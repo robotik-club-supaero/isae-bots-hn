@@ -1,0 +1,46 @@
+# Specify the parent image from which we build
+FROM ubuntu:focal
+
+# Install packages 
+# Install and setup python 3.x (latest =3.9 ?)
+RUN apt-get update -y || true && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    apt-utils \
+    gnupg2 \
+    lsb-release \
+    python3 \
+    python3-pip \
+    cmake \ 
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python packages
+# RUN pip3 install -U
+
+# Install and setup ros noetic (latest on ubuntu 20.04)
+RUN apt-get update -y || true && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y curl && \
+    sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
+    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - && \
+    apt-get update || true && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ros-noetic-desktop
+
+# Install ros dependencies & bootstrap rosdep
+RUN apt-get install --no-install-recommends -y \
+    git \
+    python3-rosdep \
+    python3-rosinstall \
+    python3-rosinstall-generator \
+    python3-wstool \
+    build-essential && rm -rf /var/lib/apt/lists/*
+    #rosdep init && rosdep update
+
+# Setup ROS work-space
+RUN mkdir -p /opt/ros_ws/src
+WORKDIR /opt/ros_ws
+RUN . /opt/ros/noetic/setup.sh
+
+# Setup ROS entrypoint
+COPY ./ros_entrypoint.sh /
+
+ENTRYPOINT [ "/ros_entrypoint.sh" ]
+CMD ["bash"] 

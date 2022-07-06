@@ -1,0 +1,34 @@
+# DOCKERFILE for isaebots-dev-env-img :
+# - Ubuntu 20.04 focal fossa + packages
+# - ROS 1 noetic + deps
+# - Python 3.8 + deps
+
+FROM ubuntu:20.04
+
+#############################################################
+# 1 - Create CORE image                                     #
+#############################################################
+
+# Install basic apt packages
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \ 
+ && apt-get install -y lsb-release \
+    curl \
+    gnupg \
+    gnupg2 \
+    locales \
+ && dpkg-reconfigure locales
+
+# Install ROS noetic
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' \
+ && curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - \
+ && apt-get update \ 
+ && apt-get install -y --no-install-recommends ros-noetic-ros-base \
+ && apt-get install -y --no-install-recommends python3-rosdep \
+ && rosdep init \
+ && rosdep fix-permissions \
+ && rosdep update 
+
+# Setup ROS environment
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+

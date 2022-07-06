@@ -1,0 +1,27 @@
+# DOCKERFILE for isaebots-dev-env-img :
+# - Ubuntu 20.04 focal fossa + packages
+# - ROS 1 noetic + deps
+# - Python 3.8 + deps
+
+FROM isaebots_desktop_env_core:latest
+SHELL ["/bin/bash", "-c"]
+
+#############################################################
+# 2 - Add up BASE image (desktop dev env)                   #
+#############################################################
+
+# Install basic apt packages
+RUN apt-get update && apt-get install -y \
+    cmake \
+    g++ \
+    git \
+    python3-pip \
+    python3-catkin-tools 
+
+# Install tools for python / pip
+# RUN pip3 install numpy 
+
+# Setup the work directory and entrypoint
+WORKDIR /dev/hn
+COPY ./docker/autosetup.sh /
+ENTRYPOINT [ "/autosetup.sh" ]

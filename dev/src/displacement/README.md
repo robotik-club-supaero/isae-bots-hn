@@ -1,12 +1,12 @@
 # DISPLACEMENT NODE
 
-Package du Displacement Node. 
+Package du Displacement Node.
 
 ## CONTENT
 
 * displacement_node.py
-* disp_comm.py
-* disp_util.py
-* disp_gain.py
+* dsp_comm.py
+* dsp_util.py
+* dsp_gain.py
 * pathfinder/
 * pathfinder_data/

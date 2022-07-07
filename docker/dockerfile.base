@@ -22,6 +22,6 @@ RUN apt-get update && apt-get install -y \
 # RUN pip3 install numpy 
 
 # Setup the work directory and entrypoint
-WORKDIR /dev/hn
+WORKDIR '/app'
 COPY ./docker/autosetup.sh /
 ENTRYPOINT [ "/autosetup.sh" ]

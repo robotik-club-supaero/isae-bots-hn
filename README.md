@@ -1,6 +1,6 @@
 # ISAE-BOTS-HN 2023
 
-![logo isae-robotics-club](.img/isae_robotics_logo.png)
+![logo isae-robotics-club](.media/isae_robotics_logo.png)
 
 ## Description
 

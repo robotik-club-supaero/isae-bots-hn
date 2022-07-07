@@ -15,15 +15,22 @@ BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
-	--volume="${PWD}/dev/hn":"/desktop_ws":rw
+	--volume="${PWD}/dev":"/app/dev" \
+	--volume="${PWD}/doc":"/app/doc" \
+	--volume="${PWD}/scripts":"/app/scripts"
 
-DOCKER_VAR_ENV = 
-
-DOCKER_ARGS = ${DOCKER_VOLUMES} ${DOCKER_VAR_ENV}
+DOCKER_ENV_VAR = \
+	--env="DISPLAY"
 
 .PHONY: help
 help:
-	@echo "help"
+	@echo "=== HELP message ================================"
+	@echo "make build-core    for Ubuntu-20.04 + ROS-noetic img"
+	@echo "make build-base    for Desktop ISAEBOTS dev env img "
+	@echo ""
+	@echo "make kill          to kill any running env container "
+	@echo "make term          to init a terminal in env Desktop "
+	@echo "================================================="
 
 #############################################################
 # SETUP
@@ -53,4 +60,6 @@ kill:
 .PHONY: term
 term: 
 	@docker run -it --net=host \
-		${DOCKER_ARGS} ${IMAGE_NAME}_base bash
+		${DOCKER_VOLUMES} \
+		${DOCKER_ENV_VAR} \
+		${IMAGE_NAME}_base bash

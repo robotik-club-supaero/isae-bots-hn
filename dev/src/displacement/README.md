@@ -9,5 +9,4 @@ Package du Displacement Node.
 * disp_util.py
 * disp_gain.py
 * pathfinder/
-
-
+* pathfinder_data/

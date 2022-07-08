@@ -19,12 +19,30 @@
 #																#
 #################################################################
 
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-
 import rospy
-import smach
-import smach_ros
+import an_ctse
 
+#################################################################
+#																#
+# 							CONSTANTS 							#
+#																#
+#################################################################
+
+def log_info(log):
+    """
+    Print standard logs.
+    """
+    rospy.loginfo(f"{an_ctse._NODENAME_} {log}")
+
+
+def log_warn(log):
+    """
+    Print warning logs.
+    """
+    rospy.logwarn(f"{an_ctse._NODENAME_} {log}")
+
+def log_errs(log):
+    """
+    Print errors logs.
+    """
+    rospy.logerr(f"{an_ctse._NODENAME_} {log}")

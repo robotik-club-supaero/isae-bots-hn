@@ -20,11 +20,40 @@
 #################################################################
 
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import numpy as np
+import ast
+import configparser
+from enum import Enum, IntEnum
+
+#################################################################
+#																#
+# 							CONSTANTS 							#
+#																#
+#################################################################
+
+_NODENAME_ = "[ACT]"
+SIMULATION = False if os.environ['USER'] == 'pi' else True
+
+#################################################################
+#																#
+# 						  ENUMERATIONS 							#
+#																#
+#################################################################
+
+class ROBOT_SIDES(IntEnum):
+    HOME = 0
+    AWAY = 1
 
 
-import rospy
-import smach
-import smach_ros
-
+class CB_NEXT_ACTION(IntEnum):
+    NONE = -3
+    STOP = -1
+    PARK = -2
+    #ACTION_1 = 0
+    #ACTION_2 = 0
+    #ACTION_3 = 0
+    #ACTION_4 = 0
+    #ACTION_5 = 0
+    #ACTION_6 = 0
+    #ACTION_7 = 0
+    #...

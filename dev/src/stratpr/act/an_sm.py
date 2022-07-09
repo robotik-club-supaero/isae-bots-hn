@@ -26,7 +26,8 @@ from std_msgs.msg      import Empty
 from geometry_msgs.msg import Quaternion
 
 # import SM states defined in an_sm_states package
-from an_sm_states.xxx import yyy
+from an_sm_states.sm_park import SM_Park
+from an_sm_states.sm_move import SM_Move
 
 from an_cste import *
 from an_help import log_info, log_warn, log_errs
@@ -39,7 +40,7 @@ from an_msgs import able_comm, next_action_pub, next_motion_pub, \
 #																#
 #################################################################
 
-class Setup(smach.State):
+class SM_Setup(smach.State):
 	"""
     STATE MACHINE: setup the SM.
     """
@@ -95,7 +96,7 @@ class Setup(smach.State):
 #																#
 #################################################################
 
-class Repartitor(smach.State):
+class SM_Repartitor(smach.State):
 	"""
     STATE MACHINE : Dispatch actions between sm substates.
     """
@@ -125,7 +126,7 @@ class Repartitor(smach.State):
 #																#
 #################################################################
 
-class End(smach.State):
+class SM_End(smach.State):
     """
     STATE MACHINE : Dispatch actions between sm substates.
     """
@@ -156,15 +157,19 @@ class End(smach.State):
 #################################################################
 
 def init_sm(sm):
-    """
-    Init state machine with its substates.
-    """
+	"""
+	Init state machine with its substates.
+	"""
 
-    with sm:
-        smach.StateMachine.add('SETUP', Setup(),
-            transitions={})
-        smach.StateMachine.add('REPARTITOR', Repartitor(),
-            transitions={})
-        smach.StateMachine.add('END', End(),
-            transitions={})
-        
+	with sm:
+		smach.StateMachine.add('SETUP', SM_Setup(),
+			transitions={'preempted':'END','start':'REPARTITOR'})
+		smach.StateMachine.add('REPARTITOR', SM_Repartitor(),
+			transitions={})
+		smach.StateMachine.add('END', SM_End(),
+			transitions={'end':'EXIT_SM','preempted':'EXIT_SM'})
+
+		smach.StateMachine.add('PARK', SM_Park,
+			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})
+		smach.StateMachine.add('MOVE', SM_Move,
+			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})

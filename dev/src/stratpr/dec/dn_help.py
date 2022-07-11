@@ -56,14 +56,27 @@ class STRAT_INDEX(IntEnum):
     MATCH = 2
 
 class STRAT_NAMES(str, Enum):
-    HOMOLOGATION = "homologation"
-    TESTS = "tests"
-    MATCH = "match"
+    HOMOLOGATION = "homologation_strat"
+    TESTS = "tests_strat"
+    MATCH = "match_strat"
+
+class DN_LIST_ACTION_INDEX(IntEnum):
+    PARK = 0
+    END = 1
+    PREEMPTED = 2
+    #...
+    #...
+
+class DN_LIST_ACTION_NAMES(str, Enum):
+    PARK = 'park'
+    END = 'end'
+    PREEMPTED = 'preempted'
+    #... 
 
 class CB_NEXT_ACTION(IntEnum):
-    NONE = -3
-    STOP = -1
-    PARK = -2
+    NONE    = -3
+    PARK_IT = -2  # park interrupt
+    STOP_IT = -1  # stop interrupt
     #ACTION_1 = 0
     #ACTION_2 = 0
     #ACTION_3 = 0

@@ -23,8 +23,9 @@ import os
 import time
 import rospy
 import threading
-from dn_help import log_info, log_errs, log_warn, CB_NEXT_ACTION, \
-                    ROBOT_SIDES, STRAT_NAMES, STRAT_INDEX, TERM_SIZE
+from dn_help import log_info, log_errs, log_warn, \
+                    ROBOT_SIDES, STRAT_NAMES, STRAT_INDEX, CB_NEXT_ACTION, \
+                    TERM_SIZE
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
@@ -141,7 +142,7 @@ def park_IT():
     log_info("#"*TERM_SIZE + "\n"
              "#"*4 + " Park interrupt " + "#"*(TERM_SIZE-20) + "\n"
              "#"*TERM_SIZE)
-    next_action_pub.publish(data=[CB_NEXT_ACTION.PARK])
+    next_action_pub.publish(data=[CB_NEXT_ACTION.PARK_IT])
 
 
 def stop_IT():
@@ -151,7 +152,7 @@ def stop_IT():
     log_info("#"*TERM_SIZE + "\n"
              "#"*4 + " End of match " + "#"*(TERM_SIZE-18) + "\n"
              "#"*TERM_SIZE)
-    next_action_pub.publish(data=[CB_NEXT_ACTION.STOP])
+    next_action_pub.publish(data=[CB_NEXT_ACTION.STOP_IT])
 
 #################################################################
 #                                                               #

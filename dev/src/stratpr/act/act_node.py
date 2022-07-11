@@ -51,7 +51,7 @@ def main():
     # INITIALIZATION
     #############################################################
 
-    log_info("Initializing Action Node.")
+    log_info("Initializing ACT Node.")
     sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
     init_sm(sm)
     init_msgs(sm)

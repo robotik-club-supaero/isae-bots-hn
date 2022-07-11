@@ -14,9 +14,9 @@
 # pyright: reportMissingImports=false
 
 #################################################################
-#																#
-# 							IMPORTS 							#
-#																#
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
 #################################################################
 
 import os
@@ -41,35 +41,35 @@ def sig_handler(s_rcv, frame):
     sys.exit()
 
 #################################################################
-#																#
-# 							Main 								#
-#																#
+#                                                               #
+#                             Main                              #
+#                                                               #
 #################################################################
 
 def main():
-	#############################################################
-	# INITIALIZATION
-	#############################################################
+    #############################################################
+    # INITIALIZATION
+    #############################################################
 
-	log_info("Initializing Action Node.")
-	sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
-	init_sm(sm)
-	init_msgs(sm)
-	
-	#############################################################
-	# SM CALL
-	#############################################################
-	# Create and start the introspection server
-	sis = smach_ros.IntrospectionServer('pr_an', sm, '/SM_ROOT')
-	sis.start()
+    log_info("Initializing Action Node.")
+    sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
+    init_sm(sm)
+    init_msgs(sm)
+    
+    #############################################################
+    # SM CALL
+    #############################################################
+    # Create and start the introspection server
+    sis = smach_ros.IntrospectionServer('pr_an', sm, '/SM_ROOT')
+    sis.start()
 
-	# Execute the state machine
-	sm.execute()
-	log_info('Exiting state machine.\n')
-	
-	# Wait for ctrl-c to stop the application
-	rospy.spin()
-	sis.stop()
+    # Execute the state machine
+    sm.execute()
+    log_info('Exiting state machine.\n')
+    
+    # Wait for ctrl-c to stop the application
+    rospy.spin()
+    sis.stop()
 
 
 if __name__ == '__main__':

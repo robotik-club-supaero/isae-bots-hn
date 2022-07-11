@@ -14,9 +14,9 @@
 # pyright: reportMissingImports=false
 
 #################################################################
-#																#
-# 							IMPORTS 							#
-#																#
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
 #################################################################
 
 import os
@@ -28,9 +28,9 @@ from an_msgs import done_action_pub, send_added_score
 from an_sm_states.sm_displacement import SM_Displacement, set_next_destination
 
 #################################################################
-#																#
-# 						     SUBSTATES  						#
-#																#
+#                                                               #
+#                          SUBSTATES                            #
+#                                                               #
 #################################################################
 
 class SM_ObsPark(smach.State):
@@ -59,9 +59,9 @@ class SM_ObsPark(smach.State):
 
 
 #################################################################
-#																#
-# 						  SM STATE : PARK  						#
-#																#
+#                                                               #
+#                        SM STATE : PARK                        #
+#                                                               #
 #################################################################
 
 SM_Park = smach.StateMachine(outcomes=['preempted', 'end'],

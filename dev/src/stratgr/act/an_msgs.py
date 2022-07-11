@@ -14,9 +14,9 @@
 # pyright: reportMissingImports=false
 
 #################################################################
-#																#
-# 							IMPORTS 							#
-#																#
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
 #################################################################
 
 import os
@@ -27,7 +27,7 @@ from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_cste import *
-from an_msgs import log_info, log_warn, log_errs
+from an_help import log_info, log_warn, log_errs
 
 #################################################################
 # TODO: check if still necessary (try rename message package on 
@@ -40,9 +40,9 @@ else:
 #################################################################
 
 #################################################################
-#																#
-# 							   INIT     						#
-#																#
+#                                                               #
+#                            INIT                               #
+#                                                               #
 #################################################################
 
 def init_msgs(sm):
@@ -65,9 +65,9 @@ def able_comm():
     ok_comm = True
 
 #################################################################
-#																#
-# 							 Feedback     						#
-#																#
+#                                                               #
+#                           FEEDBACK                            #
+#                                                               #
 #################################################################
 
 global ok_comm
@@ -141,9 +141,9 @@ def recv_XXXXX(msg):
     p_udata.XXX[0] = msg.data
 
 #################################################################
-#																#
-# 						     Senders     						#
-#																#
+#                                                               #
+#                           REQUESTS                            #
+#                                                               #
 #################################################################
 
 def send_added_score(pts):
@@ -154,9 +154,9 @@ def send_added_score(pts):
     score_pub.publish(p_udata.score[0])
 
 #################################################################
-#																#
-# 						    Pubs/Subs     						#
-#																#
+#                                                               #
+#                          Pubs/Subs                            #
+#                                                               #
 #################################################################
 
 def init_pubs():

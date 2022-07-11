@@ -14,9 +14,9 @@
 # pyright: reportMissingImports=false
 
 #################################################################
-#																#
-# 							IMPORTS 							#
-#																#
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
 #################################################################
 
 import os
@@ -31,9 +31,9 @@ from an_msgs import next_motion_pub
 from an_help import log_info, log_errs, log_warn
 
 #################################################################
-#																#
-# 							  UTILS 							#
-#																#
+#                                                               #
+#                            UTILS                              #
+#                                                               #
 #################################################################
 
 DISP_TIMEOUT = 30       #[s]
@@ -50,9 +50,9 @@ def set_next_destination(userdata, x_d, y_d, t_d, w):
 		userdata.next_pos = Quaternion(x_d, 3000-y_d, -t_d, w)
 
 #################################################################
-#																#
-# 					   SM_DISPLACEMENT STATE					#
-#																#
+#                                                               #
+#                     SM_DISPLACEMENT STATE                     #
+#                                                               #
 #################################################################
 
 class SM_Displacement(smach.State):

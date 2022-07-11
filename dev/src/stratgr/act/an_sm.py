@@ -14,9 +14,9 @@
 # pyright: reportMissingImports=false
 
 #################################################################
-#																#
-# 							IMPORTS 							#
-#																#
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
 #################################################################
 
 import time
@@ -35,9 +35,9 @@ from an_msgs import able_comm, next_action_pub, next_motion_pub, \
                     stop_teensy_pub
 
 #################################################################
-#																#
-# 				    	SM STATE : SETUP						#
-#																#
+#                                                               #
+#                       SM STATE : SETUP                        #
+#                                                               #
 #################################################################
 
 class SM_Setup(smach.State):
@@ -91,9 +91,9 @@ class SM_Setup(smach.State):
 		return 'start'
 
 #################################################################
-#																#
-# 				      SM STATE : REPARTITOR						#
-#																#
+#                                                               #
+#                    SM STATE : REPARTITOR                      #
+#                                                               #
 #################################################################
 
 class SM_Repartitor(smach.State):
@@ -121,9 +121,9 @@ class SM_Repartitor(smach.State):
 		return None	                                 # lancement prochaine action  
 		
 #################################################################
-#																#
-# 				           SM STATE : END						#
-#																#
+#                                                               #
+#                        SM STATE : END                         #
+#                                                               #
 #################################################################
 
 class SM_End(smach.State):
@@ -151,9 +151,9 @@ class SM_End(smach.State):
         return 'end'
 
 #################################################################
-#																#
-# 				           INITIALIZATION						#
-#																#
+#                                                               #
+#                        INITIALIZATION                         #
+#                                                               #
 #################################################################
 
 def init_sm(sm):

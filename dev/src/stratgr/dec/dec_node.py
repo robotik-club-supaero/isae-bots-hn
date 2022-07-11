@@ -51,7 +51,7 @@ def sig_handler(s_rcv, frame):
 #                                                               #
 #################################################################
 
-class DECNode:
+class DecisionsNode:
     """
     DEC node: ROS node for decisions and strategy.
     """
@@ -83,7 +83,7 @@ class DECNode:
 
 def main():
     rospy.init_node("DEC node")
-    node = DECNode()
+    node = DecisionsNode()
 
     init_msgs()
     init_strats()

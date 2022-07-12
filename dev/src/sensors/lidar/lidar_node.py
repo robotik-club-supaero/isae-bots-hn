@@ -1,0 +1,196 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+@file: LidarNode.py
+@status: OK
+
+Fichier de gestion des obstacles LIDAR.
+"""
+
+# pyright: reportMissingImports=false
+
+from __future__ import division
+
+import os, sys
+import rospy
+
+from math import *
+from lidar_lib import *
+
+from geometry_msgs.msg import Pose2D
+from sensor_msgs.msg   import LaserScan
+from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
+
+#################################################################
+if os.environ['USER'] == 'pi':
+	SIMULATION = False
+else:
+	SIMULATION = True
+#################################################################
+
+OBS_RESOLUTION = 100
+
+def patchFrameBR(x, y, theta):
+	"""Easier patch."""
+	if SIMULATION:
+		return x, y, theta
+	return x, 3000-y, -theta
+
+def LOG_INFO(msg):
+    rospy.loginfo("LID "+msg)
+
+def handler(rcv_sig, frame):
+	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
+	LOG_INFO("ISB Node forced to terminate...")
+	rospy.signal_shutdown(rcv_sig)
+	sys.exit()
+
+#######################################################################
+# LIDAR NODE
+#######################################################################
+
+class LidarNode:
+
+    """LidarNode class"""
+
+    def __init__(self):
+        """Initialisation."""
+        ### VARIABLES #################################################
+        self.x_robot = 0
+        self.y_robot = 0
+        self.c_robot = 0
+        self.radius = 42
+
+        self.iterData = 0
+        self.sizeData = 5
+        self.obstaclesLists = [ [] for i in range(self.sizeData)]
+
+        ### LAUNCH NODE ###############################################
+        rospy.init_node('LidarNode')
+        LOG_INFO("Initializing Lidar Node.")
+
+        # initialisation des publishers
+        self.pub_obstacles = rospy.Publisher("/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
+        # initialisation des suscribers
+        self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
+        self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
+
+
+    def update_position(self,msg):
+        """Fonction de callback de position."""
+        # TODO - remove patch
+        x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
+        self.x_robot = x
+        self.y_robot = y
+        self.c_robot = c
+ 
+    def update_obstacle(self, msg):
+        """Fonction de callback des obstacles lidar."""
+        x_r = self.x_robot
+        y_r = self.y_robot
+        cap = self.c_robot
+
+        ranges = msg.ranges
+        angle_min = msg.angle_min
+        angle_max = msg.angle_max
+        angle_inc = msg.angle_increment  
+        range_min = msg.range_min
+        range_max = msg.range_max
+        
+        raw_dists = absol_coord(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
+        obs_dists = localisation(raw_dists)
+        self.obstaclesLists[self.iterData % self.sizeData] = obs_dists
+        self.iterData += 1
+        self.treats_obstacle()
+
+    def treats_obstacle(self): # TODO - 
+        """Fonction appelee pour eliminer les 'doublons'.
+        
+        Cette fonction va comparer les obstacles detectes au temps
+        t-1 et ceux au temps t. Elle determine alors si un obstacle du 
+        temps t est en realite le meme obstacle du temps t-1 qui s'est 
+        deplace. 
+        
+        Pour cela, on regarde si pour chaque obstacle au temps t, il y 
+        a des obstacles au temps t-1 qui lui sont assez proche."""
+        
+        obstaclesLists = list(self.obstaclesLists)
+
+        indexOfMax = 0
+        maxLen = len(obstaclesLists[0])
+        for i in range(1, self.sizeData):
+            if(len(obstaclesLists[i]) > maxLen):
+                indexOfMax = i
+                maxLen = len(obstaclesLists[i])
+
+        biggestList = obstaclesLists[indexOfMax]
+
+        calculatedObstacles = []
+        for potentialObstacle in biggestList :
+            nbOcc = 1
+            for i in range(self.sizeData):
+                if( i != indexOfMax):
+                    for obstacle in obstaclesLists[i]:
+                        if(dist(potentialObstacle, obstacle) < OBS_RESOLUTION):
+                            nbOcc += 1
+            if(nbOcc > 2):
+                x_robot = self.x_robot
+                y_robot = self.y_robot
+                x = potentialObstacle[0]
+                y = potentialObstacle[1]
+                theta = 0
+
+                if x > x_robot:
+                    theta = atan((y - y_robot)/(x-x_robot))
+                elif x < x_robot :
+                    theta = pi + atan((y - y_robot)/(x-x_robot))
+                else :
+                    if y > y_robot:
+                        theta = pi/2
+                    else:
+                        theta = -pi/2
+
+                calculatedObstacles.append([potentialObstacle[0] + self.radius * cos(theta),  potentialObstacle[1] + self.radius * sin(theta)])
+
+        msg = Int16MultiArray()
+
+        data = [0]
+        for position in calculatedObstacles:
+            for coordinate in position:
+                data.append((int)(coordinate))
+
+        msg.data = data
+
+        layout = MultiArrayLayout()
+        layout.data_offset = 1
+
+        dimensions = []
+        dim1 = MultiArrayDimension()
+        dim1.label = "obstacle_nb"
+        dim1.size = len(calculatedObstacles)
+        dim1.stride = 2* len(calculatedObstacles)
+
+        dim2 = MultiArrayDimension()
+        dim2.label = "coordinate"
+        dim2.size = 2
+        dim2.stride = 2
+
+        dimensions.append(dim1)
+        dimensions.append(dim2)
+
+        layout.dim = dimensions
+
+        msg.layout = layout
+
+        self.pub_obstacles.publish(msg)
+
+
+
+#######################################################################
+# MAIN
+#######################################################################
+
+if __name__ == '__main__':
+    node = LidarNode()
+    rospy.spin()

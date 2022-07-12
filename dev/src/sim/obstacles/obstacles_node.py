@@ -91,7 +91,7 @@ class SIM_ObstaclesNode:
                 data.append((int)(coord))
 
         dim1 = MultiArrayDimension()
-        dim1.label = "nbobstacles"
+        dim1.label = "nbObstacles"
         dim1.size = len(obstacles_pos)
         dim1.stride = 2* len(obstacles_pos)
 

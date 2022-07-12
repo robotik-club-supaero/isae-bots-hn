@@ -1,41 +1,86 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
 # pyright: reportMissingImports=false
-# ---------------------------------------------------------------------
+#
 # ROS node module to handle robot control using a wiimote
 # Supported robot for this module is PMI only...
-# 
-# (C) Supaero Robotic Club 2022
+
+#################################################################
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
+#################################################################
 
 import time
 import rospy
 import cwiid
-
+from enum import IntEnum, Enum
 from std_msgs.msg      import Int16
 from geometry_msgs.msg import Quaternion
 
+#################################################################
+#                                                               #
+#                          CONSTANTS                            #
+#                                                               #
+#################################################################
+
 _NODENAME_ = "[WII]"
 
-MIN = 0
-MID = 50
-MAX = 100
+class ROBOT_SIDES(IntEnum):
+    HOME = 0
+    AWAY = 1
 
-HOME_SIDE = 0
-AWAY_SIDE = 1
+class STICK_SCALE(IntEnum):
+    MIN = 0
+    MID = 50
+    MAX = 100
 
+#################################################################
+#                                                               #
+#                            UTILS                              #
+#                                                               #
+#################################################################
 
-def LOG(msg):
+def log_info(msg):
+    """
+    Standard logs print.
+    """
     rospy.loginfo(f"{_NODENAME_} {msg}")
+
+
+def log_warn(msg):
+    """
+    Warning logs print.
+    """
+    rospy.logwarn(f"{_NODENAME_} {msg}")
+
+
+def log_errs(msg):
+    """
+    Errors logs print.
+    """
+    rospy.logerr(f"{_NODENAME_} {msg}")
 
 
 def rescale(val, src, dst):
     """
     Scale the given value from the scale of src to the scale of dst.
     
-    val: float or int
-    src: tuple 
-    dst: tuple
+    Args:
+        val: float or int
+        src: tuple 
+        dst: tuple
     """
     return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
@@ -43,48 +88,31 @@ def rescale(val, src, dst):
 def nunchuk(val, cor):
     c_bot, c_mid, c_top, delta = cor
     if abs(val-c_mid) <= delta:
-        return MID
+        return STICK_SCALE.MAX
     if val < c_mid:
-        return rescale(val, [c_bot, c_mid], [MIN, MID])
+        return rescale(val, [c_bot, c_mid], [STICK_SCALE.MIN, STICK_SCALE.MID])
     if val > c_mid:
-        return rescale(val, [c_mid, c_top], [MID, MAX])
+        return rescale(val, [c_mid, c_top], [STICK_SCALE.MID, STICK_SCALE.MAX])
     raise RuntimeError("Should not get here...")
 
 
 class WiiControlNode:
+    """
+    ROS node WII CONTROL for remote control of the robot by wiimote.
+    """
 
     def __init__(self):
-        rospy.init_node('WiiControlNode')
-        LOG("Initializing Wii Control Node.")
+        log_info("Initializing WII node ...")
+        # -- Publishers & subscribers
+        self.nextpos_pub = rospy.Publisher("/whl/next_position", Quaternion, queue_size=10, latch=False)
 
-        # --- Publishers & subscribers
-        self.pub_res = rospy.Publisher("/res_request", Int16, queue_size=10, latch=False)
-        self.pub_arm = rospy.Publisher("/arm_request", Int16, queue_size=10, latch=False)
-        self.pub_nextpos = rospy.Publisher("/nextPositionTeensy", Quaternion, queue_size=10, latch=False)
-        self.pub_grab_statue = rospy.Publisher("/grab_statue_request", Int16, queue_size=10, latch=True)
-        self.pub_drop_statue = rospy.Publisher("/drop_statue_request", Int16, queue_size=10, latch=True)
-        self.pub_drop_replic = rospy.Publisher("/drop_replic_request", Int16, queue_size=10, latch=True)
-
-        # --- Connection to Wiimote
-        print("Press 1+2 on Wiimote to connect...")
+        # -- Connection to Wiimote
         self.wiimote = None
-        connection_attemps = 1
-        while not self.wiimote:
-            try:
-                self.wiimote = cwiid.Wiimote()
-            except RuntimeError:
-                print("RuntimError, failure to connect, please try again.")
-                connection_attemps += 1
-        LOG("Connection to wiimote successful, {} attemps needed.".format(connection_attemps))
+        self.wiimote_connect()
 
-        # --- Buttons variables         
-        self.side_sel = [False, False]
-        self.res = False
-        self.arm = False
-        self.drop_replic = False
-        self.grab_statue = False
-        self.drop_statue = False
-
+        # -- Buttons variables
+               
+        # -- Dynamic variables
         self.coeff_speed = 2
         self.t_upd_speed = 0
         
@@ -92,11 +120,24 @@ class WiiControlNode:
         self.wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_NUNCHUK
         self.wiimote.led = (1 << (self.coeff_speed+1)) - 1
 
+    def wiimote_connect(self):
+        """
+        Method to connect to the wiimote
+        """
+        log_warn("Press 1+2 on Wiitome to connect ...")
+        connection_attempts = 1
+        while not self.wiimote:
+            try:
+                self.wiimote = cwiid.Wiimote()
+            except RuntimeError:
+                log_errs("Failure to connect, please try again.")
+                connection_attempts += 1
+        log_info(f"Success, connection established, {connection_attempts} attempts needed.")
+
     def unitstep(self):
         # --- Nunchuk constants (TODO: check values)
         nunchuk_v_consts = (0, 131, 255, 1)
         nunchuk_h_consts = (1, 127, 254, 1)
-
         max_speed = 255
 
         # --- Check for any move cmd from nunchuk & publish
@@ -109,75 +150,54 @@ class WiiControlNode:
             angle = -(corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
         else:
             speed = angle = 0
-
         msg_pos = Quaternion()
         msg_pos.x = min(max(speed-angle,-255),255)
         msg_pos.y = min(max(speed+angle,-255),255)
         msg_pos.z = 0
         msg_pos.w = 4  # cmd for remote control ^^
-        self.pub_nextpos.publish(msg_pos)
+        self.nextpos_pub.publish(msg_pos)
 
-        time.sleep(0.1)
+        time.sleep(0.01)
 
         # --- Check for buttons events | to change as actions change
         wiimote_buttons = self.wiimote.state['buttons']
         nunchuk_buttons = self.wiimote.state['nunchuk']['buttons']
         
         if wiimote_buttons & cwiid.BTN_A != 0:
-            if not self.grab_statue:
-                self.pub_grab_statue.publish(data=1)
-                self.grab_statue = True
+            pass
         else:
-            self.grab_statue = False
+            pass
         
         if wiimote_buttons & cwiid.BTN_B != 0:
-            if not self.drop_statue:
-                self.pub_drop_statue.publish(data=1)
-                self.drop_statue = True
+            pass
         else:
-            self.drop_statue = False
+            pass
 
         if wiimote_buttons & cwiid.BTN_1 != 0:
-            if not self.drop_replic:
-                self.pub_drop_replic.publish(data=1)
-                self.drop_replic = True
+            pass
         else:
-            self.drop_replic = False
+            pass
 
         if wiimote_buttons & cwiid.BTN_2 != 0:
-            if not self.drop_replic:
-                self.pub_drop_replic.publish(data=1)
-                self.drop_replic = True
+            pass
         else:
-            self.drop_replic = False
+            pass
 
         if wiimote_buttons & cwiid.BTN_LEFT != 0:
-            self.side_sel[AWAY_SIDE] = True
+            pass
 
         if wiimote_buttons & cwiid.BTN_RIGHT != 0:
-            self.side_sel[HOME_SIDE] = True
+            pass
 
         if nunchuk_buttons == 1: # Z btn
-            if not self.res:
-                for k in range(len(self.side_sel)):
-                    if not self.side_sel[k]:
-                        continue
-                    self.pub_res.publish(data=k)
-                LOG("Res request.")
-                self.res = True
+            pass
         else:
-            self.res = False
+            pass
    
         if nunchuk_buttons == 2: # C btn
-            if not self.arm:
-                for k in range(len(self.side_sel)):
-                    if not self.side_sel[k]:
-                        continue
-                    self.pub_arm.publish(data=k)
-                LOG("Arm request.")
-                self.arm = True
+            pass
         else:
-            self.arm = False
+            pass
 
         upd_speed_delay = 0.5
 
@@ -191,15 +211,26 @@ class WiiControlNode:
             self.wiimote.led = (1 << (self.coeff_speed)) - 1
             self.t_upd_speed = time.time()
 
-
     def mainloop(self):
+        """
+        ROS node mainloop
+        """
         while True:
             # Refreshing rate = 10Hz 
             time.sleep(0.1)
-            # Run one step 
             self.unitstep()
+
+#################################################################
+#                                                               #
+#                             MAIN                              #
+#                                                               #
+#################################################################
+
+def main():
+    rospy.init_node("WII node")
+    node = WiiControlNode()
+    node.mainloop()
 
 
 if __name__ == '__main__':
-    node = WiiControlNode()
-    node.mainloop()
+    main()

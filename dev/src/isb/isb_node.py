@@ -11,6 +11,13 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
+# pyright: reportMissingImports=false
+
+#################################################################
+#                                                               #
+#                           IMPORTS                             #
+#                                                               #
+#################################################################
 
 import sys
 import time
@@ -18,6 +25,12 @@ import rospy
 import signal
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
 from geometry_msgs.msg import Quaternion
+
+#################################################################
+#                                                               #
+#                            UTILS                              #
+#                                                               #
+#################################################################
 
 _NODENAME_ = "[ISB]"
 
@@ -29,47 +42,62 @@ MATCH_px = [0]
 COLOR_px = [1]
 STRAT_px = [7,6]  # higher weight pixel on the right... (reverse from usual)
 
-# --- Util function
-def LOG_INFO(msg):
-	"""Log function, put NODE_NAME stamp at the start of the msg."""
+
+def log_info(msg):
+	"""
+	Print logs standard.
+	"""
 	rospy.loginfo(f"{_NODENAME_} {msg}")
 
-def LOG_ERRS(msg):
-	"""Log function for errors"""
+
+def log_warn(msg):
+	"""
+	Print logs warning.
+	"""
+	rospy.logwarn(f"{_NODENAME_} {msg}")
+
+
+def log_errs(msg):
+	"""
+	Print logs errors.
+	"""
 	rospy.logerr(f"{_NODENAME_} {msg}")
 
-def handler(rcv_sig, frame):
-	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
-	LOG_INFO("Node forced to terminate...")
-	rospy.signal_shutdown(rcv_sig)
-	sys.exit()
+
+def sig_handler(s_rcv, frame):
+    """
+    Force node to quit on SIGINT.
+    """
+    log_warn("Node forced to terminate ...")
+    rospy.signal_shutdown(signal.SIGTERM)
+    sys.exit()
 
 #######################################################################
 # COLORS 
 #######################################################################
 
 class pixelColor:
-	red    = Quaternion(0, 255,	 000,	 000)
-	green  = Quaternion(0, 000,	 255,	 000)
-	blue   = Quaternion(0, 000,	 000,	 255)
-	white  = Quaternion(0, 255,	 255,	 255)
-	black  = Quaternion(0, 000,	 000,	 000)
-	grey   = Quaternion(0, 128,	 128,	 128)
-	yellow = Quaternion(0, 255,	 255,	 000)
-	orange = Quaternion(0, 255,	 114,	 000)
-	cyan   = Quaternion(0, 000,	 255,	 255)
-	navy   = Quaternion(0, 000,	 118,	 214)
-	pink   = Quaternion(0, 223,	 112,	 173)
-	purple = Quaternion(0,  92,	 000,	 255)
-	brown  = Quaternion(0,  81,	  41,	  16)
+	RD = Quaternion(0, 255, 000, 000)  # red
+	GN = Quaternion(0, 000, 255, 000)  # green
+	BL = Quaternion(0, 000, 000, 255)  # blue
+	WH = Quaternion(0, 255, 255, 255)  # white
+	BK = Quaternion(0, 000, 000, 000)  # black
+	GY = Quaternion(0, 128, 128, 128)  # gray
+	YE = Quaternion(0, 255, 255, 000)  # yellow
+	OR = Quaternion(0, 255, 114, 000)  # orange
+	PK = Quaternion(0, 223, 112, 173)  # pink
+	VT = Quaternion(0,  92, 000, 255)  # violet / purple
+	BN = Quaternion(0,  81,  41,  16)  # brown
+	CY = Quaternion(0, 000, 255, 255)  # cyan 
+	NB = Quaternion(0, 000, 118, 214)  # navy blue
 
 # -- Colors distribution
 # MATCH : 	0 = red 	| 1 = green	
 # COLOR : 	0 = yellow	| 1 = purple
 # STRAT :   0 = black 	| 1 = cyan
-MATCH_COLORS = [pixelColor.red, 	pixelColor.green]
-COLOR_COLORS = [pixelColor.yellow, 	pixelColor.purple]
-STRAT_COLORS = [pixelColor.black, 	pixelColor.cyan]
+MATCH_COLORS = [pixelColor.RD, 	pixelColor.GN]
+COLOR_COLORS = [pixelColor.YE, 	pixelColor.VT]
+STRAT_COLORS = [pixelColor.BK, 	pixelColor.CY]
 
 STRATS = [0, 1, 2, 3]
 
@@ -77,15 +105,13 @@ STRATS = [0, 1, 2, 3]
 # ISB NODE
 #######################################################################
 
-class IsbNode:
-
-	"""Class IsbNode."""
+class ISBNode:
+	"""
+	ISB node.
+	"""
 
 	def __init__(self):	
-		"""Initialise params, comms, etc.. and launch the node."""
-
-		rospy.init_node('Isb_node')
-		LOG_INFO("Initializing ISB Node ...")
+		log_info("Initializing ISB Node ...")
 
 		# --- Variables
 		self.match = False
@@ -107,15 +133,15 @@ class IsbNode:
 		self.subIsbStrat = rospy.Subscriber("/isbStrat", Int16, self.stratUpdate)
 
 		## WHY ??
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
 		self.pubReset.publish(Empty())
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
-		self.setAllPixels(pixelColor.black)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
+		self.setAllPixels(pixelColor.BK)
 
 		self.blinking()
 
@@ -137,9 +163,9 @@ class IsbNode:
 				if not self.isBlinking[px]:
 					continue
 				if self.off:
-					self.setPixel(px, pixelColor.black)
+					self.setPixel(px, pixelColor.BK)
 				else:
-					self.setPixel(px, pixelColor.white)
+					self.setPixel(px, pixelColor.WH)
 			self.off = 1 - self.off
 		
 
@@ -202,7 +228,12 @@ class IsbNode:
 # LAUNCH
 #######################################################################
 
-if __name__ == '__main__':
-	signal.signal(signal.SIGINT, handler)
-	node = IsbNode()
+def main():
+	rospy.init_node('ISB node')
+	signal.signal(signal.SIGINT, sig_handler)
+	node = ISBNode()
 	rospy.spin()
+
+
+if __name__ == '__main__':
+	main()

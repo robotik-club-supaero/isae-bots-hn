@@ -56,10 +56,13 @@ kill:
 # TASKS
 #############################################################
 
+CMD = bash
+
 # Start a terminal inside the Docker container
 .PHONY: term
 term: 
 	@docker run -it --net=host \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
-		${IMAGE_NAME}_base bash
+		${IMAGE_NAME}_base \
+		${CMD}

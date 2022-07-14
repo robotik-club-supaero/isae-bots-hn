@@ -26,13 +26,6 @@ from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimen
 from geometry_msgs.msg import Pose2D
 
 #################################################################
-if os.environ['USER'] == 'pi':
-	SIMULATION = False
-else:
-	SIMULATION = True
-#################################################################
-
-#################################################################
 #                                                               #
 #                            UTILS                              #
 #                                                               #
@@ -66,13 +59,6 @@ def line_angle(x0, y0, x1, y1):
         return theta + np.pi
     else:
         return theta - np.pi
-
-    
-def patchFrameBR(x, y, theta):
-	"""Easier patch."""
-	if SIMULATION:
-		return x, y, theta
-	return x, 3000-y, -theta
     
 #################################################################
 #                                                               #
@@ -121,7 +107,9 @@ class ObstaclesNode:
         Feedback on detected obstacles.
         """
         if msg.data[0] == 0:  # lidar obstacle
-
+            nbr = self.nb_lidar
+            obs = self.lidar_obs_lst
+            self.nb_lidar = (self.nb_lidar + 1) % 
 
 
 

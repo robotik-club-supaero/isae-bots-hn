@@ -33,7 +33,7 @@ from geometry_msgs.msg import Pose2D
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[SIM/ACU]"
+_NODENAME_ = "[SIM/ACU]"l
 
 ## Constants PR
 

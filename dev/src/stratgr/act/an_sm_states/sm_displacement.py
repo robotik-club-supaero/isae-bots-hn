@@ -26,9 +26,9 @@ import smach
 
 from geometry_msgs.msg import Quaternion
 
-from an_cste import ROBOT_SIDES, DISP_ORDERS, CB_DISP_MOTION
+from dev.src.stratgr.act.an_const import ROBOT_SIDES, DISP_ORDERS, CB_DISP_MOTION
 from an_msgs import next_motion_pub
-from an_help import log_info, log_errs, log_warn
+from dev.src.stratgr.act.an_utils import log_info, log_errs, log_warn
 
 #################################################################
 #                                                               #

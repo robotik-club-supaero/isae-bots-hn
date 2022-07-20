@@ -23,7 +23,7 @@ import os
 import time
 import rospy
 import threading
-from dn_help import log_info, log_errs, log_warn, \
+from dev.src.stratgr.dec.dn_utils import log_info, log_errs, log_warn, \
                     ROBOT_SIDES, STRAT_NAMES, STRAT_INDEX, CB_NEXT_ACTION, \
                     TERM_SIZE
 from std_msgs.msg      import Empty, Int16, Int16MultiArray

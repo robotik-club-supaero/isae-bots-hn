@@ -23,5 +23,5 @@ RUN apt-get update && apt-get install -y \
 
 # Setup the work directory and entrypoint
 WORKDIR '/app'
-COPY ./docker/autosetup.sh /
+COPY ./docker/autosetup.sh /autosetup.sh
 ENTRYPOINT [ "/autosetup.sh" ]

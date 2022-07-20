@@ -23,21 +23,15 @@ import os
 import time
 import rospy
 
+from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_cste import *
-from an_help import log_info, log_warn, log_errs
+from an_const import *
+from an_utils import log_info, log_warn, log_errs
 
 #################################################################
-# TODO: check if still necessary (try rename message package on 
-# and set rospy param elsewhere...)
-if os.environ['USER'] == 'pi':
-	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
-else:
-	from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
-	rospy.set_param("robot_name", "PR")
-#################################################################
+rospy.set_param("robot_name", "GR")
 
 #################################################################
 #                                                               #

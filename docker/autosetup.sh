@@ -16,9 +16,19 @@
 # Setup ros environment
 source /opt/ros/noetic/setup.bash
 
+if [ -n "$WDIR" ]; then 
+    if [ ! -e "$WDIR/devel/setup.bash" ]; then
+        cdir=$(pwd)
+        cd $WDIR
+        catkin_make
+        cd cdir
+    fi
+    source "$WDIR/devel/setup.bash"
+fi
+
 # Setup environment variables
 # export ...
 # export ...
 
 # Execute command passed to entrypoint
-exec "$@"
+bash -c "$@"

@@ -85,8 +85,8 @@ def main():
     rospy.init_node("DEC node")
     node = DecisionsNode()
 
-    init_msgs()
-    init_strats()
+    init_msgs(node)
+    init_strats(node)
 
     rospy.spin()
 

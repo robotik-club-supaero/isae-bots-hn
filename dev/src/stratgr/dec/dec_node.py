@@ -24,7 +24,7 @@ import sys
 import rospy
 import signal
 
-from dn_help   import CONFIG_READER, log_errs, log_info, log_warn, \
+from dev.src.stratgr.dec.dn_utils   import CONFIG_READER, log_errs, log_info, log_warn, \
                       STRAT_NAMES, DN_LIST_ACTION_NAMES
 from dn_msgs   import init_msgs
 from dn_strats import init_strats, \

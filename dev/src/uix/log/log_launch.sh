@@ -12,13 +12,17 @@
 #
 
 # On crée quelques binds dans le .bashrc utiles pour la simulation (que l'on va désactiver après il vaut mieux)
-echo 'simulation_bindkeys ' >> ~/.bashrc  # on crée un appel à une fonction dans le bashrc pour appliquer les bindkeys
+echo 'control_bindkeys ' >> ~/.bashrc  # on crée un appel à une fonction dans le bashrc pour appliquer les bindkeys
 
-cd ~  # il faut se placer à la racine
-terminator -u -l simulation  # lancement d'une session de terminator avec la layout simulation
-			                 # l'option -u permet de désactiver le dBus pour que plusieurs sessions de terminator n'interfèrent pas entre elles
+# On se place en racine pour lancer Terminator
+WDIR=$PWD
+cd ~ 
+terminator -u -l simulation --working-directory $WDIR
 
-sed -i "/^simulation_bindkeys/d" ~/.bashrc # on enlève l'appel à la fonction des bindkeys dans le bashrc
+ # lancement d'une session de terminator avec la layout simulation
+ # l'option -u permet de désactiver le dBus pour que plusieurs sessions de terminator n'interfèrent pas entre elles
+
+sed -i "/^control_bindkeys/d" ~/.bashrc # on enlève l'appel à la fonction des bindkeys dans le bashrc
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)
 # Par défaut on l'utilise sur la touche "suppr" (de symbole ^[[3~ par défaut, pour avoir le symbole sur votre ordi faites dans un terminal Ctrl-V + [KEY])

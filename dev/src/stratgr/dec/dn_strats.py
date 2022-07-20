@@ -20,9 +20,8 @@
 #################################################################
 
 import time
-from dn_help import log_errs, log_info, log_warn, \
-                    DN_LIST_ACTION_INDEX
-from dn_msgs import next_action_pub, stop_IT
+from dn_msgs  import next_action_pub, stop_IT
+from dn_utils import log_info, DN_LIST_ACTION_INDEX
 
 #################################################################
 #                                                               #

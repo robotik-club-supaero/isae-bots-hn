@@ -11,7 +11,10 @@
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
 
-# Install terminator (if not done already)
+# Get the full path of this script
+DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+# Get installed terminator (if not done already)
 installed=$(dpkg -l | grep -E '^ii' | grep terminator)
 if [ -z "$installed" ]
 	then echo "Terminator is not installed yet, install it first ..."
@@ -26,23 +29,23 @@ if [ -f "$configure" ]; then
     echo "Config file already existed, removed it"
 else 
     echo "Config file didn't already exist"
-	if ! [ -d "~/.config/terminator/" ]; then
+	if ! [ -d "~/.config/terminator" ]; then
 	mkdir ~/.config/terminator/
 	echo "Created terminator config directory"
 	fi
 fi
 
-cp term_simconfig ~/.config/terminator/config
+cp $DIR/term_simconfig ~/.config/terminator/config
 echo "Updated terminator configuration file"
 
 # Ajout d'une fonction dans le bashrc
-keybinded=$(grep simulation_bindkeys ~/.bashrc)
+keybinded=$(grep control_bindkeys ~/.bashrc)
 
 # Check si la fonction n'y est pas déjà pour ne pas l'avoir deux fois
 if [ -z "$keybinded" ]
   then cat <<'EOF' >> ~/.bashrc
 
-function simulation_bindkeys {
+function control_bindkeys {
 	bind -x '"1":"rosparam set robot_name pr && reset && exit"'  # relancer la simulation du PR (pmi - petit robot)
 	bind -x '"2":"rosparam set robot_name gr && reset && exit"'  # relancer la simulation du GR (gros robot)
 

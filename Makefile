@@ -40,9 +40,13 @@ help:
 # SETUP
 #############################################################
 
+test:
+	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
+
 # Build the core image
 .PHONY: build-core
 build-core:
+	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
 	@docker build -f ${CORE_DOCKERFILE} -t ${IMAGE_NAME}_core .
 
 # Build the base image (depends on core image build)
@@ -73,4 +77,8 @@ main: kill
 
 .PHONY: term
 term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c $(shell echo "${CMD}")
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "${CMD}"
+
+.PHONY: log_term
+log_term:
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash && ${CMD}; bash"

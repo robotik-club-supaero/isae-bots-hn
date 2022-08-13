@@ -17,12 +17,15 @@ echo 'control_bindkeys ' >> ~/.bashrc  # on crée un appel à une fonction dans 
 # On se place en racine pour lancer Terminator
 WDIR=$PWD
 cd ~ 
-terminator -u -l simulation --working-directory $WDIR
+terminator -mu -l simulation --working-directory $WDIR
 
  # lancement d'une session de terminator avec la layout simulation
  # l'option -u permet de désactiver le dBus pour que plusieurs sessions de terminator n'interfèrent pas entre elles
+ # l'option -m permet d'avoir déjà une fenêtre maximisée à l'ouverture
 
 sed -i "/^control_bindkeys/d" ~/.bashrc # on enlève l'appel à la fonction des bindkeys dans le bashrc
+
+docker kill $(docker ps -a -q)
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)
 # Par défaut on l'utilise sur la touche "suppr" (de symbole ^[[3~ par défaut, pour avoir le symbole sur votre ordi faites dans un terminal Ctrl-V + [KEY])

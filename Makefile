@@ -67,7 +67,7 @@ kill:
 	
 # Start a terminal inside the Docker container
 .PHONY: main
-main: kill
+main:# kill
 	@docker run --rm -it --net=host \
 		--name ${PS_NAME} \
 		${DOCKER_VOLUMES} \

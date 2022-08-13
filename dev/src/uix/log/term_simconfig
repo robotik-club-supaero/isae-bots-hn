@@ -56,19 +56,19 @@
       ratio = 0.5
       type = HPaned
     [[[terminal1]]]
-      command = clear && sleep 2 && NAME="ACT node" && make log_term CMD='rostopic echo --filter "m.name==\"ACT node\"" /rosout' ; bash
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make term CMD="./dev/src/uix/log/echo_logs.sh 'ACT'"
       order = 0
       title = [ACT] Action Node
       parent = topscreen1
       type = Terminal
     [[[terminal2]]]
-      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term NODE_NAME="DEC"; bash
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make term CMD="./dev/src/uix/log/echo_logs.sh 'DEC'"
       order = 1
       title = [DEC] Decision Node
       parent = topscreen1
       type = Terminal
     [[[terminal3]]]
-      command = clear && sleep 2 && NAME="DSP node" && FILT="m.name==$NAME" && make log_term CMD="rostopic echo --filter ${FILT}" ; bash
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make term CMD="./dev/src/uix/log/echo_logs.sh 'DSP'"
       order = 0
       title = [DSP] Displacement Node
       parent = botscreen1

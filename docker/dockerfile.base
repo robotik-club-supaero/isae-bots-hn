@@ -16,10 +16,11 @@ RUN apt-get update && apt-get install -y \
     g++ \
     git \
     python3-pip \
-    python3-catkin-tools 
+    python3-catkin-tools \
+    nano
 
 # Install tools for python / pip
-# RUN pip3 install numpy 
+RUN pip3 install numpy
 
 # Setup the work directory and entrypoint
 WORKDIR '/app'

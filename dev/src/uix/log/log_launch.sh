@@ -25,7 +25,7 @@ terminator -mu -l simulation --working-directory $WDIR
 
 sed -i "/^control_bindkeys/d" ~/.bashrc # on enlève l'appel à la fonction des bindkeys dans le bashrc
 
-docker kill $(docker ps -a -q)
+docker kill $(docker ps -aq)
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)
 # Par défaut on l'utilise sur la touche "suppr" (de symbole ^[[3~ par défaut, pour avoir le symbole sur votre ordi faites dans un terminal Ctrl-V + [KEY])

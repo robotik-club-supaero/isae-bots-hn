@@ -56,13 +56,13 @@
       ratio = 0.5
       type = HPaned
     [[[terminal1]]]
-      command = clear && sleep 2 && NAME="ACT node" && FILT="m.name==$NAME" && make log_term CMD="rostopic echo --filter ${FILT}" ; bash
+      command = clear && sleep 2 && NAME="ACT node" && make log_term CMD='rostopic echo --filter "m.name==\"ACT node\"" /rosout' ; bash
       order = 0
       title = [ACT] Action Node
       parent = topscreen1
       type = Terminal
     [[[terminal2]]]
-      command = clear && sleep 2 && NAME="DEC node" && FILT="m.name==$NAME" && make log_term CMD="rostopic echo --filter ${FILT}" ; bash
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term NODE_NAME="DEC"; bash
       order = 1
       title = [DEC] Decision Node
       parent = topscreen1
@@ -74,7 +74,7 @@
       parent = botscreen1
       type = Terminal
     [[[terminal4]]]
-      command = clear ; until rostopic list ; do sleep 1; echo 'lol' ; done ; make term; bash
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make term; bash
       order = 1
       title = Terminal
       parent = botscreen1

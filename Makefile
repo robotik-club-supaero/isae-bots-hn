@@ -13,6 +13,7 @@ IMAGE_NAME = isaebots_desktop_env
 PS_NAME = dev_ps
 PS_ID = null
 CMD = bash
+NODE_NAME = null
 CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
 BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 
@@ -61,6 +62,8 @@ build-base: build-core
 
 # Kill any running Docker containers
 .PHONY: kill
+
+# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker ps -aq)
 kill: 
 	@echo "Closing already running container"
 	@docker container prune -f
@@ -81,4 +84,9 @@ term:
 
 .PHONY: log_term
 log_term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash && ${CMD}; bash"
+#	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "echo ${CMD} && echo ${TEST_FILT}"
+#	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash && ${CMD}; bash"
+#	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c 'echo "source /opt/ros/noetic/setup.bash && rostopic echo --filter=\"m.name==$(echo \'${TEST_FILT}\')\" /rosout_agg; bash"'
+#	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c 'source /opt/ros/noetic/setup.bash && rostopic echo --filter=\"${TEST_FILT}\" /rosout_agg; bash'
+#	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c 'echo "source /opt/ros/noetic/setup.bash && rostopic echo --filter=\"m.name==${VAR2}\" /rosout_agg; bash"'
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "./dev/src/uix/log/echo_logs.sh ${NODE_NAME}"

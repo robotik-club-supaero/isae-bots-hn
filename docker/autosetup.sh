@@ -16,6 +16,10 @@
 # Setup ros environment
 source /opt/ros/noetic/setup.bash
 
+# Make the script to display logs executable
+chmod +x ./dev/src/uix/log/echo_logs.sh
+
+
 if [ -n "$WDIR" ]; then 
     if [ ! -e "$WDIR/devel/setup.bash" ]; then
         cdir=$(pwd)

@@ -162,7 +162,7 @@ def stop_IT():
 
 def init_pubs():
     global next_action_pub
-    next_action_pub = rospy.Publisher("/strat/next_action_feedback", Int16MultiArray, queue_size=10, latch=True)
+    next_action_pub = rospy.Publisher("/strat/next_action_answer", Int16MultiArray, queue_size=10, latch=True)
 
 
 def init_subs():
@@ -173,5 +173,5 @@ def init_subs():
     position_sub = rospy.Subscriber("/disp/current_position", Pose2D, recv_position)
 
     global next_action_sub
-    next_action_sub = rospy.Subscriber("/strat/next_action_requests", Empty, send_action_next)
+    next_action_sub = rospy.Subscriber("/strat/next_action_request", Empty, send_action_next)
     done_action_sub = rospy.Subscriber("/strat/done_action", EndOfActionMsg, recv_action_done)

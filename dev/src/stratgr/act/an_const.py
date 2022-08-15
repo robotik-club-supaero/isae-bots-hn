@@ -31,8 +31,7 @@ from enum import Enum, IntEnum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[ACT]"
-SIMULATION = False if os.environ['USER'] == 'pi' else True
+_NODENAME_ = "ACT"
 
 #-- GAME CONSTANTS --
 PARKING_POS = None

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -74,5 +74,5 @@ def main():
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sig_handler)
-    rospy.init_node('ACT node')   
+    rospy.init_node('ACT')   
     main()

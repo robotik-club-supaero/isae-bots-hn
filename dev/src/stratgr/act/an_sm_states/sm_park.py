@@ -23,7 +23,7 @@ import os
 import sys
 import time
 import smach
-from dev.src.stratgr.act.an_const import DISP_ORDERS, ACTS_SCORES, PARKING_POS
+from an_const import DISP_ORDERS, ACTS_SCORES, PARKING_POS
 from an_msgs import done_action_pub, send_added_score
 from an_sm_states.sm_displacement import SM_Displacement, set_next_destination
 
@@ -38,7 +38,7 @@ class SM_ObsPark(smach.State):
     SM PARK : Observer state
     """
     def __init__(self):
-        smach.State.__init__(self, outcomes=['preempted','done','move'],
+        smach.State.__init__(self, outcomes=['preempted','done','disp'],
 			input_keys=['nb_actions_done'],
 			output_keys=['nb_actions_done'])
 

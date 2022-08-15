@@ -27,7 +27,7 @@ from geometry_msgs.msg import Quaternion
 
 # import SM states defined in an_sm_states package
 from an_sm_states.sm_park import SM_Park
-from an_sm_states.sm_move import SM_Move
+# from an_sm_states.sm_move import SM_Move
 
 from an_const import *
 from an_utils import log_info, log_warn, log_errs
@@ -47,8 +47,8 @@ class SM_Setup(smach.State):
 
 	def __init__(self):
 		smach.State.__init__(self, outcomes=['start', 'preempted'],
-			input_keys=[],
-			output_keys=[])
+			input_keys=['start'],
+			output_keys=['start', 'color', 'score', 'nb_actions_done', 'cb_dsp', 'cb_pos', 'next_act', 'next_pos', 'errorReaction', 'errorActions'])
 
 	def execute(self, userdata):
 		##############################
@@ -103,15 +103,15 @@ class SM_Repartitor(smach.State):
 
 	def __init__(self):
 		smach.State.__init__(self, outcomes=[],
-			input_keys=[],
-			output_keys=[])
+			input_keys=['next_act', 'nb_actions_done'],
+			output_keys=['next_act', 'nb_actions_done'])
 
 	def execute(self, userdata):
 		log_info('[repartitor] requesting next action ...')
 		next_action_pub.publish(Empty()) 	         # demande nextAction au DN
 
 		userdata.next_act = CB_NEXT_ACTION.NONE	     # reset variable prochaine action
-		while userdata.next == CB_NEXT_ACTION.NONE:  # en attente de reponse du DN
+		while userdata.next_act == CB_NEXT_ACTION.NONE:  # en attente de reponse du DN
 			if self.preempt_requested():
 				self.service_preempt()
 				return 'preempted'
@@ -171,5 +171,5 @@ def init_sm(sm):
 
 		smach.StateMachine.add('PARK', SM_Park,
 			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})
-		smach.StateMachine.add('MOVE', SM_Move,
-			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})
+		# smach.StateMachine.add('MOVE', SM_Move,
+		# 	transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})

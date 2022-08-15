@@ -20,7 +20,7 @@
 #################################################################
 
 import rospy
-import an_ctse
+import an_const
 
 #################################################################
 #                                                               #
@@ -30,19 +30,19 @@ import an_ctse
 
 def log_info(log):
     """
-    Print standard logs.
+    Print info logs.
     """
-    rospy.loginfo(f"{an_ctse._NODENAME_} {log}")
+    rospy.loginfo(f"\033[37m[{an_const._NODENAME_}] {log}\033[0m")
 
 
 def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{an_ctse._NODENAME_} {log}")
+    rospy.logwarn(f"\033[33m[{an_const._NODENAME_}] {log}\033[0m")
 
 def log_errs(log):
     """
     Print errors logs.
     """
-    rospy.logerr(f"{an_ctse._NODENAME_} {log}")
+    rospy.logerr(f"\033[31m[{an_const._NODENAME_}] {log}\033[0m")

@@ -31,7 +31,7 @@ from an_const import *
 from an_utils import log_info, log_warn, log_errs
 
 #################################################################
-rospy.set_param("robot_name", "GR")
+#rospy.set_param("robot_name", "GR")
 
 #################################################################
 #                                                               #
@@ -72,7 +72,7 @@ def setup_start(msg):
 	"""
     Callback function from topic /sm/start.
     """
-	p_udata = (msg.data == 1)
+	p_udata.start = msg.data
 
 
 def setup_color(msg):
@@ -158,16 +158,16 @@ def init_pubs():
     Initialize all publishers of AN.
     """
     # GENERAL PUBS
-    global score_pub, next_action_pub, done_action_pub, next_motion_pub, stop_teensy_pub
-    score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
-    next_action_pub = rospy.Publisher('/strat/next_action', Empty, queue_size=10, latch=True)
-    done_action_pub = rospy.Publisher('/strat/done_action', EndOfActionMsg, queue_size=10, latch=True)
-    next_motion_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
-    stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
+    #global score_pub, next_action_pub, done_action_pub, next_motion_pub, stop_teensy_pub
+score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
+next_action_pub = rospy.Publisher('/strat/next_action_request', Empty, queue_size=10, latch=True)
+done_action_pub = rospy.Publisher('/strat/done_action', EndOfActionMsg, queue_size=10, latch=True)
+next_motion_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
+stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
-    # SPECIFIC TO CURRENT YEAR
-    # global ...
-    # ...
+# SPECIFIC TO CURRENT YEAR
+# global ...
+# ...
 
 
 def init_subs():
@@ -178,7 +178,7 @@ def init_subs():
     global start_sub, color_sub, position_sub, next_action_sub, done_motion_sub
     start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
     color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
-    next_action_sub = rospy.Subscriber('/strat/next_action', Int16MultiArray, recv_next_action)
+    next_action_sub = rospy.Subscriber('/strat/next_action_answer', Int16MultiArray, recv_next_action)
     done_motion_sub = rospy.Subscriber('/disp/done_displacement', Int16, ...)
     position_sub = rospy.Subscriber('/disp/current_position', Pose2D, ...)
 

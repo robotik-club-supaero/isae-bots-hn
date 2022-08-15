@@ -16,6 +16,14 @@
 # Setup ros environment
 source /opt/ros/noetic/setup.bash
 
+
+# Make the node files executable
+chmod +x ./dev/src/stratgr/act/act_node.py \
+         ./dev/src/stratgr/dec/dec_node.py \
+         ./dev/src/stratpr/act/act_node.py \
+         ./dev/src/stratpr/dec/dec_node.py \
+
+
 # Make the script to display logs executable
 chmod +x ./dev/src/uix/log/echo_logs.sh
 

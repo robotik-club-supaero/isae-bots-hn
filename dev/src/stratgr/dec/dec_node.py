@@ -23,8 +23,9 @@ import os
 import sys
 import rospy
 import signal
+import time
 
-from dn_utils    import CONFIG_READER, log_errs, log_info, log_warn, \
+from dn_utils    import CONFIG_READER, log_errs, log_fatal, log_info, log_warn, \
                       STRAT_NAMES, DN_LIST_ACTION_NAMES
 from dn_msgs     import init_msgs
 from dn_strats   import init_strats, \
@@ -79,6 +80,9 @@ class DecisionsNode:
 
 def main():
     rospy.init_node("DEC")
+
+    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
+
     node = DecisionsNode()
 
     init_msgs(node)

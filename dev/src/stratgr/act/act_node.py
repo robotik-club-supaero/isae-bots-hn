@@ -27,6 +27,8 @@ import signal
 import rospy
 import smach
 import smach_ros
+import time
+
 from an_sm import init_sm
 from an_msgs import init_msgs
 from an_utils import log_info, log_errs, log_warn
@@ -50,6 +52,8 @@ def main():
     #############################################################
     # INITIALIZATION
     #############################################################
+
+    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     log_info("Initializing Action Node ...")
     sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm

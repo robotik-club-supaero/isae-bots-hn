@@ -28,6 +28,8 @@ from dn_utils import log_info, DN_LIST_ACTION_INDEX
 #                                                               #
 #################################################################
 
+p_dn = None
+
 def init_strats(dn):
     global p_dn
     p_dn = dn
@@ -49,6 +51,8 @@ def homologation_strat():
     """
     time.sleep(0.01)
 
+    #if p_dn is None: return  # safety if the function is called before DEC node init TODO : not supposed to happen ?
+
     if p_dn.nb_actions_done[0] == 0:
         p_dn.curr_action = [int(DN_LIST_ACTION_INDEX.xxx)]
         log_info("Next action : xxx")
@@ -62,7 +66,7 @@ def homologation_strat():
         return
 
     if p_dn.nb_actions_done[0] == 2:
-        p_dn.nb_actions_done[0] =-1  # to prevent repeated end action...
+        p_dn.nb_actions_done[0] =-1  # to prevent repeated end action
         log_info("End of strategy : HOMOLOGATION")
         stop_IT()
         return
@@ -79,10 +83,20 @@ def tests_strat():
     """
     time.sleep(0.01)
 
+    log_info("Entered tests_strat section")
+
+    #if p_dn is None: return  # safety if the function is called before DEC node init TODO : not supposed to happen ?
+
     if p_dn.nb_actions_done[0] == 0:
+        p_dn.curr_action = [int(DN_LIST_ACTION_INDEX.PARK)]
+        log_info("Next action : let's go park")
+        next_action_pub.publish(data=p_dn.curr_action)
         return
 
     if p_dn.nb_actions_done[0] == 1:
+        p_dn.nb_actions_done[0] =-1  # to prevent repeated end action...
+        log_info("End of strategy : TEST")
+        stop_IT()
         return
 
 

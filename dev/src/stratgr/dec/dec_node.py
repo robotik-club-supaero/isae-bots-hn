@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -24,18 +24,13 @@ import sys
 import rospy
 import signal
 
-from dev.src.stratgr.dec.dn_utils   import CONFIG_READER, log_errs, log_info, log_warn, \
+from dn_utils    import CONFIG_READER, log_errs, log_info, log_warn, \
                       STRAT_NAMES, DN_LIST_ACTION_NAMES
-from dn_msgs   import init_msgs
-from dn_strats import init_strats, \
+from dn_msgs     import init_msgs
+from dn_strats   import init_strats, \
                       homologation_strat, tests_strat, match_strat
 
-#################################################################
-if os.environ['USER'] == 'pi':
-	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg  # sur robot
-else:
-	from message.msg            import InfoMsg, ActionnersMsg, EndOfActionMsg  # sur ordi
-#################################################################
+from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
 def sig_handler(s_rcv, frame):
     """
@@ -57,18 +52,19 @@ class DecisionsNode:
     """
 
     def __init__(self):
+
         log_info("Initializing DEC node ...")
 
-        self.match_strated = False
+        self.match_started = False
         self.color = 0
-        self.strat = int(CONFIG_READER.get("Strat", "strat_choice"))
-        self.strategies = [e.values for e in STRAT_NAMES]
+        self.strat = int(CONFIG_READER.get("STRAT", "strat_choice"))
+        self.strategies = [e.value for e in STRAT_NAMES]
 
         self.start_time = 0
-        self.match_time = int(CONFIG_READER.get("Strat", "match_time"))
+        self.match_time = int(CONFIG_READER.get("STRAT", "match_time"))
         self.delay_park = 13  # TODO: change it to named constant
 
-        self.actions_ls = [e.values for e in DN_LIST_ACTION_NAMES]
+        self.actions_ls = [e.value for e in DN_LIST_ACTION_NAMES]
         self.actions_nb = len(self.actions_ls)
         self.curr_action = []
         self.nb_actions_done = [0]
@@ -82,11 +78,13 @@ class DecisionsNode:
 #################################################################
 
 def main():
-    rospy.init_node("DEC node")
+    rospy.init_node("DEC")
     node = DecisionsNode()
 
-    init_msgs()
-    init_strats()
+    init_msgs(node)
+    init_strats(node)
+
+    log_info("Waiting for match to start")
 
     rospy.spin()
 

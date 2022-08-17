@@ -29,13 +29,13 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[DEC]"
-SIMULATION = False if os.environ['USER'] == 'pi' else True
+_NODENAME_ = "DEC"
+#SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 #################################################################
 # CONFIG 
 CONFIG_READER = configparser.ConfigParser()
-CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_start.cfg'))
+CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.cfg'))
 
 #################################################################
 # WINDOW
@@ -93,24 +93,23 @@ class CB_NEXT_ACTION(IntEnum):
 #                                                               #
 #################################################################
 
-def log_info(msg):
+def log_info(log):
     """
     Print standard logs.
     """
-    rospy.loginfo(f"{_NODENAME_} {msg}")
+    rospy.loginfo(f"\033[37m[{_NODENAME_}] {log}\033[0m")
 
 
-def log_warn(msg):
+def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{_NODENAME_} {msg}")
+    rospy.logwarn(f"\033[33m[{_NODENAME_}] {log}\033[0m")
 
 
-def log_errs(msg):
+def log_errs(log):
     """
     Print errors logs.
     """
-    rospy.logerr(f"{_NODENAME_} {msg}")
-
+    rospy.logerr(f"\033[31m[{_NODENAME_}] {log}\033[0m")
 

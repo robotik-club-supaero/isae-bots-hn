@@ -22,24 +22,21 @@ import os
 import time
 import rospy
 import threading
-from dev.src.stratgr.dec.dn_utils import log_info, log_errs, log_warn, \
+from dn_utils import log_info, log_errs, log_warn, \
                     ROBOT_SIDES, STRAT_NAMES, STRAT_INDEX, CB_NEXT_ACTION, \
                     TERM_SIZE
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
-#################################################################
-if os.environ['USER'] == 'pi':
-    from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
-else:
-    from message.msg            import InfoMsg, ActionnersMsg, EndOfActionMsg
-#################################################################
+from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 
 #################################################################
 #                                                               #
 #                            INIT                               #
 #                                                               #
 #################################################################
+
+p_dn = None
 
 def init_msgs(dn):
     """
@@ -48,6 +45,7 @@ def init_msgs(dn):
     global p_dn
     p_dn = dn
 
+    #init_pubs()
 #################################################################
 #                                                               #
 #                           FEEDBACK                            #
@@ -58,12 +56,13 @@ def start_match(msg):
     """
     Feedback on start signal /game/start
     """
+
+    if p_dn is None: return  # safety if the function is called before DEC node init
+
     if p_dn.match_started: return
 
     if msg.data == 1:
-        log_info("#"*TERM_SIZE + "\n"
-                 "#"*4 + " Start match " + "#"*(TERM_SIZE-17) + "\n"
-                 "#"*TERM_SIZE)
+        log_info('\033[1m\033[36m' + "#"*20 + " Start match " + "#"*20 + '\033[0m')
 
         p_dn.match_started = True
         p_dn.start_time = time.time()
@@ -75,6 +74,8 @@ def setup_color(msg):
     """
     Feedback on color side /game/color.
     """
+    if p_dn is None: return  # safety if the function is called before DEC node init
+
     p_dn.color = msg.data
     if p_dn.color == ROBOT_SIDES.HOME:
         log_info("Received color : HOME")
@@ -86,6 +87,8 @@ def setup_strat(msg):
     """
     Feedback on strategy chosen /game/strat.*
     """
+    if p_dn is None: return  # safety if the function is called before DEC node init
+
     if msg.data == STRAT_INDEX.HOMOLOGATION:
         p_dn.strat_index = STRAT_INDEX.HOMOLOGATION
         log_info(f"Received strat: {STRAT_NAMES.HOMOLOGATION}")
@@ -105,6 +108,8 @@ def recv_position(msg):
     """
     Feedback on /disp/current_position topic.
     """
+    if p_dn is None: return  # safety if the function is called before DEC node init
+
     p_dn.position = [msg.x, msg.y, msg.theta]
 
 
@@ -124,7 +129,7 @@ def send_action_next(msg):
     """
     Send back the next action when triggered.
     """
-    log_info(f"Next action requested by AN ...")
+    log_info(f"Next action requested by AN")
     p_dn.strat_lst[p_dn.strat]()
     
 
@@ -146,7 +151,7 @@ def park_IT():
 
 def stop_IT():
     """
-    Interrupt : end of match
+    Interrupt : end of match => stop moving
     """
     log_info("#"*TERM_SIZE + "\n"
              "#"*4 + " End of match " + "#"*(TERM_SIZE-18) + "\n"
@@ -160,17 +165,19 @@ def stop_IT():
 #################################################################
 
 def init_pubs():
-    global next_action_pub
-    next_action_pub = rospy.Publisher("/strat/next_action_answer", Int16MultiArray, queue_size=10, latch=True)
+    return
+#global next_action_pub
+next_action_pub = rospy.Publisher("/strat/next_action_answer", Int16MultiArray, queue_size=10, latch=True)
 
 
 def init_subs():
-    global start_sub, color_sub, strat_sub, position_sub
-    start_sub = rospy.Subscriber("/game/start", Int16, start_match)
-    color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
-    strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
-    position_sub = rospy.Subscriber("/disp/current_position", Pose2D, recv_position)
+    return
+#global start_sub, color_sub, strat_sub, position_sub
+start_sub = rospy.Subscriber("/game/start", Int16, start_match)
+color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
+strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
+position_sub = rospy.Subscriber("/disp/current_position", Pose2D, recv_position)
 
-    global next_action_sub
-    next_action_sub = rospy.Subscriber("/strat/next_action_request", Empty, send_action_next)
-    done_action_sub = rospy.Subscriber("/strat/done_action", EndOfActionMsg, recv_action_done)
+#global next_action_sub
+next_action_sub = rospy.Subscriber("/strat/next_action_request", Empty, send_action_next)
+done_action_sub = rospy.Subscriber("/strat/done_action", EndOfActionMsg, recv_action_done)

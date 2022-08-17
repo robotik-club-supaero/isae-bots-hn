@@ -62,13 +62,13 @@
       parent = topscreen1
       type = Terminal
     [[[terminal2]]]
-      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term CMD="./dev/src/uix/log/echo_logs.sh 'DEC'"
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term CMD="./dev/src/uix/log/echo_logs.sh '/DEC'"
       order = 1
       title = [DEC] Decision Node
       parent = topscreen1
       type = Terminal
     [[[terminal3]]]
-      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term CMD="./dev/src/uix/log/echo_logs.sh 'DSP'"
+      command = clear ; until rostopic list ; do sleep 0.5; done ; clear; make log_term CMD="./dev/src/uix/log/echo_logs.sh '/DSP'"
       order = 0
       title = [DSP] Displacement Node
       parent = botscreen1
@@ -93,28 +93,24 @@
       type = HPaned
     [[[terminal5]]]
       command = clear && sleep 2 && make term CMD="echo 'Actuators?' ..."; bash
-      group = bn_nodes
       order = 0
       title = [ACN] Actuator Node | SIM
       parent = topscreen2
       type = Terminal
     [[[terminal6]]]
       command = clear && sleep 3 && make term ; bash 
-      group = bn_nodes
       order = 1
       title = [SSR] Sensors Nodes
       parent = topscreen2
       type = Terminal
     [[[terminal7]]]
       command = clear && sleep 3 && make term ; bash
-      group = bn_nodes
       order = 0
       title = [BRN] Base Roulante | SIM
       parent = botscreen2
       type = Terminal
     [[[terminal8]]]
       command = clear && sleep 3 && make term ; bash 
-      group = bn_nodes
       order = 1
       title = [OBS] Obstacle Node | SIM
       parent = botscreen2
@@ -132,29 +128,25 @@
       parent = subframe3
       type = HPaned
     [[[terminal9]]]
-      command = clear && make main CMD="roscore" ; bash
-      group = monitoring
+      command = clear && make main CMD="roslaunch scripts/gr_desktop.launch"
       order = 0
       title = Roscore
       parent = topscreen3
       type = Terminal
     [[[terminal10]]]
       command = clear && sleep 2 && make term ; bash
-      group = monitoring
       order = 1
       title = Interface
       parent = topscreen3
       type = Terminal
     [[[terminal11]]]
       command = ""
-      group = monitoring
       order = 0
       title = "Empty terminal"
       parent = botscreen3
       type = Terminal
     [[[terminal12]]]
       command = ""
-      group = monitoring
       order = 1
       title = "Empty terminal"
       parent = botscreen3
@@ -178,14 +170,12 @@
       ratio = 0.500685871056
       type = HPaned
     [[[terminal2]]]
-      group = test
       order = 0
       parent = child1
       profile = default
       type = Terminal
       uuid = 0fd5b328-6501-45cb-a037-332341446069
     [[[terminal3]]]
-      group = test
       order = 1
       parent = child1
       profile = default

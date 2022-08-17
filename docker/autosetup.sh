@@ -43,4 +43,4 @@ fi
 # export ...
 
 # Execute command passed to entrypoint
-bash -c "$@"
+bash -c "$@"; $SHELL

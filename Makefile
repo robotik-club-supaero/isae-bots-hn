@@ -76,7 +76,7 @@ main:# kill
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
 		${IMAGE_NAME}_base \
-		${CMD}
+		"${CMD}"
 
 .PHONY: term
 term:

@@ -24,9 +24,9 @@ chmod +x ./dev/src/stratgr/act/act_node.py \
          ./dev/src/stratpr/dec/dec_node.py \
 
 
-# Make the script to display logs executable
+# Make the scripts to display logs executable
 chmod +x ./dev/src/uix/log/echo_logs.sh
-
+chmod +x ./dev/src/uix/log/simTerm_rc.sh
 
 if [ -n "$WDIR" ]; then 
     if [ ! -e "$WDIR/devel/setup.bash" ]; then
@@ -39,8 +39,8 @@ if [ -n "$WDIR" ]; then
 fi
 
 # Setup environment variables
-# export ...
-# export ...
+# export ROS_IP=192.168.43.12
+# export ROS_MASTER_URI=http://192.168.43.12:11311
 
 # Execute command passed to entrypoint
-bash -c "$@"; $SHELL
+bash -c "$@"

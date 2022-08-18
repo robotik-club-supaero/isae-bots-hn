@@ -11,9 +11,6 @@
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
 
-# On crée quelques binds dans le .bashrc utiles pour la simulation (que l'on va désactiver après il vaut mieux)
-echo 'control_bindkeys ' >> ~/.bashrc  # on crée un appel à une fonction dans le bashrc pour appliquer les bindkeys
-
 # On se place en racine pour lancer Terminator
 WDIR=$PWD
 cd ~ 
@@ -32,8 +29,6 @@ terminator -mu -l simulation -p sim -T "Robot Simulation Station" --working-dire
 
 # kill les docker containers quand on quitte terminator
 docker kill $(docker container ls -q)
-
-sed -i "/^control_bindkeys/d" ~/.bashrc # on enlève l'appel à la fonction des bindkeys dans le bashrc
 
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)

@@ -130,7 +130,7 @@ def send_action_next(msg):
     Send back the next action when triggered.
     """
     log_info(f"Next action requested by AN")
-    p_dn.strat_lst[p_dn.strat]()
+    p_dn.strategies[p_dn.strat]()
     
 
 #################################################################
@@ -143,9 +143,8 @@ def park_IT():
     """
     Interrupt : time to park
     """
-    log_info("#"*TERM_SIZE + "\n"
-             "#"*4 + " Park interrupt " + "#"*(TERM_SIZE-20) + "\n"
-             "#"*TERM_SIZE)
+    log_info('\033[1m\033[36m' + "#"*19 + " Park interrupt " + "#"*18 + '\033[0m')
+
     next_action_pub.publish(data=[CB_NEXT_ACTION.PARK_IT])
 
 
@@ -153,9 +152,8 @@ def stop_IT():
     """
     Interrupt : end of match => stop moving
     """
-    log_info("#"*TERM_SIZE + "\n"
-             "#"*4 + " End of match " + "#"*(TERM_SIZE-18) + "\n"
-             "#"*TERM_SIZE)
+    log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
+
     next_action_pub.publish(data=[CB_NEXT_ACTION.STOP_IT])
 
 #################################################################

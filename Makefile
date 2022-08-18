@@ -63,7 +63,7 @@ build-base: build-core
 # Kill any running Docker containers
 .PHONY: kill
 
-# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker ps -aq)
+# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker container ls -q)
 kill: 
 	@echo "Closing already running container"
 	@docker container prune -f
@@ -83,6 +83,6 @@ term:
 	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "${CMD}"
 	
 
-.PHONY: log_term
-log_term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "${CMD}"
+.PHONY: sim_term
+sim_term:
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh

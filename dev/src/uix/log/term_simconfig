@@ -98,19 +98,19 @@
       parent = topscreen2
       type = Terminal
     [[[terminal6]]]
-      command = clear && sleep 3 && make term ; bash 
+      command = clear && sleep 3 && make term
       order = 1
       title = [SSR] Sensors Nodes
       parent = topscreen2
       type = Terminal
     [[[terminal7]]]
-      command = clear && sleep 3 && make term ; bash
+      command = clear && sleep 3 && make term
       order = 0
       title = [BRN] Base Roulante | SIM
       parent = botscreen2
       type = Terminal
     [[[terminal8]]]
-      command = clear && sleep 3 && make term ; bash 
+      command = clear && sleep 3 && make term
       order = 1
       title = [OBS] Obstacle Node | SIM
       parent = botscreen2
@@ -128,7 +128,7 @@
       parent = subframe3
       type = HPaned
     [[[terminal9]]]
-      command = clear ; make main CMD="roslaunch scripts/gr_desktop.launch"
+      command = clear ; make main CMD="trap exit SIGHUP; roslaunch scripts/gr_desktop.launch"
       order = 0
       title = Roscore
       parent = topscreen3

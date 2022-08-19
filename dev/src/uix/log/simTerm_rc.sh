@@ -2,30 +2,33 @@
 
 source /opt/ros/noetic/setup.bash
 
-ROSLAUNCH_RUNNING=1
+sleep 2
+if [ -z $(rosnode list) ]; then ROSLAUNCH_RUNNING=0; else ROSLAUNCH_RUNNING=1; fi
+clear
 
 # BINDKEYS
 
-COMMANDK="[SIM COMMAND] :  Shut down roslaunch"
-COMMANDK2="[ERROR] No roslaunch is currently active"
+COMMANDK="[SIM COMMAND] :  Shutting down roslaunch..."
+COMMANDK1="[SIM COMMAND] -> stopped roslaunch"
+COMMANDK2="\033[31m[ERROR] No roslaunch is currently active\033[0m"
 COM="ps -ef | grep /bin/roslaunch | awk 'NR==1{print \$2}'"
-bind -x '"\C-K":"if [[ $ROSLAUNCH_RUNNING == 1 ]]; then echo $COMMANDK; ROSLAUNCH_RUNNING=0; kill -s SIGINT $(eval $COM); else echo $COMMANDK2; fi"'
-
+bind -x '"\C-K":"if [[ $ROSLAUNCH_RUNNING == 1 ]]; then echo $COMMANDK; ROSLAUNCH_RUNNING=0; kill -s SIGINT $(eval $COM); sleep 2; echo $COMMANDK1; else echo -e $COMMANDK2; fi"'
+# TODO : actively check that roslaunch stopped instead of just waiting
 
 COMMANDR="[SIM COMMAND] :  Restart simulation"
-COMMANDR2="[ERROR] Stop the roslaunch before restarting"
+COMMANDR2="\033[31m[ERROR] Stop the roslaunch before restarting\033[0m"
 COM2="ps -ef | grep /bin/bash | awk '{if(\$3 == 1){print \$2}}'"
-bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNCH_RUNNING=1; kill -s SIGHUP $(eval $COM2); else echo $COMMANDR2; fi"'
+bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNCH_RUNNING=1; kill -s SIGHUP $(eval $COM2); else echo -e $COMMANDR2; fi"'
 
 
-COMMANDH="[ROS MESSAGE] -> Set side to HOME"
-bind -x '"\C-H":"echo $COMMANDH; rostopic pub --once /game/color std_msgs/Int16 0 > /dev/null"'
+COMMANDH="[ROS MESSAGE] -> Set side to \033[36mHOME\033[0m"
+bind -x '"\C-H":"echo -e $COMMANDH; rostopic pub --once /game/color std_msgs/Int16 0 > /dev/null"'
 
-COMMANDA="[ROS MESSAGE] -> Set side to AWAY"
-bind -x '"\C-A":"echo $COMMANDA; rostopic pub --once /game/color std_msgs/Int16 1 > /dev/null"'
+COMMANDA="[ROS MESSAGE] -> Set side to \033[36mAWAY\033[0m"
+bind -x '"\C-A":"echo -e $COMMANDA; rostopic pub --once /game/color std_msgs/Int16 1 > /dev/null"'
 
-COMMANDG="[ROS MESSAGE] -> Start match"
-bind -x '"\C-G":"echo $COMMANDG; rostopic pub --once /game/start std_msgs/Int16 1 > /dev/null"'
+COMMANDG="[ROS MESSAGE] -> \033[32mStart match\033[0m"
+bind -x '"\C-G":"echo -e $COMMANDG; rostopic pub --once /game/start std_msgs/Int16 1 > /dev/null"'
 
 
 # INFO MESSAGE AT STARTUP

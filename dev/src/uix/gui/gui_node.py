@@ -25,10 +25,14 @@ import signal
 import rospy
 import time
 
+from PyQt5.QtWidgets import QApplication
+
 from gui_msgs import init_msgs
 from gui_utils import log_info, log_warn, log_errs
 
 from mvc.Model import Model
+from mvc.View import View
+from mvc.Controller import Controller
 
 
 def sig_handler(s_rcv, frame):
@@ -64,7 +68,15 @@ class GuiNode:
         init_msgs(self)
 
 
+        # Creation of the gui application
+        self.app = QApplication(sys.argv)
+
+
+
+        # Creation of mvc instances
         self.model = Model()
+        self.view = View()
+        self.controller = Controller(self.model, self.view)
 
 
     
@@ -94,10 +106,11 @@ def main():
     time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     node = GuiNode()
+
+    node.app.exec_()
     
 
-    # Wait for ctrl-c to stop the application
-    rospy.spin()
+    rospy.spin()  # TODO : need it ? exec_() is blocking
 
 
 if __name__ == '__main__':

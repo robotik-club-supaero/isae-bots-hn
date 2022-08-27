@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
 
 '''
 View class of the GUI node
 It contains all the display functions (and no logic)
 '''
 
-from turtle import width
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut
 from PyQt5.QtCore import QRect, QMetaObject,QRectF, QPoint
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush
@@ -92,6 +92,11 @@ class View(QWidget):
 
 
 
+	def blinkLED(self, led, col):
+		return
+
+	def setLED(self, led, col):
+		return
 
 
 

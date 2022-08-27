@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 '''
 Modem class of the GUI node
@@ -15,9 +16,10 @@ class Model():
 
 
         #### MATCH VARIABLES ####
-        self.isMatchStarted = False
-        self.color = None
+        self.matchState = False
+        self.side = None
 
-        self.robot_pos = None
+        self.r1_pos = None
+        self.r2_pos = None
 
         print("Initialized Model")

@@ -29,7 +29,7 @@ def update_color(self, msg):
     if msg.data != 0 and msg.data != 1:
         log_fatal(f"{msg.data} is not a valid color value, ignoring color update")
 
-    self.model.color = msg.data
+    self.controller.set_side(msg.data)
 
 
 

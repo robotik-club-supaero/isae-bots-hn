@@ -24,7 +24,7 @@ DOCKER_VOLUMES = \
 #	--volume="${PWD}/scripts":"/app/scripts"
 
 DOCKER_ENV_VAR = \
-	--env="DISPLAY" \
+	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev"
 
 .PHONY: help
@@ -71,10 +71,25 @@ kill:
 # Start a terminal inside the Docker container
 .PHONY: main
 main:# kill
-	@docker run --rm -it --net=host \
+#	@docker run --rm -it --net=host \
 		--name ${PS_NAME} \
 		${DOCKER_VOLUMES} \
+		--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
+    	-e DISPLAY=${DISPLAY} \
 		${DOCKER_ENV_VAR} \
+		${IMAGE_NAME}_base \
+		"${CMD}"
+
+
+#	the 'privileged' flag is necessary otherwise we get a Dbus error, but the kernel is more exposed this way..
+#	we log in as a user and not root (preferable)
+
+	@docker run --privileged --rm -it --net=host \
+		--name ${PS_NAME} \
+		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		${DOCKER_VOLUMES} \
+		${DOCKER_ENV_VAR} \
+		-u dockeruser \
 		${IMAGE_NAME}_base \
 		"${CMD}"
 

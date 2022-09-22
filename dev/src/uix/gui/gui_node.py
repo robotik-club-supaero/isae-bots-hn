@@ -25,7 +25,7 @@ import signal
 import rospy
 import time
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from gui_msgs import init_msgs
 from gui_utils import log_info, log_warn, log_errs
@@ -73,6 +73,7 @@ class GuiNode:
 
 
 
+
         # Creation of mvc instances
         self.model = Model()
         self.view = View()
@@ -106,11 +107,19 @@ def main():
     time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     node = GuiNode()
-
-    node.app.exec_()
     
+    screenDims = node.app.primaryScreen().size()
+    node.view.setupScreen(screenDims)
 
-    rospy.spin()  # TODO : need it ? exec_() is blocking
+    node.view.show()
+
+    log_info("Executing app")
+    try:
+        sys.exit(node.app.exec_())
+    except SystemExit:
+        print('Interface exited')    
+
+    #rospy.spin()  # TODO : need it ? exec_() is blocking
 
 
 if __name__ == '__main__':

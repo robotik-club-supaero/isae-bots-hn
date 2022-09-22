@@ -4,11 +4,14 @@
 View class of the GUI node
 It contains all the display functions (and no logic)
 '''
+import os
+PATH = os.path.dirname(os.path.abspath(__file__))
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut
-from PyQt5.QtCore import QRect, QMetaObject,QRectF, QPoint
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut, QGridLayout, QPushButton
+from PyQt5.QtCore import Qt, QTimer, QRect, QMetaObject,QRectF, QPoint
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush
 
+from .components.MatchBoard import MatchBoard
 
 '''
 Default coordinate system (can be translated, rotated and scaled)
@@ -21,77 +24,88 @@ y
 
 '''
 
-class View(QWidget):
+SCREEN_MARGIN = 200
+
+REFRESH_FREQ = 10  # Hz
+
+class View(QMainWindow):
 	def __init__(self):
 		super().__init__()
-		self.text = 'Hello World'
-		self.setGeometry(300, 300, 500, 500)
-
-		PATH = "images/test_1.jpg"  # 640x480
-		self.pixmap_image = QPixmap(PATH)
 
 
-		self.shortcut_open = QShortcut(QKeySequence('Ctrl+O'), self)
-		self.shortcut_open.activated.connect(self.on_open)
+		self.setObjectName("Main Window")
+		#self.resize(800, 600)
 
-		self.shortcut_close = QShortcut(QKeySequence('Ctrl+Q'), self)
+		self.mainLayoutWidget = QWidget()
+
+		self.mainLayout = QGridLayout(self.mainLayoutWidget)
+		self.mainLayout.setObjectName("Main layout")
+
+		self.matchBoard = MatchBoard()
+		self.mainLayout.addWidget(self.matchBoard)
+
+		self.pushButton_2 = QPushButton()
+		self.pushButton_2.setObjectName("pushButton_2")
+		self.pushButton_2.setText("Bonsoir")
+
+
+		self.mainLayout.addWidget(self.pushButton_2, 1, 1, 1, 1)
+
+
+		self.pixmap_image = QPixmap(os.path.join(PATH, 'image_files/vinyle.gif'))
+
+
+		# key bindings
+		self.shortcut_close = QShortcut(QKeySequence('Ctrl+C'), self)
 		self.shortcut_close.activated.connect(self.closeApp)
 
-		self.shortcut_close = QShortcut(QKeySequence('Ctrl+R'), self)
-		self.shortcut_close.activated.connect(self.randomEvent)
-
-		self.shape = QRect(int(self.width()/2), 0, 20, 40) # x, y, width, height
 
 
-			
-	def on_open(self):
-		print("Open something")
-		self.setGeometry(100,100,300,500)
+		self.timer = QTimer(self)
+		self.timer.timeout.connect(self.refresh)
+		self.timer.start(1/REFRESH_FREQ)
+
+		self.isRefreshNeeded = False
+
+		self.setCentralWidget(self.mainLayoutWidget)
+		
+
+
 
 	def closeApp(self):
-		print("Closing the interface")
+		print("Closing main window")
+		self.close()
+		return
 
-		
-	def randomEvent(self):
-		self.shape.moveTop(self.shape.top() + 5)
-		self.update()
+
+	def refreshNeeded(self):
+		self.isRefreshNeeded = True
+
+	def refresh(self):
+		if self.refreshNeeded:
+			self.update()
+			self.isRefreshNeeded = False
+
+
+	def setOrientation(self, isVertical):
+		if isVertical:
+			self.setGeometry(0+SCREEN_MARGIN, 0+SCREEN_MARGIN,
+							 self.screenWidth-SCREEN_MARGIN, self.screenHeight-SCREEN_MARGIN)
+
+		else: 
+			self.setGeometry(100, 100, 900, 600)
+			
+
+
+	def setupScreen(self, dims):
+		self.screenWidth = dims.width()
+		self.screenHeight = dims.height()
+		print("lol", self.screenWidth, self.screenHeight)
+
+		self.setOrientation(True)  # vertical by default
 
 
 	
-	def paintEvent(self, event):
-		painter = QPainter()
-		painter.begin(self)
-		print('y')
-
-		painter.translate(QPoint(100,10))
-		painter.rotate(10.0)  # can be used to flip the table (vertical or horizontal), it flips the whole coordinate system
-		painter.scale(0.8, 0.8)  # idem with scale, can be ued to zoom in or out
-
-		pen =QPen(QColor(250, 0, 0), 5.0)
-		painter.setPen(pen)
-		#painter.setFont(QFont('Open Sans', 12))
-		# painter.drawText(event.rect(), Qt.AlignCenter, self.text)
-
-
-		painter.drawPixmap(QRect(0,0,640//2,480//2), self.pixmap_image, QRect(0,0,640,480))
-
-		painter.drawEllipse(100, 100, 56, 56)
-
-		x = 250
-		y = 100
-		self.robot_rect = QRect(x, y, 100, 200)
-		# painter.drawRect(self.robot_rect)
-		painter.fillRect(self.robot_rect, QColor(250, 0, 0))
-
-
-		painter.setPen(QPen(Qt.black, 5, Qt.SolidLine))
-		painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
-		painter.drawRect(self.shape)
-
-		painter.end()
-
-
-
 	def blinkLED(self, led, col):
 		return
 

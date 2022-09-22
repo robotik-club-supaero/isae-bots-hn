@@ -32,5 +32,6 @@ def update_color(self, msg):
     self.controller.set_side(msg.data)
 
 
-
+def update_position(self, msg):
+    self.controller.set_robot_pos(msg.x, msg.y, msg.theta)
 

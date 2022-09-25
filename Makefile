@@ -95,7 +95,7 @@ main:# kill
 
 .PHONY: term
 term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "${CMD}"
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
 	
 
 .PHONY: sim_term

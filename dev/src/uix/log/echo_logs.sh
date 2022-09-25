@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source /opt/ros/noetic/setup.bash
 
 # export ROS_IP=192.168.43.12
 # export ROS_MASTER_URI=http://192.168.43.12:11311

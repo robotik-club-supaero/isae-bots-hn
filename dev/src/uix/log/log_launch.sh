@@ -24,7 +24,7 @@ terminator -mu -l simulation -p sim -T "Robot Simulation Station" --working-dire
 # TODO : also have different profiles ? So that we don't mistake one for the other
 
  # lancement d'une session de terminator avec la layout simulation
- # l'option -u permet de désactiver le dBus pour que plusieurs sessions de terminator n'interfèrent pas entre elles
+ # l'option -u permet de désactiver le dBus pour que plusieurs sessions de terminator n'interfèrent pas entre elles | TODO : empêche pyQt de fonctionner ?
  # l'option -m permet d'avoir déjà une fenêtre maximisée à l'ouverture
 
 # kill les docker containers quand on quitte terminator

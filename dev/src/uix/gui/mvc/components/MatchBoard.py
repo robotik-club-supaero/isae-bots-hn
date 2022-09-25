@@ -8,42 +8,37 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut
 from PyQt5.QtCore import Qt, QTimer, QRect, QMetaObject,QRectF, QPoint
-from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush
+from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush, QTransform
 
 
+
+# CONSTANTS #
+
+X_MARGIN = 5
+Y_MARGIN = 5
 
 
 class MatchBoard(QWidget):
 	def __init__(self):
 		super().__init__()
 
-		self.isRefreshNeeded = False
+
+		self.bg_image = QPixmap(os.path.join(PATH, '../../image_files/vinyle_2023.png'))
+		self.bg_image = self.bg_image.transformed(QTransform().rotate(-90))
+
+		self.bg_dims = (self.bg_image.size().width(), self.bg_image.size().height())
+
+		self.robot_rect = QRect(0, 0, 150, 100)  # TODO : robot dimensions
 
 
-		self.pixmap_image = QPixmap(os.path.join(PATH, 'image_files/vinyle.gif'))
-
-
-		self.shortcut_open = QShortcut(QKeySequence('Ctrl+O'), self)
-		self.shortcut_open.activated.connect(self.opensomething)
-
-		self.shortcut_close = QShortcut(QKeySequence('Ctrl+Q'), self)
-		self.shortcut_close.activated.connect(self.closeApp)
-
-		self.shortcut_close = QShortcut(QKeySequence('Ctrl+R'), self)
-		self.shortcut_close.activated.connect(self.randomEvent)
-
-		self.shape = QRect(int(self.width()/2), 0, 20, 40) # x, y, width, height
-
-
-	def refreshNeeded(self):
-		self.isRefreshNeeded = True
 
 	def refresh(self):
-		if self.refreshNeeded:
-			self.update()
-			self.isRefreshNeeded = False
+		'''Ordered by the View object'''
 
-			
+		self.robot_rect.moveTop(self.robot_rect.top() + 1)
+
+		self.update()
+
 
 
 	def setupScreen(self, dims):
@@ -62,10 +57,7 @@ class MatchBoard(QWidget):
 	def closeApp(self):
 		print("Closing the interface")
 
-		
-	def randomEvent(self):
-		self.shape.moveTop(self.shape.top() + 5)
-		self.update()
+
 
 
 	
@@ -83,20 +75,24 @@ class MatchBoard(QWidget):
 		# painter.drawText(event.rect(), Qt.AlignCenter, self.text)
 
 
-		painter.drawPixmap(QRect(0,0,500,900), self.pixmap_image, QRect(0,0,500,900))
 
-		painter.drawEllipse(100, 100, 56, 56)
+		# vertical
+		# painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, 500 - X_MARGIN, 750 - Y_MARGIN),
+		# 				   self.bg_image)
 
-		x = 250
-		y = 100
-		self.robot_rect = QRect(x, y, 100, 200)
+		# horizontal
+		painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, 1125 - X_MARGIN, 750 - Y_MARGIN),
+						   self.bg_image)
+
+		#painter.drawEllipse(100, 100, 56, 56)
+
 		# painter.drawRect(self.robot_rect)
 		painter.fillRect(self.robot_rect, QColor(250, 0, 0))
 
 
-		painter.setPen(QPen(Qt.black, 5, Qt.SolidLine))
-		painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
-		painter.drawRect(self.shape)
+		# painter.setPen(QPen(Qt.black, 5, Qt.SolidLine))
+		# painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+		# painter.drawRect(self.shape)
 
 		painter.end()
 

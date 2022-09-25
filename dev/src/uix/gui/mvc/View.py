@@ -7,7 +7,7 @@ It contains all the display functions (and no logic)
 import os
 PATH = os.path.dirname(os.path.abspath(__file__))
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut, QGridLayout, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut, QGridLayout, QPushButton, QVBoxLayout
 from PyQt5.QtCore import Qt, QTimer, QRect, QMetaObject,QRectF, QPoint
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush
 
@@ -37,22 +37,78 @@ class View(QMainWindow):
 		#self.resize(800, 600)
 
 		self.mainLayoutWidget = QWidget()
+		self.mainLayoutWidget.setObjectName("centralwidget")
+		self.setCentralWidget(self.mainLayoutWidget)
 
-		self.mainLayout = QGridLayout(self.mainLayoutWidget)
-		self.mainLayout.setObjectName("Main layout")
+		self.mainLayout = QVBoxLayout(self.mainLayoutWidget)
+		self.mainLayout.setContentsMargins(0, 0, 0, 0)
+		self.mainLayout.setSpacing(0)
+		self.mainLayout.setObjectName("verticalLayout")
+
+
+		# self.mainLayout = QGridLayout(self.mainLayoutWidget)
+		# self.mainLayout.setGeometry(QRect(30, 20, 721, 521))
+		# self.mainLayout.setContentsMargins(0, 0, 0, 0)
+		# self.mainLayout.setObjectName("Main layout")
+
+		# self.mainLayout.setColumnStretch(0, 5)
+		# self.mainLayout.setColumnStretch(1, 1)
+		# self.mainLayout.setRowStretch(0, 5)
+		# self.mainLayout.setRowStretch(1, 1)
+
+		# print("Rows : ", self.mainLayout.rowCount())
+		# print("Columns : ", self.mainLayout.columnCount())
+		# print("stretch : ", self.mainLayout.rowStretch(0))
+
+		self.horizontalLayout = QHBoxLayout()
+		self.horizontalLayout.setObjectName("horizontalLayout")
 
 		self.matchBoard = MatchBoard()
-		self.mainLayout.addWidget(self.matchBoard)
+		# self.matchBoard.setGeometry(QRect(30, 20, 721, 521))
+		self.matchBoard.setFixedSize(1125, 750)
+		self.horizontalLayout.addWidget(self.matchBoard, stretch=4)
+
+
+
+
+
+		self.rightGridLayout = QGridLayout(self.mainLayoutWidget)
+		self.rightGridLayout.setGeometry(QRect(30, 20, 721, 521))
+		self.rightGridLayout.setContentsMargins(0, 0, 0, 0)
+		self.rightGridLayout.setObjectName("Main layout")
 
 		self.pushButton_2 = QPushButton()
 		self.pushButton_2.setObjectName("pushButton_2")
 		self.pushButton_2.setText("Bonsoir")
+		self.rightGridLayout.addWidget(self.pushButton_2, 0, 0)
+		self.rightGridLayout.addWidget(self.pushButton_2, 1, 0)
+
+		self.horizontalLayout.addLayout(self.rightGridLayout, stretch=1)
+
+		# self.horizontalLayout.setStretch(4, 1)
 
 
-		self.mainLayout.addWidget(self.pushButton_2, 1, 1, 1, 1)
+		self.mainLayout.addLayout(self.horizontalLayout, stretch=4)
 
 
-		self.pixmap_image = QPixmap(os.path.join(PATH, 'image_files/vinyle.gif'))
+		self.pushButton_3 = QPushButton()
+		self.pushButton_3.setObjectName("pushButton_2")
+		self.pushButton_3.setText("Bonsoir")
+
+		self.mainLayout.addWidget(self.pushButton_3, stretch=1)
+
+		# self.pushButton_4 = QPushButton()
+		# self.pushButton_4.setObjectName("pushButton_2")
+		# self.pushButton_4.setText("Bonsoir")
+
+		# self.mainLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
+		# self.mainLayout.addWidget(self.pushButton_3, 1, 0, 1, 1)
+		# self.mainLayout.addWidget(self.pushButton_4, 1, 1, 1, 1)
+
+		self.mainLayout.setStretch(2, 1)
+
+
+
 
 
 		# key bindings
@@ -63,11 +119,9 @@ class View(QMainWindow):
 
 		self.timer = QTimer(self)
 		self.timer.timeout.connect(self.refresh)
-		self.timer.start(1/REFRESH_FREQ)
+		self.timer.start(1000/REFRESH_FREQ)
 
 		self.isRefreshNeeded = False
-
-		self.setCentralWidget(self.mainLayoutWidget)
 		
 
 
@@ -82,8 +136,9 @@ class View(QMainWindow):
 		self.isRefreshNeeded = True
 
 	def refresh(self):
-		if self.refreshNeeded:
-			self.update()
+
+		if self.refreshNeeded or True:  # TODO : clear
+			self.matchBoard.refresh()
 			self.isRefreshNeeded = False
 
 

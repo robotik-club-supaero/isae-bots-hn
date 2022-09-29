@@ -27,7 +27,6 @@ class Controller():
 
         self.model.matchState = matchState
         self.view.setLED('matchLED', 'g')
-        self.view.refreshNeeded()
 
 
     def set_side(self, side):
@@ -37,7 +36,6 @@ class Controller():
 
         self.model.side = side
         self.view.setLED('sideLED', 'g')
-        self.view.refreshNeeded()
 
 
     def set_robot_pos(self, id, x, y, theta):
@@ -51,5 +49,17 @@ class Controller():
             return
             
         self.model.set_robot_pos(id, x, y, theta)
-        self.view.update_robot_pos(id, x, y, theta)
-        self.view.refreshNeeded()
+
+        print(id, x, y, theta)
+
+        # TODO : could check is robot_pos changed or not
+
+
+    def refreshMatchView(self):
+        '''Periodically for the matchBoard'''
+        '''
+        If a mutex is not available in read, we pass (it's gonna be read on the next refresh)
+        If a mutex is not available in write, we wait (don't want to miss a write)
+        '''
+
+        self.view.updateMatchBoard()

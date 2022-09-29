@@ -15,6 +15,8 @@ def init_msgs(self):
     self.start_sub = rospy.Subscriber("/game/start", Int16, self.update_start)
     self.color_sub = rospy.Subscriber("/game/color", Int16, self.update_color)
 
+    self.pos_sub = rospy.Subscriber("/current_position", Pose2D, self.update_position)
+
 
 
 def update_start(self, msg):
@@ -33,5 +35,9 @@ def update_color(self, msg):
 
 
 def update_position(self, msg):
-    self.controller.set_robot_pos(msg.x, msg.y, msg.theta)
+
+    try:
+        self.controller.set_robot_pos(0, msg.x, msg.y, msg.theta)
+    except AttributeError:
+        print("GuiNode class not initialized yet")
 

@@ -24,13 +24,16 @@ y
 
 '''
 
+
 SCREEN_MARGIN = 200
 
 REFRESH_FREQ = 10  # Hz
 
 class View(QMainWindow):
-	def __init__(self):
+	def __init__(self, model):
 		super().__init__()
+
+		self.model = model
 
 
 		self.setObjectName("Main Window")
@@ -65,10 +68,7 @@ class View(QMainWindow):
 
 		self.matchBoard = MatchBoard()
 		# self.matchBoard.setGeometry(QRect(30, 20, 721, 521))
-		self.matchBoard.setFixedSize(1125, 750)
 		self.horizontalLayout.addWidget(self.matchBoard, stretch=4)
-
-
 
 
 
@@ -80,8 +80,12 @@ class View(QMainWindow):
 		self.pushButton_2 = QPushButton()
 		self.pushButton_2.setObjectName("pushButton_2")
 		self.pushButton_2.setText("Bonsoir")
-		self.rightGridLayout.addWidget(self.pushButton_2, 0, 0)
-		self.rightGridLayout.addWidget(self.pushButton_2, 1, 0)
+
+		# self.rightGridLayout.addWidget(self.pushButton_2, 0, 0)
+		# self.rightGridLayout.addWidget(self.pushButton_2, 1, 0)
+		# self.rightGridLayout.addWidget(self.pushButton_2, 0, 1)
+		# self.rightGridLayout.addWidget(self.pushButton_2, 1, 1)
+
 
 		self.horizontalLayout.addLayout(self.rightGridLayout, stretch=1)
 
@@ -95,15 +99,8 @@ class View(QMainWindow):
 		self.pushButton_3.setObjectName("pushButton_2")
 		self.pushButton_3.setText("Bonsoir")
 
-		self.mainLayout.addWidget(self.pushButton_3, stretch=1)
+		# self.mainLayout.addWidget(self.pushButton_3, stretch=1)
 
-		# self.pushButton_4 = QPushButton()
-		# self.pushButton_4.setObjectName("pushButton_2")
-		# self.pushButton_4.setText("Bonsoir")
-
-		# self.mainLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
-		# self.mainLayout.addWidget(self.pushButton_3, 1, 0, 1, 1)
-		# self.mainLayout.addWidget(self.pushButton_4, 1, 1, 1, 1)
 
 		self.mainLayout.setStretch(2, 1)
 
@@ -118,10 +115,9 @@ class View(QMainWindow):
 
 
 		self.timer = QTimer(self)
-		self.timer.timeout.connect(self.refresh)
+		self.timer.timeout.connect(self.updateMatchBoard)
 		self.timer.start(1000/REFRESH_FREQ)
 
-		self.isRefreshNeeded = False
 		
 
 
@@ -129,17 +125,9 @@ class View(QMainWindow):
 	def closeApp(self):
 		print("Closing main window")
 		self.close()
-		return
 
 
-	def refreshNeeded(self):
-		self.isRefreshNeeded = True
 
-	def refresh(self):
-
-		if self.refreshNeeded or True:  # TODO : clear
-			self.matchBoard.refresh()
-			self.isRefreshNeeded = False
 
 
 	def setOrientation(self, isVertical):
@@ -166,6 +154,16 @@ class View(QMainWindow):
 
 	def setLED(self, led, col):
 		return
+
+
+	def updateMatchBoard(self):
+		'''All things to update '''
+
+		for k in range(1):  # TODO : update all robots instead of just num 0
+
+			with self.model.lock:
+				pos = self.model.robot_positions[k]
+			self.matchBoard.plotRobot(k, pos)  # id, [x, y, theta]
 
 
 

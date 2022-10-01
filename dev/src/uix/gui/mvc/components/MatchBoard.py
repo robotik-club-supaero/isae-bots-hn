@@ -12,7 +12,7 @@ from PyQt5.QtCore import Qt, QTimer, QRect, QMetaObject,QRectF, QPoint, QLine
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush, QTransform, QCursor, QPolygonF, QPainterPath
 
 import numpy as np
-from numpy import pi, sqrt, cos, sin, arctan
+from numpy import pi, sqrt, cos, sin, arctan2
 
 
 # CONSTANTS #
@@ -29,7 +29,12 @@ ROBOT_WIDTH = 195
 ROBOT_HEIGHT = 160
 
 ROBOT_DIAG = np.linalg.norm([ROBOT_WIDTH, ROBOT_HEIGHT])
-ROBOT_ANGLE = arctan(ROBOT_HEIGHT / ROBOT_WIDTH)
+ROBOT_ANGLE = arctan2(ROBOT_HEIGHT, ROBOT_WIDTH)
+
+CLICK_CIRCLE_RADIUS = 5
+
+CLICK_LINE_RADIUS = 40
+CLICK_LINE_WIDTH = 3
 
 
 class MatchBoard(QWidget):
@@ -93,20 +98,27 @@ class MatchBoard(QWidget):
 
 
 
+	def mouseMoveEvent(self, QMouseEvent):
+
+		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		self.clickOrderAngle = arctan2(inputPos[1] - self.clickCircleCenter.y(), inputPos[0] - self.clickCircleCenter.x())
 
 			
 	def mousePressEvent(self, QMouseEvent):
 
 		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
-		self.lastClickedPosition = self.toBoardPos(inputPos)
 
+		self.clickCircleCenter = QPoint(inputPos[0], inputPos[1])
+		self.clickOrderAngle = 0  # as first position angle
+
+		self.lastClickedPosition = self.toBoardPos(inputPos)
 		self.matchBoardClicked = True
 
 	def mouseReleaseEvent(self, QMouseEvent):
 
 		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
-		self.lastReleasedPosition = self.toBoardPos(inputPos)
 
+		self.lastReleasedPosition = self.toBoardPos(inputPos)
 		self.matchBoardClicked = False
 
 	def isMatchBoardClicked(self):return self.matchBoardClicked
@@ -120,6 +132,8 @@ class MatchBoard(QWidget):
 	def paintEvent(self, event):
 		painter = QPainter()
 		painter.begin(self)
+
+		painter.setRenderHint(QPainter.Antialiasing)
 
 		# painter.translate(QPoint(100,10))
 		# painter.rotate(10.0)  # can be used to flip the table (vertical or horizontal), it flips the whole coordinate system
@@ -139,16 +153,20 @@ class MatchBoard(QWidget):
 		painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, self.matchBoardDims[0] - X_MARGIN, self.matchBoardDims[1] - Y_MARGIN),
 						   self.bg_image)
 
-		#painter.drawEllipse(100, 100, 56, 56)
-
-		# painter.drawRect(self.robot_rect)
-		# painter.fillRect(self.robot_rect, QColor(250, 0, 0))
 
 
+		#### CLICK ORDER ####
+		if self.lastClickedPosition is not None:
 
-		# poly = QPolygonF([QPoint(100,200), QPoint(600,200), QPoint(0,0)])
+			painter.setPen(QPen(QColor(57, 173, 240), CLICK_LINE_WIDTH, Qt.SolidLine))
+			painter.drawLine(self.clickCircleCenter, self.clickCircleCenter + QPoint( int(CLICK_LINE_RADIUS*cos(self.clickOrderAngle)), int(CLICK_LINE_RADIUS*sin(self.clickOrderAngle)) ))
 
-		# poly.replace(0, QPoint(100,500))
+			painter.setPen(QPen(Qt.black, 1, Qt.SolidLine))
+			painter.setBrush(QColor(57, 173, 240))
+
+			painter.drawEllipse(self.clickCircleCenter, CLICK_CIRCLE_RADIUS, CLICK_CIRCLE_RADIUS)
+
+		
 
 		#### ROBOT ###
 

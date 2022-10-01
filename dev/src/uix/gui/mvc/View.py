@@ -13,6 +13,8 @@ from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QB
 
 from .components.MatchBoard import MatchBoard
 
+from math import atan2
+
 '''
 Default coordinate system (can be translated, rotated and scaled)
 --------> x
@@ -27,7 +29,7 @@ y
 
 SCREEN_MARGIN = 200
 
-REFRESH_FREQ = 10  # Hz
+REFRESH_FREQ = 30  # Hz
 
 class View(QMainWindow):
 	def __init__(self, model):
@@ -98,8 +100,9 @@ class View(QMainWindow):
 		self.pushButton_3 = QPushButton()
 		self.pushButton_3.setObjectName("pushButton_2")
 		self.pushButton_3.setText("Bonsoir")
+		self.pushButton_3.clicked.connect(self.matchBoard.switchOrientation)
 
-		# self.mainLayout.addWidget(self.pushButton_3, stretch=1)
+		self.mainLayout.addWidget(self.pushButton_3, stretch=1)
 
 
 		self.mainLayout.setStretch(2, 1)
@@ -114,9 +117,16 @@ class View(QMainWindow):
 
 
 
-		self.timer = QTimer(self)
-		self.timer.timeout.connect(self.updateMatchBoard)
-		self.timer.start(1000/REFRESH_FREQ)
+		# self.timer = QTimer(self)
+		# self.timer.timeout.connect(self.updateMatchBoard)
+		# self.timer.start(1000/REFRESH_FREQ)
+
+
+		self.matchBoardClickStatus = 0  # to detect a click event and treat it only once
+
+		self.lastClickedPos = None
+		self.lastReleasedPos = None
+
 
 		
 
@@ -166,6 +176,35 @@ class View(QMainWindow):
 			self.matchBoard.plotRobot(k, pos)  # id, [x, y, theta]
 
 
+	def matchBoardClickOrder(self):
+		'''Returns None if no order has been given, or the order only once'''
+
+
+		if self.matchBoardClickStatus == 0 and self.matchBoard.isMatchBoardClicked():
+
+			self.lastClickedPos = self.matchBoard.getLastClickedPosition()
+
+			if self.lastClickedPos is None: # cancel, weird case
+				print("ERROR : clicked position is None")
+
+			self.matchBoardClickStatus = 1
+
+			return None
+
+
+		elif self.matchBoardClickStatus == 1 and not self.matchBoard.isMatchBoardClicked():
+
+			self.lastReleasePos = self.matchBoard.getLastReleasedPosition()
+
+			if self.lastReleasePos is None: # cancel, weird case
+				print("ERROR : released position is None")
+
+			self.matchBoardClickStatus = 0
+
+			return (self.lastClickedPos[0], self.lastClickedPos[1] , atan2(self.lastReleasePos[1] - self.lastClickedPos[1], self.lastReleasePos[0] - self.lastClickedPos[0]))
+			
+		else:
+			return None
 
 # # don't auto scale when drag app to a different monitor.
 # # QApplication.setAttribute(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

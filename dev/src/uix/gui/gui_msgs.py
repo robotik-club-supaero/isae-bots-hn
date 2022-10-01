@@ -19,6 +19,7 @@ def init_msgs(self):
 
 
 
+
 def update_start(self, msg):
 
     if msg.data == 1:
@@ -41,3 +42,10 @@ def update_position(self, msg):
     except AttributeError:
         print("GuiNode class not initialized yet")
 
+
+
+clickOrder_pub = rospy.Publisher("/nextPositionTeensy", Quaternion, queue_size=10, latch=False)
+
+def send_click_order(clickOrder):
+
+    clickOrder_pub.publish(Quaternion(clickOrder[0], clickOrder[1] , clickOrder[2], 0))

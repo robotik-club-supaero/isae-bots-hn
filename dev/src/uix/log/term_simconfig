@@ -104,7 +104,7 @@
       parent = topscreen2
       type = Terminal
     [[[terminal7]]]
-      command = clear && sleep 3 && make term
+      command = clear && make term CMD="cd dev/src/sim/br; ./SimulationBaseRoulante"
       order = 0
       title = [BRN] Base Roulante | SIM
       parent = botscreen2
@@ -134,7 +134,7 @@
       parent = topscreen3
       type = Terminal
     [[[terminal10]]]
-      command = clear && make term
+      command = clear && make term CMD="cd dev/; source devel/setup.bash; rosrun uix gui_node.py"
       order = 1
       title = Interface
       parent = topscreen3

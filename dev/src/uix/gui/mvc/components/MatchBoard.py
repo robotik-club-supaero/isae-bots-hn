@@ -51,7 +51,6 @@ class MatchBoard(QWidget):
 
 
 		self.bgOrientation = None
-		self.setVerticalOrientation()  # by default
 
 		# self.robot_rect = QRect(0, 0, 150, 100)  # TODO : robot dimensions
 		self.robot_shape = QPolygonF([QPoint(0,0), QPoint(0,0), QPoint(0,0), QPoint(0,0)])
@@ -67,12 +66,12 @@ class MatchBoard(QWidget):
 
 
 
-	def switchOrientation(self):
-		'''Called by button press'''
+	# def switchOrientation(self, orientation):
+	# 	'''Called by button press'''
 
-		if self.bgOrientation == "vertical": self.setHorizontalOrientation()
-		elif self.bgOrientation == "horizontal": self.setVerticalOrientation()
-		else: print("ERROR : No orientation defined")
+	# 	if self.bgOrientation == "vertical": self.setHorizontalOrientation()
+	# 	elif self.bgOrientation == "horizontal": self.setVerticalOrientation()
+	# 	else: print("ERROR : No orientation defined")
 
 
 	def setVerticalOrientation(self):
@@ -91,7 +90,7 @@ class MatchBoard(QWidget):
 		self.matchBoardSizeFactor = 0.375
 		self.matchBoardDims = (3000*self.matchBoardSizeFactor, 2000*self.matchBoardSizeFactor)
 
-		self.setFixedSize(self.matchBoardDims[1], self.matchBoardDims[0])
+		self.setFixedSize(self.matchBoardDims[0], self.matchBoardDims[1])
 		if self.bgOrientation is not None: self.bg_image = self.bg_image.transformed(QTransform().rotate(90))
 
 		self.bgOrientation = "horizontal"

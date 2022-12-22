@@ -143,7 +143,8 @@ def main():
 	node = GuiNode()
 	
 	screenDims = node.app.primaryScreen().size()
-	node.view.setupScreen(screenDims)
+	node.view.setupScreenDims(screenDims)
+	node.view.setOrientation(True)
 
 	node.view.show()
 

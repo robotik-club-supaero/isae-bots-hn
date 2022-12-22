@@ -27,7 +27,7 @@ y
 '''
 
 
-SCREEN_MARGIN = 200
+SCREEN_MARGIN = 300
 
 REFRESH_FREQ = 30  # Hz
 
@@ -83,7 +83,7 @@ class View(QMainWindow):
 		self.pushButton_2.setObjectName("pushButton_2")
 		self.pushButton_2.setText("Bonsoir")
 
-		# self.rightGridLayout.addWidget(self.pushButton_2, 0, 0)
+		self.rightGridLayout.addWidget(self.pushButton_2)
 		# self.rightGridLayout.addWidget(self.pushButton_2, 1, 0)
 		# self.rightGridLayout.addWidget(self.pushButton_2, 0, 1)
 		# self.rightGridLayout.addWidget(self.pushButton_2, 1, 1)
@@ -99,8 +99,8 @@ class View(QMainWindow):
 
 		self.pushButton_3 = QPushButton()
 		self.pushButton_3.setObjectName("pushButton_2")
-		self.pushButton_3.setText("Bonsoir")
-		self.pushButton_3.clicked.connect(self.matchBoard.switchOrientation)
+		self.pushButton_3.setText("Change Orientation")
+		self.pushButton_3.clicked.connect(self.switchOrientation)
 
 		self.mainLayout.addWidget(self.pushButton_3, stretch=1)
 
@@ -127,8 +127,7 @@ class View(QMainWindow):
 		self.lastClickedPos = None
 		self.lastReleasedPos = None
 
-
-		
+		self.isVerticalOrientation = True
 
 
 
@@ -142,20 +141,30 @@ class View(QMainWindow):
 
 	def setOrientation(self, isVertical):
 		if isVertical:
-			self.setGeometry(0+SCREEN_MARGIN, 0+SCREEN_MARGIN,
-							 self.screenWidth-SCREEN_MARGIN, self.screenHeight-SCREEN_MARGIN)
+			# self.setGeometry(0+SCREEN_MARGIN, 0+SCREEN_MARGIN,
+			# 				 self.screenWidth-SCREEN_MARGIN, self.screenHeight-SCREEN_MARGIN)
+			self.setGeometry(100, 100,
+							 self.screenWidth/2, self.screenHeight-200)
+			self.matchBoard.setVerticalOrientation()
 
-		else: 
-			self.setGeometry(100, 100, 900, 600)
-			
+		else:
+			# self.setGeometry(0+SCREEN_MARGIN, 0+SCREEN_MARGIN,
+			# 				 self.screenHeight-SCREEN_MARGIN, self.screenHeight-SCREEN_MARGIN)
+			self.setGeometry(100, 100,
+							 self.screenWidth-200, self.screenHeight-500)
+			self.matchBoard.setHorizontalOrientation()
 
 
-	def setupScreen(self, dims):
+	def switchOrientation(self):
+
+		self.isVerticalOrientation = not self.isVerticalOrientation
+		self.setOrientation(self.isVerticalOrientation)
+
+
+	def setupScreenDims(self, dims):
 		self.screenWidth = dims.width()
 		self.screenHeight = dims.height()
-		print("lol", self.screenWidth, self.screenHeight)
 
-		self.setOrientation(True)  # vertical by default
 
 
 	

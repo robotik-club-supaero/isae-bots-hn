@@ -128,7 +128,7 @@
       parent = subframe3
       type = HPaned
     [[[terminal9]]]
-      command = clear ; make main CMD="trap exit SIGHUP; roslaunch scripts/gr_desktop.launch"
+      command = clear ; make main CMD="trap exit SIGHUP; roslaunch scripts/gr_desktop.launch; $SHELL"
       order = 0
       title = Roscore
       parent = topscreen3

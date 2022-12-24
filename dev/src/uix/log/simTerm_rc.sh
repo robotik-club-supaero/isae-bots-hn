@@ -17,9 +17,8 @@ bind -x '"\C-K":"if [[ $ROSLAUNCH_RUNNING == 1 ]]; then echo $COMMANDK; ROSLAUNC
 
 COMMANDR="[SIM COMMAND] :  Restart simulation"
 COMMANDR2="\033[31m[ERROR] Stop the roslaunch before restarting\033[0m"
-COM2="ps -ef | grep /bin/bash | awk '{if(\$3 == 1){print \$2}}'"
+COM2="ps -ef | grep /bin/bash | grep -vE 'exit|auto|grep|dev' | awk '{print \$2}'"
 bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNCH_RUNNING=1; kill -s SIGHUP $(eval $COM2); else echo -e $COMMANDR2; fi"'
-
 
 COMMANDH="[ROS MESSAGE] -> Set side to \033[36mHOME\033[0m"
 bind -x '"\C-H":"echo -e $COMMANDH; rostopic pub --once /game/color std_msgs/Int16 0 > /dev/null"'

@@ -48,62 +48,24 @@ def init_comm(displacementNode):
     global p_dn   # create global variable pointer to DisplacementNode
     p_dn = displacementNode 
 
-## CONSTANTES
-BECAUSE_BIG_IS_BIG  = 100 if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 500 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 350 + BECAUSE_BIG_IS_BIG
-RADIUS_ROBOT_OBSTACLE = 300
-RESET_RANGE = 560  
-STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_Y_STAND = 250 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_Y_AVOID = 175 + BECAUSE_BIG_IS_BIG
-
-COEFF_ANGLES = 0.57735026 # pi/6 | 30°
-
-
 #######################################################################
 # Dictionnaires des interfaces
 #######################################################################
 
 """Dictionnaire des commandes envoyee a la Teensy."""
 CMD_TEENSY = {
-    "go_to":                0,      # va a un point precis avec le bon cap
-    "pass_by":              1,      # va a un point sans cap final et en position approximative
-    "stop":                 2,      # arrete le mouvement, efface le chemin de la Teensy
-    "set":                  3,      # fixe la Teensy a une position donnee
-    "remote":               4,      # utilisation de la wiimote
-    "front recal":          5,      # recalage avant (x_new,y_new,theta) reset seulement x ou y selon theta
-    "back recal":           6,      # recalage arrière (x_new,y_new,theta) reset seulement x ou y selon theta
-    "light final av":       7,      # déplacement précis av
-    "light final ar":       8,      # déplacement précis ar
-    "rotation":             9,      # orientation seule
-    "contact_front":        10,     # contact face avant robot
-    "contact_back":         11      # contact face arriere robot
+    "disp":                 0,      # Déplacement du robot vers un point
+    "stop":                 1,      # Arrête le mouvement
+    "accurate":             2,
+    "recalage":             3
 }
 
 """Dictionnaire des commandes recus de la strat."""
 CMD_STRAT = {
-    "displacement":         0,      # Déplacement usuel
-    "straight line":        1,      # Ligne droite
-    "relative pos":         2,      # Position relative
-    "front recal":          3,      # Recalage avant
-    "back recal":           4,      # Recalage arriere
-    "accurate":             5,      # Déplacement precis av/ar
-    "avoidance":            6,      # Déplacement avec évitement
-    "finish":               -1,     # Fin du match
-    "rotation":             7,      # Orientation seule
-
-    "front contact":        12,     # Contact avant
-    "back contact":         13,     # Contact arriere
-    "accurate same x":      14,     # Accurate avec le même x que la position actuelle du robot
-    "accurate backward":    15,     # Accurate en arriere
-    "accurate front":       16,     # Accurate en marche avant
-
-    "Astar call":           17,
-    "Astar call evitement": 18,
-    "apply path":           19,
-    "slow rotation":        20
+    "disp":                 0,      # Déplacement du robot vers un point
+    "stop":                 1,      # Arrête le mouvement
+    "accurate":             2,
+    "recalage":             3
 }
 
 """Dictionnaire des callback renvoyee a la strat."""
@@ -112,7 +74,6 @@ COM_STRAT = {
     "path not found":       -1,     # Pas de chemin
     "stop":                 1,      # On s'arrête
     "go":                   2,      # On repart
-    "crawl":                4,
     "stop blocked":         3,      # On s'arrete et la destination est bloquee par l'adversaire
     "asserv error":         -2,     # Erreur de l'asserv
 }
@@ -126,33 +87,17 @@ def callback_teensy(msg):
     """Traitement des msg de la teensy."""
 
     ## Mise en erreur de l'asserv...
-    if msg.data == 0:
+    if msg.data == -2:
         LOG_INFO("ERROR - asserv.")
         pub_strat.publish(COM_STRAT["asserv error"])
         return
 
     ## okPos de la part de la teensy
-    if msg.data == 1:
-        if p_dn.finalMove:
-            p_dn.turn = True
-            p_dn.finalTurn = True
-            p_dn.avoidMode = False
-        else:
-            LOG_INFO("Go to path next point.")
-            p_dn.next_point(True)
+    if msg.data == 0:
+        LOG_INFO("Go to path next point.")
+        p_dn.next_point(True)
         return
     
-    ## okTurn de la part de la Teensy
-    if msg.data == 2:
-        p_dn.turn = False
-        p_dn.resume = False
-
-        if p_dn.finalTurn:
-            p_dn.finalTurn = False
-            LOG_INFO("Final orientation done.")
-            p_dn.next_point(True)
-        return
-
     LOG_INFO("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
     
 
@@ -161,28 +106,29 @@ def callback_strat(msg):
     """Traitement des commandes de la strat."""
     
     ## Reset des params
-    p_dn.accurateMode = False
-    p_dn.rotationMode = False
-    p_dn.avoidMode = False
-    p_dn.sameXMode = False
-    p_dn.avAccurateMode = False
-    p_dn.arAccurateMode = False
+    # p_dn.accurateMode = False
+    # p_dn.rotationMode = False
+    # p_dn.avoidMode = False
+    # p_dn.sameXMode = False
+    # p_dn.avAccurateMode = False
+    # p_dn.arAccurateMode = False
 
-    p_dn.finalTurn = False
-    p_dn.stop_obstacle_detection = False
-    p_dn.resume = False
-    p_dn.paused = False
+    # p_dn.finalTurn = False
+    # p_dn.stop_obstacle_detection = False
+    # p_dn.resume = False
+    # p_dn.paused = False
 
-    LOG_INFO("Received order from STRAT NODES: [{},{},{}] - current path: [{}]".format(
-        msg.x, msg.y, msg.z, p_dn.path))
-    if len(p_dn.path): p_dn.path = []
+    LOG_INFO("Received order from STRAT NODES: [{},{},{}] - displacement method : [{}]".format(
+        msg.x, msg.y, msg.z, msg.w))
+    p_dn.path = []
 
     ## Stop en fin de match
-    if msg.w == CMD_STRAT["finish"]:
-        pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-        p_dn.finish = True
+    # if msg.w == CMD_STRAT["finish"]:
+    #     pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
+    #     p_dn.finish = True
 
     ## Parametrage du mouvement selon la commande
+
     if msg.w == CMD_STRAT["front recal"]:
         p_dn.recalageMode = True
         p_dn.stop_obstacle_detection = True   #On ne detecte pas les obstacles lors des recalages
@@ -190,56 +136,69 @@ def callback_strat(msg):
         p_dn.path = [[msg.x, msg.y, msg.z]]
         pub_speed.publish(data=[0.3*p_dn.speedLin, 0.3*p_dn.speedRot])
 
-    elif msg.w == CMD_STRAT["back recal"]:
-        p_dn.recalageMode = True
-        p_dn.stop_obstacle_detection = True
-        p_dn.recalageParam = CMD_TEENSY["back recal"]
+    if msg.w == CMD_STRAT["accurate"]:
         p_dn.path = [[msg.x, msg.y, msg.z]]
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
 
-    elif msg.w == CMD_STRAT["front contact"]:
-        p_dn.recalageMode = True
-        p_dn.stop_obstacle_detection = True
-        p_dn.recalageParam = CMD_TEENSY["contact_front"]
+    elif msg.w == CMD_STRAT["recalage"]:
         p_dn.path = [[msg.x, msg.y, msg.z]]
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
 
-    elif msg.w == CMD_STRAT["back contact"]:
-        p_dn.recalageMode = True
-        p_dn.stop_obstacle_detection = True
-        p_dn.recalageParam = CMD_TEENSY["contact_back"]
-        p_dn.path = [[msg.x, msg.y, msg.z]]
+    elif msg.w == CMD_STRAT["stop"]:
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"]))
 
-    elif msg.w == CMD_STRAT["accurate"]:
-        p_dn.accurateMode = True
-        p_dn.path = [[msg.x, msg.y, msg.z]]
-        pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
+        
 
-    elif msg.w == CMD_STRAT["accurate same x"]:
-        p_dn.accurateMode = True
-        p_dn.sameXMode = True
-        p_dn.path = [[msg.x, msg.y, msg.z]]
-        pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
+    # elif msg.w == CMD_STRAT["back recal"]:
+    #     p_dn.recalageMode = True
+    #     p_dn.stop_obstacle_detection = True
+    #     p_dn.recalageParam = CMD_TEENSY["back recal"]
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
 
-    elif msg.w == CMD_STRAT["accurate backward"]:
-        p_dn.accurateMode = True
-        p_dn.arAccurateMode = True            
-        p_dn.path = [[msg.x, msg.y, msg.z]]
-        pub_speed.publish(data=[0.4 * p_dn.maxSpeedLin, 0.6 * p_dn.maxSpeedRot])
+    # elif msg.w == CMD_STRAT["front contact"]:
+    #     p_dn.recalageMode = True
+    #     p_dn.stop_obstacle_detection = True
+    #     p_dn.recalageParam = CMD_TEENSY["contact_front"]
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
 
-    elif msg.w == CMD_STRAT["accurate front"]:
-        p_dn.accurateMode = True
-        p_dn.avAccurateMode = True
-        p_dn.path = [[msg.x, msg.y, msg.z]]
-        pub_speed.publish(data=[0.8 * p_dn.maxSpeedLin, 1 * p_dn.maxSpeedRot])
+    # elif msg.w == CMD_STRAT["back contact"]:
+    #     p_dn.recalageMode = True
+    #     p_dn.stop_obstacle_detection = True
+    #     p_dn.recalageParam = CMD_TEENSY["contact_back"]
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
 
-    elif msg.w == CMD_STRAT["rotation"] or msg.w == CMD_STRAT["slow rotation"]:
-        p_dn.rotationMode = True
-        p_dn.finalTurn = True
-        p_dn.path = [[0, 0, msg.z]]
+    # elif msg.w == CMD_STRAT["accurate"]:
+    #     p_dn.accurateMode = True
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
+    #     pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
 
-        if msg.w == CMD_STRAT["slow rotation"]: 
-            pub_speed.publish(data=[p_dn.speedLin, p_dn.maxSpeedRot/12.0])
-        else: 
-            pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
+    # elif msg.w == CMD_STRAT["accurate same x"]:
+    #     p_dn.accurateMode = True
+    #     p_dn.sameXMode = True
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
+    #     pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
+
+    # elif msg.w == CMD_STRAT["accurate backward"]:
+    #     p_dn.accurateMode = True
+    #     p_dn.arAccurateMode = True            
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
+    #     pub_speed.publish(data=[0.4 * p_dn.maxSpeedLin, 0.6 * p_dn.maxSpeedRot])
+
+    # elif msg.w == CMD_STRAT["accurate front"]:
+    #     p_dn.accurateMode = True
+    #     p_dn.avAccurateMode = True
+    #     p_dn.path = [[msg.x, msg.y, msg.z]]
+    #     pub_speed.publish(data=[0.8 * p_dn.maxSpeedLin, 1 * p_dn.maxSpeedRot])
+
+    # elif msg.w == CMD_STRAT["rotation"] or msg.w == CMD_STRAT["slow rotation"]:
+    #     p_dn.rotationMode = True
+    #     p_dn.finalTurn = True
+    #     p_dn.path = [[0, 0, msg.z]]
+
+    #     if msg.w == CMD_STRAT["slow rotation"]: 
+    #         pub_speed.publish(data=[p_dn.speedLin, p_dn.maxSpeedRot/12.0])
+    #     else: 
+    #         pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
 
     else:
         ## Setup de la vitesse
@@ -465,6 +424,12 @@ def callback_position(msg):
     except:
         pass
 
+def callback_speed(msg):
+    """Update la vitesse ordonnée par la strat """
+    p_dn.maxSpeedLin = msg[0]
+    p_dn.maxSpeedRot = msg[1]
+    return
+
 def publishPath(path):
     """Publish path to the interfaceNode."""    
     if SIMULATION:
@@ -511,10 +476,5 @@ pub_path = rospy.Publisher("/simu/current_path", Float32MultiArray, queue_size=1
 pub_grid = rospy.Publisher("/simu/nodegrid", Float32MultiArray, queue_size=10, latch=False)
 
 # Publication parametres de jeu & gains
-pub_speed = rospy.Publisher("/speedTeensyObjective", Float32MultiArray, queue_size=10, latch=False)
-pub_gains = rospy.Publisher("/gains", Float32MultiArray, queue_size=10, latch=True)
-pub_gains_motor = rospy.Publisher("/gainsMotor", Float32MultiArray, queue_size=10, latch=True)
-pub_dyn1 = rospy.Publisher("/dynamicParameters", Float32MultiArray, queue_size=10, latch=True)
-pub_dyn2 = rospy.Publisher("/dynamicParameters2", Float32MultiArray, queue_size=10, latch=True)
-
-
+sub_speed = rospy.Subscriber("/speedStrat", Float32MultiArray, callback_speed)
+pub_speed = rospy.Publisher("/speedTeensy", Float32MultiArray, queue_size=10, latch=False)

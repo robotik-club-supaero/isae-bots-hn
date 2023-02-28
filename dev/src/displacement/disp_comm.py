@@ -70,7 +70,8 @@ CMD_TEENSY = {
     "disp":                 0,      # Déplacement du robot vers un point
     "stop":                 1,      # Arrête le mouvement
     "accurate":             2,      # Déplacement précis du robot
-    "recalage":             3       # Déplacement de type recalage (contre un bord du terrain typiquement)
+    "recalage":             3,      # Déplacement de type recalage (contre un bord du terrain typiquement)
+    "set":                  4       # Fixe la position de départ
 }
 
 """Dictionnaire des commandes recues de la strat."""
@@ -122,7 +123,6 @@ def callback_strat(msg):
     ## Reset des params
     # p_dn.accurateMode = False
     # p_dn.rotationMode = False
-    # p_dn.avoidMode = False
     # p_dn.sameXMode = False
     # p_dn.avAccurateMode = False
     # p_dn.arAccurateMode = False
@@ -140,14 +140,7 @@ def callback_strat(msg):
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
         p_dn.matchEnded = True
 
-    ## Parametrage du mouvement selon la commande
-    """ if msg.w == CMD_STRAT["front recal"]:
-        p_dn.recalageMode = True
-        p_dn.stop_obstacle_detection = True   #On ne detecte pas les obstacles lors des recalages
-        p_dn.recalageParam = CMD_TEENSY["front recal"]
-        p_dn.path = [[msg.x, msg.y, msg.z]] """
-
-    if msg.w == CMD_STRAT["accurate"]:
+    elif msg.w == CMD_STRAT["accurate"]:
         p_dn.path = [[msg.x, msg.y, msg.z]]
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
 
@@ -155,130 +148,57 @@ def callback_strat(msg):
         p_dn.path = [[msg.x, msg.y, msg.z]]
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
 
-        
-
-    # elif msg.w == CMD_STRAT["back recal"]:
-    #     p_dn.recalageMode = True
-    #     p_dn.stop_obstacle_detection = True
-    #     p_dn.recalageParam = CMD_TEENSY["back recal"]
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-
-    # elif msg.w == CMD_STRAT["front contact"]:
-    #     p_dn.recalageMode = True
-    #     p_dn.stop_obstacle_detection = True
-    #     p_dn.recalageParam = CMD_TEENSY["contact_front"]
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-
-    # elif msg.w == CMD_STRAT["back contact"]:
-    #     p_dn.recalageMode = True
-    #     p_dn.stop_obstacle_detection = True
-    #     p_dn.recalageParam = CMD_TEENSY["contact_back"]
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-
-    # elif msg.w == CMD_STRAT["accurate"]:
-    #     p_dn.accurateMode = True
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-    #     pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
-
-    # elif msg.w == CMD_STRAT["accurate same x"]:
-    #     p_dn.accurateMode = True
-    #     p_dn.sameXMode = True
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-    #     pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
-
-    # elif msg.w == CMD_STRAT["accurate backward"]:
-    #     p_dn.accurateMode = True
-    #     p_dn.arAccurateMode = True            
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-    #     pub_speed.publish(data=[0.4 * p_dn.maxSpeedLin, 0.6 * p_dn.maxSpeedRot])
-
-    # elif msg.w == CMD_STRAT["accurate front"]:
-    #     p_dn.accurateMode = True
-    #     p_dn.avAccurateMode = True
-    #     p_dn.path = [[msg.x, msg.y, msg.z]]
-    #     pub_speed.publish(data=[0.8 * p_dn.maxSpeedLin, 1 * p_dn.maxSpeedRot])
-
-    # elif msg.w == CMD_STRAT["rotation"] or msg.w == CMD_STRAT["slow rotation"]:
-    #     p_dn.rotationMode = True
-    #     p_dn.finalTurn = True
-    #     p_dn.path = [[0, 0, msg.z]]
-
-    #     if msg.w == CMD_STRAT["slow rotation"]: 
-    #         pub_speed.publish(data=[p_dn.speedLin, p_dn.maxSpeedRot/12.0])
-    #     else: 
-    #         pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
-
-    else:
+    elif msg.w == CMD_STRAT["disp"] or msg.w == CMD_STRAT["noAvoidance"]:
         ## Setup de la vitesse
-        p_dn.speedLin = p_dn.maxSpeedLin
-        p_dn.speedRot = p_dn.maxSpeedRot
-        pub_speed.publish(data=[p_dn.speedLin, p_dn.speedRot])
+        pub_speed.publish(data=[p_dn.maxSpeedLin, p_dn.maxSpeedRot])
 
-        # p_dn.maxAstarTime = 10
+        dest_pos = [msg.x, msg.y, msg.z]
+        curr_pos = p_dn.current_pos
 
-        if msg.w == CMD_STRAT["displacement"] or msg.w == CMD_STRAT["avoidance"]:
+        LOG_INFO("Standard displacement :\n{} -> {}\n".format(printablePos(curr_pos), printablePos(dest_pos)))
+
+        ## - Déplacement standard
+        if msg.w == CMD_STRAT["disp"] :
+            p_dn.avoidMode = True
+
             ## Setup du Pathfinder
-            dest_pos = [msg.x, msg.y, msg.z]
-            curr_pos = p_dn.current_pos
+            p_dn.maxAstarTime = 3
             p_dn.pathfinder.setGoal(dest_pos)
             p_dn.pathfinder.setInit(curr_pos)
+            result = p_dn.build_path(p_dn.avoidMode, p_dn.isFirstAccurate, False)
 
-            ## - Deplacement classique
-            if msg.w == CMD_STRAT["displacement"]: 
-                # Affichage lisible
-                aff_curr_pos = printablePos(curr_pos)
-                aff_dest_pos = printablePos(dest_pos)
-                LOG_INFO("Standard displacement :\n{} -> {}\n".format(aff_curr_pos, aff_dest_pos))
+        ## - Deplacement avec evitement
+        else:   
+            p_dn.avoidMode = False
+            p_dn.isResetPossible = False
+            result = p_dn.build_path(p_dn.avoidMode, p_dn.isFirstAccurate, False)
 
-                result = p_dn.build_path(False, p_dn.isFirstAccurate, False)
+        ## Si on a trouvé un chemin
+        if result['success']:
+            LOG_INFO("Found path: \n"+str(p_dn.path))
+            # Affichage du path
+            if len(p_dn.path) > 0:
+                publishPath(p_dn.path)
+            if p_dn.avoidMode:
+                #Calcul du point de reset des marges d'évitement
+                p_dn.setAvoidResetPoint()
+        ## Sinon, erreur de la recherche de chemin
+        else:       
+            LOG_WARN("ERROR - Reason: " + result['message'])
+            # Retour de l'erreur a la strat
+            pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
-            ## - Deplacement avec evitement
-            else:   
-                # Affichage lisible
-                aff_curr_pos = printablePos(curr_pos)
-                aff_dest_pos = printablePos(dest_pos)
-                LOG_INFO("Avoiding displacement :\n{} -> {}\n".format(aff_curr_pos, aff_dest_pos))
-                
-                p_dn.avoidMode = True
-                p_dn.isResetPossible = False
-
-                result = p_dn.build_path(True, p_dn.isFirstAccurate, False)
-
-            ## If pathfinding was a success 
-            if result['success']:
-                LOG_INFO("Found path: \n"+str(p_dn.path))
-                # Affichage du path
-                if len(p_dn.path) > 0:
-                    publishPath(p_dn.path)
-                if p_dn.avoidMode:
-                    #Calcul du point de reset des marges d'évitement
+            # Retry without opponents chaos
+            if p_dn.avoidMode:
+                result = p_dn.build_path(p_dn.avoidMode, p_dn.isFirstAccurate, True)
+                if result['success']:
+                    LOG_INFO("Path found without chaos: [{}]".format(p_dn.path))
                     p_dn.setAvoidResetPoint()
-            ## Sinon, erreur de la recherche de chemin
-            else:       
-                LOG_WARN("ERROR - Reason: " + result['message'])
-                # Retour de l'erreur a la strat
-                pub_strat.publish(Int16(COM_STRAT["path not found"]))
-
-                # Retry without opponents chaos
-                if p_dn.avoidMode:
-                    result = p_dn.build_path(True, p_dn.isFirstAccurate, True)
-                    if result['success']:
-                        LOG_INFO("Path found without chaos: [{}]".format(p_dn.path))
-                        p_dn.setAvoidResetPoint()
-                    else:
-                        LOG_INFO("Error without chaos: {}".format(result['message']))
                 else:
-                    LOG_INFO("Error: {}".format(result['message']))
+                    LOG_INFO("Error without chaos: {}".format(result['message']))
+            else:
+                LOG_INFO("Error: {}".format(result['message']))
 
-        elif msg.w == CMD_STRAT["straight line"]: 
-            dest_pos = [msg.x, msg.y, msg.z]
-            LOG_INFO("Found path: straight forward to" + str(dest_pos))
-            p_dn.path = [dest_pos]
-
-        elif msg.w == CMD_STRAT["relative pos"]:
-            dest_pos = [msg.x, msg.y, msg.z] + p_dn.current_pos
-            p_dn.path = [dest_pos]
-        
     ## On envoie le premier point a la Teensy
     p_dn.move = True 
     p_dn.next_point(False)
@@ -385,52 +305,26 @@ def callback_lidar(msg):
     except:
         pass    
 
-def callback_color(msg):
-    """Update la couleur du robot."""
-    try:
-        ## Init starting position 
-        homePos = list(literal_eval(READER.get("Robot", "start_pos")))
-        awayPos = [homePos[0], 3000-homePos[1], -homePos[2]]
-        
-        if msg.data == 0: # HOME
-            p_dn.color_txt = "Yellow"
-            p_dn.color_int = 0
-            #pub_teensy.publish(Quaternion(homePos[0], homePos[1], homePos[2], 3))
-            
-            # TODO - remove patch
-            x, y, c = patchFrameBR(homePos[0], homePos[1], homePos[2])
-            pub_teensy.publish(Quaternion(x,y,c,3))
-        else:
-            p_dn.color_txt = "Purple"
-            p_dn.color_int = 1
-            #pub_teensy.publish(Quaternion(awayPos[0], awayPos[1], awayPos[2], 3))
+def callback_initPos(msg):
+    """Update la position de départ du robot."""
+    initPos = list(literal_eval(READER.get("Robot", "start_pos_"+str(msg.data))))
+    x, y, z = initPos[0], initPos[1], initPos[2]
+    pub_teensy.publish(Quaternion(x,y,z,4))
 
-            # TODO - remove patch
-            x, y, c = patchFrameBR(awayPos[0], awayPos[1], awayPos[2])
-            pub_teensy.publish(Quaternion(x,y,c,3))
-
-        ## Init pathfinder with correct color
-        p_dn.pathfinder = Pathfinder(p_dn.color_int)
-        publishGrid(p_dn.pathfinder.tableMap.getNodeList())
-    except:
-        pass
+    ## Init pathfinder with correct color
+    p_dn.pathfinder = Pathfinder(0) #TODO paramètre à supprimer, une seule grid commune pour le pathfinder
+    publishGrid(p_dn.pathfinder.tableMap.getNodeList())
 
 
 def callback_position(msg):
     """Update la position actuelle du robot."""
-    try:
-        # # Traitement des infos
-        # p_dn.current_pos = np.array([msg.x, msg.y, msg.theta])
 
-        # TODO - remove patch
-        x,y,c = patchFrameBR(msg.x, msg.y, msg.theta)
-        p_dn.current_pos = np.array([x,y,c])
+    x,y,c = patchFrameBR(msg.x, msg.y, msg.theta)
+    p_dn.current_pos = [x,y,c]
 
-        # On reset les marges si assez proche du point de reset
-        if p_dn.avoidMode and np.linalg.norm(p_dn.current_pos[:2]-p_dn.resetPoint) < 20:
-            p_dn.isResetPossible = True    
-    except:
-        pass
+    # On reset les marges si assez proche du point de reset
+    if p_dn.avoidMode and np.linalg.norm(p_dn.current_pos[:2]-p_dn.resetPoint) < 20:
+        p_dn.isResetPossible = True    
 
 def callback_speed(msg):
     """Update la vitesse ordonnée par la strat """
@@ -473,7 +367,7 @@ sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
 # Comm Strat
 pub_strat = rospy.Publisher("/okPositionPF", Int16, queue_size=10, latch=False)
 sub_strat = rospy.Subscriber("/nextDisplacement", Quaternion, callback_strat)
-sub_color = rospy.Subscriber("/color", Int16, callback_color)
+sub_initPos = rospy.Subscriber("/initPos", Int16, callback_initPos)
 
 # Comm Position
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)

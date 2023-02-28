@@ -82,9 +82,9 @@ class DisplacementNode:
 
         self.matchEnded = False
 
-        ## Variable d'etat d'un DEPLACEMENT
+        ## Variable liées au déplacement du robot
         # self.turn = False                       # Le robot tourne sur lui meme
-        # self.move = False                       # Le robot est en cours de deplacement
+        self.move = False                       # Le robot est en cours de deplacement
         # self.finalTurn = False                  # Le robot effectue sa rotation finale
         # self.finalMove = False                  # Le robot se dirige vers le point final
         # self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
@@ -96,7 +96,7 @@ class DisplacementNode:
         # self.arAccurateMode = False             # Le robot est en mode accurate en marche arrière force
         # self.avAccurateMode = False             # Le robot est en mode accurate en marche avant force
         # self.sameXMode = False                  # Le robot se deplace au point donne en gardant son X actuel
-        # self.avoidMode = False                  # Le robot se deplace en mode evitement
+        self.avoidMode = False                  # Le robot se deplace en mode evitement
 
         # ## Variables speciales
         # self.finish = False                     # Le match est fini, on 'bloque' le robot

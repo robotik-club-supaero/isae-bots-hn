@@ -44,6 +44,19 @@ else:
 #																#
 #################################################################
 
+## CONSTANTES
+BECAUSE_BIG_IS_BIG  = 100 if ROBOT_NAME=="GR" else 0
+STOP_RANGE_STANDARD = 500 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_AVOIDING = 350 + BECAUSE_BIG_IS_BIG
+RADIUS_ROBOT_OBSTACLE = 300
+RESET_RANGE = 560  
+STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_Y_STAND = 250 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_Y_AVOID = 175 + BECAUSE_BIG_IS_BIG
+
+COEFF_ANGLES = 0.57735026 # pi/6 | 30°
+
 def init_comm(displacementNode):
     global p_dn   # create global variable pointer to DisplacementNode
     p_dn = displacementNode 
@@ -52,30 +65,31 @@ def init_comm(displacementNode):
 # Dictionnaires des interfaces
 #######################################################################
 
-"""Dictionnaire des commandes envoyee a la Teensy."""
+"""Dictionnaire des commandes envoyees a la Teensy."""
 CMD_TEENSY = {
     "disp":                 0,      # Déplacement du robot vers un point
     "stop":                 1,      # Arrête le mouvement
-    "accurate":             2,
-    "recalage":             3
+    "accurate":             2,      # Déplacement précis du robot
+    "recalage":             3       # Déplacement de type recalage (contre un bord du terrain typiquement)
 }
 
-"""Dictionnaire des commandes recus de la strat."""
+"""Dictionnaire des commandes recues de la strat."""
 CMD_STRAT = {
     "disp":                 0,      # Déplacement du robot vers un point
-    "stop":                 1,      # Arrête le mouvement
-    "accurate":             2,
-    "recalage":             3
+    "noAvoidance":          1,      # On désactive l'évitement pour ces déplacements
+    "stop":                 2,      # Arrête le mouvement
+    "accurate":             3,      # Déplacement précis du robot
+    "recalage":             4       # Déplacement de type recalage (contre un bord du terrain typiquement)
 }
 
-"""Dictionnaire des callback renvoyee a la strat."""
+"""Dictionnaire des callback renvoyees a la strat."""
 COM_STRAT = {
-    "ok pos":               0,      # Bien arrivé
-    "path not found":       -1,     # Pas de chemin
-    "stop":                 1,      # On s'arrête
-    "go":                   2,      # On repart
-    "stop blocked":         3,      # On s'arrete et la destination est bloquee par l'adversaire
-    "asserv error":         -2,     # Erreur de l'asserv
+    "asserv error":         -2,     # Erreur de l'asserv (difficile à gérer)
+    "path not found":       -1,     # La recherche de chemin n'a pas aboutie
+    "ok pos":               0,      # Le robot est arrivé au point demandé
+    "stop":                 1,      # Le robot s'arrête
+    "go":                   2,      # Le robot redémarre
+    "stop blocked":         3       # On s'arrete car la destination est bloquee par l'adversaire
 }
 
 
@@ -84,17 +98,17 @@ COM_STRAT = {
 #######################################################################
 
 def callback_teensy(msg):
-    """Traitement des msg de la teensy."""
+    """Traitement des msg recues de la teensy."""
 
-    ## Mise en erreur de l'asserv...
-    if msg.data == -2:
+    ## Problème asserv
+    if msg.data == -1:
         LOG_INFO("ERROR - asserv.")
         pub_strat.publish(COM_STRAT["asserv error"])
         return
 
-    ## okPos de la part de la teensy
+    ## On est arrivé a point 
     if msg.data == 0:
-        LOG_INFO("Go to path next point.")
+        LOG_INFO("Point reached. Go to next point.")
         p_dn.next_point(True)
         return
     
@@ -118,23 +132,20 @@ def callback_strat(msg):
     # p_dn.resume = False
     # p_dn.paused = False
 
-    LOG_INFO("Received order from STRAT NODES: [{},{},{}] - displacement method : [{}]".format(
-        msg.x, msg.y, msg.z, msg.w))
+    LOG_INFO("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
     p_dn.path = []
 
-    ## Stop en fin de match
-    # if msg.w == CMD_STRAT["finish"]:
-    #     pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-    #     p_dn.finish = True
+    ## Commande d'arrêt
+    if msg.w == CMD_STRAT["stop"]:
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
+        p_dn.matchEnded = True
 
     ## Parametrage du mouvement selon la commande
-
-    if msg.w == CMD_STRAT["front recal"]:
+    """ if msg.w == CMD_STRAT["front recal"]:
         p_dn.recalageMode = True
         p_dn.stop_obstacle_detection = True   #On ne detecte pas les obstacles lors des recalages
         p_dn.recalageParam = CMD_TEENSY["front recal"]
-        p_dn.path = [[msg.x, msg.y, msg.z]]
-        pub_speed.publish(data=[0.3*p_dn.speedLin, 0.3*p_dn.speedRot])
+        p_dn.path = [[msg.x, msg.y, msg.z]] """
 
     if msg.w == CMD_STRAT["accurate"]:
         p_dn.path = [[msg.x, msg.y, msg.z]]
@@ -143,9 +154,6 @@ def callback_strat(msg):
     elif msg.w == CMD_STRAT["recalage"]:
         p_dn.path = [[msg.x, msg.y, msg.z]]
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
-
-    elif msg.w == CMD_STRAT["stop"]:
-        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"]))
 
         
 
@@ -470,11 +478,15 @@ sub_color = rospy.Subscriber("/color", Int16, callback_color)
 # Comm Position
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 
-# Comm Pathfinder - SIMULATION 
-pub_path = rospy.Publisher("/simu/current_path", Float32MultiArray, queue_size=10, latch=False)
-# Comm Simulation - SIMULATION
-pub_grid = rospy.Publisher("/simu/nodegrid", Float32MultiArray, queue_size=10, latch=False)
-
 # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/speedStrat", Float32MultiArray, callback_speed)
 pub_speed = rospy.Publisher("/speedTeensy", Float32MultiArray, queue_size=10, latch=False)
+
+############################
+#### Pour la Simulation ####
+############################
+
+# Comm Pathfinder
+pub_path = rospy.Publisher("/simu/current_path", Float32MultiArray, queue_size=10, latch=False)
+# Comm Simulation
+pub_grid = rospy.Publisher("/simu/nodegrid", Float32MultiArray, queue_size=10, latch=False)

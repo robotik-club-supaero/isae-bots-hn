@@ -66,7 +66,22 @@ class DisplacementNode:
         """Initialise le DisplacementNode."""
 
         LOG_INFO("Initializing Displacement Node.")
+
+        ## Variables liées au déplacement du robot
+
+        self.maxSpeedLin = 0
+        self.maxSpeedRot = 0
+
+        ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
+
+        self.path = []
+        self.pathfinder = Pathfinder(self.color_int)
+        self.maxAstarTime = 5
        
+        ## Variables liées au déroulement du match
+
+        self.matchEnded = False
+
         ## Variable d'etat d'un DEPLACEMENT
         # self.turn = False                       # Le robot tourne sur lui meme
         # self.move = False                       # Le robot est en cours de deplacement
@@ -102,13 +117,6 @@ class DisplacementNode:
         # self.color_txt = "Yellow"               # HOME = yellow this year
 
         # self.current_pos = None
-
-        self.path = []
-        self.pathfinder = Pathfinder(self.color_int)
-
-        self.maxAstarTime = 5
-        self.maxSpeedLin = 0
-        self.maxSpeedRot = 0
 
 #######################################################################
 # Fonctions de construction de path
@@ -152,7 +160,7 @@ class DisplacementNode:
         # On essaie d'obtenir un chemin
         try:
             result['built path'] = self.pathfinder.getPath(isInAvoidMode, isFirstAccurate, isSecondAttempt)
-            result['message'] = "PathFound" 
+            result['message'] = "Path found" 
             result['success'] = True
 
         except PathNotFoundError:
@@ -166,13 +174,13 @@ class DisplacementNode:
             return result
 
         # On recupere le chemin obtenu
-        built_path = result['built path']
-        if not len(built_path):
-            LOG_ERRS("Error - not len(built_path) in build_path().")
+        if not len(result['built path']):
+            LOG_ERRS("Error - Empty path found")
+            result['message'] = "Empty path found" 
             result['success'] = False
             return result
         
-        self.path = built_path
+        self.path = result['built path']
         return result
 
 

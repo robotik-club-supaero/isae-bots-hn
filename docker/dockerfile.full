@@ -70,7 +70,8 @@ RUN apt-get update && apt-get install -y \
     usbutils
 
 # Install tools for python / pip
-RUN pip3 install numpy, cwiid
+RUN pip3 install numpy
+RUN pip3 install cwiid
 
 # Add user so that we don't log in as root
 RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio dockeruser

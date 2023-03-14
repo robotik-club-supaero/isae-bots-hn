@@ -3,7 +3,13 @@
 # - ROS 1 noetic + deps
 # - Python 3.8 + deps
 
-FROM isaebots_desktop_env_core:latest
+# FROM isaebots_desktop_env_core:latest
+# FROM test_img:latest
+FROM --platform=linux/arm/v7 test_img:latest
+# ARG TARGETPLATFORM
+# ARG BUILDPLATFORM
+# RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
 SHELL ["/bin/bash", "-c"]
 
 #############################################################

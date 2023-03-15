@@ -89,7 +89,8 @@ def rescale(val, src, dst):
 def nunchuk(val, cor):
     c_bot, c_mid, c_top, delta = cor
     if abs(val-c_mid) <= delta:
-        return STICK_SCALE.MAX
+        # TODO : there is something to do here
+        return STICK_SCALE.MID
     if val < c_mid:
         return rescale(val, [c_bot, c_mid], [STICK_SCALE.MIN, STICK_SCALE.MID])
     if val > c_mid:
@@ -152,6 +153,7 @@ class WiiControlNode:
             corr_hori = nunchuk(hori, nunchuk_h_consts)
             speed = (corr_vert - 50)*2 / (5-self.coeff_speed) * max_speed /100
             angle = -(corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
+            # print(corr_vert, corr_hori)
         else:
             speed = angle = 0
         self.msg_pos.x = min(max(speed-angle,-255),255)
@@ -222,7 +224,7 @@ class WiiControlNode:
         while True:
 
             # Refreshing rate of 20Hz with 1000Hz resolution
-            while perf_counter() - begin < 0.05:
+            while perf_counter() - begin < 0.1:
                 time.sleep(0.001)
             begin = perf_counter()
 

@@ -102,6 +102,9 @@ RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 # Install PyQt
 RUN apt-get install -y python3-pyqt5
 
+# install bluetooth
+RUN apt-get install -y bluez bluetooth
+
 # Setup the work directory and entrypoint
 WORKDIR '/app'
 COPY ./docker/autosetup.sh /autosetup.sh

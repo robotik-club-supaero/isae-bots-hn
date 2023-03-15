@@ -23,6 +23,7 @@
 #################################################################
 
 import time
+from time import perf_counter
 import rospy
 import cwiid
 from enum import IntEnum, Enum
@@ -104,7 +105,7 @@ class WiiControlNode:
     def __init__(self):
         log_info("Initializing WII node ...")
         # -- Publishers & subscribers
-        self.nextpos_pub = rospy.Publisher("/whl/next_position", Quaternion, queue_size=10, latch=False)
+        self.nextpos_pub = rospy.Publisher("/nextPositionTeensy", Quaternion, queue_size=10, latch=False)
 
         # -- Connection to Wiimote
         self.wiimote = None
@@ -120,11 +121,14 @@ class WiiControlNode:
         self.wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_NUNCHUK
         self.wiimote.led = (1 << (self.coeff_speed+1)) - 1
 
+        self.msg_pos = Quaternion(x=0, y=0, z=0, w=0)
+
+
     def wiimote_connect(self):
         """
         Method to connect to the wiimote
         """
-        log_warn("Press 1+2 on Wiitome to connect ...")
+        log_warn("Press 1+2 on Wiimote to connect ...")
         connection_attempts = 1
         while not self.wiimote:
             try:
@@ -150,12 +154,11 @@ class WiiControlNode:
             angle = -(corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
         else:
             speed = angle = 0
-        msg_pos = Quaternion()
-        msg_pos.x = min(max(speed-angle,-255),255)
-        msg_pos.y = min(max(speed+angle,-255),255)
-        msg_pos.z = 0
-        msg_pos.w = 4  # cmd for remote control ^^
-        self.nextpos_pub.publish(msg_pos)
+        self.msg_pos.x = min(max(speed-angle,-255),255)
+        self.msg_pos.y = min(max(speed+angle,-255),255)
+        self.msg_pos.z = 0
+        self.msg_pos.w = 4  # cmd for remote control
+        self.nextpos_pub.publish(self.msg_pos)
 
         time.sleep(0.01)
 
@@ -215,10 +218,18 @@ class WiiControlNode:
         """
         ROS node mainloop
         """
+        begin = perf_counter()
         while True:
-            # Refreshing rate = 10Hz 
-            time.sleep(0.1)
+
+            # Refreshing rate of 20Hz with 1000Hz resolution
+            while perf_counter() - begin < 0.05:
+                time.sleep(0.001)
+            begin = perf_counter()
+
             self.unitstep()
+            print(self.msg_pos.x, self.msg_pos.y)
+
+
 
 #################################################################
 #                                                               #

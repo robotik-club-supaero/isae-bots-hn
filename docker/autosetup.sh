@@ -42,5 +42,10 @@ fi
 # export ROS_IP=192.168.43.12
 # export ROS_MASTER_URI=http://192.168.43.12:11311
 
+
+# start bluetooth for remote control (pi only)
+service dbus start
+bluetoothd &
+
 # Execute command passed to entrypoint
 bash -c "$@"

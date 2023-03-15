@@ -36,9 +36,9 @@ RUN sudo rosdep fix-permissions
 RUN rosdep update
 
 # bn
-RUN apt-get install ros-noetic-rosserial-arduino
-RUN apt-get install ros-noetic-rosserial-python
-RUN apt-get install ros-noetic-rosserial
+RUN apt-get install -y ros-noetic-rosserial-arduino
+RUN apt-get install -y ros-noetic-rosserial-python
+RUN apt-get install -y ros-noetic-rosserial
 
 # hn
 RUN apt-get install -y ros-noetic-smach ros-noetic-smach-viewer
@@ -71,13 +71,33 @@ RUN apt-get update && apt-get install -y \
 
 # Install tools for python / pip
 RUN pip3 install numpy
-RUN pip3 install cwiid
+# RUN pip3 install cwiid
 
 # Add user so that we don't log in as root
 RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio dockeruser
 
 # This fix: libGL error: No matching fbConfigs or visuals found
 #ENV LIBGL_ALWAYS_INDIRECT=1
+
+# install pi-bluetooth
+RUN apt-get install -y pi-bluetooth
+
+# Install cwiid
+# RUN git clone https://github.com/abstrakraft/cwiid.git
+# WORKDIR '/home/pi/cwiid'
+# RUN aclocal
+# RUN autoconf
+# RUN ./configure
+# RUN make
+# RUN sudo make install
+RUN apt install -y libcwiid-dev
+# RUN apt-get install -y libcwiid1
+# RUN pip install cwiid
+# RUN python ./docker/cwiid/setup.py
+
+# COPY ./docker/cwiid-3.0.0.tar.xz /app/cwiid-3.0.0.tar.xz
+COPY ./docker/cwiid-3.0.0.tar.xz .
+RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 
 # Install PyQt
 RUN apt-get install -y python3-pyqt5

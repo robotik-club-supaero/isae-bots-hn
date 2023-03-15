@@ -4,45 +4,55 @@
 
 """Generates a grid for a map of the table."""
 
-from lxml import etree
+#######################################################################
+#
+#                               IMPORTS
+#
+#######################################################################
 
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+from disp_utils import READER
+import numpy as np
+
+# On donne un nom au fichier regroupant tous les noeuds générés.
 ofile = "./WholeTableGrid_away.xml"
 
-margin = 100                            # entre les noeuds des bords et les bords
-min_x, max_x = 0+margin, 2000-margin    # Dimensions en x
-min_y, max_y = 1500+margin, 3000-margin # Dimensions en y
+# On initialise les paramètres pour la génération des points de la table
+robot_width = int(READER.get("Robot", "robot_larg"))
+robot_length = int(READER.get("Robot", "robot_long"))
+robot_diag = np.linalg.norm([robot_width/2, robot_length/2])
+margin = robot_diag // 2 + 20            # Pour en prendre en compte les dimensions du robot et que le point central du robot puisse se balader dans des zones autorisées.
+min_x, max_x = 0+margin, 2000-margin     # Dimensions en x de la table.
+min_y, max_y = 1500+margin, 3000-margin  # Dimensions en y de la table.
 
-dx, dy = max_x-min_x, max_y-min_y 
-nbPts_h = 20                            # nb de points selon x
-nbPts_w = nbPts_h * dy // dx            # nb de points selon y
-x_step = (max_x-min_x) / (nbPts_h-1)    # ecart entre les points en x
-y_step = (max_y-min_y) / (nbPts_w-1)    # ecart entre les points en y
+dx, dy = max_x-min_x, max_y-min_y        # Zone de déplacement autorisé
+nb_points_x = 20                         # nb de points selon x
+nb_points_y = int(nb_points_x * dy // dx)     # nb de points selon y
+x_step = dx / (nb_points_x-1)            # ecart entre les points en x
+y_step = dy / (nb_points_y-1)            # ecart entre les points en y
 
-# Generation
-grid = etree.Element("map")
+# Création de la grille à partir de ces données
+grid = ET.Element("map")
 counter = 0
-for xId in range(nbPts_h):
-    for yId in range(nbPts_w):
-        node = etree.SubElement(grid, "node")
+for xId in range(nb_points_x):
+    for yId in range(nb_points_y):
+        node = ET.SubElement(grid, "node")
         node.set("id","p{}".format(counter))
         node.set("x","{}".format(min_x + int(xId * x_step)))
         node.set("y","{}".format(min_y + int(yId * y_step)))
 
-        if(yId != nbPts_w-1):
-            link = etree.SubElement(grid, "connection")
+        if(yId != nb_points_y-1): ## On connecte le point à celui devant lui (en y).
+            link = ET.SubElement(grid, "connection")
             link.set("p1","p{}".format(counter))
             link.set("p2","p{}".format(counter+1))            
-            if(xId != nbPts_h-1):
-                connectionB = etree.SubElement(grid, "connection")
-                connectionB.set("p1","p{}".format(counter))
-                connectionB.set("p2","p{}".format(counter+nbPts_w))
-        else:
-            if(xId != nbPts_h-1):
-                connectionB = etree.SubElement(grid, "connection")
-                connectionB.set("p1","p{}".format(counter))
-                connectionB.set("p2","p{}".format(counter+nbPts_w))
+        if(xId != nb_points_x-1):
+            connectionB = ET.SubElement(grid, "connection")
+            connectionB.set("p1","p{}".format(counter))
+            connectionB.set("p2","p{}".format(counter+nb_points_y))
         counter+=1
 
 fid = open(ofile, "w")
-fid.write(etree.tostring(grid, encoding='utf-8', xml_declaration=True, pretty_print=True))
+xmlstr = minidom.parseString(ET.tostring(grid)).toprettyxml(indent="   ")
+fid.write(xmlstr)
 fid.close()

@@ -5,7 +5,7 @@
 @file: node.py
 @status: in progress
 
-Definition des noeuds de l'algo A star.
+Definition des noeuds de l'algo pour l'A*.
 """
 
 import math
@@ -33,7 +33,7 @@ class Node:
         self.weight = None      # Poids du noeud dans l'algorithme A*
     
 #######################################################################
-# Parametrisation of Node
+# Getters & Setters
 #######################################################################
 
     def getPosition(self):
@@ -47,10 +47,15 @@ class Node:
     
     def getWeight(self):
         return self.weight
-        
-    def addLinkNodeList(self,node):
-        """Adds a node to the linkNodeList."""
-        self.linkNodeList.append(node)
+
+    def getParent(self):
+        return self.parent
+
+    def getInitDist(self):
+        return self.initDist
+
+    def getGoalDist(self):
+        return self.goalDist
         
     def getLinkNodeList(self):
         """Gets the link node list of the node."""
@@ -58,9 +63,6 @@ class Node:
         
     def setParent(self, parent):
         self.parent = parent
-
-    def getParent(self):
-        return self.parent
         
     def setGoalDist(self, goalDist):
         self.goalDist = goalDist
@@ -71,20 +73,41 @@ class Node:
         self.initDist = startDist
         if self.goalDist != None: 
             self.weight = self.initDist+self.goalDist
-        
-    def getInitDist(self):
-        return self.initDist
+
+    def addLinkNodeList(self,node):
+        """Adds a node to the linkNodeList."""
+        self.linkNodeList.append(node)
 
 #######################################################################
-# Manipulation in computations
+# Modification du noeud parent ainsi que des attributs du noeud actuel
+####################################################################### 
+
+    def distFromNode(self, node):
+        '''Calcul la distance euclidienne avec le noeud passé en paramètre.'''
+        return math.sqrt((node.getX()-self.getX())**2+(node.getY()-self.getY())**2)
+
+    def calculWeight(self, parent):
+        """Calcul du nouveau poids à partir d'un noeud parent (pour voir si l'on doit changer le noeud parent ou non)."""
+        return self.goalDist + parent.getInitDist() + self.distFromNode(parent)   
+    
+    def updateNode(self, parent):
+        '''Fonction de mise à jour du noeud (changement de parent).'''
+        self.initDist = parent.getInitDist() + self.distFromNode(parent)
+        self.parent = parent
+        self.weight = self.calculWeight(parent)
+
+#######################################################################
+# Manipulation sur les noeuds
 #######################################################################
     
     def equals(self, node):
         """Verifie l'egalite avec le noeud passe en parametre."""
-        return np.array_equal(node.getPosition(), self.getPosition())
+        return node.getX() == self.getX() and node.getY() == self.getY()
   
     def isVisible(self, node, tableMap): # TODO - change
-        '''Vérifie si le noeud passé en paramètre est visible.'''
+        '''Vérifie si le noeud passé en paramètre est visible, i.e pas d'obstacle sur la route'''
+        '''On peut se permettre par la suite de voir l'intersection du centre de notre robot avec les obstacles, car les dimensions du robot sont prise
+        en compte dans la marge.'''
 
         if self.equals(node):
             return False
@@ -99,6 +122,8 @@ class Node:
                 y = obstacle.getYCenter()
                 r = obstacle.getRadius()
                 
+                ## det4 correspond au déterminant de l'équation caractéristique du second ordre calculant la ou les intersections avec le cercle étudié.
+                ## Si le déterminant est >= 0, il existe une intersection, et on regarde alors si cette intersection se trouve sur le chemin pour aller au noeud.
                 det4 = ((self.getX()-x)*lineVect[0]+(self.getY()-y)*lineVect[1])**2-((lineVect[0]**2+lineVect[1]**2)*((self.getX()-x)**2)+(self.getY()-y)**2-r**2)
                 if det4 >= 0:
                     tp = -((self.getX()-x)*lineVect[0]+(self.getY()-y)*lineVect[1]+math.sqrt(det4))/(lineVect[0]**2+lineVect[1]**2)
@@ -107,6 +132,7 @@ class Node:
                         return False
                     
             elif obstacle.getName() == "T":
+                ## Pas d'obstacles triangulaires pour le moment.
                 continue
 
             elif obstacle.getName() == "R":
@@ -130,27 +156,10 @@ class Node:
                         return False
             
             else:
-                raise TypeError("obstacle type unknown... Obstacle.getName() = {}".format(obstacle.getName()))
+                raise TypeError("Obstacle type unknown... Obstacle.getName() = {}".format(obstacle.getName()))
                 
         return True
-        
-#######################################################################
-# UPDATE du node
-####################################################################### 
-
-    def distFromNode(self, node):
-        '''Calcul la distance euclidienne avec le noeud passé en paramètre.'''
-        return math.sqrt((node.getX()-self.getX())**2+(node.getY()-self.getY())**2)
-
-    def calculWeight(self, parent):
-        """Calcul du nouveau poids (si on change de noeud parent)."""
-        return self.goalDist + parent.getInitDist() + self.distFromNode(parent)   
     
-    def updateNode(self, parent):
-        '''Fonction de mise à jour du noeud (changement de parent).'''
-        self.initDist = parent.getInitDist() + self.distFromNode(parent)
-        self.parent = parent
-        self.weight = self.calculWeight(parent)
         
         
         

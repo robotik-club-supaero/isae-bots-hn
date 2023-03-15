@@ -27,7 +27,7 @@ Y_THRESHOLD = 5     # 5mm
 #######################################################################
 
 def isNodeInList(list, node):
-    #Renvoie Vrai et le noeud si le noeud est dans la liste
+    #Renvoie True si le noeud demandé est dans la liste et False sinon
     for testNode in list:
         if testNode.equals(node):
             return True
@@ -52,6 +52,7 @@ def isNodeOutObstacles(tableMap, node, isFirst):
     for obstacle in tableMap.getObstacleList():
         if obstacle.isNodeIn(node):
             return False
+    return True
 
 
 #######################################################################
@@ -72,6 +73,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     currNode = Node(init)    
     currNode.setInitDist(0)
     isFirstAccurate[0] = not isNodeOutObstacles(tableMap, currNode, True)
+    isInAvoidMode = tableMap.getAvoid()
     
     # Init liste du A*
     openedList = []
@@ -84,7 +86,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
         goalDist = node.distFromNode(goalNode)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent
-        if tableMap.getAvoid() and goalDist < 200:  
+        if isInAvoidMode and goalDist < 200:  
             node.addLinkNodeList(goalNode)
         else:
             node.addLinkNodeList(goalNode)
@@ -96,8 +98,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
             if currNode.isVisible(node, tableMap) and isNodeOutObstacles(tableMap, node, False):
                 currNode.addLinkNodeList(node)
 
-            # On sauve le noeud le plus proche, hors des obstacles, 
-            # meme si la liaison traverse un obstacle
+            # On garde le noeud même si la liaison traverse un obstacle si jamais on avait pas de meilleur noeud
             if isNodeOutObstacles(tableMap, node, False):
                 if bestNode == None or initDist < bestDist:
                     bestNode = node

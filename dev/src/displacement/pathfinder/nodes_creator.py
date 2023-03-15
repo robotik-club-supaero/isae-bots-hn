@@ -15,10 +15,10 @@
 
 import os
 
-from lxml import etree
+import xml.etree.ElementTree as ET
 from node import Node
 
-from disp_utils import ROBOT_NAME
+from disp_utils import ROBOT_NAME, READER
 
 #######################################################################
 #
@@ -32,8 +32,10 @@ def makeNodeList(option):
     
     Parameters 
     ----------
-    option: [int] | 0, 1 or 2
-        Specifies the type of map must be used (home, away, avoiding).
+    option: [int] | -1, 0, ..., n 
+        Specifies the type of map that must be used (avoiding, config1, config2, ...).
+        In the case of the years before 2023, there were 2 config : HOME and AWAY.
+        In the case of the year 2023, there were multiple config depending of the start position (but always two colors).
     
     Return
     ------
@@ -42,21 +44,15 @@ def makeNodeList(option):
     """
   
     ## CONFIG DATA ####################################################
-    if ROBOT_NAME == "PR":
-        data0 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
-        data1 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
-        data2 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
-    else:
-        data0 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_home.xml"))
-        data1 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_away.xml"))
-        data2 = etree.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
 
-    if option == 0:
-        data = data0
-    elif option == 1:
-        data = data1
-    elif option == 2:
-        data = data2
+    number_config = int(READER.get("Robot", "number_config"))
+
+    if option == -1:
+        data = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
+
+    elif option < number_config:
+        data = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_config"+str(option)+".xml"))
+
     else:
         raise RuntimeError("Specified option is invalid")
 

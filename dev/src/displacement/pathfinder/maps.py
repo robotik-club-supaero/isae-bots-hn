@@ -41,7 +41,7 @@ class Maps:
         self.standardNodeList = standardNodeList    # Liste des noeuds de passages présents sur la Map        
         self.avoidingNodeList = avoidingNodeList    # Liste des noeud à utiliser lors de l'évitement
 
-        self.obstacleRobotPos = None                # Position robot évitement
+        self.obstacleRobotPos = None                # Position robot à éviter
 
         # Choix map classique ou map d'évitement    #### ATRANSFORMER EN ENTIER POUR AVOIR PLUS QUE 2 MAPS ####
         self.avoid = False
@@ -49,16 +49,12 @@ class Maps:
         self.isSecondAttempt = False
 
     def getObstacleList(self):
-        obstacleList = [o for o in self.obstacleList]
-
         if self.avoid:
             if self.isSecondAttempt:
-                obstacleList.pop()
-                return obstacleList+[self.obstacleRobotPos]
-            else:
-                return obstacleList+[self.obstacleRobotPos]
+                self.obstacleList.pop()
+            return self.obstacleList+[self.obstacleRobotPos]
         else:
-            return obstacleList
+            return self.obstacleList
     
     def getNodeList(self):
         if self.avoid:
@@ -75,37 +71,3 @@ class Maps:
 
     def getAvoid(self):
         return self.avoid
-
-    # def setRack(self, rack):
-    #     self.rack=rack
-
-    # def getRack(self):
-    #     return self.rack
-
-    # def removeBouee(self, id):
-    #     self.obstacleList.pop(id)
-
-    # def addBouee(self, x, y):
-    #     self.obstacleList.append(CircleObstacle(x, y, self.R_bouee + self.robotWidth/2 + self.boueeMargin))
-
-    # def addDroppedBouees(self, color, side):
-    #     if side == "left":
-    #         if color == 0:
-    #             self.obstacleList.append(RectangleObstacle(470, 540, 0, 400))
-    #             self.obstacleList.append(CircleObstacle(505, 400, self.robotWidth/2 + self.boueeMargin))
-    #             print("Added left blue rack obstacle")
-    #         else: 
-    #             self.obstacleList.append(RectangleObstacle(470, 540, 2600, 3000))
-    #             self.obstacleList.append(CircleObstacle(505, 2600, self.robotWidth/2 + self.boueeMargin))
-    #             print("Added left yellow rack obstacle")
-
-    #     elif side == "right":
-    #         if color == 0:
-    #             self.obstacleList.append(RectangleObstacle(1040, 1110, 0, 400))
-    #             self.obstacleList.append(CircleObstacle(1075, 400, self.robotWidth/2 + self.boueeMargin))
-    #             print("Added right blue rack obstacle")
-    #         else: 
-    #             self.obstacleList.append(RectangleObstacle(470, 540, 2600, 3000))
-    #             self.obstacleList.append(CircleObstacle(1075, 2600, self.robotWidth/2 + self.boueeMargin))
-    #             print("Added right yellow rack obstacle")
-    #     else: raise ValueError

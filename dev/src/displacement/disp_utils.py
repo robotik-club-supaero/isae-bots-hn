@@ -20,7 +20,7 @@ import os
 import rospy
 import numpy as np
 
-import ConfigParser
+import configparser
 from ast import literal_eval
 
 #################################################################
@@ -35,9 +35,9 @@ VERSION = 1
 NODE_NAME = "[DSP] "   
 
 SIMULATION = False if os.environ['USER'] == 'pi' else True
-ROBOT_NAME = rospy.get_param("robot_name") if SIMULATION else ""
 
-READER = ConfigParser.ConfigParser()
+READER = configparser.ConfigParser()
+ROBOT_NAME = READER.get("Robot", "robot_name")
 if not SIMULATION: 
     READER.read(os.path.join(os.path.dirname(__file__),"../../start.ini"))
 elif ROBOT_NAME == "PR":
@@ -45,7 +45,8 @@ elif ROBOT_NAME == "PR":
 elif ROBOT_NAME == "GR":
     READER.read(os.path.join(os.path.dirname(__file__),"../../gr_start.ini")) 
 
-ROBOT_NAME = READER.get("Robot", "robot_name") # either "PR" or "GR" (easier)
+COLOR_MATCH = READER.get("Robot", "color") # Couleur du côté duquel on joue
+CONFIG_MATCH = READER.get("Robot", "config") # Permet d'avoir plusieurs configurations (positions de départs (utile pour la coupe 2023))
 
 def toRobotCoord(xRobot, yRobot, cap, pos):
     """Fonction transposant pos dans le repere local du robot."""
@@ -95,9 +96,9 @@ def printablePos(pos):
 
 def patchFrameBR(x, y, theta):
     """Easier patch"""
-    if ROBOT_NAME == "GR":
+    if COLOR_MATCH == "HOME":
         return x, y, theta
-    return x, 3000-y, -theta
+    return 2000-x, y, -theta
 
 #######################################################################
 # LOGS functions

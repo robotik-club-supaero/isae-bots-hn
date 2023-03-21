@@ -15,6 +15,8 @@ from std_msgs.msg import Int16MultiArray
 from std_msgs.msg import MultiArrayLayout
 from std_msgs.msg import MultiArrayDimension
 
+from displacement.disp_utils import patchFrameBR
+
 #################################################################
 if os.environ['USER'] == 'pi':
 	SIMULATION = False
@@ -42,12 +44,6 @@ def lineAngle(x0, y0, x1, y1):
 		else:
 			theta = theta - np.pi
 	return theta
-
-def patchFrameBR(x, y, theta):
-	"""Easier patch."""
-	if SIMULATION:
-		return x, y, theta
-	return x, 3000-y, -theta
     
 
 class SensorsNode:
@@ -62,55 +58,25 @@ class SensorsNode:
     y_robot=0
     cap = 0
 
+    def __init__(self):
+        
+        rospy.init_node('SensorsNode')
+        rospy.loginfo("Initialisation du Traitement des Capteurs")
+
+        self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
+
+        # initialisation des suscribers
+        self.subLidar=rospy.Subscriber("/obstaclesLidar", Int16MultiArray, self.update_obstacles)
+        self.subSonars = rospy.Subscriber("/obstaclesSonar", Int16MultiArray, self.update_obstacles)
+        self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
+
     def update_position(self,msg):
         """Fonction de callback de position."""
-        
-        # TODO - remove patch
+
         x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
         self.x_robot = x
         self.y_robot = y
         self.c_robot = c
-
-        '''
-        ####
-        x = 800
-        y = 1200
-        d = (int)(np.linalg.norm([self.x_robot - x, self.y_robot- y]))
-        theta = lineAngle(self.x_robot, self.y_robot, x, y)
-        dx = (int)(abs(d*np.cos(theta)))
-        dy = (int)(abs(d*np.sin(theta)))
-        newmsg = Int16MultiArray()
-
-        #newmsg.data = [0, [1000, 1300, 300, 300]]
-        newmsg.data = [0, x, y, d, dx, dy]
-
-        layout = MultiArrayLayout()
-        layout.data_offset = 1
-
-        dimensions = []
-        dim1 = MultiArrayDimension()
-        dim1.label = "obstacle_nb"
-        dim1.size = 1
-        dim1.stride = 5*1
-
-        dim2 = MultiArrayDimension()
-        dim2.label = "info"
-        dim2.size = 5
-        dim2.stride = 5
-
-        dimensions.append(dim1)
-        dimensions.append(dim2)
-
-        layout.dim = dimensions
-
-        newmsg.layout = layout
-
-        self.pub_obstaclesInfo.publish(newmsg)
-        ####
-        '''
-
-
-
 
 	#fonction callback sur retour d'obstacles
     #ébauche de traitement des données LIDAR et SONAR pour déterminer des vitesses/directions. Ce code n'est pas efficace
@@ -186,20 +152,6 @@ class SensorsNode:
             newmsg.layout = layout
 
             self.pub_obstaclesInfo.publish(newmsg)
-
-         
-	
-    def __init__(self):
-        
-        rospy.init_node('SensorsNode')
-        rospy.loginfo("Initialisation du Traitement des Capteurs")
-
-        self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
-
-        # initialisation des suscribers
-        self.subLidar=rospy.Subscriber("/obstaclesLidar", Int16MultiArray, self.update_obstacles)
-        self.subSonars = rospy.Subscriber("/obstaclesSonar", Int16MultiArray, self.update_obstacles)
-        self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
 
     
 if __name__ == '__main__':

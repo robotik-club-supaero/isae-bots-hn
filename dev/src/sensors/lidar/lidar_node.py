@@ -12,11 +12,9 @@ Fichier de gestion des obstacles LIDAR.
 
 from __future__ import division
 
-import os, sys
-import rospy
-
 from math import *
 from lidar_lib import *
+from displacement.disp_utils import patchFrameBR
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
@@ -30,21 +28,6 @@ else:
 #################################################################
 
 OBS_RESOLUTION = 100
-
-def patchFrameBR(x, y, theta):
-	"""Easier patch."""
-	if SIMULATION:
-		return x, y, theta
-	return x, 3000-y, -theta
-
-def LOG_INFO(msg):
-    rospy.loginfo("LID "+msg)
-
-def handler(rcv_sig, frame):
-	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
-	LOG_INFO("ISB Node forced to terminate...")
-	rospy.signal_shutdown(rcv_sig)
-	sys.exit()
 
 #######################################################################
 # LIDAR NODE
@@ -79,7 +62,6 @@ class LidarNode:
 
     def update_position(self,msg):
         """Fonction de callback de position."""
-        # TODO - remove patch
         x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
         self.x_robot = x
         self.y_robot = y

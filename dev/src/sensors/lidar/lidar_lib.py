@@ -34,6 +34,7 @@ SIMULATION = False if os.environ['HOSTNAME'] == 'pi' else True
 
 READER = configparser.ConfigParser()
 ROBOT_NAME = READER.get("Robot", "robot_name")
+
 if not SIMULATION: 
     READER.read(os.path.join(os.path.dirname(__file__),"../../start.ini"))
 elif ROBOT_NAME == "PR":
@@ -52,46 +53,41 @@ def LOG_INFO(msg):
     rospy.loginfo("[LID] :" + msg)
 
 def handler(rcv_sig, frame):
-	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
+	"""Forcer le nœud à quitter sur SIGINT, éviter d'aller jusqu'à le SIGTERM."""
 	LOG_INFO("ISB Node forced to terminate...")
 	rospy.signal_shutdown(rcv_sig)
 	sys.exit()
 
-#calcule les coordonnées absolues d'un set de points du lidar (on applique déjà un masque pour supprimer les données en dehors de la table ou dans la balance)
-def absol_coord(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max):
-    """Fonction de calcul des coord absolues d'un obstacle.
-    
-    Cette fonction calcule les coordonnees absolues d'un set de points 
-    du lidar. (On applique deja un masque pour supp les donnees en dehors
-    de la table)."""
+# Calcule les coordonnées absolues d'un set de points du LiDAR dans le repère de la carte.
+def lidar_to_table(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max):
 
     # Parametres de calcul
     margin = TABLE_MARGIN
     theta = angle_min
     
-    # Liste des coord des obstacles sur la table
+    # Liste des coordonnées des obstacles sur la table
     obstList = [] 
     for dist in ranges:
+        # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
         if range_min<dist<range_max:
             # Calcul des coords absolue sur la carte
-            x_obs=x_r+dist*1000*np.cos(cap+theta)
-            y_obs=y_r+dist*1000*np.sin(cap+theta)
-            # On ne conserve que les obstacles sur la table..
+            x_obs = x_r + 1000*dist*np.cos(cap + theta)
+            y_obs = y_r + 1000*dist*np.sin(cap + theta)
+            # On applique un deuxième masque une fois les coordonnées obtenues pour supprimer les points en dehors de la map.
             if (margin < y_obs < TABLE_H-margin) and (margin < x_obs < TABLE_W-margin):
                 obstList.append([x_obs, y_obs])
-        theta+=angle_inc
+        theta += angle_inc
     return obstList
     
 
-def dist(pt1, pt2):
-    """Returns the distance between the 2 points. """
+def euclidean_distance(pt1, pt2):
+    """Retourne la distance entre 2 points dans un repère cartésien. Ici, le repère de la table.    """
     return math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)
  
 
-#quand on a un set de points, cette fonction permet de déterminer un obstacle pour chaque regroupement de points   
-def localisation(obstList):
-    """Fonction qui permet de determiner un obstacle pour chaque groupe
-    de points."""
+# Fonction permettant de clusteriser les points obtenus après traitement. Cela diminue le nombre de points et identifie les obstacles.
+# Les points sont, par construction, dans le sens de l'augmentation de l'angle theta du LiDAR. Donc si on identifie un regroupement, le traitement effectué ci-dessous est valable dans le sens où l'on ne retrouvera pas de points dans ce même regroupement.
+def clusterisation(obstList):
 
     opponentList = []
 
@@ -105,22 +101,21 @@ def localisation(obstList):
         nbPts = 0
 
         for pos in obstList:
-            # On regarde si le point suivant fait partie du regourpement
-            # precedent en regardant sa distance au regroupement
-            if dist(lastPos,pos) < LOCAL_LIM:
+            # On regarde si le point suivant fait partie du regroupement en regardant sa distance au regroupement.
+            if euclidean_distance(lastPos,pos) < LOCAL_LIM:
                 nbPts += 1
                 xBary += pos[0]
                 yBary += pos[1]
                 lastPos = pos
                 continue
             
-            # Sinon, s'il y a plus d'un pt on moyennise
+            # Sinon, s'il y a plus d'un point on moyennise pour obtenir des coordonnées barycentriques.
             if nbPts >= 1:
                 xBary /= nbPts
                 yBary /= nbPts 
                 opponentList.append([xBary, yBary])
             # Et on cree un nouvel obstacle avec le point
-            nbPts=1
+            nbPts = 1
             xBary = pos[0]
             yBary = pos[1]
             lastPos = pos

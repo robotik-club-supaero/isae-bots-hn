@@ -10,6 +10,7 @@ import roslib
 import rospy
 
 import numpy as np
+from math import atan2
 from geometry_msgs.msg import Pose2D
 from std_msgs.msg import Int16MultiArray
 from std_msgs.msg import MultiArrayLayout
@@ -24,76 +25,69 @@ else:
 	SIMULATION = True
 #################################################################
 
-# pour le test#
+### CONSTANTES ###
+
+DISTANCEMIN = 100
+INTERVALLE = 1
+LIMITEBASSE = 10
+
+# Fonction permettant de calculer l'angle entre 2 points dans un repère cartésien.
 def lineAngle(x0, y0, x1, y1):
 
-	if x1 == x0:
-		if y1 == y0:
-			rospy.logerr("ERREUR : memes coordonnes pour les deux points de la line")
-		theta = np.sign(y1 - y0)*np.pi/2
-
-	elif y1 == y0:
-		theta = (1 - np.sign(x1 - x0))*np.pi/2
-
-	else:
-		theta = np.arctan((y1 - y0)/(x1 - x0))
-
-	if x0>x1:  # cas ou l'arctan vaut en fait theta +- pi
-		if y0<y1:
-			theta = theta + np.pi
-		else:
-			theta = theta - np.pi
-	return theta
+	return atan2((y1-y0)/(x1-x0))
     
 
 class SensorsNode:
-    DISTANCEMIN = 100
-    INTERVALLE = 1
-    LIMITEBASSE = 10
-    obstaclesLidar = []
-    obstaclesSonars = []
-    countLidar = 1
-    countSonars = 1
-    x_robot=0
-    y_robot=0
-    cap = 0
 
     def __init__(self):
-        
+
         rospy.init_node('SensorsNode')
         rospy.loginfo("Initialisation du Traitement des Capteurs")
 
+        # Attributs du noeuds
+
+        self.obstaclesLidar = []
+        self.obstaclesSonars = []
+        self.countLidar = 1
+        self.countSonars = 1
+        self.x_robot=0
+        self.y_robot=0
+        self.cap = 0
+        
+        # Publishers & Subscribers nécessaires pour le noeud
+
         self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
 
-        # initialisation des suscribers
         self.subLidar=rospy.Subscriber("/obstaclesLidar", Int16MultiArray, self.update_obstacles)
         self.subSonars = rospy.Subscriber("/obstaclesSonar", Int16MultiArray, self.update_obstacles)
         self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
 
+    # Fonciton callback pour la position
     def update_position(self,msg):
-        """Fonction de callback de position."""
 
         x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
         self.x_robot = x
         self.y_robot = y
         self.c_robot = c
 
-	#fonction callback sur retour d'obstacles
-    #ébauche de traitement des données LIDAR et SONAR pour déterminer des vitesses/directions. Ce code n'est pas efficace
+	# Fonction callback sur retour des données obstacles LiDAR et Sonar + Traitement pour déterminer la position de ces obstacles.
     def update_obstacles(self, msg):
-        #le premier indice de la liste vaut 0 si ce sont des obstacles LIDAR, 1 si SONAR
-        if msg.data[0] == 0:
-            #rospy.loginfo('Par ici')
+
+        count = 0
+        obstacles = []
+
+        if msg.data[0] == 0: # Données LiDAR
             count = self.countLidar
             obstacles = self.obstaclesLidar
-            self.countLidar = (self.countLidar + 1) % self.INTERVALLE
-        elif msg.data[0] == 1:
-            #rospy.loginfo('Par la')
+            self.countLidar = (self.countLidar + 1) % INTERVALLE
+
+        elif msg.data[0] == 1: # Données Sonar
             count = self.countSonars
             obstacles = self.obstaclesSonars
-            self.countSonars = (self.countSonars + 1) % self.INTERVALLE
-        if count==0:
-            infoList =[]
+            self.countSonars = (self.countSonars + 1) % INTERVALLE
+
+        if count == 0:
+            infoList = []
             newObstacles = []
             for i in range((msg.layout.dim[0]).size):
                 newObstacles.append([msg.data[2*i +1], msg.data[2*i + 2]])
@@ -106,10 +100,10 @@ class SensorsNode:
                     for obstacle in obstacles:
                         if np.linalg.norm(np.array(obstacle) - np.array(newObstacle)) < np.linalg.norm(np.array(nearestObstacle) -np.array(newObstacle)):
                             nearestObstacle = obstacle 
-                    if np.linalg.norm( np.array(nearestObstacle) - np.array(newObstacle)) < self.DISTANCEMIN :
+                    if np.linalg.norm( np.array(nearestObstacle) - np.array(newObstacle)) < DISTANCEMIN :
                         dx = newObstacle[0] - nearestObstacle[0]
                         dy = newObstacle[1] - nearestObstacle[1]
-                        if np.linalg.norm([dx,dy]) < self.LIMITEBASSE:
+                        if np.linalg.norm([dx,dy]) < LIMITEBASSE:
                             dx = 0
                             dy = 0
                 info = [newObstacle[0], newObstacle[1], ((int)(np.linalg.norm([self.x_robot - newObstacle[0], self.y_robot- newObstacle[1]]))), dx, dy]

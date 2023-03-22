@@ -72,7 +72,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     goalNode = Node(goal)
     currNode = Node(init)    
     currNode.setInitDist(0)
-    isFirstAccurate[0] = not isNodeOutObstacles(tableMap, currNode, True)
+    isFirstAccurate = not isNodeOutObstacles(tableMap, currNode, True)
     isInAvoidMode = tableMap.getAvoid()
     
     # Init liste du A*

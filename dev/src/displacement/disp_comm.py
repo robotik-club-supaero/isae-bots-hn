@@ -68,10 +68,12 @@ def init_comm(displacementNode):
 """Dictionnaire des commandes envoyees a la Teensy."""
 CMD_TEENSY = {
     "disp":                 0,      # Déplacement du robot vers un point
-    "stop":                 1,      # Arrête le mouvement
-    "accurate":             2,      # Déplacement précis du robot
-    "recalage":             3,      # Déplacement de type recalage (contre un bord du terrain typiquement)
-    "set":                  4       # Fixe la position de départ
+    "dispAr":               1,      # Déplacement du robot en marche arrière
+    "stop":                 2,      # Arrête le mouvement
+    "accurateAv":           3,      # Déplacement précis du robot vers l'avant
+    "accurateAr":           4,      # Déplacement précis du robot vers l'arrière
+    "recalage":             5,      # Déplacement de type recalage (contre un bord du terrain typiquement)
+    "set":                  6       # Fixe la position de départ
 }
 
 """Dictionnaire des commandes recues de la strat."""

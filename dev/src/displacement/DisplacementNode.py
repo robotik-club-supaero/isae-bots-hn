@@ -36,17 +36,11 @@ from pathfinder.exceptions import PathNotFoundError, TimeOutError
 from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
-# import init functions
-from disp_gain import init_gain
-from disp_comm import init_comm
-
 # import utils
-from disp_utils import LOG_INFO, LOG_ERRS, dprint
-from disp_utils import toRobotCoord, patchFrameBR
+from disp_utils import LOG_INFO, LOG_ERRS, dprint, toRobotCoord, patchFrameBR
 
 # import comms
-from disp_comm import COM_STRAT, CMD_TEENSY
-from disp_comm import pub_strat, pub_teensy, pub_speed
+from disp_comm import COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_speed
 
 #################################################################
 #																#
@@ -67,7 +61,13 @@ class DisplacementNode:
 
         LOG_INFO("Initializing Displacement Node.")
 
-        ## Variables liées au déplacement du robot
+        ## Variables liées au match
+
+        self.color = 0
+        self.config = 0
+        self.matchEnded = False
+
+        ## Variables liées à la vitesse de déplacement du robot
 
         self.maxSpeedLin = 0
         self.maxSpeedRot = 0
@@ -75,48 +75,27 @@ class DisplacementNode:
         ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
 
         self.path = []
-        self.pathfinder = Pathfinder(self.color_int)
+        self.pathfinder = Pathfinder(self.color)
         self.maxAstarTime = 5
-       
-        ## Variables liées au déroulement du match
-
-        self.matchEnded = False
 
         ## Variable liées au déplacement du robot
-        # self.turn = False                       # Le robot tourne sur lui meme
         self.move = False                       # Le robot est en cours de deplacement
-        # self.finalTurn = False                  # Le robot effectue sa rotation finale
-        # self.finalMove = False                  # Le robot se dirige vers le point final
-        # self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
+        self.finalMove = False                  # Le robot se dirige vers le point final
+        self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
+        self.current_pos = [0,0]                # La position actuelle du robot
 
-        # ## Variables de mode de DEPLCEMENT
-        # self.accurateMode = False               # Le robot se deplace precisement / lentement 
-        # self.rotationMode = False               # Le robot tourne seulement sur lui meme 
-        # self.recalageMode = False               # Le robot se recale contre un mur / ou vient seulement en contact
-        # self.arAccurateMode = False             # Le robot est en mode accurate en marche arrière force
-        # self.avAccurateMode = False             # Le robot est en mode accurate en marche avant force
-        # self.sameXMode = False                  # Le robot se deplace au point donne en gardant son X actuel
+        # ## Variables de mode de DEPLACEMENT
+        self.accurateMode = False             # Le robot se deplace precisement / lentement vers l'avant
+        self.recalageMode = False               # Le robot se recale contre un mur / ou vient seulement en contact
         self.avoidMode = False                  # Le robot se deplace en mode evitement
 
         # ## Variables speciales
-        # self.finish = False                     # Le match est fini, on 'bloque' le robot
-        # self.resetPoint = [0,0]                 # Point au alentour duquel il faut reset les marges d'arret de l'evitement
-        # self.isResetPossible = False            # Variable décrivant si il faut reset les marges d'evitement ou non
-        # self.isFirstAccurate = [False]          # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
-        # self.recalageParam = CMD_TEENSY["stop"] # Parametre de recalage (avant/arrière ; contact ?)
+        self.resetPoint = [0,0]                 # Point au alentour duquel il faut reset les marges d'arret de l'evitement
+        self.isResetPossible = False            # Variable décrivant si il faut reset les marges d'evitement ou non
+        self.isFirstAccurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
-        # self.resume = False                     # On repart apres avoir rencontre un obstacle
-        # self.paused = False                     # Le robot est arrete a cause d'un obstacle
-        # self.time_last_seen_obstacle = 0        # Temps auquel on a vu le dernier obstacle 
-        # self.refresh_update_obstacle = 0.5
-        # self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
-
-        # ## Variables de jeu
-        # self.color_int = 0                      # HOME by default
-        # self.color_txt = "Yellow"               # HOME = yellow this year
-
-        # self.current_pos = None
+        self.blocked = False                     # Le robot est arrete a cause d'un obstacle
 
 #######################################################################
 # Fonctions de construction de path
@@ -205,43 +184,41 @@ class DisplacementNode:
             x = self.path[0][0]
             y = self.path[0][1]
             z = self.path[0][2]
-            LOG_INFO("\nDisplacement Pass By ({}, {})".format(x,y))
-            
-            """ # Si le point est dans un obstacle
-            if self.isFirstAccurate[0]:
-                xLoc, _ = toRobotCoord(self.current_pos[0], self.current_pos[1], self.current_pos[2], self.path[0])
-                if xLoc > 0: # Marche avant necessaire
-                    self.forward = True
-                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["light final av"]))
-                else:
-                    self.forward = False
-                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["light final ar"]))
-            else:
-                self.forward = True
-                pub_teensy.publish(Quaternion(x,y,0,CMD_TEENSY["pass_by"])) """
+            x, y, z = patchFrameBR(x, y, z)
 
-            pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["disp"]))
-            pub_speed.publish(Float32MultiArray(self.maxSpeedLin, self.maxSpeedRot))
-            
-            return
+            if self.recalageMode:
+                LOG_INFO("\nDisplacement request ({}, {}, {}) recalage".format(x, y, z))
+                pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["recalage"]))
+
+            else:
+                if self.forward:
+                    if self.accurateMode:
+                        LOG_INFO("\nDisplacement request ({}, {}, {}) accurateAv".format(x, y, z))
+                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["accurateAv"]))
+                    else:
+                        LOG_INFO("\nDisplacement request ({}, {}, {}) dispAv".format(x, y, z))
+                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["disp"]))
+                
+                else:
+                    if self.accurateMode:
+                        LOG_INFO("\nDisplacement request ({}, {}, {}) accurateAr".format(x, y, z))
+                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["accurateAr"]))
+                    else:
+                        LOG_INFO("\nDisplacement request ({}, {}, {}) dispAr".format(x, y, z))
+                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["dispAr"]))
+
+                pub_speed.publish(Float32MultiArray(self.maxSpeedLin, self.maxSpeedRot))
+                self.move = True
             
         # Sinon, on on a fini (ou bien a nulle part ou aller, pcq obstacle
         # detecte sans qu'on bouge...)
-        if len(self.path) == 0 and just_arrived:
+        else:
             LOG_INFO("Arrived at destination!")
             # Reset des params
-            # self.move = False
-            # self.turn = False
-            # self.finalTurn = False
-            # self.finalMove = False
-
-            # self.avoidMode = False
-            # self.sameXMode = False
-            # self.recalageMode = False
-            # self.accurateMode = False
-            # self.rotationMode = False 
-            # self.arAccurateMode = False     
-            # self.avAccurateMode = False
+            self.move = False
+            self.avoidMode = False
+            self.recalageMode = False
+            self.accurateMode = False
 
             # Publication a la strat
             pub_strat.publish(Int16(COM_STRAT["ok pos"]))

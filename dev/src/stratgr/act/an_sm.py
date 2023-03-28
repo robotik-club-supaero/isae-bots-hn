@@ -26,12 +26,11 @@ from std_msgs.msg      import Empty
 from geometry_msgs.msg import Quaternion
 
 # import SM states defined in an_sm_states package
-from an_sm_states.sm_park import SM_Park
-from an_sm_states.sm_move import SM_Move
+from an_sm_states.sm_park import Park
 
 from an_const import *
 from an_utils import log_info, log_warn, log_errs
-from an_msgs  import able_comm, next_action_pub, next_motion_pub, \
+from stratgr.act.an_comm  import enable_comm, next_action_pub, next_motion_pub, \
                     stop_teensy_pub
 
 #################################################################
@@ -40,15 +39,15 @@ from an_msgs  import able_comm, next_action_pub, next_motion_pub, \
 #                                                               #
 #################################################################
 
-class SM_Setup(smach.State):
+class Setup(smach.State):
 	"""
     STATE MACHINE: setup the SM.
     """
 
 	def __init__(self):
-		smach.State.__init__(self, outcomes=['start', 'preempted'],
-			input_keys=[],
-			output_keys=[])
+		smach.State.__init__(self, 	outcomes=['start', 'preempted'],
+									input_keys=ALL_KEY_LIST,
+									output_keys=ALL_KEY_LIST)
 
 	def execute(self, userdata):
 		##############################
@@ -58,28 +57,28 @@ class SM_Setup(smach.State):
 		## Game param variables
 		userdata.start = False
 		userdata.color = 0
-		userdata.score = 0
+		userdata.score = [SCORES_ACTIONS.INITIAL.value]
 		userdata.nb_actions_done = [0]
 		
 		## Callback of subscribers
-		userdata.cb_dsp = [-1]  # result of displacement action
+		userdata.cb_disp = [-1]  # result of displacement action
 		userdata.cb_pos = [[]]  # current position of the robot
+		userdata.cb_arm = []    # state of the arm
+		userdata.cb_elevator = [] # state of the elevator
 
-		
-
-		userdata.next_act = -2  # Indicateur de l'action en cours
+		userdata.next_action = -2  # Indicateur de l'action en cours
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.errorReaction = [-1]
 		userdata.errorActions = [0]
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)
-		able_comm()
+		enable_comm()
 
 		##############################
 		## WAITING FOR START SIGNAL ##
 		##############################
-		log_info('[smach] waiting for "start" signal ...')
+		log_info('[smach] Waiting for "start" signal ...')
 
 		while not userdata.start:
 			if self.preempt_requested():
@@ -96,29 +95,29 @@ class SM_Setup(smach.State):
 #                                                               #
 #################################################################
 
-class SM_Repartitor(smach.State):
+class Repartitor(smach.State):
 	"""
     STATE MACHINE : Dispatch actions between sm substates.
     """
 
 	def __init__(self):
-		smach.State.__init__(self, outcomes=[],
-			input_keys=[],
-			output_keys=[])
+		smach.State.__init__(self, 	outcomes=[e.name for e in LIST_ACTIONS],
+									input_keys=['nb_actions_done', 'next_action'],
+									output_keys=['nb_actions_done', 'next_action'])
 
 	def execute(self, userdata):
 		log_info('[repartitor] requesting next action ...')
 		next_action_pub.publish(Empty()) 	         # demande nextAction au DN
 
-		userdata.next_act = CB_NEXT_ACTION.NONE	     # reset variable prochaine action
-		while userdata.next == CB_NEXT_ACTION.NONE:  # en attente de reponse du DN
+		userdata.next_action = LIST_ACTIONS.NONE	     # reset variable prochaine action
+		while userdata.next_action == LIST_ACTIONS.NONE:  # en attente de reponse du DN
 			if self.preempt_requested():
 				self.service_preempt()
 				return 'preempted'
 			time.sleep(0.01)
 
-		userdata.nb_actions_done[0] = 0  		     # reinitialisation nb etapes
-		return None	                                 # lancement prochaine action  
+		userdata.nb_actions_done[0] = 0  		     	  # reinitialisation nb etapes
+		return LIST_ACTIONS(userdata.next_action).name    # lancement prochaine action  
 		
 #################################################################
 #                                                               #
@@ -126,15 +125,15 @@ class SM_Repartitor(smach.State):
 #                                                               #
 #################################################################
 
-class SM_End(smach.State):
+class End(smach.State):
     """
     STATE MACHINE : Dispatch actions between sm substates.
     """
 
     def __init__(self):
-        smach.State.__init__(self, outcomes=['end','preempted'],
-            input_keys=[],
-            output_keys=[])
+        smach.State.__init__(self, 	outcomes=['end','preempted'],
+            						input_keys=[''],
+            						output_keys=[''])
 
     def execute(self, userdata):
         log_info('[end] killing state machine ...')
@@ -162,14 +161,18 @@ def init_sm(sm):
 	"""
 
 	with sm:
-		smach.StateMachine.add('SETUP', SM_Setup(),
-			transitions={'preempted':'END','start':'REPARTITOR'})
-		smach.StateMachine.add('REPARTITOR', SM_Repartitor(),
-			transitions={})
-		smach.StateMachine.add('END', SM_End(),
-			transitions={'end':'EXIT_SM','preempted':'EXIT_SM'})
+		### Primary States
+		smach.StateMachine.add('SETUP', 
+			 					Setup(),
+								transitions={'preempted':'END','start':'REPARTITOR'})
+		smach.StateMachine.add('REPARTITOR', 
+			 					Repartitor(),
+								transitions={})
+		smach.StateMachine.add('END', 
+			 					End(),
+								transitions={'end':'EXIT_SM','preempted':'EXIT_SM'})
 
-		smach.StateMachine.add('PARK', SM_Park,
-			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})
-		smach.StateMachine.add('MOVE', SM_Move,
-			transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})
+		### Secondary States
+		smach.StateMachine.add('PARK', 
+			 					Park,
+								transitions={'preempted':'REPARTITOR','end':'REPARTITOR'})

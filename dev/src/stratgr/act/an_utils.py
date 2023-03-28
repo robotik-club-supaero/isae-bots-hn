@@ -20,7 +20,7 @@
 #################################################################
 
 import rospy
-import an_ctse
+from an_const import SIMULATION, NODE_NAME
 
 #################################################################
 #                                                               #
@@ -32,17 +32,79 @@ def log_info(log):
     """
     Print standard logs.
     """
-    rospy.loginfo(f"{an_ctse._NODENAME_} {log}")
+    rospy.loginfo(NODE_NAME + log)
 
 
 def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{an_ctse._NODENAME_} {log}")
+    rospy.logwarn(NODE_NAME + log)
 
 def log_errs(log):
     """
     Print errors logs.
     """
-    rospy.logerr(f"{an_ctse._NODENAME_} {log}")
+    rospy.logerr(NODE_NAME + log)
+
+def patchFrameBr(x, y, theta):
+    if SIMULATION:
+        return x, y, theta
+    return 2000-x, y, theta
+
+#################################################################
+# Colors gestion												#
+#################################################################
+
+class Color():
+	BLACK = '\033[30m'
+	RED = '\033[31m'
+	GREEN = '\033[32m'
+	YELLOW = '\033[33m'
+	BLUE = '\033[34m'
+	MAGENTA = '\033[35m'
+	CYAN = '\033[36m'
+	WHITE = '\033[37m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+	RESET = '\033[0m'
+
+colorDict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
+			 'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
+
+#################################################################
+# Debug functions												#
+#################################################################
+
+# Enable or disable debug prints
+debug_prints = True  
+
+# Debug print function
+def debugPrint(msg, format):
+	
+	# If debug prints are disabled, quit
+	if not debug_prints: return
+
+	# If no color was specified, error & quit
+	if len(format) == 0:
+		print(Color.RED + "Wrong debugPrint color" + Color.RESET)
+		return
+
+	printString = ''
+	color = format[0]
+
+	if len(format[1:]) > 0:
+		shape = format[1:]
+		if shape == '*': 
+			printString += Color.BOLD
+		elif shape == '-': 
+			printString += Color.UNDERLINE
+		elif shape == '*-': 
+			printString += Color.BOLD + Color.UNDERLINE
+	
+	try:
+		printString += colorDict[color] + str(msg) + Color.RESET
+		print(printString)
+	except KeyError:
+		print(Color.RED + "Wrong debugPrint color" + Color.RESET)
+		return

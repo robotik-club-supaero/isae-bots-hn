@@ -28,7 +28,7 @@ import rospy
 import smach
 import smach_ros
 from an_sm import init_sm
-from an_msgs import init_msgs
+from stratgr.act.an_comm import init_comm
 from an_utils import log_info, log_errs, log_warn
 
 
@@ -54,7 +54,7 @@ def main():
     log_info("Initializing Action Node ...")
     sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
     init_sm(sm)
-    init_msgs(sm)
+    init_comm(sm)
     
     #############################################################
     # SM CALL

@@ -23,9 +23,9 @@ import os
 import sys
 import time
 import smach
-from dev.src.stratgr.act.an_const import DISP_ORDERS, ACTS_SCORES, PARKING_POS
-from an_msgs import done_action_pub, send_added_score
-from an_sm_states.sm_displacement import SM_Displacement, set_next_destination
+from an_const import *
+from an_comm import done_action_pub, send_added_score
+from sm_displacement import Displacement, set_next_destination
 
 #################################################################
 #                                                               #
@@ -33,14 +33,14 @@ from an_sm_states.sm_displacement import SM_Displacement, set_next_destination
 #                                                               #
 #################################################################
 
-class SM_ObsPark(smach.State):
+class ObsPark(smach.State):
     """
     SM PARK : Observer state
     """
     def __init__(self):
-        smach.State.__init__(self, outcomes=['preempted','done','move'],
-			input_keys=['nb_actions_done'],
-			output_keys=['nb_actions_done'])
+        smach.State.__init__(self,  outcomes=['preempted','done','disp'],
+			                        input_keys=['nb_actions_done','color','next_pos'],
+			                        output_keys=['color','next_pos'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -53,7 +53,7 @@ class SM_ObsPark(smach.State):
             set_next_destination(userdata, x, y, z, DISP_ORDERS.STANDARD)
             return 'disp'
 
-        send_added_score(int(ACTS_SCORES.PARKING))
+        send_added_score(int(SCORES_ACTIONS.PARKING))
         done_action_pub.publish(exit=1, reason='success')
         return 'done'
 
@@ -64,13 +64,15 @@ class SM_ObsPark(smach.State):
 #                                                               #
 #################################################################
 
-SM_Park = smach.StateMachine(outcomes=['preempted', 'end'],
-			input_keys=['nb_actions_done','cb_dsp','cb_pos','next_pos'],
-			output_keys=['nb_actions_done','cb_dsp'])
+Park = smach.StateMachine(  outcomes=['preempted', 'end'],
+			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color'],
+			                output_keys=['nb_actions_done','cb_disp','cb_pos'])
 							
-with SM_Park:
-	smach.StateMachine.add('OBS_PARK', SM_ObsPark(), 
-		transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT'})
-	smach.StateMachine.add('DISPLACEMENT', SM_Displacement(), 
-		transitions={'preempted':'preempted','done':'OBS_PARK','redo':'DISPLACEMENT','fail':'OBS_PARK'})
+with Park:
+	smach.StateMachine.add('OBS_PARK', 
+                            ObsPark(), 
+		                    transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT'})
+	smach.StateMachine.add('DISPLACEMENT', 
+                            Displacement(), 
+		                    transitions={'preempted':'preempted','done':'OBS_PARK','redo':'DISPLACEMENT','fail':'OBS_PARK'})
 

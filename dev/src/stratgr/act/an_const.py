@@ -31,7 +31,7 @@ from enum import Enum, IntEnum
 #                                                               #
 #################################################################
 
-NODE_NAME = "[ACT]"
+NODE_NAME = "[ACT] "
 SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 #-- GAME CONSTANTS --
@@ -47,63 +47,54 @@ try :
 except:
 	print("no file found...")
 
+#################################################################
+#                                                               #
+#                          ROBOT                                #
+#                                                               #
+#################################################################
+
+## Park Position
 PARKING_POS = list(literal_eval(READER.get('Robot', 'park_pos')))
 
-#################################################################
-#                                                               #
-#                            ENUMS                              #
-#                                                               #
-#################################################################
-
-class ROBOT_SIDES(IntEnum):
-    HOME = 0
-    AWAY = 1
-
-
-## Origin postion 
+## Origin Position 
 ORIGIN = list(literal_eval(READER.get('Robot','start_pos')))
 
-class DISP_ORDERS(IntEnum):
-    STANDARD = 0
-    STRAIGHT = 1
-    RECAL_AV = 3
-    RECAL_AR = 4
-    ROTATION = 7
-    TOUCH_AV = 12
-    TOUCH_AR = 13
-    ACCUR_AV = 16
-    ACCUR_AR = 15
+ROBOT_LARG = int(READER.get('Robot', 'robot_larg'))
+ROBOT_LONG = int(READER.get('Robot', 'robot_long'))
+ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
+#################################################################
+#                                                               #
+#                       SM CONSTANTS                            #
+#                                                               #
+#################################################################
 
-class SCORES_ACTIONS(IntEnum):
-    INITIAL = 0
-    PARKING = 20
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
+DISPLACEMENT = {
+      'stop'             : -1,
+      'disp'             : 0, 
+      'disp_no_avoidance': 1,
+      'recalage_av'      : 2,
+      'recalage_ar'      : 3,
+      'accurate'         : 4,
+      'rotation'         : 5
+}
 
-class LIST_ACTIONS(IntEnum):
-    NONE = -4
-    PREEMPTED = -3
-    PARK = -2
-    STOP = -1
-    WAITING = 0
-    TAKE_CHERRIES_PERPENDICULAR = 1
-    TAKE_CHERRIES_WALL = 2
-    DEPOSIT_CHERRIES = 3
-    TAKE_CAKES = 4
-    DEPOSIT_CAKES = 5
-    #ACTION_5 = 0
-    #ACTION_6 = 0
-    #ACTION_7 = 0
-    #...
+CB_DISP = {
+	-3: 'None',
+	-2: 'Error Asserv',
+    -1: 'Path not found',
+     0: 'Disp Success',
+     1: 'Path Blocked',
+     2: 'Restart',
+     3: 'Destination blocked'
+}
 
-class CB_DISP(IntEnum):
-    NONE         = -3
-    ERROR_ASSERV = -2
-    NOPATH_FOUND = -1
-    DISP_SUCCESS = 0
-    PATH_BLOCKED = 1
-    DISP_RESTART = 2
-    DEST_BLOCKED = 3
+#TODO : Compléter ces listes au fur et à mesure de l'avancement de l'AN
 
 ## I/O keys for states of the sm
 ALL_KEY_LIST = [
@@ -123,17 +114,16 @@ ALL_KEY_LIST = [
     'next_pos'
     ]
 
-ACTIONS_LIST = [
-    'takeCherriesPerpendicular',
-    'takeCherriesWall',
-    'depositCherries',
-    'takeCakes',
-    'depositCakes',
-    'park',
-    'preempted',
-    'end',
-    'waiting'
-    ]
+ACTIONS_LIST = {
+    0: 'takeCherriesPerpendicular',
+    1: 'takeCherriesWall',
+    2: 'depositCherries',
+    3: 'takeCakes',
+    4: 'depositCakes',
+    5: 'park',
+    6: 'preempted',
+    7: 'end'
+    }
 
 ACTIONS_STATES = {
     'takeCherriesPerpendicular':'TAKE_CHERRIES_PERPENDICULAR',
@@ -147,10 +137,15 @@ ACTIONS_STATES = {
     'waiting':'WAITING'
     }
 
-#######################################################################
-# ROBOT 
-#######################################################################
+ACTIONS_SCORE = {
+	'init_score':               0, 
+	'sample_removed_rack':      1,
+    'sample_camp':              1,
+	'sample_sortrev_camp':      1,
+	'sample_galery':            3,
+	'sample_sortrev_galery':    3,
+    'sample_workshed':          5,
+    'parking':                 20
+}
 
-ROBOT_LARG = int(READER.get('Robot', 'robot_larg'))
-ROBOT_LONG = int(READER.get('Robot', 'robot_long'))
-ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
+ACTIONS_POS = {}

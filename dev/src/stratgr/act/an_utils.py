@@ -47,10 +47,10 @@ def log_errs(log):
     """
     rospy.logerr(NODE_NAME + log)
 
-def patchFrameBr(x, y, theta):
+def patch_frame_br(x, y, theta):
     if SIMULATION:
         return x, y, theta
-    return 2000-x, y, theta
+    return 2000-x, y, -theta
 
 #################################################################
 # Colors gestion												#
@@ -69,7 +69,7 @@ class Color():
 	UNDERLINE = '\033[4m'
 	RESET = '\033[0m'
 
-colorDict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
+color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
 			 'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
 
 #################################################################
@@ -80,31 +80,31 @@ colorDict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 
 debug_prints = True  
 
 # Debug print function
-def debugPrint(msg, format):
+def debug_print(msg, format):
 	
 	# If debug prints are disabled, quit
 	if not debug_prints: return
 
 	# If no color was specified, error & quit
 	if len(format) == 0:
-		print(Color.RED + "Wrong debugPrint color" + Color.RESET)
+		print(Color.RED + "Wrong debug_print color" + Color.RESET)
 		return
 
-	printString = ''
+	print_string = ''
 	color = format[0]
 
 	if len(format[1:]) > 0:
 		shape = format[1:]
 		if shape == '*': 
-			printString += Color.BOLD
+			print_string += Color.BOLD
 		elif shape == '-': 
-			printString += Color.UNDERLINE
+			print_string += Color.UNDERLINE
 		elif shape == '*-': 
-			printString += Color.BOLD + Color.UNDERLINE
+			print_string += Color.BOLD + Color.UNDERLINE
 	
 	try:
-		printString += colorDict[color] + str(msg) + Color.RESET
-		print(printString)
+		print_string += color_dict[color] + str(msg) + Color.RESET
+		print(print_string)
 	except KeyError:
 		print(Color.RED + "Wrong debugPrint color" + Color.RESET)
 		return

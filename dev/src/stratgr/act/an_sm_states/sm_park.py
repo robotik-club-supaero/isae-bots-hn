@@ -24,7 +24,7 @@ import sys
 import time
 import smach
 from an_const import *
-from an_comm import done_action_pub, send_added_score
+from an_comm import end_of_action_pub, add_score
 from sm_displacement import Displacement, set_next_destination
 
 #################################################################
@@ -38,9 +38,10 @@ class ObsPark(smach.State):
     SM PARK : Observer state
     """
     def __init__(self):
-        smach.State.__init__(self,  outcomes=['preempted','done','disp'],
-			                        input_keys=['nb_actions_done','color','next_pos'],
-			                        output_keys=['color','next_pos'])
+        smach.State.__init__(   self,  
+                                outcomes=['preempted','done','disp'],
+			                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color'],
+			                    output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -50,11 +51,11 @@ class ObsPark(smach.State):
         ## Move to parking position
         x, y, z = PARKING_POS
         if userdata.nb_actions_done[0] == 0:
-            set_next_destination(userdata, x, y, z, DISP_ORDERS.STANDARD)
+            set_next_destination(userdata, x, y, z, 0)
             return 'disp'
 
-        send_added_score(int(SCORES_ACTIONS.PARKING))
-        done_action_pub.publish(exit=1, reason='success')
+        add_score(ACTIONS_SCORE['parking'])
+        end_of_action_pub.publish(exit=1, reason='success')
         return 'done'
 
 
@@ -66,7 +67,7 @@ class ObsPark(smach.State):
 
 Park = smach.StateMachine(  outcomes=['preempted', 'end'],
 			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color'],
-			                output_keys=['nb_actions_done','cb_disp','cb_pos'])
+			                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos'])
 							
 with Park:
 	smach.StateMachine.add('OBS_PARK', 

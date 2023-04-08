@@ -27,7 +27,7 @@ from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_const import *
-from an_utils import log_info, log_warn, log_errs, patchFrameBr
+from an_utils import log_info, log_warn, log_errs, patch_frame_br
 
 #################################################################
 if not SIMULATION:
@@ -76,39 +76,36 @@ def setup_start(msg):
 	"""
     Callback function from topic /sm/start.
     """
-	p_smData = (msg.data == 1)
+	p_smData.start = (msg.data == 1)
 
 
 def setup_color(msg):
     """
     Callback function from topic /sm/color.
     """
-    if msg.data not in [e.value for e in ROBOT_SIDES]:
+    if msg.data not in [0,1]:
         log_errs(f"Wrong value of color given ({msg.data})...")
         return
     else: 
-        for e in ROBOT_SIDES:
-            if e.value == msg.data:
-                log_info(f"Color received : {e.name}") 
-                p_smData.color = e.value
-                break       
+        p_smData.color = msg.data
+        log_info("Received color : {}".format(COLOR[p_smData.color]))
 
 
 def cb_next_action(msg):
     """
     Callback for next action (DN -> Repartitor)
     """
-    if msg.data[0] == LIST_ACTIONS.STOP:
-        p_sm.request_preempt()
-        log_info("Received stop signal (end of match)")
-        return
-    if msg.data[0] == LIST_ACTIONS.PARK:
+    if msg.data[0] == -2:
         # Tmp fix from last year (= sm did not quit normally on parking...)
         p_sm.request_preempt()
-        log_info("Received park signal (almost finished)")
+        log_info("Received stop signal (initiate parking)")
         return
-    if msg.data[0] not in [e.value for e in LIST_ACTIONS]:
-        log_errs(f"Wrong command from DN [/strat/next_action] : {msg.data[0]}")
+    if msg.data[0] == -1:
+        p_sm.request_preempt()
+        log_info("Received park signal (end of match)")
+        return
+    if msg.data[0] not in [0,1,2,3,4,5]: # Index de ACTIONS_LIST dans an_const
+        log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
     p_smData.next_action = msg.data[0]
 
@@ -130,18 +127,14 @@ def cb_position(msg):
 
 def cb_arm(msg):
     """
-    Callback function to update sm variable XXXXX.
-
-    <copy> this template for your update / callback functions.
+    Callback of the state of the arm (for the cherries)
     """
     if not ok_comm: return
     p_smData.cb_arm[0] = msg.data
     
 def cb_elevator(msg):
     """
-    Callback function to update sm variable XXXXX.
-
-    <copy> this template for your update / callback functions.
+    Callback of the state of the elevator (for the cakes)
     """
     if not ok_comm: return
     p_smData.cb_elevator[0] = msg.data
@@ -201,7 +194,7 @@ def updateErrorReaction(msg):
 #                                                               #
 #################################################################
 
-def send_added_score(pts):
+def add_score(pts):
     """
     Request for setting a new score (prev + new pts added).
     """
@@ -219,11 +212,11 @@ def init_pubs():
     Initialize all publishers of AN.
     """
     # GENERAL PUBS
-    global score_pub, next_action_pub, done_action_pub, next_motion_pub, stop_teensy_pub
+    global score_pub, repartitor_pub, end_of_action_pub, disp_pub, stop_teensy_pub
     score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
-    next_action_pub = rospy.Publisher('/strat/next_action', Empty, queue_size=10, latch=True)
-    done_action_pub = rospy.Publisher('/strat/done_action', EndOfActionMsg, queue_size=10, latch=True)
-    next_motion_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
+    repartitor_pub = rospy.Publisher('/strat/repartitor', Empty, queue_size=10, latch=True)
+    end_of_action_pub = rospy.Publisher('/strat/end_of_action', EndOfActionMsg, queue_size=10, latch=True)
+    disp_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
     stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
     # SPECIFIC TO CURRENT YEAR
@@ -237,11 +230,11 @@ def init_subs():
     Initialize all subscribers of AN.
     """
     # GENERAL SUBS
-    global start_sub, color_sub, position_sub, next_action_sub, done_motion_sub
+    global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
     start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
     color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
-    next_action_sub = rospy.Subscriber('/strat/next_action', Int16MultiArray, cb_next_action)
-    done_motion_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
+    repartitor_sub = rospy.Subscriber('/strat/repartitor', Int16MultiArray, cb_next_action)
+    disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
     position_sub = rospy.Subscriber('/disp/current_position', Pose2D, cb_position)
 
     # SPECIFIC TO CURRENT YEAR

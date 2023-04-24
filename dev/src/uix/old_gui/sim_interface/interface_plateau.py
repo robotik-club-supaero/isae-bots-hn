@@ -374,7 +374,7 @@ class InterfaceNode:
 
 
 
-
+        '''
         #### Création des object de départ
         sampleColors = ("blue", "green", "red")
 
@@ -416,6 +416,7 @@ class InterfaceNode:
         self.plot_excavation_squares()
 
         if squareIndicators: self.plot_square_indicators()
+        '''
 
         self.fenetre.after(10,self.refresh)  # every 10ms we refresh
 

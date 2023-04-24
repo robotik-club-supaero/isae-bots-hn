@@ -32,18 +32,13 @@ from enum import Enum, IntEnum
 #################################################################
 
 NODE_NAME = "[ACT] "
-SIMULATION = False if os.environ['USER'] == 'pi' else True
+SIMULATION = True #TODO remove this parameter
 
 #-- GAME CONSTANTS --
 
 READER = configparser.ConfigParser()
 try :
-	if SIMULATION: 
-		#print("###simu###")
-		READER.read(os.path.join(os.path.dirname(__file__),"../../../pr_start.ini"))
-	else: 
-		#print("###real###")
-		READER.read(os.path.join(os.path.dirname(__file__),"../../../start.ini"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.cfg"))
 except:
 	print("no file found...")
 

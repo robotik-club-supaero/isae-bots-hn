@@ -19,7 +19,8 @@ BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
 	--volume="${PWD}/dev":"/app/dev" \
-	--volume="${PWD}/scripts":"/app/scripts"
+	--volume="${PWD}/scripts":"/app/scripts" \
+	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 #	--volume="${PWD}/doc":"/app/doc" \
 #	--volume="${PWD}/scripts":"/app/scripts"
 
@@ -86,10 +87,9 @@ main:# kill
 
 	@docker run --privileged --rm -it --net=host \
 		--name ${PS_NAME} \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
-		-u dockeruser \
+		-u 0 \
 		${IMAGE_NAME}_base \
 		"${CMD}"
 

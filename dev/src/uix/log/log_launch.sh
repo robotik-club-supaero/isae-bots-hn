@@ -28,7 +28,9 @@ terminator -mu -l simulation -p sim -T "Robot Simulation Station" --working-dire
  # l'option -m permet d'avoir déjà une fenêtre maximisée à l'ouverture
 
 # kill les docker containers quand on quitte terminator
-docker kill $(docker container ls -q)
+# on peut aussi utiliser stop qui arrête proprement le process mais qui met plus de temps s'il faut escalate au SIGKILL
+#docker kill $(docker container ls -q)
+docker stop $(docker container ls -q)
 
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)

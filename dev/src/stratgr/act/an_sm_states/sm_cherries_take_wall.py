@@ -26,6 +26,7 @@ import smach
 from an_const import *
 from an_comm import end_of_action_pub, add_score
 from sm_displacement import Displacement, set_next_destination
+from sm_cherries_substates import TakeCherries
 
 #################################################################
 #                                                               #
@@ -33,15 +34,15 @@ from sm_displacement import Displacement, set_next_destination
 #                                                               #
 #################################################################
 
-class ObsTakeCherriesPerpendicular(smach.State):
+class ObsTakeCherriesWall(smach.State):
     """
     SM PARK : Observer state
     """
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','take','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','pucks_taken'],
-			                    output_keys=['nb_actions_done','next_pos','pucks_taken'])
+			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded'],
+			                    output_keys=['nb_actions_done','next_pos','cherries_loaded'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -52,13 +53,13 @@ class ObsTakeCherriesPerpendicular(smach.State):
              
             case 0:
                 ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
-                x, y, z = ACTIONS_POS['takeCherriesPerpendicular']
+                x, y, z = ACTIONS_POS['takeCherriesWall']
                 set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
                 return 'disp'
 
             case 1:
                 ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
-                return 'takeCherries'
+                return 'take'
 
             case _:
                 add_score(ACTIONS_SCORE['parking'])
@@ -75,15 +76,18 @@ class ObsTakeCherriesPerpendicular(smach.State):
 #                                                               #
 #################################################################
 
-TakeCherriesPerpendicular = smach.StateMachine( outcomes=['preempted', 'end'],
-                                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','pucks_taken','nb_take_cherries_error'],
-                                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','nb_take_cherries_error'])
+TakeCherriesWall = smach.StateMachine(  outcomes=['preempted', 'end'],
+                                        input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_take_cherries_error'],
+                                        output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_take_cherries_error'])
 							
-with TakeCherriesPerpendicular:
-	smach.StateMachine.add('OBS_TAKE_CHERRIES_PERPENDICULAR', 
-                            ObsTakeCherriesPerpendicular(), 
-		                    transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT'})
-	smach.StateMachine.add('DISPLACEMENT', 
+with TakeCherriesWall:
+    smach.StateMachine.add('OBS_TAKE_CHERRIES_WALL', 
+                            ObsTakeCherriesWall(), 
+                            transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT','take':'TAKE_CHERRIES_WALL', 'redo':'OBS_TAKE_CHERRIES_WALL'})
+    smach.StateMachine.add('DISPLACEMENT', 
                             Displacement(), 
-		                    transitions={'preempted':'preempted','done':'OBS_PARK','redo':'DISPLACEMENT','fail':'OBS_PARK'})
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CHERRIES_WALL','redo':'DISPLACEMENT','fail':'OBS_TAKE_CHERRIES_WALL'})
+    smach.StateMachine.add('TAKE_CHERRIES_WALL', 
+                            TakeCherries(), 
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CHERRIES_WALL','fail':'OBS_TAKE_CHERRIES_WALL'})
 

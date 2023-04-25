@@ -27,6 +27,9 @@ from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
 from an_sm_states.sm_park import Park
+from an_sm_states.sm_cherries_take_perpendicular import TakeCherriesPerpendicular
+from an_sm_states.sm_cherries_take_wall import TakeCherriesWall
+from an_sm_states.sm_cherries_deposit import DepositCherries
 
 from an_const import *
 from an_utils import *
@@ -63,6 +66,8 @@ class Setup(smach.State):
 		## Data about the match
 		userdata.deposit_area = [[]] # Coordonnées de là où on dépose les gâteaux
 		userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
+		userdata.cherries_loaded = [0] # Permet de savoir si le robot transporte des cerises ou non. 0: Non ; 1: Oui 
+		userdata.cherries_orientation = [-1] # 0 pour parler des cerises perpendiculaires au mur, 1 pour celles contre le mur.
 
 		## Callback of subscribers
 		userdata.cb_disp = [-1]  # result of displacement action. CHECK an_const to see details on cb_disp
@@ -77,6 +82,7 @@ class Setup(smach.State):
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.error_reaction = [-1]
 		userdata.nb_take_cherries_error = [0]
+		userdata.nb_deposit_cherries_error = [0]
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)
@@ -182,6 +188,15 @@ def init_sm(sm):
 								transitions={'end':'EXIT_SM','preempted':'EXIT_SM'})
 
 		### Secondary States
+		smach.StateMachine.add('TAKE_CHERRIES_PERPENDICULAR', 
+			 					TakeCherriesPerpendicular,
+								transitions={'preempted':'END','end':'REPARTITOR'})
+		smach.StateMachine.add('TAKE_CHERRIES_WALL', 
+			 					TakeCherriesWall,
+								transitions={'preempted':'END','end':'REPARTITOR'})
+		smach.StateMachine.add('DEPOSIT_CHERRIES', 
+			 					DepositCherries,
+								transitions={'preempted':'END','end':'REPARTITOR'})
 		smach.StateMachine.add('PARK', 
 			 					Park,
-								transitions={'preempted':'END','end':'END'})
+								transitions={'preempted':'END','end':'REPARTITOR'})

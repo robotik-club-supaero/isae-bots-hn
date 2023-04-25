@@ -49,13 +49,13 @@ except:
 #################################################################
 
 ## Park Position
-PARKING_POS = list(literal_eval(READER.get('Robot', 'park_pos')))
+PARKING_POS = list(literal_eval(READER.get('ROBOT', 'park_pos')))
 
 ## Origin Position 
-ORIGIN = list(literal_eval(READER.get('Robot','start_pos')))
+ORIGIN = list(literal_eval(READER.get('ROBOT','init_pos')))
 
-ROBOT_LARG = int(READER.get('Robot', 'robot_larg'))
-ROBOT_LONG = int(READER.get('Robot', 'robot_long'))
+ROBOT_LARG = int(READER.get('ROBOT', 'robot_larg'))
+ROBOT_LONG = int(READER.get('ROBOT', 'robot_long'))
 ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
 #################################################################

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -30,13 +29,13 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[DEC]"
-SIMULATION = False if os.environ['USER'] == 'pi' else True
+_NODENAME_ = "DEC"
+#SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 #################################################################
 # CONFIG 
 CONFIG_READER = configparser.ConfigParser()
-CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_start.cfg'))
+CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.cfg'))
 
 #################################################################
 # WINDOW
@@ -94,24 +93,42 @@ class CB_NEXT_ACTION(IntEnum):
 #                                                               #
 #################################################################
 
-def log_info(msg):
+class Color():
+	BLACK = '\033[30m'
+	RED = '\033[31m'
+	GREEN = '\033[32m'
+	YELLOW = '\033[33m'
+	BLUE = '\033[34m'
+	MAGENTA = '\033[35m'
+	CYAN = '\033[36m'
+	WHITE = '\033[37m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+	RESET = '\033[0m'
+
+def log_info(log):
     """
     Print standard logs.
     """
-    rospy.loginfo(f"{_NODENAME_} {msg}")
+    rospy.loginfo(f"{Color.WHITE}[{_NODENAME_}] {log}{Color.RESET}")
 
 
-def log_warn(msg):
+def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{_NODENAME_} {msg}")
+    rospy.logwarn(f"{Color.YELLOW}[{_NODENAME_}] {log}{Color.RESET}")
 
 
-def log_errs(msg):
+def log_errs(log):
     """
-    Print errors logs.
+    Print errors logs (errors concerning actions, not critical)
     """
-    rospy.logerr(f"{_NODENAME_} {msg}")
+    rospy.logerr(f"{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")
 
 
+def log_fatal(log):
+    """
+    Print fatal error logs (critical errors, not concerning actions and never supposed to happen)
+    """
+    rospy.logfatal(f"{Color.BOLD}{Color.UNDERLINE}{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")

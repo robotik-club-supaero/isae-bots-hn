@@ -27,8 +27,11 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
  && apt-get install -y --no-install-recommends python3-rosdep \
  && rosdep init \
  && rosdep fix-permissions \
- && rosdep update 
+ && rosdep update \
+ && apt-get install -y ros-noetic-smach ros-noetic-smach-viewer
 
 # Setup ROS environment
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 
+# alias python to python3
+RUN echo "alias python=python3" >> ~/.bashrc

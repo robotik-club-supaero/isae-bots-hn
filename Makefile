@@ -18,12 +18,14 @@ BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
-	--volume="${PWD}/dev":"/app/dev" 
+	--volume="${PWD}/dev":"/app/dev" \
+	--volume="${PWD}/scripts":"/app/scripts" \
+	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 #	--volume="${PWD}/doc":"/app/doc" \
 #	--volume="${PWD}/scripts":"/app/scripts"
 
 DOCKER_ENV_VAR = \
-	--env="DISPLAY" \
+	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev"
 
 .PHONY: help
@@ -40,9 +42,13 @@ help:
 # SETUP
 #############################################################
 
+test:
+	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
+
 # Build the core image
 .PHONY: build-core
 build-core:
+	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
 	@docker build -f ${CORE_DOCKERFILE} -t ${IMAGE_NAME}_core .
 
 # Build the base image (depends on core image build)
@@ -57,20 +63,41 @@ build-base: build-core
 
 # Kill any running Docker containers
 .PHONY: kill
+
+# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker container ls -q)
 kill: 
 	@echo "Closing already running container"
 	@docker container prune -f
 	
 # Start a terminal inside the Docker container
 .PHONY: main
-main: kill
-	@docker run --rm -it --net=host \
+main:# kill
+#	@docker run --rm -it --net=host \
+		--name ${PS_NAME} \
+		${DOCKER_VOLUMES} \
+		--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
+    	-e DISPLAY=${DISPLAY} \
+		${DOCKER_ENV_VAR} \
+		${IMAGE_NAME}_base \
+		"${CMD}"
+
+
+#	the 'privileged' flag is necessary otherwise we get a Dbus error, but the kernel is more exposed this way..
+#	we log in as a user and not root (preferable)
+
+	@docker run --privileged --rm -it --net=host \
 		--name ${PS_NAME} \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
+		-u 0 \
 		${IMAGE_NAME}_base \
-		${CMD}
+		"${CMD}"
 
 .PHONY: term
 term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c $(shell echo "${CMD}")
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	
+
+.PHONY: sim_term
+sim_term:
+	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh

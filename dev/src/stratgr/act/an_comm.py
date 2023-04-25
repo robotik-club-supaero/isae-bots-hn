@@ -29,11 +29,7 @@ from geometry_msgs.msg import Quaternion, Pose2D
 from an_const import *
 from an_utils import log_info, log_warn, log_errs, patch_frame_br
 
-#################################################################
-if not SIMULATION:
-	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
-else:
-	from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg	
+from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg	
 
 rospy.set_param("robot_name", "GR")
 

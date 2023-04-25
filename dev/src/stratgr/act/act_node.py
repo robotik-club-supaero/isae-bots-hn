@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -27,6 +27,8 @@ import signal
 import rospy
 import smach
 import smach_ros
+import time
+
 from an_sm import init_sm
 from stratgr.act.an_comm import init_comm
 from an_utils import log_info, log_errs, log_warn
@@ -50,6 +52,11 @@ def main():
     #############################################################
     # INITIALIZATION
     #############################################################
+
+    signal.signal(signal.SIGINT, sig_handler)
+    rospy.init_node('ACT')   
+
+    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     log_info("Initializing Action Node ...")
     sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
@@ -80,6 +87,4 @@ def main():
 
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, sig_handler)
-    rospy.init_node('ACT node')   
     main()

@@ -19,7 +19,7 @@ installed=$(dpkg -l | grep -E '^ii' | grep terminator)
 if [ -z "$installed" ]
 	then echo "Terminator is not installed yet, install it first ..."
 	exit 1
-	else echo "Terminator is installed, moving on" && sleep 1
+	else echo "Terminator is installed, moving on" && sleep 0.2
 fi
 
 # Replace config file
@@ -38,26 +38,4 @@ fi
 cp $DIR/term_simconfig ~/.config/terminator/config
 echo "Updated terminator configuration file"
 
-# Ajout d'une fonction dans le bashrc
-keybinded=$(grep control_bindkeys ~/.bashrc)
-
-# Check si la fonction n'y est pas déjà pour ne pas l'avoir deux fois
-if [ -z "$keybinded" ]
-  then cat <<'EOF' >> ~/.bashrc
-
-function control_bindkeys {
-	bind -x '"1":"rosparam set robot_name pr && reset && exit"'  # relancer la simulation du PR (pmi - petit robot)
-	bind -x '"2":"rosparam set robot_name gr && reset && exit"'  # relancer la simulation du GR (gros robot)
-
-	bind -x '"0":"rostopic pub --once /game/start std_msgs/Int16 1"'  # envoyer le signal de départ
-
-	bind -x '"4":"rostopic pub --once /game/color std_msgs/Int16 0"'  # côté HOME
-	bind -x '"5":"rostopic pub --once /game/color std_msgs/Int16 1"'  # côté AWAY
-}
-EOF
-  echo "Added bindkeys function in bashrc"
-  
-  else echo "Bindkeys already defined"
-fi
-
-echo "Done !"
+echo "All done !"

@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
 # pyright: reportMissingImports=false
 
 """
@@ -48,53 +59,18 @@ elif ROBOT_NAME == "GR":
 COLOR_MATCH = READER.get("Robot", "color") # Couleur du côté duquel on joue
 CONFIG_MATCH = READER.get("Robot", "config") # Permet d'avoir plusieurs configurations (positions de départs (utile pour la coupe 2023))
 
-def toRobotCoord(xRobot, yRobot, cap, pos):
+def to_robot_coord(x_robot, y_robot, cap, pos):
     """Fonction transposant pos dans le repere local du robot."""
-    xLoc = np.cos(cap)*(pos[0]-xRobot)+np.sin(cap)*(pos[1]-yRobot)
-    yLoc = np.cos(cap)*(pos[1]-yRobot)-np.sin(cap)*(pos[0]-xRobot)
-    return (xLoc, yLoc)
+    x_loc = np.cos(cap)*(pos[0]-x_robot)+np.sin(cap)*(pos[1]-y_robot)
+    y_loc = np.cos(cap)*(pos[1]-y_robot)-np.sin(cap)*(pos[0]-x_robot)
+    return (x_loc, y_loc)
 
-def printablePos(pos):
+def printable_pos(pos):
     """Fonction de mise en forme d'une position pour affichage."""
-    pPos = [int(pos[0]), int(pos[1]), round(pos[2], 2)]
-    return pPos
+    p_pos = [int(pos[0]), int(pos[1]), round(pos[2], 2)]
+    return p_pos
 
-# def patchFrameBR_1(x_r, y_r, cap, x_d, y_d, t_d):
-# 	"""Changes the frame so the BR gets us where we want...
-
-# 	Pour cela, il faut :
-# 	 - passer au repere local du robot
-# 	 - realiser une symetrie par rapport a l'axe xR
-# 	 - revenir au repere global HN
-# 	 - envoyer a la BR.
-     
-#     Les parametres sont les suivants:
-#      - x_r : x du robot
-#      - y_r : y du robot
-#      - cap : le cap du robot
-#      - x_d ; le x de destination
-#      - y_d : le y de destination
-#      - t_d : le theta de destination"""
-
-# 	if simulation: 
-# 		return x_d, y_d, t_d
-# 	# Translation 
-# 	x_1 = x_d - x_r
-# 	y_1 = y_d - y_r
-# 	# Rotation + symetrie (on inverse le y seulement)
-# 	x_2 = cos(cap)*x_1 + sin(cap)*y_1
-# 	y_2 = sin(cap)*x_1 - cos(cap)*y_1
-# 	# Rotation inverse
-# 	x_3 = cos(cap)*x_2 - sin(cap)*y_2
-# 	y_3 = sin(cap)*x_2 + cos(cap)*y_2
-# 	# Translation
-# 	x_final = x_3 + x_r
-# 	y_final = y_3 + y_r
-# 	t_final = pi / 2 - t_d
-
-# 	return x_final, y_final, t_final
-
-def patchFrameBR(x, y, theta):
+def patch_frame_br(x, y, theta):
     """Easier patch"""
     if COLOR_MATCH == "HOME":
         return x, y, theta
@@ -104,15 +80,15 @@ def patchFrameBR(x, y, theta):
 # LOGS functions
 #######################################################################
 
-def LOG_INFO(msg):
+def log_info(msg):
     """Fonction intermediaire affichant les logs pendant l'execution."""
     rospy.loginfo(NODE_NAME+msg)
 
-def LOG_ERRS(msg):
+def log_errs(msg):
     """Fonction intermediaire affichant les logs d'erreurs."""
     rospy.logerr(NODE_NAME+msg)
 
-def LOG_WARN(msg):
+def log_warn(msg):
     """Fonction intermediaire affichant les logs de warning."""
     rospy.logwarn(NODE_NAME+msg)
 

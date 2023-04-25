@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
 # pyright: reportMissingImports=false
 
 """
@@ -27,8 +38,8 @@ from pathfinder.pathfinder import Pathfinder
 from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 # import logs
-from disp_utils import LOG_INFO, LOG_ERRS, LOG_WARN
-from disp_utils import printablePos, toRobotCoord, patchFrameBR, dprint
+from disp_utils import log_info, log_errs, log_warn
+from disp_utils import printable_pos, to_robot_coord, patch_frame_br, dprint
 from disp_utils import SIMULATION, READER, ROBOT_NAME
 
 #################################################################################################
@@ -67,13 +78,14 @@ def init_comm(displacementNode):
 
 """Dictionnaire des commandes envoyees a la Teensy."""
 CMD_TEENSY = {
-    "disp":                 0,      # Déplacement du robot vers un point
-    "dispAr":               1,      # Déplacement du robot en marche arrière
+    "disp":                 0,      # Déplacement du robot vers un point (transitoire, pas le dernier)
+    "dispFinal":            1,      # Déplacement du robot vers un point final de traj
     "stop":                 2,      # Arrête le mouvement
-    "accurateAv":           3,      # Déplacement précis du robot vers l'avant
-    "accurateAr":           4,      # Déplacement précis du robot vers l'arrière
-    "recalage":             5,      # Déplacement de type recalage (contre un bord du terrain typiquement)
-    "set":                  6       # Fixe la position de départ
+    "accurate":             3,      # Déplacement précis du robot vers l'avant
+    "recalage":             4,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
+    "rotation":             5,      # Cas où on fait une rotation simple
+    "set":                  6,      # Fixe la position de départ
+    "wii":                  7       # Cas d'utilisation de la manette wii
 }
 
 """Dictionnaire des commandes recues de la strat."""
@@ -105,17 +117,17 @@ def callback_teensy(msg):
 
     ## Problème asserv
     if msg.data == -1:
-        LOG_INFO("ERROR - asserv.")
+        log_info("ERROR - asserv.")
         pub_strat.publish(COM_STRAT["asserv error"])
         return
 
     ## On est arrivé a point 
     if msg.data == 0:
-        LOG_INFO("Point reached. Go to next point.")
+        log_info("Point reached. Go to next point.")
         p_dn.next_point(True)
         return
     
-    LOG_INFO("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
+    log_info("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
     
 
 
@@ -134,7 +146,7 @@ def callback_strat(msg):
     # p_dn.resume = False
     # p_dn.paused = False
 
-    LOG_INFO("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
+    log_info("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
     p_dn.path = []
 
     ## Commande d'arrêt
@@ -157,7 +169,7 @@ def callback_strat(msg):
         dest_pos = [msg.x, msg.y, msg.z]
         curr_pos = p_dn.current_pos
 
-        LOG_INFO("Standard displacement :\n{} -> {}\n".format(printablePos(curr_pos), printablePos(dest_pos)))
+        log_info("Standard displacement :\n{} -> {}\n".format(printablePos(curr_pos), printablePos(dest_pos)))
 
         ## - Déplacement standard
         if msg.w == CMD_STRAT["disp"] :
@@ -177,7 +189,7 @@ def callback_strat(msg):
 
         ## Si on a trouvé un chemin
         if result['success']:
-            LOG_INFO("Found path: \n"+str(p_dn.path))
+            log_info("Found path: \n"+str(p_dn.path))
             # Affichage du path
             if len(p_dn.path) > 0:
                 publishPath(p_dn.path)
@@ -194,12 +206,12 @@ def callback_strat(msg):
             if p_dn.avoidMode:
                 result = p_dn.build_path(p_dn.avoidMode, p_dn.isFirstAccurate, True)
                 if result['success']:
-                    LOG_INFO("Path found without chaos: [{}]".format(p_dn.path))
+                    log_info("Path found without chaos: [{}]".format(p_dn.path))
                     p_dn.setAvoidResetPoint()
                 else:
-                    LOG_INFO("Error without chaos: {}".format(result['message']))
+                    log_info("Error without chaos: {}".format(result['message']))
             else:
-                LOG_INFO("Error: {}".format(result['message']))
+                log_info("Error: {}".format(result['message']))
 
     ## On envoie le premier point a la Teensy
     p_dn.move = True 
@@ -247,7 +259,7 @@ def callback_lidar(msg):
             # le cas du avoidMode ou resume car plutot bien alignes)
             if p_dn.turn and not p_dn.avoidMode and not p_dn.resume:
                 if msg.data[0] not in [0,1]:
-                    LOG_ERRS("Wrong msg from callback_obstacle.")
+                    log_errs("Wrong msg from callback_obstacle.")
                     continue
                 if msg.data[0] == 0:  # msg du lidar
                     if distObs < 0.9*stopRange:
@@ -257,7 +269,7 @@ def callback_lidar(msg):
                 #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
                 #-> NE PAS CHERCHER DE PATH INUTILEMENT SI LA DESTINATION EST DANS LA ZONE DE BLOCAGE DE L'OBSTACLE
                 if msg.data[0] not in [0,1]:
-                    LOG_ERRS("Wrong msg from callback_obstacle.")
+                    log_errs("Wrong msg from callback_obstacle.")
                     continue
                 #-> Si lidar : on regarde les adversaires devant !
                 #-> On setup la vitesse suivant la pos locale du 
@@ -276,7 +288,7 @@ def callback_lidar(msg):
             #-> Si le robot recule
             else:
                 if msg.data[0] not in [0,1]: 
-                    LOG_ERRS("Wrong msg from callback_obstacle.")
+                    log_errs("Wrong msg from callback_obstacle.")
                     continue
                 
                 if msg.data[0] == 1: # sonar
@@ -343,7 +355,7 @@ def publishPath(path):
             pathCoords.append(path[k][1])
             if k == len(path)-1: pathCoords.append(path[k][2])  # le cap final
         pub_path.publish(data = pathCoords)  # liste des coordonnees successives
-        LOG_INFO("## Simulation ## Path published : {}".format(pathCoords))
+        log_info("## Simulation ## Path published : {}".format(pathCoords))
 
 def publishGrid(grid):
     """Publish grid to the interfaceNode."""
@@ -353,7 +365,7 @@ def publishGrid(grid):
             nodeCoords.append(grid[n].getX())
             nodeCoords.append(grid[n].getY())
         pub_grid.publish(data=nodeCoords)
-        LOG_INFO("## Simulation ## Grid published to interface.")
+        log_info("## Simulation ## Grid published to interface.")
 
 #######################################################################
 # PUBLISHERS & SUBSCRIBERS

@@ -71,6 +71,17 @@ RUN apt-get install -y python3-pyqt5
 #     alsa-base \
 #     alsa-utils
 
+
+
+# BN installs
+# RUN adduser $USER dialout
+
+RUN apt-get install -y ros-noetic-rosserial-arduino
+RUN apt-get install -y ros-noetic-rosserial-python
+RUN apt-get install -y ros-noetic-rosserial
+
+COPY ./docker/49-teensy.rules /etc/udev/rules.d/
+
 # Setup the work directory and entrypoint
 WORKDIR '/app'
 COPY ./docker/autosetup.sh /app/autosetup.sh

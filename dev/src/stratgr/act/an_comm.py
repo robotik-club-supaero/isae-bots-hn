@@ -132,6 +132,20 @@ def cb_arm(msg):
     if not ok_comm: return
     p_smData.cb_arm[0] = msg.data
     
+def cb_doors(msg):
+    """
+    Callback of the state of the doors (opened or closed) (for the cakes)
+    """
+    if not ok_comm: return
+    p_smData.cb_doors[0] = msg.data
+
+def cb_clamp(msg):
+    """
+    Callback of the state of the clamp (opened or closed) (for the cakes)
+    """
+    if not ok_comm: return
+    p_smData.cb_clamp[0] = msg.data    
+
 def cb_elevator(msg):
     """
     Callback of the state of the elevator (for the cakes)
@@ -155,38 +169,38 @@ def cb_XXXXX(msg):
 #################################################################
 
 # Error action return 
-def actionError(reasonOfError): 
+def action_error(reasonOfError): 
 	
 	##################################
 	time_out_error = 3
 	##################################
 
-	p_smData.errorReaction[0] = -1
+	p_smData.error_reaction[0] = -1
 
 	start_time_error = time.time()
-	while p_smData.errorReaction[0] == -1 and time.time()-start_time_error < time_out_error:  # attente de reponse du DN
+	while p_smData.error_reaction[0] == -1 and time.time()-start_time_error < time_out_error:  # attente de reponse du DN
 		time.sleep(0.05)
 
-	if p_smData.errorReaction[0] == 1:  # On decide de faire une autre action suite a l'echec
-		p_smData.errorReaction[0] = -1
+	if p_smData.error_reaction[0] == 1:  # On decide de faire une autre action suite a l'echec
+		p_smData.error_reaction[0] = -1
 		log_errs("-> REACTION : SKIP")
 		return 'done'	# New action
 
-	if p_smData.errorReaction[0] == 0:  # On decide de reessayer l'action
-		p_smData.errorReaction[0] = -1
+	if p_smData.error_reaction[0] == 0:  # On decide de reessayer l'action
+		p_smData.error_reaction[0] = -1
 		log_errs("-> REACTION : RETRY")
 		return 'redo'	# Repeat action
 
 	if time.time()-start_time_error > time_out_error:  # Le DN n'a pas pu se decider
 		log_errs("-> PAS DE REACTION DU DN")
-		p_smData.errorReaction[0] = -1
+		p_smData.error_reaction[0] = -1
 		return 'done'	# Time out
 
 
-# update de errorReaction
-def updateErrorReaction(msg):
-	p_smData.errorReaction[0] = msg.data
-	log_info('errorReaction mis a jour a {}'.format(p_smData.errorReaction[0]))
+# update de error_reaction
+def update_error_reaction(msg):
+	p_smData.error_reaction[0] = msg.data
+	log_info('error_reaction mis a jour a {}'.format(p_smData.error_reaction[0]))
 
 #################################################################
 #                                                               #
@@ -222,6 +236,8 @@ def init_pubs():
     # SPECIFIC TO CURRENT YEAR
     global cherries_pub, elevator_pub
     cherries_pub = rospy.Publisher('/strat/cherries', Int16, queue_size=10, latch=True)
+    doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
+    clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
     elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
 
 
@@ -240,6 +256,8 @@ def init_subs():
     # SPECIFIC TO CURRENT YEAR
     global cherries_sub, elevator_sub
     cherries_sub = rospy.Subscriber('/strat/cherries_feedback', Int16, cb_arm)
+    doors_sub    = rospy.Subscriber('/strat/doors_feedback', Int16, cb_doors)
+    clamp_sub    = rospy.Subscriber('/strat/clamp_feedback', Int16, cb_clamp)
     elevator_sub = rospy.Subscriber('/strat/elevator_feedback', Int16, cb_elevator)
 
 

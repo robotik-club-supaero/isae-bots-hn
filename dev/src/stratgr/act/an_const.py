@@ -76,7 +76,7 @@ COLOR = {
 
 DISPLACEMENT = {
       'stop'             : -1,
-      'disp'             : 0, 
+      'standard'         : 0, 
       'disp_no_avoidance': 1,
       'recalage_av'      : 2,
       'recalage_ar'      : 3,
@@ -105,11 +105,13 @@ ALL_KEY_LIST = [
     'cb_disp',
     'cb_arm',
     'cb_elevator',
+    'cb_clamp',
+    'cb_doors',
     'cb_pos',
     'arm_order',
     'depositArea',
-    'nbTakeGroundError',
-    'nbTakeRackError',
+    'nbTakeCakesError',
+    'nbTakeCherriesError',
     'next_action',
     'next_pos'
     ]
@@ -139,12 +141,6 @@ ACTIONS_STATES = {
 
 ACTIONS_SCORE = {
 	'init_score':               0, 
-	'sample_removed_rack':      1,
-    'sample_camp':              1,
-	'sample_sortrev_camp':      1,
-	'sample_galery':            3,
-	'sample_sortrev_galery':    3,
-    'sample_workshed':          5,
     'parking':                 20
 }
 

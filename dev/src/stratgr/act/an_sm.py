@@ -60,17 +60,23 @@ class Setup(smach.State):
 		userdata.score = [ACTIONS_SCORE['init_score']]
 		userdata.nb_actions_done = [0]
 		
+		## Data about the match
+		userdata.deposit_area = [[]] # Coordonnées de là où on dépose les gâteaux
+		userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
+
 		## Callback of subscribers
 		userdata.cb_disp = [-1]  # result of displacement action. CHECK an_const to see details on cb_disp
 		userdata.cb_pos = [[]]  # current position of the robot
 		userdata.cb_arm = []    # state of the arm
+		userdata.cb_doors = []	# state of the doors
+		userdata.cb_clamp = [] 	# state of the clamp
 		userdata.cb_elevator = [] # state of the elevator
 
 		## Game infos variables
 		userdata.next_action = -2  # Indicateur de l'action en cours
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
-		userdata.errorReaction = [-1]
-		userdata.errorActions = [0]
+		userdata.error_reaction = [-1]
+		userdata.nb_take_cherries_error = [0]
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)

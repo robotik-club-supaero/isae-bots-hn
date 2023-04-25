@@ -50,7 +50,8 @@ def log_errs(log):
 def patch_frame_br(x, y, theta):
     if SIMULATION:
         return x, y, theta
-    return 2000-x, y, -theta
+    # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
+    return 2000-x, y, -theta # Si la symétrie est selon l'axe y.
 
 #################################################################
 # Colors gestion												#

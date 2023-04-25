@@ -24,11 +24,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import smach
 import time
-from gr_an_utils import LOG_ERRS, LOG_INFO, patchFrameBr
+from an_utils import log_errs, log_info, patch_frame_br
 
 # Import publishers
 from an_comm import cherries_pub, add_score, action_error
-from sm_displacement import setDest
+from an_sm_states.sm_displacement import set_next_destination
 
 # Import utils and constants
 from an_const import ACTIONS_SCORE, DISPLACEMENT
@@ -53,13 +53,13 @@ class TakeCherries(smach.State) :
             smach.State.__init__(   self,
                                     outcomes=['fail', 'preempted','done'],
                                     input_keys=['nb_actions_done','cb_arm', 'nb_take_cherries_error','cherries_loaded'],
-                                    output_keys=['nb_actions_done', 'nb_take_cherries_error','cherries_loaded'])
+                                    output_keys=['nb_actions_done', 'nb_take_cherries_error','cherries_loaded','cb_arm'])
 
 
     def execute(self, userdata):
 
         #Deploying an arm to take cherries on a rack
-        LOG_INFO("Ordering take cherries")
+        log_info("Ordering take cherries")
         userdata.cb_arm[0] = -1
         cherries_pub.publish(0) # Publish 0 to tell to the BN to deploy the arm in order to recover the cherries
         
@@ -74,17 +74,17 @@ class TakeCherries(smach.State) :
             
             #React to the feedback
             if userdata.cb_arm[0] == 0 : #Success
-                LOG_INFO("Take cherries : success")
+                log_info("Take cherries : success")
                 userdata.cherries_loaded[0] = 1
                 userdata.nb_actions_done[0] += 1
                 return 'done'
             elif userdata.cb_arm[0] == 1 : #Error durring the recovery
-                LOG_INFO("Take cherries : error encountered")
+                log_info("Take cherries : error encountered")
                 userdata.nb_take_cherries_error[0] += 1
                 return 'fail'
 
         if time.time() - begin_time >= ARM_TIMING_TAKE :
-            LOG_INFO('Timeout reached')
+            log_info('Timeout reached')
             return action_error("fail")
 
 #####################################################################################
@@ -95,14 +95,14 @@ class DepositBucket(smach.State) :
     def __init__(self) :
         smach.State.__init__(self,
                             outcomes=['preempted','done','fail'],
-                            input_keys=['nb_actions_done','cb_arm','cherries_loaded'],
-                            output_keys=['nb_actions_done','cherries_loaded'])
+                            input_keys=['nb_actions_done','cb_arm','cherries_loaded','nb_deposit_cherries_error'],
+                            output_keys=['nb_actions_done','cherries_loaded','cb_arm'])
 
 
     def execute(self, userdata):
         
         #Deploying an arm to depose the cherries
-        LOG_INFO("Ordering Depose Cherries in the Bucket")
+        log_info("Ordering Depose Cherries in the Bucket")
         userdata.cb_arm[0] = -1
         cherries_pub.publish(1) # Publish 1 to tell to the BN to deploy the arm in order to recover the cherries
         begin_time = time.time()
@@ -113,19 +113,19 @@ class DepositBucket(smach.State) :
             time.sleep(0.1)
             #React to feedback
             if userdata.cb_arm[0] == 0 : #No problem
-                LOG_INFO("Deposit sample arm : success")
+                log_info("Deposit sample arm : success")
                 userdata.nb_actions_done[0] += 1
                 return 'done' 
             elif userdata.cb_arm[0] == 1 :
-                LOG_ERRS("Deposit sample arm : fail")
+                log_errs("Deposit sample arm : fail")
                 userdata.nb_deposit_cherries_error[0] += 1
                 return 'fail'
             
         if time.time() - begin_time >= ARM_TIMING_TAKE :
-            LOG_INFO('Timeout reached')
+            log_info('Timeout reached')
             return action_error("fail")
         
-        LOG_INFO("No response BN")
+        log_info("No response BN")
         return 'fail'
 
 #TODO : Gestion d'erreur
@@ -137,8 +137,8 @@ class TakeCherriesPerpendicularError(smach.State) :
     def __init__(self) :
         smach.State.__init__(   self,
                                 outcomes=['preempted','done', 'littleDisp'],
-                                input_keys=['nbActionsDone','nbTakeGroundError','next_pos','cb_arm', 'cb_pos', 'color'],
-                                output_keys=['nbActionsDone','nbTakeGroundError', 'next_pos'])
+                                input_keys=['nb_actions_done','nb_take_cherries_error','next_pos','cb_arm', 'cb_pos', 'color'],
+                                output_keys=['nb_actions_done','nb_take_cherries_error', 'next_pos','cb_arm'])
 
     def execute(self, userdata):
         if self.preempt_requested() :
@@ -146,22 +146,22 @@ class TakeCherriesPerpendicularError(smach.State) :
             return 'preempted'  
 
         if userdata.cb_arm[0] == 1 :
-            if userdata.nbTakeGroundError[0] == 1 : 
+            if userdata.nb_take_cherries_error[0] == 1 : 
                 x,y,theta = userdata.cb_pos[0]
-                setDest(userdata,x,y+POS_ACCURATE_DISP,theta,DISPLACEMENT['accur_av'])
+                set_next_destination(userdata,x,y+POS_ACCURATE_DISP,theta,DISPLACEMENT['accur_av'])
                 return 'littleDisp'
             
-            elif userdata.nbTakeGroundError[0] == 2 :
+            elif userdata.nb_take_cherries_error[0] == 2 :
                 x,y,theta = (userdata.cb_pos[0][0], userdata.cb_pos[0][1], userdata.cb_pos[0][2])
-                setDest(userdata,x,y+NEG_ACCURATE_DISP,theta,DISPLACEMENT['accur_ar'])
+                set_next_destination(userdata,x,y+NEG_ACCURATE_DISP,theta,DISPLACEMENT['accur_ar'])
                 return 'littleDisp'
             
-            elif userdata.nbTakeGroundError[0] == 3: # TODO Find n, the number of attempts we can make
-                userdata.nbTakeGroundError[0] = 0
-                userdata.nbActionsDone[0] += 1
+            elif userdata.nb_take_cherries_error[0] == 3: # TODO Find n, the number of attempts we can make
+                userdata.nb_take_cherries_error[0] = 0
+                userdata.nb_actions_done[0] += 1
                 return 'done'
         
         elif userdata.cb_arm[0] == 2 : # We just skip the action
-            userdata.nbTakeGroundError[0] = 0
-            userdata.nbActionsDone[0] += 1
+            userdata.nb_take_cherries_error[0] = 0
+            userdata.nb_actions_done[0] += 1
             return 'done'

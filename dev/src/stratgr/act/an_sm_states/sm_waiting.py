@@ -33,30 +33,30 @@ from an_sm_states.sm_displacement import Displacement, set_next_destination
 #                                                               #
 #################################################################
 
-class ObsPark(smach.State):
+class ObsWaiting(smach.State):
     """
     SM PARK : Observer state
     """
     def __init__(self):
         smach.State.__init__(   self,  
-                                outcomes=['preempted','done','disp'],
-			                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color'],
-			                    output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos'])
+                                outcomes=['preempted','done','redo'],
+			                    input_keys=['nb_actions_done','next_pos','color'],
+			                    output_keys=['nb_actions_done','next_pos'])
 
     def execute(self, userdata):
-        if self.preempt_requested():
-            self.service_preempt()
-            return 'preempted'
+        begin_time = time.time()
 
-        ## Move to parking position
-        x, y, z = PARKING_POS
-        if userdata.nb_actions_done[0] == 0:
-            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
-            return 'disp'
+        while time.time() - begin_time < 100:
+            time.sleep(0.01)
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'       
+        ## Return --> Repartitor
+        # endOfAction_pub.publish(exit=1, reason='success')
+        return 'redo'
+                  
 
-        add_score(ACTIONS_SCORE['parking'])
-        end_of_action_pub.publish(exit=1, reason='success')
-        return 'done'
+       
 
 
 #################################################################
@@ -65,15 +65,13 @@ class ObsPark(smach.State):
 #                                                               #
 #################################################################
 
-Park = smach.StateMachine(  outcomes=['preempted', 'end'],
-			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color'],
-			                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos'])
+Waiting = smach.StateMachine(   outcomes=['preempted', 'end'],
+                                input_keys=['nb_actions_done','next_pos', 'color'],
+                                output_keys=['nb_actions_done','next_pos','color'])
 							
-with Park:
-	smach.StateMachine.add('OBS_PARK', 
-                            ObsPark(), 
-		                    transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT'})
-	smach.StateMachine.add('DISPLACEMENT', 
-                            Displacement(), 
-		                    transitions={'preempted':'preempted','done':'OBS_PARK','redo':'DISPLACEMENT','fail':'OBS_PARK'})
+with Waiting:
+    smach.StateMachine.add('OBS_WAITING', 
+                            ObsWaiting(), 
+                            transitions={'preempted':'preempted','done':'end','redo':'OBS_WAITING'})
+   
 

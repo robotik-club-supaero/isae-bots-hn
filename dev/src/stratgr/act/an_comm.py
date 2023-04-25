@@ -47,9 +47,6 @@ def init_comm(sm):
     p_sm = sm
     p_smData = sm.userdata
 
-    init_pubs()
-    init_subs()
-
 
 def enable_comm():
     """
@@ -217,43 +214,41 @@ def add_score(pts):
 #                                                               #
 #################################################################
 
-def init_pubs():
-    """
-    Initialize all publishers of AN.
-    """
-    # GENERAL PUBS
-    global score_pub, repartitor_pub, end_of_action_pub, disp_pub, stop_teensy_pub
-    score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
-    repartitor_pub = rospy.Publisher('/strat/repartitor', Empty, queue_size=10, latch=True)
-    end_of_action_pub = rospy.Publisher('/strat/end_of_action', EndOfActionMsg, queue_size=10, latch=True)
-    disp_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
-    stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
+"""
+Initialize all publishers of AN.
+"""
+# GENERAL PUBS
+global score_pub, repartitor_pub, end_of_action_pub, disp_pub, stop_teensy_pub
+score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
+repartitor_pub = rospy.Publisher('/strat/repartitor', Empty, queue_size=10, latch=True)
+end_of_action_pub = rospy.Publisher('/strat/end_of_action', EndOfActionMsg, queue_size=10, latch=True)
+disp_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
+stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
-    # SPECIFIC TO CURRENT YEAR
-    global cherries_pub, elevator_pub
-    cherries_pub = rospy.Publisher('/strat/cherries', Int16, queue_size=10, latch=True)
-    doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
-    clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
-    elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
+# SPECIFIC TO CURRENT YEAR
+global cherries_pub, elevator_pub
+cherries_pub = rospy.Publisher('/strat/cherries', Int16, queue_size=10, latch=True)
+doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
+clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
+elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
 
 
-def init_subs():
-    """
-    Initialize all subscribers of AN.
-    """
-    # GENERAL SUBS
-    global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
-    start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
-    color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
-    repartitor_sub = rospy.Subscriber('/strat/repartitor', Int16MultiArray, cb_next_action)
-    disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
-    position_sub = rospy.Subscriber('/disp/current_position', Pose2D, cb_position)
+"""
+Initialize all subscribers of AN.
+"""
+# GENERAL SUBS
+global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
+start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
+color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
+repartitor_sub = rospy.Subscriber('/strat/repartitor', Int16MultiArray, cb_next_action)
+disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
+position_sub = rospy.Subscriber('/disp/current_position', Pose2D, cb_position)
 
-    # SPECIFIC TO CURRENT YEAR
-    global cherries_sub, elevator_sub
-    cherries_sub = rospy.Subscriber('/strat/cherries_feedback', Int16, cb_arm)
-    doors_sub    = rospy.Subscriber('/strat/doors_feedback', Int16, cb_doors)
-    clamp_sub    = rospy.Subscriber('/strat/clamp_feedback', Int16, cb_clamp)
-    elevator_sub = rospy.Subscriber('/strat/elevator_feedback', Int16, cb_elevator)
+# SPECIFIC TO CURRENT YEAR
+global cherries_sub, elevator_sub
+cherries_sub = rospy.Subscriber('/strat/cherries_feedback', Int16, cb_arm)
+doors_sub    = rospy.Subscriber('/strat/doors_feedback', Int16, cb_doors)
+clamp_sub    = rospy.Subscriber('/strat/clamp_feedback', Int16, cb_clamp)
+elevator_sub = rospy.Subscriber('/strat/elevator_feedback', Int16, cb_elevator)
 
 

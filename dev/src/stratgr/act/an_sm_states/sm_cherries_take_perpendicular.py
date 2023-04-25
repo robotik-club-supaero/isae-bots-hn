@@ -25,8 +25,8 @@ import time
 import smach
 from an_const import *
 from an_comm import end_of_action_pub, add_score
-from sm_displacement import Displacement, set_next_destination
-from sm_cherries_substates import TakeCherries
+from an_sm_states.sm_displacement import Displacement, set_next_destination
+from an_sm_states.sm_cherries_substates import TakeCherries
 
 #################################################################
 #                                                               #
@@ -49,22 +49,19 @@ class ObsTakeCherriesPerpendicular(smach.State):
             self.service_preempt()
             return 'preempted'
 
-        match userdata.nb_actions_done[0]:
-             
-            case 0:
-                ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
-                x, y, z = ACTIONS_POS['takeCherriesPerpendicular']
-                set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
-                return 'disp'
+        if userdata.nb_actions_done[0] == 0:
+            ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
+            x, y, z = ACTIONS_POS['takeCherriesPerpendicular']
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+            return 'disp'
 
-            case 1:
-                ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
-                return 'take'
+        if userdata.nb_actions_done[0] == 1:
+            ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
+            return 'take'
 
-            case _:
-                add_score(ACTIONS_SCORE['parking'])
-                end_of_action_pub.publish(exit=1, reason='success')
-                return 'done' 
+        add_score(ACTIONS_SCORE['parking'])
+        end_of_action_pub.publish(exit=1, reason='success')
+        return 'done' 
                   
 
        

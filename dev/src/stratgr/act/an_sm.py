@@ -27,9 +27,12 @@ from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
 from an_sm_states.sm_park import Park
+from an_sm_states.sm_waiting import Waiting
 from an_sm_states.sm_cherries_take_perpendicular import TakeCherriesPerpendicular
 from an_sm_states.sm_cherries_take_wall import TakeCherriesWall
 from an_sm_states.sm_cherries_deposit import DepositCherries
+from an_sm_states.sm_cakes_take import TakeCakes
+from an_sm_states.sm_cakes_deposit import DepositCakes
 
 from an_const import *
 from an_utils import *
@@ -65,22 +68,24 @@ class Setup(smach.State):
 		
 		## Data about the match
 		userdata.deposit_area = [[]] # Coordonnées de là où on dépose les gâteaux
+		userdata.taken_area = [[]] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
 		userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
 		userdata.cherries_loaded = [0] # Permet de savoir si le robot transporte des cerises ou non. 0: Non ; 1: Oui 
-		userdata.cherries_orientation = [-1] # 0 pour parler des cerises perpendiculaires au mur, 1 pour celles contre le mur.
 
 		## Callback of subscribers
 		userdata.cb_disp = [-1]  # result of displacement action. CHECK an_const to see details on cb_disp
 		userdata.cb_pos = [[]]  # current position of the robot
-		userdata.cb_arm = []    # state of the arm
-		userdata.cb_doors = []	# state of the doors
-		userdata.cb_clamp = [] 	# state of the clamp
-		userdata.cb_elevator = [] # state of the elevator
+		userdata.cb_arm = [-1]    # state of the arm
+		userdata.cb_doors = [-1]	# state of the doors
+		userdata.cb_clamp = [-1] 	# state of the clamp
+		userdata.cb_elevator = [-1] # state of the elevator
 
 		## Game infos variables
 		userdata.next_action = -2  # Indicateur de l'action en cours
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.error_reaction = [-1]
+		userdata.nb_take_cakes_error = [0]
+		userdata.nb_deposit_cakes_error = [0]
 		userdata.nb_take_cherries_error = [0]
 		userdata.nb_deposit_cherries_error = [0]
 
@@ -197,6 +202,15 @@ def init_sm(sm):
 		smach.StateMachine.add('DEPOSIT_CHERRIES', 
 			 					DepositCherries,
 								transitions={'preempted':'END','end':'REPARTITOR'})
+		smach.StateMachine.add('TAKE_CAKES', 
+			 					TakeCakes,
+								transitions={'preempted':'END','end':'REPARTITOR'})
+		smach.StateMachine.add('DEPOSIT_CAKES', 
+			 					DepositCakes,
+								transitions={'preempted':'END','end':'REPARTITOR'})
 		smach.StateMachine.add('PARK', 
 			 					Park,
+								transitions={'preempted':'END','end':'END'})
+		smach.StateMachine.add('WAITING', 
+			 					Waiting,
 								transitions={'preempted':'END','end':'REPARTITOR'})

@@ -38,7 +38,7 @@ SIMULATION = True #TODO remove this parameter
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.cfg"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
 except:
 	print("no file found...")
 
@@ -105,22 +105,30 @@ ALL_KEY_LIST = [
     'cb_pos',
     'arm_order',
     'depositArea',
-    'nbTakeCakesError',
-    'nbTakeCherriesError',
+    'nb_take_cakes_error',
+    'nb_deposit_cakes_error',
+    'nb_take_cherries_error',
+    'nb_deposit_cherries_error',
     'next_action',
-    'next_pos'
+    'next_pos',
+    'deposit_area',
+    'taken_area',
+    'pucks_taken',
+    'cherries_loaded',
+    'error_reaction'
     ]
 
-ACTIONS_LIST = {
-    0: 'takeCherriesPerpendicular',
-    1: 'takeCherriesWall',
-    2: 'depositCherries',
-    3: 'takeCakes',
-    4: 'depositCakes',
-    5: 'park',
-    6: 'preempted',
-    7: 'end'
-    }
+ACTIONS_LIST = [
+    'takeCherriesPerpendicular',
+    'takeCherriesWall',
+    'depositCherries',
+    'takeCakes',
+    'depositCakes',
+    'park',
+    'preempted',
+    'end',
+    'waiting'
+    ]
 
 ACTIONS_STATES = {
     'takeCherriesPerpendicular':'TAKE_CHERRIES_PERPENDICULAR',
@@ -139,4 +147,7 @@ ACTIONS_SCORE = {
     'parking':                 20
 }
 
-ACTIONS_POS = {}
+ACTIONS_POS = {
+	'takeCherriesPerpendicular':[500, 500, 0],
+	'depositCherries':[600, 600, 0]
+}

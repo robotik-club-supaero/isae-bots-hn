@@ -30,7 +30,7 @@ import smach_ros
 import time
 
 from an_sm import init_sm
-from stratgr.act.an_comm import init_comm
+from an_comm import init_comm
 from an_utils import log_info, log_errs, log_warn
 
 

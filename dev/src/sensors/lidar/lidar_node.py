@@ -12,11 +12,9 @@ Fichier de gestion des obstacles LIDAR.
 
 from __future__ import division
 
-import os, sys
-import rospy
-
-from math import *
+from math import atan2, sin, cos
 from lidar_lib import *
+from displacement.disp_utils import patchFrameBR
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
@@ -30,21 +28,6 @@ else:
 #################################################################
 
 OBS_RESOLUTION = 100
-
-def patchFrameBR(x, y, theta):
-	"""Easier patch."""
-	if SIMULATION:
-		return x, y, theta
-	return x, 3000-y, -theta
-
-def LOG_INFO(msg):
-    rospy.loginfo("LID "+msg)
-
-def handler(rcv_sig, frame):
-	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
-	LOG_INFO("ISB Node forced to terminate...")
-	rospy.signal_shutdown(rcv_sig)
-	sys.exit()
 
 #######################################################################
 # LIDAR NODE
@@ -78,8 +61,7 @@ class LidarNode:
 
 
     def update_position(self,msg):
-        """Fonction de callback de position."""
-        # TODO - remove patch
+        """Fonction de callback de la position."""
         x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
         self.x_robot = x
         self.y_robot = y
@@ -98,9 +80,9 @@ class LidarNode:
         range_min = msg.range_min
         range_max = msg.range_max
         
-        raw_dists = absol_coord(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
-        obs_dists = localisation(raw_dists)
-        self.obstaclesLists[self.iterData % self.sizeData] = obs_dists
+        raw_data = lidar_to_table(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
+        obs_detected = clusterisation(raw_data)
+        self.obstaclesLists[self.iterData % self.sizeData] = obs_detected
         self.iterData += 1
         self.treats_obstacle()
 
@@ -132,30 +114,20 @@ class LidarNode:
             for i in range(self.sizeData):
                 if( i != indexOfMax):
                     for obstacle in obstaclesLists[i]:
-                        if(dist(potentialObstacle, obstacle) < OBS_RESOLUTION):
+                        if(euclidean_distance(potentialObstacle, obstacle) < OBS_RESOLUTION):
                             nbOcc += 1
             if(nbOcc > 2):
                 x_robot = self.x_robot
                 y_robot = self.y_robot
                 x = potentialObstacle[0]
                 y = potentialObstacle[1]
-                theta = 0
+                theta = atan2((y-y_robot)/(x-x_robot))
 
-                if x > x_robot:
-                    theta = atan((y - y_robot)/(x-x_robot))
-                elif x < x_robot :
-                    theta = pi + atan((y - y_robot)/(x-x_robot))
-                else :
-                    if y > y_robot:
-                        theta = pi/2
-                    else:
-                        theta = -pi/2
-
-                calculatedObstacles.append([potentialObstacle[0] + self.radius * cos(theta),  potentialObstacle[1] + self.radius * sin(theta)])
+                calculatedObstacles.append([x - self.radius * cos(theta),  y - self.radius * sin(theta)])
 
         msg = Int16MultiArray()
 
-        data = [0]
+        data = [0] # Le 0 est l'identifiant du LiDAR dans le SensorsNode.
         for position in calculatedObstacles:
             for coordinate in position:
                 data.append((int)(coordinate))

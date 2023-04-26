@@ -220,7 +220,7 @@ Initialize all publishers of AN.
 # GENERAL PUBS
 global score_pub, repartitor_pub, end_of_action_pub, disp_pub, stop_teensy_pub
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
-repartitor_pub = rospy.Publisher('/strat/repartitor', Empty, queue_size=10, latch=True)
+repartitor_pub = rospy.Publisher('/strat/repartitor_act', Empty, queue_size=10, latch=True)
 end_of_action_pub = rospy.Publisher('/strat/end_of_action', EndOfActionMsg, queue_size=10, latch=True)
 disp_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
@@ -240,7 +240,7 @@ Initialize all subscribers of AN.
 global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
 start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
-repartitor_sub = rospy.Subscriber('/strat/repartitor', Int16MultiArray, cb_next_action)
+repartitor_sub = rospy.Subscriber('/strat/repartitor_dec', Int16MultiArray, cb_next_action)
 disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
 position_sub = rospy.Subscriber('/disp/current_position', Pose2D, cb_position)
 

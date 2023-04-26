@@ -19,8 +19,8 @@
 #################################################################
 
 import time
-from dn_msgs  import next_action_pub, stop_IT
-from dn_utils import log_info, DN_LIST_ACTION_INDEX
+from dn_comm  import next_action_pub, stop_IT
+from dn_utils import log_info, LIST_OF_ACTIONS
 
 #################################################################
 #                                                               #
@@ -54,18 +54,24 @@ def homologation_strat():
     #if p_dn is None: return  # safety if the function is called before DEC node init TODO : not supposed to happen ?
 
     if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = [int(DN_LIST_ACTION_INDEX.xxx)]
-        log_info("Next action : xxx")
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCherriesPerpendicular']
+        log_info("Next action : Take Cherries Perpendicular")
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
     if p_dn.nb_actions_done[0] == 1:
-        p_dn.curr_action = [int(DN_LIST_ACTION_INDEX.PARK)]
-        log_info("Next action : park")
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCherries']
+        log_info("Next action : Deposit Cherries")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 2:
+        p_dn.curr_action = LIST_OF_ACTIONS['park']
+        log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
-    if p_dn.nb_actions_done[0] == 2:
+    if p_dn.nb_actions_done[0] == 3:
         p_dn.nb_actions_done[0] =-1  # to prevent repeated end action
         log_info("End of strategy : HOMOLOGATION")
         stop_IT()
@@ -85,19 +91,8 @@ def tests_strat():
 
     log_info("Entered tests_strat section")
 
-    #if p_dn is None: return  # safety if the function is called before DEC node init TODO : not supposed to happen ?
 
-    if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = [int(DN_LIST_ACTION_INDEX.PARK)]
-        log_info("Next action : let's go park")
-        next_action_pub.publish(data=p_dn.curr_action)
-        return
-
-    if p_dn.nb_actions_done[0] == 1:
-        p_dn.nb_actions_done[0] =-1  # to prevent repeated end action...
-        log_info("End of strategy : TEST")
-        stop_IT()
-        return
+    return
 
 
 def match_strat():

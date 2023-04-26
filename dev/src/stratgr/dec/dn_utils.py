@@ -34,8 +34,8 @@ _NODENAME_ = "DEC"
 
 #################################################################
 # CONFIG 
-CONFIG_READER = configparser.ConfigParser()
-CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.cfg'))
+READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.ini'))
 
 #################################################################
 # WINDOW
@@ -48,44 +48,34 @@ class ROBOT_SIDES(IntEnum):
     AWAY = 1
 
 #################################################################
-# STRATS PARAMS
-class STRAT_INDEX(IntEnum):
-    HOMOLOGATION = 0
-    TESTS = 1
-    MATCH = 2
 
-class STRAT_NAMES(str, Enum):
-    HOMOLOGATION = "homologation_strat"
-    TESTS = "tests_strat"
-    MATCH = "match_strat"
+ACTIONS_LIST = [
+    'takeCherriesPerpendicular',
+    'takeCherriesWall',
+    'depositCherries',
+    'takeCakes',
+    'depositCakes',
+    'park',
+    'preempted',
+    'end',
+    'waiting'
+    ]
 
-class DN_LIST_ACTION_INDEX(IntEnum):
-    PARK = 0
-    END = 1
-    PREEMPTED = 2
-    #...
-    #...
+LIST_OF_ACTIONS = {
+    'takeCherriesPerpendicular': [0],
+    'takeCherriesWall':          [1],
+    'depositCherries':           [2],
+    'takeCakes':                 [3],
+    'depositCakes':              [4],
+    'park':                      [5],
+    'end':                       [6],
+    'waiting':                   [7]
+}
 
-class DN_LIST_ACTION_NAMES(str, Enum):
-    PARK = 'park'
-    END = 'end'
-    PREEMPTED = 'preempted'
-    #... 
-
-class CB_NEXT_ACTION(IntEnum):
-    NONE    = -3
-    PARK_IT = -2  # park interrupt
-    STOP_IT = -1  # stop interrupt
-    #ACTION_1 = 0
-    #ACTION_2 = 0
-    #ACTION_3 = 0
-    #ACTION_4 = 0
-    #ACTION_5 = 0
-    #ACTION_6 = 0
-    #ACTION_7 = 0
-    #...
-
-
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
 #################################################################
 #                                                               #

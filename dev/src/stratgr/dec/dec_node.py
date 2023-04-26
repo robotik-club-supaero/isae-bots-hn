@@ -27,7 +27,7 @@ import time
 
 from dn_utils    import READER, ACTIONS_LIST, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm
-from dn_strats   import init_strats, homologation_strat, tests_strat, match_strat
+from dn_strats   import init_strats, test_strat
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
@@ -62,7 +62,7 @@ class DecisionsNode:
         self.delay_park = 13  # TODO: change it to named constant
 
         self.strat = int(READER.get("STRAT", "strat_choice"))
-        self.strategies = [homologation_strat]
+        self.strategies = [test_strat]
 
         self.actions_ls = ACTIONS_LIST
         self.actions_nb = len(self.actions_ls)

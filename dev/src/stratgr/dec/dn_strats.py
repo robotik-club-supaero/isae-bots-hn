@@ -19,7 +19,7 @@
 #################################################################
 
 import time
-from dn_comm  import next_action_pub, stop_IT
+from dn_comm  import next_action_pub, stop_IT, take_cakes_pub, deposit_cakes_pub
 from dn_utils import log_info, LIST_OF_ACTIONS
 
 #################################################################
@@ -40,7 +40,7 @@ def init_strats(dn):
 #                                                               #
 #################################################################
 
-def homologation_strat():
+def test_strat():
     """
     DN Strat: homologation
     
@@ -66,12 +66,26 @@ def homologation_strat():
         return
     
     if p_dn.nb_actions_done[0] == 2:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(0)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 3:
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(0)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 4:
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
-    if p_dn.nb_actions_done[0] == 3:
+    if p_dn.nb_actions_done[0] == 5:
         p_dn.nb_actions_done[0] =-1  # to prevent repeated end action
         log_info("End of strategy : HOMOLOGATION")
         stop_IT()

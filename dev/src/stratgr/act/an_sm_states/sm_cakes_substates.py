@@ -41,127 +41,216 @@ ACTION_TIMEOUT = 5
 ARM_TIMING_TAKE = 3
 ARM_TIMING_DEPOSE = 3
 
+DOORS_TIMING = 2 
+CLAMP_TIMING = 2
+ELEVATOR_TIMING = 2
+
 NEG_ACCURATE_DISP = -30 
 POS_ACCURATE_DISP = +15
 
 #################################################################
-# TakeCakes - For cakes (take the given number)
+# MoveElevator
 #################################################################
 
-class TakePucks(smach.State) :
+class MoveElevator(smach.State) :
     def __init__(self) :
             smach.State.__init__(   self,
                                     outcomes=['fail', 'preempted','done'],
-                                    input_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator','nb_take_cakes_error','pucks_taken'],
-                                    output_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator', 'nb_take_cakes_error','pucks_taken'])
+                                    input_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator','nb_errors','pucks_taken','stage_to_go'],
+                                    output_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator', 'nb_errors','pucks_taken','stage_to_go'])
 
 
     def execute(self, userdata):
 
-        #Deploying an arm to take cherries on a rack
-        log_info("Ordering take cakes")
-        userdata.cb_doors[0] = -1
-        cherries_pub.publish(0) # Publish 0 to tell to the BN to deploy the arm in order to recover the cherries
+        log_info("Ordering move elevator")
+        userdata.cb_elevator[0] = -1
+        elevator_pub.publish(userdata.stage_to_go[0]) # On publie 1 pour ouvrir la pince
         
         #Wait for the end of action
 
         begin_time = time.time()
-        while (time.time() - begin_time < ARM_TIMING_TAKE) :
+        while (time.time() - begin_time < ELEVATOR_TIMING) :
             time.sleep(0.01)
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
             
             #React to the feedback
-            if userdata.cb_arm[0] == 0 : #Success
-                log_info("Take cherries : success")
-                userdata.cherries_loaded[0] = 1
+            if userdata.cb_elevator[0] == 0 : #Success
+                log_info("Move Elevator : success")
                 userdata.nb_actions_done[0] += 1
                 return 'done'
-            elif userdata.cb_arm[0] == 1 : #Error durring the recovery
-                log_info("Take cherries : error encountered")
-                userdata.nb_take_cherries_error[0] += 1
+            elif userdata.cb_elevator[0] == 1 : #Error durring the recovery
+                log_info("Move Elevator : error encountered")
+                userdata.nb_errors[0] += 1
                 return 'fail'
 
-        if time.time() - begin_time >= ARM_TIMING_TAKE :
+        if time.time() - begin_time >= ELEVATOR_TIMING :
             log_info('Timeout reached')
             return action_error("fail")
 
-#####################################################################################
-# DepositBucket - Put the cherries in the bucket (DepositCherries was already taken)
-#####################################################################################
+#################################################################
+# OpenClamp
+#################################################################
 
-class DepositPucks(smach.State) :
+class OpenClamp(smach.State) :
     def __init__(self) :
-        smach.State.__init__(self,
-                            outcomes=['preempted','done','fail'],
-                            input_keys=['nb_actions_done','cb_arm','cherries_loaded'],
-                            output_keys=['nb_actions_done','cherries_loaded'])
+            smach.State.__init__(   self,
+                                    outcomes=['fail', 'preempted','done'],
+                                    input_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator','nb_errors','pucks_taken'],
+                                    output_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator', 'nb_errors','pucks_taken'])
 
 
     def execute(self, userdata):
+
+        log_info("Ordering open clamp")
+        userdata.cb_clamp[0] = -1
+        clamp_pub.publish(1) # On publie 1 pour ouvrir la pince
         
-        #Deploying an arm to depose the cherries
-        log_info("Ordering Depose Cherries in the Bucket")
-        userdata.cb_arm[0] = -1
-        cherries_pub.publish(1) # Publish 1 to tell to the BN to deploy the arm in order to recover the cherries
+        #Wait for the end of action
+
         begin_time = time.time()
-        while (time.time() - begin_time < ARM_TIMING_DEPOSE) :
+        while (time.time() - begin_time < CLAMP_TIMING) :
+            time.sleep(0.01)
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
-            time.sleep(0.1)
-            #React to feedback
-            if userdata.cb_arm[0] == 0 : #No problem
-                log_info("Deposit sample arm : success")
-                userdata.nb_actions_done[0] += 1
-                return 'done' 
-            elif userdata.cb_arm[0] == 1 :
-                log_errs("Deposit sample arm : fail")
-                userdata.nb_deposit_cherries_error[0] += 1
-                return 'fail'
             
-        if time.time() - begin_time >= ARM_TIMING_TAKE :
+            #React to the feedback
+            if userdata.cb_clamp[0] == 0 : #Success
+                log_info("Open Clamp : success")
+                userdata.nb_actions_done[0] += 1
+                return 'done'
+            elif userdata.cb_clamp[0] == 1 : #Error durring the recovery
+                log_info("Open Clamp : error encountered")
+                userdata.nb_errors[0] += 1
+                return 'fail'
+
+        if time.time() - begin_time >= CLAMP_TIMING :
             log_info('Timeout reached')
             return action_error("fail")
-        
-        log_info("No response BN")
-        return 'fail'
 
-#TODO : Gestion d'erreur
-#########################################################################################################
-# TakeCherriesError - Substate managing potential errors induced by taking cherries on a rack
-#########################################################################################################
+#################################################################
+# CloseClamp
+#################################################################
 
-class TakeCherriesPerpendicularError(smach.State) :
+class CloseClamp(smach.State) :
     def __init__(self) :
-        smach.State.__init__(   self,
-                                outcomes=['preempted','done', 'littleDisp'],
-                                input_keys=['nbActionsDone','nbTakeGroundError','next_pos','cb_arm', 'cb_pos', 'color'],
-                                output_keys=['nbActionsDone','nbTakeGroundError', 'next_pos'])
+            smach.State.__init__(   self,
+                                    outcomes=['fail', 'preempted','done'],
+                                    input_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator','nb_errors','pucks_taken'],
+                                    output_keys=['nb_actions_done','cb_doors','cb_clamp','cb_elevator', 'nb_errors','pucks_taken'])
+
 
     def execute(self, userdata):
-        if self.preempt_requested() :
-            self.service_preempt()
-            return 'preempted'  
 
-        if userdata.cb_arm[0] == 1 :
-            if userdata.nbTakeGroundError[0] == 1 : 
-                x,y,theta = userdata.cb_pos[0]
-                set_next_destination(userdata,x,y+POS_ACCURATE_DISP,theta,DISPLACEMENT['accur_av'])
-                return 'littleDisp'
-            
-            elif userdata.nbTakeGroundError[0] == 2 :
-                x,y,theta = (userdata.cb_pos[0][0], userdata.cb_pos[0][1], userdata.cb_pos[0][2])
-                set_next_destination(userdata,x,y+NEG_ACCURATE_DISP,theta,DISPLACEMENT['accur_ar'])
-                return 'littleDisp'
-            
-            elif userdata.nbTakeGroundError[0] == 3: # TODO Find n, the number of attempts we can make
-                userdata.nbTakeGroundError[0] = 0
-                userdata.nbActionsDone[0] += 1
-                return 'done'
+        log_info("Ordering close clamp")
+        userdata.cb_clamp[0] = -1
+        clamp_pub.publish(0) # On publie 0 pour fermer la pince
         
-        elif userdata.cb_arm[0] == 2 : # We just skip the action
-            userdata.nbTakeGroundError[0] = 0
-            userdata.nbActionsDone[0] += 1
-            return 'done'
+        #Wait for the end of action
+
+        begin_time = time.time()
+        while (time.time() - begin_time < CLAMP_TIMING) :
+            time.sleep(0.01)
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+            
+            #React to the feedback
+            if userdata.cb_clamp[0] == 0 : #Success
+                log_info("Close Clamp : success")
+                userdata.nb_actions_done[0] += 1
+                return 'done'
+            elif userdata.cb_clamp[0] == 1 : #Error durring the recovery
+                log_info("Close Clamp : error encountered")
+                userdata.nb_errors[0] += 1
+                return 'fail'
+
+        if time.time() - begin_time >= CLAMP_TIMING :
+            log_info('Timeout reached')
+            return action_error("fail")
+
+#################################################################
+# OpenDoors - 
+#################################################################
+
+class OpenDoors(smach.State) :
+    def __init__(self) :
+            smach.State.__init__(   self,
+                                    outcomes=['fail', 'preempted','done'],
+                                    input_keys=['nb_actions_done','cb_doors','nb_errors','pucks_taken'],
+                                    output_keys=['nb_actions_done','cb_doors', 'nb_errors','pucks_taken'])
+
+
+    def execute(self, userdata):
+
+        #Deploying an arm to take cherries on a rack
+        log_info("Ordering open doors")
+        userdata.cb_doors[0] = -1
+        doors_pub.publish(1) # On publie 1 pour dire au BN d'ouvrir les portes.
+        
+        #Wait for the end of action
+
+        begin_time = time.time()
+        while (time.time() - begin_time < DOORS_TIMING) :
+            time.sleep(0.01)
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+            
+            #React to the feedback
+            if userdata.cb_doors[0] == 0 : #Success
+                log_info("Open doors : success")
+                userdata.nb_actions_done[0] += 1
+                return 'done'
+            elif userdata.cb_doors[0] == 1 : #Error durring the recovery
+                log_info("Open doors : error encountered")
+                userdata.nb_errors[0] += 1
+                return 'fail'
+
+        if time.time() - begin_time >= DOORS_TIMING :
+            log_info('Timeout reached')
+            return action_error("fail")
+
+#################################################################
+# CloseDoors - 
+#################################################################
+
+class CloseDoors(smach.State) :
+    def __init__(self) :
+            smach.State.__init__(   self,
+                                    outcomes=['fail', 'preempted','done'],
+                                    input_keys=['nb_actions_done','cb_doors','nb_errors','pucks_taken'],
+                                    output_keys=['nb_actions_done','cb_doors', 'nb_errors','pucks_taken'])
+
+
+    def execute(self, userdata):
+
+        #Deploying an arm to take cherries on a rack
+        log_info("Ordering close doors")
+        userdata.cb_doors[0] = -1
+        doors_pub.publish(0) # On publie 0 pour dire au BN de fermer les portes.
+        
+        #Wait for the end of action
+
+        begin_time = time.time()
+        while (time.time() - begin_time < DOORS_TIMING) :
+            time.sleep(0.01)
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+            
+            #React to the feedback
+            if userdata.cb_doors[0] == 0 : #Success
+                log_info("Close doors : success")
+                userdata.nb_actions_done[0] += 1
+                return 'done'
+            elif userdata.cb_doors[0] == 1 : #Error durring the recovery
+                log_info("Close doors : error encountered")
+                userdata.nb_errors[0] += 1
+                return 'fail'
+
+        if time.time() - begin_time >= DOORS_TIMING :
+            log_info('Timeout reached')
+            return action_error("fail")

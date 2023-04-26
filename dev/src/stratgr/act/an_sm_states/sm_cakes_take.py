@@ -26,7 +26,7 @@ import smach
 from an_const import *
 from an_comm import end_of_action_pub, add_score
 from an_sm_states.sm_displacement import Displacement, set_next_destination
-from an_sm_states.sm_cakes_substates import TakePucks
+from an_sm_states.sm_cakes_substates import *
 
 #################################################################
 #                                                               #
@@ -40,9 +40,9 @@ class ObsTakeCakes(smach.State):
     """
     def __init__(self):
         smach.State.__init__(   self,  
-                                outcomes=['preempted','done','disp','take','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','taken_area'],
-			                    output_keys=['nb_actions_done','next_pos'])
+                                outcomes=['preempted','done','disp','openDoors','closeDoors','redo','openClamp','closeClamp','elevator'],
+			                    input_keys=['nb_actions_done','next_pos','color','taken_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'],
+			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -51,13 +51,63 @@ class ObsTakeCakes(smach.State):
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
-            x, y, z = userdata.taken_area
+            x, y, z = CAKES_POS[userdata.taken_area[0]]
+            #TODO Le shift à cause des portes
+            x, y, z = x-DOORS_SHIFT, y-DOORS_SHIFT, z
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
-        if userdata.nb_actions_done[0] == 1:
-            ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
-            return 'deposit'
+        elif userdata.nb_actions_done[0] == 1:
+            ## On lance l'action de prendre les palets.
+            return 'openDoors'
+
+        elif userdata.nb_actions_done[0] == 2:
+            x, y, z = CAKES_POS[userdata.taken_area[0]]
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+            return 'disp'
+        
+        if userdata.pucks_taken[0] > 0 :    
+            if userdata.nb_actions_done[0] == 3:
+                userdata.stage_to_go[0] = 3
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 4:
+                return 'openClamp'
+            
+            elif userdata.nb_actions_done[0] == 5:
+                userdata.stage_to_go[0] = 0
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 6:
+                return 'closeClamp'
+            
+            elif userdata.nb_actions_done[0] == 7:
+                userdata.pucks_taken[0] += 3
+                userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 8:
+                return 'closeDoors'
+            
+        else :
+
+            if userdata.nb_actions_done[0] == 3:
+                return 'openClamp'
+            
+            elif userdata.nb_actions_done[0] == 4:
+                userdata.stage_to_go[0] = 0
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 5:
+                return 'closeClamp'
+            
+            elif userdata.nb_actions_done[0] == 6:
+                userdata.pucks_taken[0] += 3
+                userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 7:
+                return 'closeDoors'
 
         add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')
@@ -74,17 +124,29 @@ class ObsTakeCakes(smach.State):
 #################################################################
 
 TakeCakes = smach.StateMachine( outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_take_cherries_error'],
-                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_take_cherries_error'])
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','taken_area','stage_to_go'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','taken_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'])
 							
 with TakeCakes:
     smach.StateMachine.add('OBS_TAKE_CAKES', 
                             ObsTakeCakes(), 
-                            transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT','take':'TAKE_CAKES', 'redo':'OBS_TAKE_CAKES'})
+                            transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT','openDoors':'OPEN_DOORS', 'closeDoors':'CLOSE_DOORS', 'openClamp':'OPEN_CLAMP', 'closeClamp':'CLOSE_CLAMP', 'elevator':'MOVE_ELEVATOR', 'redo':'OBS_TAKE_CAKES'})
     smach.StateMachine.add('DISPLACEMENT', 
                             Displacement(), 
                             transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','redo':'DISPLACEMENT','fail':'OBS_TAKE_CAKES'})
-    smach.StateMachine.add('TAKE_CAKES', 
-                            TakePucks(), 
+    smach.StateMachine.add('OPEN_DOORS', 
+                            OpenDoors(), 
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','fail':'OBS_TAKE_CAKES'})
+    smach.StateMachine.add('CLOSE_DOORS', 
+                            CloseDoors(), 
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','fail':'OBS_TAKE_CAKES'})
+    smach.StateMachine.add('OPEN_CLAMP', 
+                            OpenClamp(), 
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','fail':'OBS_TAKE_CAKES'})
+    smach.StateMachine.add('CLOSE_CLAMP', 
+                            CloseClamp(), 
+                            transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','fail':'OBS_TAKE_CAKES'})
+    smach.StateMachine.add('MOVE_ELEVATOR', 
+                            MoveElevator(), 
                             transitions={'preempted':'preempted','done':'OBS_TAKE_CAKES','fail':'OBS_TAKE_CAKES'})
 

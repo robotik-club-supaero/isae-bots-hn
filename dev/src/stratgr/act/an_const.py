@@ -58,6 +58,8 @@ ROBOT_LARG = int(READER.get('ROBOT', 'robot_larg'))
 ROBOT_LONG = int(READER.get('ROBOT', 'robot_long'))
 ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
+DOORS_SHIFT = 50
+
 #################################################################
 #                                                               #
 #                       SM CONSTANTS                            #
@@ -105,17 +107,16 @@ ALL_KEY_LIST = [
     'cb_pos',
     'arm_order',
     'depositArea',
-    'nb_take_cakes_error',
-    'nb_deposit_cakes_error',
-    'nb_take_cherries_error',
-    'nb_deposit_cherries_error',
     'next_action',
     'next_pos',
     'deposit_area',
     'taken_area',
     'pucks_taken',
     'cherries_loaded',
-    'error_reaction'
+    'error_reaction',
+    'nb_errors',
+    'stage_to_go',
+    'stage_to_deposit'
     ]
 
 ACTIONS_LIST = [
@@ -150,4 +151,12 @@ ACTIONS_SCORE = {
 ACTIONS_POS = {
 	'takeCherriesPerpendicular':[500, 500, 0],
 	'depositCherries':[600, 600, 0]
+}
+
+CAKES_POS = {
+	0: [200, 200, 0]
+}
+
+DEPOSIT_POS = {
+	0: [400, 400, 0]
 }

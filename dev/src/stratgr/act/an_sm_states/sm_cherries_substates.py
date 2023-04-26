@@ -52,8 +52,8 @@ class TakeCherries(smach.State) :
     def __init__(self) :
             smach.State.__init__(   self,
                                     outcomes=['fail', 'preempted','done'],
-                                    input_keys=['nb_actions_done','cb_arm', 'nb_take_cherries_error','cherries_loaded'],
-                                    output_keys=['nb_actions_done', 'nb_take_cherries_error','cherries_loaded','cb_arm'])
+                                    input_keys=['nb_actions_done','cb_arm', 'nb_errors','cherries_loaded'],
+                                    output_keys=['nb_actions_done', 'nb_errors','cherries_loaded','cb_arm'])
 
 
     def execute(self, userdata):
@@ -80,7 +80,7 @@ class TakeCherries(smach.State) :
                 return 'done'
             elif userdata.cb_arm[0] == 1 : #Error durring the recovery
                 log_info("Take cherries : error encountered")
-                userdata.nb_take_cherries_error[0] += 1
+                userdata.nb_errors[0] += 1
                 return 'fail'
 
         if time.time() - begin_time >= ARM_TIMING_TAKE :
@@ -95,8 +95,8 @@ class DepositBucket(smach.State) :
     def __init__(self) :
         smach.State.__init__(self,
                             outcomes=['preempted','done','fail'],
-                            input_keys=['nb_actions_done','cb_arm','cherries_loaded','nb_deposit_cherries_error'],
-                            output_keys=['nb_actions_done','cherries_loaded','cb_arm'])
+                            input_keys=['nb_actions_done','cb_arm','cherries_loaded','nb_errors'],
+                            output_keys=['nb_actions_done','cherries_loaded','cb_arm','nb_errors'])
 
 
     def execute(self, userdata):
@@ -118,7 +118,7 @@ class DepositBucket(smach.State) :
                 return 'done' 
             elif userdata.cb_arm[0] == 1 :
                 log_errs("Deposit sample arm : fail")
-                userdata.nb_deposit_cherries_error[0] += 1
+                userdata.nb_errors[0] += 1
                 return 'fail'
             
         if time.time() - begin_time >= ARM_TIMING_TAKE :
@@ -137,8 +137,8 @@ class TakeCherriesPerpendicularError(smach.State) :
     def __init__(self) :
         smach.State.__init__(   self,
                                 outcomes=['preempted','done', 'littleDisp'],
-                                input_keys=['nb_actions_done','nb_take_cherries_error','next_pos','cb_arm', 'cb_pos', 'color'],
-                                output_keys=['nb_actions_done','nb_take_cherries_error', 'next_pos','cb_arm'])
+                                input_keys=['nb_actions_done','nb_errors','next_pos','cb_arm', 'cb_pos', 'color'],
+                                output_keys=['nb_actions_done','nb_errors', 'next_pos','cb_arm'])
 
     def execute(self, userdata):
         if self.preempt_requested() :
@@ -146,22 +146,22 @@ class TakeCherriesPerpendicularError(smach.State) :
             return 'preempted'  
 
         if userdata.cb_arm[0] == 1 :
-            if userdata.nb_take_cherries_error[0] == 1 : 
+            if userdata.nb_errors[0] == 1 : 
                 x,y,theta = userdata.cb_pos[0]
                 set_next_destination(userdata,x,y+POS_ACCURATE_DISP,theta,DISPLACEMENT['accur_av'])
                 return 'littleDisp'
             
-            elif userdata.nb_take_cherries_error[0] == 2 :
+            elif userdata.nb_errors[0] == 2 :
                 x,y,theta = (userdata.cb_pos[0][0], userdata.cb_pos[0][1], userdata.cb_pos[0][2])
                 set_next_destination(userdata,x,y+NEG_ACCURATE_DISP,theta,DISPLACEMENT['accur_ar'])
                 return 'littleDisp'
             
-            elif userdata.nb_take_cherries_error[0] == 3: # TODO Find n, the number of attempts we can make
-                userdata.nb_take_cherries_error[0] = 0
+            elif userdata.nb_errors[0] == 3: # TODO Find n, the number of attempts we can make
+                userdata.nb_errors[0] = 0
                 userdata.nb_actions_done[0] += 1
                 return 'done'
         
         elif userdata.cb_arm[0] == 2 : # We just skip the action
-            userdata.nb_take_cherries_error[0] = 0
+            userdata.nb_errors[0] = 0
             userdata.nb_actions_done[0] += 1
             return 'done'

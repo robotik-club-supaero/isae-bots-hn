@@ -26,7 +26,7 @@ import smach
 from an_const import *
 from an_comm import end_of_action_pub, add_score
 from an_sm_states.sm_displacement import Displacement, set_next_destination
-from an_sm_states.sm_cakes_substates import DepositPucks
+from an_sm_states.sm_cakes_substates import *
 
 #################################################################
 #                                                               #
@@ -40,9 +40,9 @@ class ObsDepositCakes(smach.State):
     """
     def __init__(self):
         smach.State.__init__(   self,  
-                                outcomes=['preempted','done','disp','take','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded'],
-			                    output_keys=['nb_actions_done','next_pos','cherries_loaded'])
+                                outcomes=['preempted','done','disp','redo','openDoors','closeDoors','openClamp','closeClamp','elevator'],
+			                    input_keys=['nb_actions_done','next_pos','color','deposit_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit'],
+			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -51,13 +51,42 @@ class ObsDepositCakes(smach.State):
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
-            x, y, z = userdata.taken_area
+            x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
-        if userdata.nb_actions_done[0] == 1:
-            ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
-            return 'deposit'
+        elif userdata.nb_actions_done[0] == 1:
+            ## On lance l'action de prendre les palets.
+            return 'openDoors'
+
+        elif userdata.nb_actions_done[0] == 2:
+            userdata.stage_to_go[0] = 0
+            return 'elevator'
+        
+        elif userdata.nb_actions_done[0] == 3:
+                return 'openClamp'
+        
+        elif userdata.nb_actions_done[0] == 4:
+            userdata.stage_to_go[0] = userdata.stage_to_deposit[0]
+            return 'elevator'
+        
+        elif userdata.nb_actions_done[0] == 5:
+            return 'closeClamp'
+        
+        elif userdata.nb_actions_done[0] == 6:
+            userdata.pucks_taken[0] -= userdata.stage_to_deposit[0]
+            userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
+            return 'elevator'
+        
+        elif userdata.nb_actions_done[0] == 7:
+            ## On se déplace jusqu'au site de la pile de gâteaux visée
+            x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
+            x, y, z = x-DOORS_SHIFT, y-DOORS_SHIFT, z
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+            return 'disp'
+        
+        elif userdata.nb_actions_done[0] == 8:
+                return 'closeDoors'
 
         add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')
@@ -73,18 +102,30 @@ class ObsDepositCakes(smach.State):
 #                                                               #
 #################################################################
 
-DepositCakes = smach.StateMachine(  outcomes=['preempted', 'end'],
-                                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_take_cherries_error'],
-                                    output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_take_cherries_error'])
+DepositCakes = smach.StateMachine( outcomes=['preempted', 'end'],
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','deposit_area','stage_to_go','stage_to_deposit'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','deposit_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit'])
 							
 with DepositCakes:
     smach.StateMachine.add('OBS_DEPOSIT_CAKES', 
                             ObsDepositCakes(), 
-                            transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT','take':'DEPOSIT_CAKES', 'redo':'OBS_DEPOSIT_CAKES'})
+                            transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT','openDoors':'OPEN_DOORS', 'closeDoors':'CLOSE_DOORS', 'openClamp':'OPEN_CLAMP', 'closeClamp':'CLOSE_CLAMP', 'elevator':'MOVE_ELEVATOR', 'redo':'OBS_DEPOSIT_CAKES'})
     smach.StateMachine.add('DISPLACEMENT', 
                             Displacement(), 
                             transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','redo':'DISPLACEMENT','fail':'OBS_DEPOSIT_CAKES'})
-    smach.StateMachine.add('DEPOSIT_CAKES', 
-                            DepositPucks(), 
+    smach.StateMachine.add('OPEN_DOORS', 
+                            OpenDoors(), 
+                            transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','fail':'OBS_DEPOSIT_CAKES'})
+    smach.StateMachine.add('CLOSE_DOORS', 
+                            CloseDoors(), 
+                            transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','fail':'OBS_DEPOSIT_CAKES'})
+    smach.StateMachine.add('OPEN_CLAMP', 
+                            OpenClamp(), 
+                            transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','fail':'OBS_DEPOSIT_CAKES'})
+    smach.StateMachine.add('CLOSE_CLAMP', 
+                            CloseClamp(), 
+                            transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','fail':'OBS_DEPOSIT_CAKES'})
+    smach.StateMachine.add('MOVE_ELEVATOR', 
+                            MoveElevator(), 
                             transitions={'preempted':'preempted','done':'OBS_DEPOSIT_CAKES','fail':'OBS_DEPOSIT_CAKES'})
 

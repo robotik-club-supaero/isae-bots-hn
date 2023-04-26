@@ -74,8 +74,8 @@ class ObsTakeCherriesPerpendicular(smach.State):
 #################################################################
 
 TakeCherriesPerpendicular = smach.StateMachine( outcomes=['preempted', 'end'],
-                                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_take_cherries_error'],
-                                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_take_cherries_error'])
+                                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_errors'],
+                                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors'])
 							
 with TakeCherriesPerpendicular:
     smach.StateMachine.add('OBS_TAKE_CHERRIES_PERPENDICULAR', 

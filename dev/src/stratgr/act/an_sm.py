@@ -67,10 +67,12 @@ class Setup(smach.State):
 		userdata.nb_actions_done = [0]
 		
 		## Data about the match
-		userdata.deposit_area = [[]] # Coordonnées de là où on dépose les gâteaux
-		userdata.taken_area = [[]] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
+		userdata.deposit_area = [-1] # Coordonnées de là où on dépose les gâteaux
+		userdata.taken_area = [-1] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
 		userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
 		userdata.cherries_loaded = [0] # Permet de savoir si le robot transporte des cerises ou non. 0: Non ; 1: Oui 
+		userdata.stage_to_go = [0]
+		userdata.stage_to_deposit = [0]
 
 		## Callback of subscribers
 		userdata.cb_disp = [-1]  # result of displacement action. CHECK an_const to see details on cb_disp
@@ -84,10 +86,7 @@ class Setup(smach.State):
 		userdata.next_action = -2  # Indicateur de l'action en cours
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.error_reaction = [-1]
-		userdata.nb_take_cakes_error = [0]
-		userdata.nb_deposit_cakes_error = [0]
-		userdata.nb_take_cherries_error = [0]
-		userdata.nb_deposit_cherries_error = [0]
+		userdata.nb_errors = [0]
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)

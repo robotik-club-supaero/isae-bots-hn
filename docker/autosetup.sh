@@ -44,7 +44,7 @@ fi
 
 
 # start bluetooth for remote control (pi only)
-service dbus start
+# service dbus start
 bluetoothd &
 
 # Execute command passed to entrypoint

@@ -152,14 +152,20 @@ class WiiControlNode:
             corr_vert = nunchuk(vert, nunchuk_v_consts)
             corr_hori = nunchuk(hori, nunchuk_h_consts)
             speed = (corr_vert - 50)*2 / (5-self.coeff_speed) * max_speed /100
-            angle = -(corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
+            angle = (corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
             # print(corr_vert, corr_hori)
         else:
             speed = angle = 0
-        self.msg_pos.x = min(max(speed-angle,-255),255)
-        self.msg_pos.y = min(max(speed+angle,-255),255)
+        self.msg_pos.x = min(max( (speed-angle) *2,-255),255)
+        self.msg_pos.y = min(max( (speed+angle) *2,-255),255)
         self.msg_pos.z = 0
         self.msg_pos.w = 4  # cmd for remote control
+
+        # seuillage
+        if abs(self.msg_pos.x) < 10: self.msg_pos.x = 0
+        if abs(self.msg_pos.y) < 10: self.msg_pos.y = 0
+
+
         self.nextpos_pub.publish(self.msg_pos)
 
         time.sleep(0.01)
@@ -229,7 +235,7 @@ class WiiControlNode:
             begin = perf_counter()
 
             self.unitstep()
-            print(self.msg_pos.x, self.msg_pos.y)
+            # print(self.msg_pos.x, self.msg_pos.y)
 
 
 
@@ -240,7 +246,7 @@ class WiiControlNode:
 #################################################################
 
 def main():
-    rospy.init_node("WII node")
+    rospy.init_node("wii_node")
     node = WiiControlNode()
     node.mainloop()
 

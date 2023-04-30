@@ -30,7 +30,7 @@ from enum import IntEnum, Enum
 #################################################################
 
 NODE_NAME = "[DEC] "
-#SIMULATION = False if os.environ['USER'] == 'pi' else True
+SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #################################################################
 # CONFIG 

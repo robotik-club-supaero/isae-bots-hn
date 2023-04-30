@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -24,18 +23,21 @@
 #
 #######################################################################
 
-from maps import Maps
-from astar import a_star
-from exceptions import PathNotFoundError
+from .maps import Maps
+from .astar import a_star
+from .exceptions import PathNotFoundError
 
 import nodes_creator as nc
 import obstacles_creator as oc
 
-from obstacle_rect import ObstacleRect
-from obstacle_circ import ObstacleCirc
+from .obstacle_rect import ObstacleRect
+from .obstacle_circ import ObstacleCirc
 
-from disp_utils import *
-from ast import literal_eval
+
+# from .disp_utils import *
+from disp_utils import READER
+
+from .ast import literal_eval
 
 #######################################################################
 #

@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
+# pyright: reportMissingImports=false
 
 """
 @file: LidarNode.py
@@ -14,11 +26,11 @@ from __future__ import division
 
 from math import atan2, sin, cos
 from lidar_lib import *
-from displacement.disp_utils import patchFrameBR
+from displacement.disp_utils import patch_frame_br, log_info, log_errs
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
+from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
 #################################################################
 if os.environ['USER'] == 'pi':
@@ -28,6 +40,11 @@ else:
 #################################################################
 
 OBS_RESOLUTION = 100
+
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
 #######################################################################
 # LIDAR NODE
@@ -44,6 +61,7 @@ class LidarNode:
         self.y_robot = 0
         self.c_robot = 0
         self.radius = 42
+        self.color = None
 
         self.iterData = 0
         self.sizeData = 5
@@ -51,18 +69,30 @@ class LidarNode:
 
         ### LAUNCH NODE ###############################################
         rospy.init_node('LidarNode')
-        LOG_INFO("Initializing Lidar Node.")
+        log_info("Initializing Lidar Node.")
 
         # initialisation des publishers
-        self.pub_obstacles = rospy.Publisher("/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
+        self.pub_obstacles = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
         # initialisation des suscribers
-        self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
+        self.sub_pos = rospy.Subscriber("/disp/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
+        self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
+
+    def update_color(self, msg):
+        """
+        Callback function from topic /sm/color.
+        """
+        if msg.data not in [0,1]:
+            log_errs(f"Wrong value of color given ({msg.data})...")
+            return
+        else: 
+            self.color = msg.data
+            log_info("Received color : {}".format(COLOR[self.color]))
 
 
     def update_position(self,msg):
         """Fonction de callback de la position."""
-        x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
+        x,y,c = patch_frame_br(msg.x,msg.y,msg.theta, self.color)
         self.x_robot = x
         self.y_robot = y
         self.c_robot = c

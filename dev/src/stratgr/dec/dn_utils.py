@@ -29,7 +29,7 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "DEC"
+_NODENAME_ = "[DEC] "
 #SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 #################################################################

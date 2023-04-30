@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
+# pyright: reportMissingImports=false
 
 
 from __future__ import division
@@ -12,11 +24,11 @@ import rospy
 import numpy as np
 from math import atan2
 from geometry_msgs.msg import Pose2D
-from std_msgs.msg import Int16MultiArray
+from std_msgs.msg import Int16MultiArray, Int16
 from std_msgs.msg import MultiArrayLayout
 from std_msgs.msg import MultiArrayDimension
 
-from displacement.disp_utils import patchFrameBR
+from displacement.disp_utils import patch_frame_br, log_errs, log_info
 
 #################################################################
 if os.environ['USER'] == 'pi':
@@ -30,6 +42,11 @@ else:
 DISTANCEMIN = 100
 INTERVALLE = 1
 LIMITEBASSE = 10
+
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
 # Fonction permettant de calculer l'angle entre 2 points dans un repère cartésien.
 def lineAngle(x0, y0, x1, y1):
@@ -53,19 +70,32 @@ class SensorsNode:
         self.x_robot=0
         self.y_robot=0
         self.cap = 0
+        self.color = None
         
         # Publishers & Subscribers nécessaires pour le noeud
 
-        self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
+        self.pub_obstaclesInfo=rospy.Publisher("/sensors/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
 
-        self.subLidar=rospy.Subscriber("/obstaclesLidar", Int16MultiArray, self.update_obstacles)
-        self.subSonars = rospy.Subscriber("/obstaclesSonar", Int16MultiArray, self.update_obstacles)
-        self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
+        self.subLidar=rospy.Subscriber("/lidar/obstaclesLidar", Int16MultiArray, self.update_obstacles)
+        self.subSonars = rospy.Subscriber("/sonar/obstaclesSonar", Int16MultiArray, self.update_obstacles)
+        self.sub_rospy=rospy.Subscriber("/disp/current_position", Pose2D, self.update_position)
+        self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
+
+    def update_color(self, msg):
+        """
+        Callback function from topic /sm/color.
+        """
+        if msg.data not in [0,1]:
+            log_errs(f"Wrong value of color given ({msg.data})...")
+            return
+        else: 
+            self.color = msg.data
+            log_info("Received color : {}".format(COLOR[self.color]))
 
     # Fonciton callback pour la position
     def update_position(self,msg):
 
-        x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
+        x,y,c = patch_frame_br(msg.x,msg.y,msg.theta)
         self.x_robot = x
         self.y_robot = y
         self.c_robot = c

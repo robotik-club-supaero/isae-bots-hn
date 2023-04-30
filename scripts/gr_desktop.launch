@@ -11,6 +11,8 @@ Launch script for GR (sim for now)
 	<!-- strat nodes -->
 	<node name="DEC" pkg="stratgr" type="dec_node.py" output="screen" cwd="node" required="true"/>
 	<node name="ACT" pkg="stratgr" type="act_node.py" output="screen" cwd="node" required="true"/>
+	<node name="ACN" pkg="sim" type="actuators_node.py" output="screen" cwd="node" required="true"/>
+	<node name="DSP" pkg="displacement" type="disp_node.py" output="screen" cwd="node" required="true"/>
 
 
 </launch>

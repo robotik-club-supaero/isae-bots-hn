@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+
+# pyright: reportMissingImports=false
 
 """
 @file: lidar_lib.py
@@ -33,7 +45,7 @@ LOCAL_LIM = 100         # distance lim de regroupement/localisation
 SIMULATION = False if os.environ['HOSTNAME'] == 'pi' else True
 
 READER = configparser.ConfigParser()
-ROBOT_NAME = READER.get("Robot", "robot_name")
+ROBOT_NAME = READER.get("ROBOT", "robot_name")
 
 if not SIMULATION: 
     READER.read(os.path.join(os.path.dirname(__file__),"../../start.ini"))
@@ -42,8 +54,6 @@ elif ROBOT_NAME == "PR":
 elif ROBOT_NAME == "GR":
     READER.read(os.path.join(os.path.dirname(__file__),"../../gr_start.ini")) 
 
-COLOR_MATCH = READER.get("Robot", "color") # Couleur du côté duquel on joue
-CONFIG_MATCH = READER.get("Robot", "config") # Permet d'avoir plusieurs configurations (positions de départs (utile pour la coupe 2023))
 
 #######################################################################
 # FUNCTIONS

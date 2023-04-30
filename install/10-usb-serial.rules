@@ -1,0 +1,5 @@
+#/etc/udev/rules.d/10-usb-serial.rules
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="0483", ATTRS{serial}=="5766090", SYMLINK+="ttyBR"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="0483", ATTRS{serial}=="5764420", SYMLINK+="ttyACT"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="19a2", ATTRS{idProduct}=="5001", SYMLINK+="ttyLIDAR"

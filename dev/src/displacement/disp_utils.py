@@ -48,16 +48,21 @@ NODE_NAME = "[DSP] "
 SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 READER = configparser.ConfigParser()
-ROBOT_NAME = READER.get("Robot", "robot_name")
-if not SIMULATION: 
-    READER.read(os.path.join(os.path.dirname(__file__),"../../start.ini"))
-elif ROBOT_NAME == "PR":
-    READER.read(os.path.join(os.path.dirname(__file__),"../../pr_start.ini"))
-elif ROBOT_NAME == "GR":
-    READER.read(os.path.join(os.path.dirname(__file__),"../../gr_start.ini")) 
+try :
+	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
+except:
+	print("no file found...")
 
-COLOR_MATCH = READER.get("Robot", "color") # Couleur du côté duquel on joue
-CONFIG_MATCH = READER.get("Robot", "config") # Permet d'avoir plusieurs configurations (positions de départs (utile pour la coupe 2023))
+ROBOT_NAME = READER.get("ROBOT", "robot_name")
+COLOR_MATCH = READER.get("ROBOT", "color") # Couleur du côté duquel on joue
+INIT_POS = READER.get("ROBOT", "init_pos")
+
+MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
+
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
 def to_robot_coord(x_robot, y_robot, cap, pos):
     """Fonction transposant pos dans le repere local du robot."""
@@ -70,9 +75,9 @@ def printable_pos(pos):
     p_pos = [int(pos[0]), int(pos[1]), round(pos[2], 2)]
     return p_pos
 
-def patch_frame_br(x, y, theta):
+def patch_frame_br(x, y, theta, color):
     """Easier patch"""
-    if COLOR_MATCH == "HOME":
+    if COLOR[color] == "HOME":
         return x, y, theta
     return 2000-x, y, -theta
 

@@ -72,12 +72,11 @@ COLOR = {
 }
 
 DISPLACEMENT = {
-      'stop'             : -1,
       'standard'         : 0, 
-      'disp_no_avoidance': 1,
-      'recalage_av'      : 2,
-      'recalage_ar'      : 3,
-      'accurate'         : 4,
+      'noAvoidance'      : 1,
+      'stop'             : 2,
+      'accurate'         : 3,
+      'recalage'         : 4,
       'rotation'         : 5
 }
 

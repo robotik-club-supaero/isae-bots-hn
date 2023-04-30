@@ -29,7 +29,7 @@ import os
 import xml.etree.ElementTree as ET
 from node import Node
 
-from disp_utils import ROBOT_NAME, READER
+from disp_utils import *
 
 #######################################################################
 #
@@ -37,7 +37,7 @@ from disp_utils import ROBOT_NAME, READER
 #
 #######################################################################
 
-def makeNodeList(option):
+def make_node_list(option):
     """
     Function to create a list of nodes for the pathfinder grid of nodes.
     
@@ -56,14 +56,21 @@ def makeNodeList(option):
   
     ## CONFIG DATA ####################################################
 
-    number_config = int(READER.get("Robot", "number_config"))
+    if ROBOT_NAME == "PR":
+        data0 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
+        data1 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
+        data2 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
+    else:
+        data0 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_home.xml"))
+        data1 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_away.xml"))
+        data2 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
 
-    if option == -1:
-        data = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
-
-    elif option < number_config:
-        data = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_config"+str(option)+".xml"))
-
+    if option == 0:
+        data = data0
+    elif option == 1:
+        data = data1
+    elif option == 2:
+        data = data2
     else:
         raise RuntimeError("Specified option is invalid")
 

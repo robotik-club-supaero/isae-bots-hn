@@ -34,7 +34,7 @@ import obstacles_creator as oc
 from obstacle_rect import ObstacleRect
 from obstacle_circ import ObstacleCirc
 
-from disp_utils import READER, LOG_INFO
+from disp_utils import *
 from ast import literal_eval
 
 #######################################################################
@@ -51,44 +51,44 @@ class Pathfinder:
         """Initialization of Pathfinder."""
         
         avoid = 2
-        self.tableMap = Maps(nc.makeNodeList(color),nc.makeNodeList(avoid),oc.makeObstacleList(color))
+        self.table_map = Maps(nc.make_node_list(color),nc.make_node_list(avoid),oc.make_obstacle_list(color))
         self.init_pos = None
         self.goal_pos = None
-        self.robotToAvoidPos = None        
+        self.robot_to_avoid_pos = None        
         
         self.color = color   # Color : 0 Home | 1 Away | 
-        self.maxAstarTime = int(literal_eval(READER.get("Pathfinder", "max_astar_time")))
+        self.max_astar_time = int(literal_eval(READER.get("Pathfinder", "max_astar_time")))
         
-    def setInit(self, pos):
+    def set_init(self, pos):
         self.init_pos = pos
         
-    def setGoal(self,pos):
+    def set_goal(self,pos):
         self.goal_pos = pos
 
-    def setRobotToAvoidPos(self, pos, radius):
-        self.robotToAvoidPos = [pos, radius]
+    def set_robot_to_avoid_pos(self, pos, radius):
+        self.robot_to_avoid_pos = [pos, radius]
 
-    def getRobotToAvoidPos(self):
-        return self.robotToAvoidPos
+    def get_robot_to_avoid_pos(self):
+        return self.robot_to_avoid_pos
     
-    def getTableMap(self):
-        return self.tableMap
+    def get_table_map(self):
+        return self.table_map
 
-    def setMaxAstarTime(self, time):
-        self.maxAstarTime = time
+    def set_max_astar_time(self, time):
+        self.max_astar_time = time
 
 #######################################################################
 #                            COMPUTE PATH 
 #######################################################################
         
-    def getPath(self, isAvoid, isFirstAccurate, isSecondAttempt):
+    def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
         if isAvoid:
-            if self.robotToAvoidPos is None:
-                LOG_INFO("ERREUR : IL N'Y A PAS EU DE SETAVOIDROBOT.")
+            if self.robot_to_avoid_pos is None:
+                log_info("ERREUR : IL N'Y A PAS EU DE SETAVOIDROBOT.")
                 raise PathNotFoundError
-            self.tableMap.setObstacleRobotPos(ObstacleCirc(self.robotToAvoidPos[0][0], self.robotToAvoidPos[0][1], self.robotToAvoidPos[1]))
-            self.tableMap.setAvoid(True, isSecondAttempt)
+            self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
+            self.table_map.set_avoid(True, isSecondAttempt)
         else:
-            self.tableMap.setAvoid(False, False)
+            self.table_map.set_avoid(False, False)
             
-        return a_star(self.init_pos, self.goal_pos, self.tableMap, isFirstAccurate, self.maxAstarTime)
+        return a_star(self.init_pos, self.goal_pos, self.table_map, isFirstAccurate, self.max_astar_time)

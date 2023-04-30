@@ -22,32 +22,32 @@ class ObstacleRect:
     
     """Implemente un obstacle rectangulaire sur la map."""
 
-    def __init__(self,xMin,xMax,yMin,yMax):
+    def __init__(self,x_min,x_max,y_min,y_max):
         """Initialization of obstacle."""    
         self.name = "R"     # Type d'obstacle
-        self.xMin = xMin    # xMin du rectangle
-        self.xMax = xMax    # xMax du rectangle
-        self.yMin = yMin    # yMin du rectangle
-        self.yMax = yMax    # yMax du rectangle
+        self.x_min = x_min    # x_min du rectangle
+        self.x_max = x_max    # x_max du rectangle
+        self.y_min = y_min    # y_min du rectangle
+        self.y_max = y_max    # y_max du rectangle
         
-    def getXMin(self):
-        return self.xMin
+    def get_x_min(self):
+        return self.x_min
     
-    def getXMax(self):
-        return self.xMax
+    def get_x_max(self):
+        return self.x_max
     
-    def getYMin(self):
-        return self.yMin
+    def get_y_min(self):
+        return self.y_min
     
-    def getYMax(self):
-        return self.yMax
+    def get_y_max(self):
+        return self.y_max
     
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def isNodeIn(self, node):
+    def is_node_in(self, node):
         x = node.getX()
         y = node.getY()
-        return self.xMin<x<self.xMax and self.yMin<y<self.yMax
+        return self.x_min<x<self.x_max and self.y_min<y<self.y_max
 
     

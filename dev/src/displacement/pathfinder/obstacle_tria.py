@@ -36,19 +36,19 @@ class ObstacleTria:
         self.p2 = p2        # point 2 sous la forme (x2,y2)
         self.p3 = p3        # point 3 sous la forme (x3,y3)
         
-    def getP1(self):
+    def get_p1(self):
         return self.p1
     
-    def getP2(self):
+    def get_p2(self):
         return self.p2
     
-    def getP3(self):
+    def get_p3(self):
         return self.p3
     
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def isNodeIn(self, node):
+    def is_node_in(self, node):
         x = node.getX()
         y = node.getY()
 

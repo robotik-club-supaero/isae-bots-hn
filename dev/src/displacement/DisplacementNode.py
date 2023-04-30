@@ -48,10 +48,12 @@ from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
 # import utils
-from disp_utils import LOG_INFO, LOG_ERRS, dprint, toRobotCoord, patchFrameBR
+from disp_utils import *
 
 # import comms
-from disp_comm import COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_speed
+from disp_comm import init_comm
+from disp_comm import COM_STRAT, CMD_TEENSY
+from disp_comm import pub_strat, pub_teensy
 
 #################################################################
 #																#
@@ -70,40 +72,42 @@ class DisplacementNode:
     def __init__(self):
         """Initialise le DisplacementNode."""
 
-        LOG_INFO("Initializing Displacement Node.")
+        log_info("Initializing Displacement Node.")
 
         ## Variables liées au match
 
         self.color = 0
-        self.config = 0
         self.matchEnded = False
-
-        ## Variables liées à la vitesse de déplacement du robot
-
-        self.maxSpeedLin = 0
-        self.maxSpeedRot = 0
 
         ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
 
         self.path = []
         self.pathfinder = Pathfinder(self.color)
-        self.maxAstarTime = 5
+        self.max_astar_time = MAX_ASTAR_TIME
 
         ## Variable liées au déplacement du robot
         self.move = False                       # Le robot est en cours de deplacement
-        self.finalMove = False                  # Le robot se dirige vers le point final
+        self.final_move = False                  # Le robot se dirige vers le point final
+        self.turn = False
+        self.final_turn = False 
+        self.resume = False 
+        self.paused = False                     # Le robot est arrete a cause d'un obstacle
+        self.time_last_seen_obstacle = 0        # Temps auquel on a vu le dernier obstacle 
+        self.refresh_update_obstacle = 0.5
+        self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
-        self.current_pos = [0,0]                # La position actuelle du robot
+        self.current_pos = [0,0,0]                # La position actuelle du robot
 
         # ## Variables de mode de DEPLACEMENT
-        self.accurateMode = False             # Le robot se deplace precisement / lentement vers l'avant
-        self.recalageMode = False               # Le robot se recale contre un mur / ou vient seulement en contact
-        self.avoidMode = False                  # Le robot se deplace en mode evitement
+        self.accurate = False             # Le robot se deplace precisement / lentement vers l'avant
+        self.recalage = False               # Le robot se recale contre un mur / ou vient seulement en contact
+        self.avoid_mode = False                  # Le robot se deplace en mode evitement
+        self.rotation = False 
 
         # ## Variables speciales
-        self.resetPoint = [0,0]                 # Point au alentour duquel il faut reset les marges d'arret de l'evitement
-        self.isResetPossible = False            # Variable décrivant si il faut reset les marges d'evitement ou non
-        self.isFirstAccurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
+        self.reset_point = [0,0]                 # Point au alentour duquel il faut reset les marges d'arret de l'evitement
+        self.is_reset_possible = False            # Variable décrivant si il faut reset les marges d'evitement ou non
+        self.is_first_accurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
         self.blocked = False                     # Le robot est arrete a cause d'un obstacle
@@ -142,14 +146,14 @@ class DisplacementNode:
             - chemin_calcule: le chemin calcule."""
 
         # Update temps max de l'Astar
-        self.pathfinder.setMaxAstarTime(self.maxAstarTime)
+        self.pathfinder.set_max_astar_time(self.max_astar_time)
 
         # Instanciation de resultisInAvoidMode
         result = {'message':"", 'success':False, 'built path':[]}
 
         # On essaie d'obtenir un chemin
         try:
-            result['built path'] = self.pathfinder.getPath(isInAvoidMode, isFirstAccurate, isSecondAttempt)
+            result['built path'] = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate, isSecondAttempt)
             result['message'] = "Path found" 
             result['success'] = True
 
@@ -165,7 +169,7 @@ class DisplacementNode:
 
         # On recupere le chemin obtenu
         if not len(result['built path']):
-            LOG_ERRS("Error - Empty path found")
+            log_errs("Error - Empty path found")
             result['message'] = "Empty path found" 
             result['success'] = False
             return result
@@ -191,115 +195,158 @@ class DisplacementNode:
                 self.path = self.path[1:]
         
         # S'il existe un point 
-        if len(self.path):
+        # S'il existe un point intermediaire
+        if len(self.path) >= 2:
             x = self.path[0][0]
             y = self.path[0][1]
-            z = self.path[0][2]
-            x, y, z = patchFrameBR(x, y, z)
+            log_info("\nDisplacement Pass By ({}, {})".format(x,y))
 
-            if self.recalageMode:
-                LOG_INFO("\nDisplacement request ({}, {}, {}) recalage".format(x, y, z))
-                pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["recalage"]))
+            """ # TODO - remove patch
+            x,y,_ = patch_frame_br(x,y,0,self.color) """
 
-            else:
-                if self.forward:
-                    if self.accurateMode:
-                        LOG_INFO("\nDisplacement request ({}, {}, {}) accurateAv".format(x, y, z))
-                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["accurateAv"]))
-                    else:
-                        LOG_INFO("\nDisplacement request ({}, {}, {}) dispAv".format(x, y, z))
-                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["disp"]))
-                
+            # Si on est dans un obstacle
+            if self.is_first_accurate[0]:
+                xLoc, _ = to_robot_coord(self.current_pos[0], self.current_pos[1], self.current_pos[2], self.path[0])
+                if xLoc > 0: # Marche avant necessaire
+                    self.forward = True
+                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
                 else:
-                    if self.accurateMode:
-                        LOG_INFO("\nDisplacement request ({}, {}, {}) accurateAr".format(x, y, z))
-                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["accurateAr"]))
-                    else:
-                        LOG_INFO("\nDisplacement request ({}, {}, {}) dispAr".format(x, y, z))
-                        pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["dispAr"]))
+                    self.forward = False
+                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
+            else:
+                self.forward = True
+                pub_teensy.publish(Quaternion(x,y,0,CMD_TEENSY["disp"]))
 
-                pub_speed.publish(Float32MultiArray(self.maxSpeedLin, self.maxSpeedRot))
-                self.move = True
+            # Init params du mouvement
+            self.turn = True
+            self.final_move = False
+            return
+
+        # Sinon, s'il reste un point c'est le dernier
+        if len(self.path) == 1:
+            x, y, c = self.path[0]
+            self.turn = True
+            self.final_move = True
+
+            """ # TODO - remove patch 
+            x,y,c = patch_frame_br(x,y,c) """
+
+            ## Gestion differents types de deplacement
+            if self.accurate:
+                xRob, yRob, cRob = self.current_pos
+
+                log_info("\nDisplacement request ({}, {}, {}) accurate".format(x, y, c))
+                
+                xLoc, _ = to_robot_coord(xRob, yRob, cRob, [x,y,c])
+                if xLoc >= 0:
+                    pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["accurate"]))
+                    self.forward = True
+                else:
+                    pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["accurate"]))
+                    self.forward = False
+                return
+
+            if self.rotation:
+                log_info("\nDisplacement request ({}, {}, {}) rotation.".format(x, y, c))
+                #print("\n\n\n\nspeedRot = {}\n\n\n\n".format(self.speedRot))
+                pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["rotation"]))
+                return
+
+            if self.recalage:
+                log_info("\nDisplacement request ({}, {}, {}) recalage.".format(x, y, c))
+                self.final_move = False     #Pas d'orientation finale en fin de recalage 
+                pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["recalage"]))
+                return
+        
+            ## Point final
+            log_info("\nDisplacement request ({}, {}, {}) standard.".format(x, y, c))
+            self.forward = True
+            pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["dispFinal"]))
             
         # Sinon, on on a fini (ou bien a nulle part ou aller, pcq obstacle
         # detecte sans qu'on bouge...)
-        else:
-            LOG_INFO("Arrived at destination!")
+        if len(self.path) == 0 and just_arrived:
+            log_info("Arrived at destination!")
             # Reset des params
             self.move = False
-            self.avoidMode = False
-            self.recalageMode = False
-            self.accurateMode = False
+            self.turn = False
+            self.final_turn = False
+            self.final_move = False
+
+            self.avoid_mode = False
+            self.recalage = False
+            self.accurate = False
+            self.rotation = False 
 
             # Publication a la strat
             pub_strat.publish(Int16(COM_STRAT["ok pos"]))
 
 
-    # def setAvoidResetPoint(self):
-    #     """Calcul du point de reset des marges d'evitement.
+    def set_avoid_reset_point(self):
+        """Calcul du point de reset des marges d'evitement.
         
-    #     Il s'agit du point à partir duquel on sera suffissament loin de
-    #     l'obstacle jusqu'a la fin du trajet."""
+        Il s'agit du point à partir duquel on sera suffissament loin de
+        l'obstacle jusqu'a la fin du trajet."""
 
-    #     avoidRobotPos = self.pathfinder.getRobotToAvoidPos()[0]
-    #     posList = [self.current_pos] + self.path
-    #     i = len(posList) -1
-    #     work = True
-    #     while i > 0 and work: 
-    #         #Parcours des droites de trajectoire de la fin vers le début
-    #         if min(posList[i-1][0], posList[i][0])<avoidRobotPos[0]<max(posList[i-1][0], posList[i][0]) or min(posList[i-1][1], posList[i][1])<avoidRobotPos[1]<max(posList[i-1][1], posList[i][1]):
-    #             if posList[i][0]-posList[i-1][0] !=0:
-    #                 a = float(posList[i][1]-posList[i-1][1])/float(posList[i][0]-posList[i-1][0])
-    #                 b=-1
-    #                 c = posList[i-1][1]-a*posList[i-1][0]
-    #             else:
-    #                 a=1
-    #                 b=0
-    #                 c=-posList[i-1][0]
-    #             #Calcul de la distance de la droite au centre de l'obstacle
-    #             d = (a*avoidRobotPos[0]+b*avoidRobotPos[1]+c)/sqrt(a**2+b**2)
-    #             if abs(d)<600:
-    #                 work = False
-    #         i-=1
+        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()[0]
+        pos_list = [self.current_pos] + self.path
+        i = len(pos_list) -1
+        work = True
+        while i > 0 and work: 
+            #Parcours des droites de trajectoire de la fin vers le début
+            if min(pos_list[i-1][0], pos_list[i][0])<avoid_robot_pos[0]<max(pos_list[i-1][0], pos_list[i][0]) or min(pos_list[i-1][1], pos_list[i][1])<avoid_robot_pos[1]<max(pos_list[i-1][1], pos_list[i][1]):
+                if pos_list[i][0]-pos_list[i-1][0] !=0:
+                    a = float(pos_list[i][1]-pos_list[i-1][1])/float(pos_list[i][0]-pos_list[i-1][0])
+                    b=-1
+                    c = pos_list[i-1][1]-a*pos_list[i-1][0]
+                else:
+                    a=1
+                    b=0
+                    c=-pos_list[i-1][0]
+                #Calcul de la distance de la droite au centre de l'obstacle
+                d = (a*avoid_robot_pos[0]+b*avoid_robot_pos[1]+c)/sqrt(a**2+b**2)
+                if abs(d)<600:
+                    work = False
+            i-=1
 
-    #     if work:    # On est toujours trop pres --> reset sur le point final
-    #         self.resetPoint = self.path[-1][:2]
-    #     else:       # On calcul et setup le point de reset
-    #         vectN = np.array([a,b])/np.linalg.norm([a,b])
-    #         self.resetPoint = np.array(avoidRobotPos) - d*vectN
+        if work:    # On est toujours trop pres --> reset sur le point final
+            self.reset_point = self.path[-1][:2]
+        else:       # On calcul et setup le point de reset
+            vect_normal = np.array([a,b])/np.linalg.norm([a,b])
+            self.reset_point = np.array(avoid_robot_pos) - d*vect_normal
             
-    # def handle_obstacle(self, obstacle_seen, obstacle_stop, isDestBlocked):
-    #     """Gestion d'arret du robot."""
-    #     # dprint("Enter handle_obstacle()")
-    #     if obstacle_stop:
-    #         self.time_last_seen_obstacle = time()
-    #         if not self.paused:
-    #             LOG_INFO("New obstacle detected! - STOP")
-    #             self.paused = True
-    #             pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-    #             if isDestBlocked:
-    #                 LOG_ERRS("Destination is being blocked.")
-    #                 pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-    #             else:
-    #                 pub_strat.publish(Int16(COM_STRAT["stop"]))
-    #         return
+    def handle_obstacle(self, obstacle_seen, obstacle_stop, isDestBlocked):
+        """Gestion d'arret du robot."""
+        # dprint("Enter handle_obstacle()")
+        if obstacle_stop:
+            self.time_last_seen_obstacle = time()
+            if not self.paused:
+                log_info("New obstacle detected! - STOP")
+                self.paused = True
+                pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
+                if isDestBlocked:
+                    log_errs("Destination is being blocked.")
+                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                else:
+                    pub_strat.publish(Int16(COM_STRAT["stop"]))
+            return
 
-    #     if obstacle_seen:   # Il faut ralentir
-    #         # dprint("Obstacle is seen")
-    #         # self.time_last_seen_obstacle = time()
+        if obstacle_seen:   # Il faut ralentir
+            # dprint("Obstacle is seen")
+            # self.time_last_seen_obstacle = time()
 
-    #         LOG_INFO("New obstacle detected! - SPEED DOWN")
-    #         self.paused = False
-    #         pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-    #         pub_strat.publish(Int16(COM_STRAT["go"]))
-    #         return
+            log_info("New obstacle detected! - SPEED DOWN")
+            self.paused = False
+            pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
+            pub_strat.publish(Int16(COM_STRAT["go"]))
+            return
 
-    #     if self.paused and (time()-self.time_last_seen_obstacle > self.refresh_update_obstacle):
-    #         self.paused = False
-    #         self.resume = True
-    #         LOG_INFO("Resume displacement.")
-    #         pub_strat.publish(Int16(COM_STRAT["go"]))
-    #         self.next_point(False)
+        if self.paused and (time()-self.time_last_seen_obstacle > self.refresh_update_obstacle):
+            self.paused = False
+            self.resume = True
+            log_info("Resume displacement.")
+            pub_strat.publish(Int16(COM_STRAT["go"]))
+            self.next_point(False)
 
 
 
@@ -315,7 +362,6 @@ def main():
     node = DisplacementNode()
 
     init_comm(node)
-    init_gain(node)
     
     # Wait for close key to quit
     rospy.spin()

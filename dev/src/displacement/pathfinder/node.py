@@ -36,10 +36,10 @@ class Node:
     def __init__(self, pos):
         """Initialize a node."""
         self.pos = pos          # Position du noeud sur la table
-        self.linkNodeList = []  # List des index des noeuds connectes
+        self.link_node_list = []  # List des index des noeuds connectes
         
-        self.goalDist = None    # Distance à vol d'oiseau au noeud d'arrive
-        self.initDist = None    # Distance au noeud de départ (avec le chemin envisagé)
+        self.goal_dist = None    # Distance à vol d'oiseau au noeud d'arrive
+        self.init_dist = None    # Distance au noeud de départ (avec le chemin envisagé)
 
         self.parent = None      # Noeud parent       
         self.weight = None      # Poids du noeud dans l'algorithme A*
@@ -48,65 +48,65 @@ class Node:
 # Getters & Setters
 #######################################################################
 
-    def getPosition(self):
+    def get_position(self):
         return self.pos
 
-    def getX(self):
+    def get_x(self):
         return self.pos[0]
     
-    def getY(self):
+    def get_y(self):
         return self.pos[1]
     
-    def getWeight(self):
+    def get_weight(self):
         return self.weight
 
-    def getParent(self):
+    def get_parent(self):
         return self.parent
 
-    def getInitDist(self):
-        return self.initDist
+    def get_init_dist(self):
+        return self.init_dist
 
-    def getGoalDist(self):
-        return self.goalDist
+    def get_goal_dist(self):
+        return self.goal_dist
         
-    def getLinkNodeList(self):
+    def get_link_node_list(self):
         """Gets the link node list of the node."""
-        return self.linkNodeList
+        return self.link_node_list
         
-    def setParent(self, parent):
+    def set_parent(self, parent):
         self.parent = parent
         
-    def setGoalDist(self, goalDist):
-        self.goalDist = goalDist
-        if self.initDist != None:
-            self.weight = self.initDist+self.goalDist
+    def set_goal_dist(self, goal_dist):
+        self.goal_dist = goal_dist
+        if self.init_dist != None:
+            self.weight = self.init_dist+self.goal_dist
         
-    def setInitDist(self, startDist):
-        self.initDist = startDist
-        if self.goalDist != None: 
-            self.weight = self.initDist+self.goalDist
+    def set_init_dist(self, startDist):
+        self.init_dist = startDist
+        if self.goal_dist != None: 
+            self.weight = self.init_dist+self.goal_dist
 
-    def addLinkNodeList(self,node):
+    def add_link_node_list(self,node):
         """Adds a node to the linkNodeList."""
-        self.linkNodeList.append(node)
+        self.link_node_list.append(node)
 
 #######################################################################
 # Modification du noeud parent ainsi que des attributs du noeud actuel
 ####################################################################### 
 
-    def distFromNode(self, node):
+    def dist_from_node(self, node):
         '''Calcul la distance euclidienne avec le noeud passé en paramètre.'''
-        return math.sqrt((node.getX()-self.getX())**2+(node.getY()-self.getY())**2)
+        return math.sqrt((node.get_x()-self.get_x())**2+(node.get_y()-self.get_y())**2)
 
-    def calculWeight(self, parent):
+    def calcul_weight(self, parent):
         """Calcul du nouveau poids à partir d'un noeud parent (pour voir si l'on doit changer le noeud parent ou non)."""
-        return self.goalDist + parent.getInitDist() + self.distFromNode(parent)   
+        return self.goal_dist + parent.get_init_dist() + self.dist_from_node(parent)   
     
-    def updateNode(self, parent):
+    def update_node(self, parent):
         '''Fonction de mise à jour du noeud (changement de parent).'''
-        self.initDist = parent.getInitDist() + self.distFromNode(parent)
+        self.init_dist = parent.get_init_dist() + self.dist_from_node(parent)
         self.parent = parent
-        self.weight = self.calculWeight(parent)
+        self.weight = self.calcul_weight(parent)
 
 #######################################################################
 # Manipulation sur les noeuds
@@ -114,9 +114,9 @@ class Node:
     
     def equals(self, node):
         """Verifie l'egalite avec le noeud passe en parametre."""
-        return node.getX() == self.getX() and node.getY() == self.getY()
+        return node.get_x() == self.get_x() and node.get_y() == self.get_y()
   
-    def isVisible(self, node, tableMap): # TODO - change
+    def is_visible(self, node, tableMap): # TODO - change
         '''Vérifie si le noeud passé en paramètre est visible, i.e pas d'obstacle sur la route'''
         '''On peut se permettre par la suite de voir l'intersection du centre de notre robot avec les obstacles, car les dimensions du robot sont prise
         en compte dans la marge.'''
@@ -124,51 +124,51 @@ class Node:
         if self.equals(node):
             return False
         
-        nodeDist = self.distFromNode(node)
-        lineVect = np.array([node.getX()-self.getX(), node.getY()-self.getY()])
-        lineVect = lineVect / np.linalg.norm(lineVect)
+        node_dist = self.dist_from_node(node)
+        line_vect = np.array([node.get_x()-self.get_x(), node.get_y()-self.get_y()])
+        line_vect = line_vect / np.linalg.norm(line_vect)
         
-        for obstacle in tableMap.getObstacleList():
-            if obstacle.getName() == "C":
-                x = obstacle.getXCenter()
-                y = obstacle.getYCenter()
-                r = obstacle.getRadius()
+        for obstacle in tableMap.get_obstacle_list():
+            if obstacle.get_name() == "C":
+                x = obstacle.get_x_center()
+                y = obstacle.get_y_center()
+                r = obstacle.get_radius()
                 
                 ## det4 correspond au déterminant de l'équation caractéristique du second ordre calculant la ou les intersections avec le cercle étudié.
                 ## Si le déterminant est >= 0, il existe une intersection, et on regarde alors si cette intersection se trouve sur le chemin pour aller au noeud.
-                det4 = ((self.getX()-x)*lineVect[0]+(self.getY()-y)*lineVect[1])**2-((lineVect[0]**2+lineVect[1]**2)*((self.getX()-x)**2)+(self.getY()-y)**2-r**2)
+                det4 = ((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1])**2-((line_vect[0]**2+line_vect[1]**2)*((self.get_x()-x)**2)+(self.get_y()-y)**2-r**2)
                 if det4 >= 0:
-                    tp = -((self.getX()-x)*lineVect[0]+(self.getY()-y)*lineVect[1]+math.sqrt(det4))/(lineVect[0]**2+lineVect[1]**2)
-                    tm = -((self.getX()-x)*lineVect[0]+(self.getY()-y)*lineVect[1]-math.sqrt(det4))/(lineVect[0]**2+lineVect[1]**2)
-                    if 0 < tp < nodeDist or 0 < tm < nodeDist:
+                    tp = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]+math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
+                    tm = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]-math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
+                    if 0 < tp < node_dist or 0 < tm < node_dist:
                         return False
                     
-            elif obstacle.getName() == "T":
+            elif obstacle.get_name() == "T":
                 ## Pas d'obstacles triangulaires pour le moment.
                 continue
 
-            elif obstacle.getName() == "R":
-                xMin = obstacle.getXMin()
-                xMax = obstacle.getXMax()
-                yMin = obstacle.getYMin()
-                yMax = obstacle.getYMax()
+            elif obstacle.get_name() == "R":
+                x_min = obstacle.get_x_min()
+                x_max = obstacle.get_x_max()
+                y_min = obstacle.get_y_min()
+                y_max = obstacle.get_y_max()
                 
-                if lineVect[0] != 0 :
-                    tMin = (xMin-self.getX())/lineVect[0]
-                    tMax = (xMax-self.getX())/lineVect[0]
+                if line_vect[0] != 0 :
+                    t_min = (x_min-self.get_x())/line_vect[0]
+                    t_max = (x_max-self.get_x())/line_vect[0]
 
-                    if (yMin<self.getY()+tMin*lineVect[1]<yMax and 0<tMin<nodeDist) or (yMin<self.getY()+tMax*lineVect[1]<yMax and 0<tMax<nodeDist):
+                    if (y_min<self.get_y()+t_min*line_vect[1]<y_max and 0<t_min<node_dist) or (y_min<self.get_y()+t_max*line_vect[1]<y_max and 0<t_max<node_dist):
                         return False
     
-                if lineVect[1] != 0 :
-                    tMin = (yMin-self.getY())/lineVect[1]
-                    tMax = (yMax-self.getY())/lineVect[1]
+                if line_vect[1] != 0 :
+                    t_min = (y_min-self.get_y())/line_vect[1]
+                    t_max = (y_max-self.get_y())/line_vect[1]
                     
-                    if (xMin<self.getX()+tMin*lineVect[0]<xMax and 0<tMin<nodeDist ) or (xMin<self.getX()+tMax*lineVect[0]<xMax and 0<tMax<nodeDist):
+                    if (x_min<self.get_x()+t_min*line_vect[0]<x_max and 0<t_min<node_dist ) or (x_min<self.get_x()+t_max*line_vect[0]<x_max and 0<t_max<node_dist):
                         return False
             
             else:
-                raise TypeError("Obstacle type unknown... Obstacle.getName() = {}".format(obstacle.getName()))
+                raise TypeError("Obstacle type unknown... Obstacle.get_name() = {}".format(obstacle.get_name()))
                 
         return True
     

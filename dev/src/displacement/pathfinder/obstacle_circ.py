@@ -24,27 +24,27 @@ class ObstacleCirc:
     
     """Implemente un obstacle circulaire sur la map."""
 
-    def __init__(self, xCenter, yCenter, radius):
+    def __init__(self, x_center, y_center, radius):
         """Initialization of obstacle."""
         self.name = "C"         # Type d'obstacle
-        self.xCenter = xCenter  # Coordonnée selon l'axe X du centre du cercle
-        self.yCenter = yCenter  # Coordonnée selon l'axe Y du centre du cercle
+        self.x_center = x_center  # Coordonnée selon l'axe X du centre du cercle
+        self.y_center = y_center  # Coordonnée selon l'axe Y du centre du cercle
         self.radius = radius    # Rayon du cercle
         
-    def getXCenter(self):
-        return self.xCenter
+    def get_x_center(self):
+        return self.x_center
     
-    def getYCenter(self):
-        return self.yCenter
+    def get_y_center(self):
+        return self.y_center
     
-    def getRadius(self):
+    def get_radius(self):
         return self.radius
     
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def isNodeIn(self, node):
+    def is_node_in(self, node):
         """Verifie si le node passe en param est dans l'obstacle."""
         x = node.getX()
         y = node.getY()
-        return math.sqrt((x-self.xCenter)**2+(y-self.yCenter)**2)<self.radius
+        return math.sqrt((x-self.x_center)**2+(y-self.y_center)**2)<self.radius

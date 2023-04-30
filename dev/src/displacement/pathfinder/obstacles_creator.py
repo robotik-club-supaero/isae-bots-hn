@@ -33,8 +33,7 @@ from obstacle_rect import ObstacleRect
 from obstacle_circ import ObstacleCirc
 from obstacle_tria import ObstacleTria
 
-from disp_utils import READER
-from disp_utils import LOG_INFO
+from disp_utils import *
 
 HOME = 0
 AWAY = 1
@@ -45,7 +44,7 @@ AWAY = 1
 #
 #######################################################################
 
-def makeObstacleList(color):
+def make_obstacle_list(color):
     """Fonction retournant une liste d'obstacles statiques."""
 
     ## STATIC OBSTACLES ###############################################
@@ -109,5 +108,5 @@ def makeObstacleList(color):
         obstacleList.extend([digSiteHome,digSiteAway])
         #obstacleList.append(baseAway)
 
-    LOG_INFO("Number of static obstacles : {}.".format(len(obstacleList)))
+    log_info("Number of static obstacles : {}.".format(len(obstacleList)))
     return obstacleList

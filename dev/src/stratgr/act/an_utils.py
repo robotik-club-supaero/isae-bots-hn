@@ -20,7 +20,7 @@
 #################################################################
 
 import rospy
-from an_const import SIMULATION, NODE_NAME
+from an_const import SIMULATION, NODE_NAME, COLOR
 
 #################################################################
 #                                                               #
@@ -47,8 +47,8 @@ def log_errs(log):
     """
     rospy.logerr(NODE_NAME + log)
 
-def patch_frame_br(x, y, theta):
-    if SIMULATION:
+def patch_frame_br(x, y, theta, color):
+    if COLOR[color] == "HOME":
         return x, y, theta
     # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
     return 2000-x, y, -theta # Si la symétrie est selon l'axe y.

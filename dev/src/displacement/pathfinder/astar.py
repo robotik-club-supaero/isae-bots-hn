@@ -38,21 +38,21 @@ X_THRESHOLD = 5     # 5mm
 Y_THRESHOLD = 5     # 5mm
 #######################################################################
 
-def isNodeInList(list, node):
+def is_node_in_list(list, node):
     #Renvoie True si le noeud demandé est dans la liste et False sinon
-    for testNode in list:
-        if testNode.equals(node):
+    for test_node in list:
+        if test_node.equals(node):
             return True
     return False
 
-def isNodeOutObstacles(tableMap, node, isFirst):
+def is_node_out_obstacles(tableMap, node, isFirst):
     #Teste si le noeud est en dehors des obstacles
-    if not tableMap.getAvoid():
+    if not tableMap.get_avoid():
         return True
     if not isFirst:
         return True
-    for obstacle in tableMap.getObstacleList():
-        if obstacle.isNodeIn(node):
+    for obstacle in tableMap.get_obstacle_list():
+        if obstacle.is_node_in(node):
             return False
     return True
 
@@ -71,56 +71,56 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
 #######################################################################
     
     # Le noeud de test courant est initialise au noeud de depart
-    goalNode = Node(goal)
-    currNode = Node(init)    
+    goal_node = Node(goal)
+    curr_node = Node(init)    
 
     # Si l'arrivee est visible depuis le départ, on renvoie directement un chemin vers l'arrivée
-    if goalNode.isVisible(currNode, tableMap):
-        return [goalNode.getPosition()]
+    if goal_node.is_visible(curr_node, tableMap):
+        return [goal_node.get_position()]
     
-    currNode.setInitDist(0)
-    isFirstAccurate = not isNodeOutObstacles(tableMap, currNode, True)
-    isInAvoidMode = tableMap.getAvoid()
+    curr_node.set_init_dist(0)
+    isFirstAccurate = not is_node_out_obstacles(tableMap, curr_node, True)
+    is_in_avoid_mode = tableMap.get_avoid()
     
     # Init liste du A*
-    openedList = PriorityQueue() ## La queue des noeuds à regarder
-    openedList.put((currNode.weight(), currNode))
-    closedList = [] ## La liste des noeuds déjà visités
+    opened_list = PriorityQueue() ## La queue des noeuds à regarder
+    opened_list.put((curr_node.weight(), curr_node))
+    closed_list = [] ## La liste des noeuds déjà visités
     
     # Liaison des noeuds de depart et d'arrivee avec les noeuds de la carte
-    bestNode = None
-    bestDist = 0
-    for node in tableMap.getNodeList():
-        goalDist = node.distFromNode(goalNode)
+    best_node = None
+    best_dist = 0
+    for node in tableMap.get_node_list():
+        goal_dist = node.dist_from_node(goal_node)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent
-        if isInAvoidMode and goalDist < 200:  
-            node.addLinkNodeList(goalNode)
+        if is_in_avoid_mode and goal_dist < 200:  
+            node.add_link_node_list(goal_node)
         else:
-            node.addLinkNodeList(goalNode)
+            node.add_link_node_list(goal_node)
 
         # On connecte le noeud de départ
-        initDist = node.distFromNode(currNode)
+        init_dist = node.dist_from_node(curr_node)
 
-        if bestNode == None:
-            bestNode = node
-            bestDist = initDist
+        if best_node == None:
+            best_node = node
+            best_dist = init_dist
 
-        if initDist < 1500:
+        if init_dist < 1500:
             # On rajoute le noeud s'il est visible et hors des obstacles
-            if currNode.isVisible(node, tableMap) and isNodeOutObstacles(tableMap, node, False):
-                currNode.addLinkNodeList(node)
+            if curr_node.is_visible(node, tableMap) and is_node_out_obstacles(tableMap, node, False):
+                curr_node.add_link_node_list(node)
 
             # On garde le noeud même si la liaison traverse un obstacle si jamais on avait pas de meilleur noeud
-            if isNodeOutObstacles(tableMap, node, False):
-                if initDist < bestDist:
-                    bestNode = node
-                    bestDist = initDist
+            if is_node_out_obstacles(tableMap, node, False):
+                if init_dist < best_dist:
+                    best_node = node
+                    best_dist = init_dist
 
     # Si la liste de connection du noeud de depart est vide on force la premiere connection avec le noeud le plus proche          
-    if currNode.getLinkNodeList() == [] and bestNode != None:
-        bestNode.setGoalDist(bestNode.distFromNode(goalNode))
-        bestNode.updateNode(currNode)
+    if curr_node.get_link_node_list() == [] and best_node != None:
+        best_node.set_goal_dist(best_node.dist_from_node(goal_node))
+        best_node.update_node(curr_node)
 
 #######################################################################
 # PHASE DE RECHERCHE
@@ -129,55 +129,55 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     begin = time.time()
 
     # Boucle de parcours du graphe selon l'algo de A*
-    while not openedList.empty():
+    while not opened_list.empty():
         # NB: A peu pres 1000 passages ici quand on ne trouve pas de path (depend de la map et des positions)
         if time.time() - begin > maxAstarTime:  # interruption de l'Astar
             raise TimeOutError
         
-        currNode = openedList.get()
-        closedList.append(currNode)
+        curr_node = opened_list.get()
+        closed_list.append(curr_node)
 
-        if currNode == goalNode :
+        if curr_node == goal_node :
             break
 
-        for neighbor in currNode.getLinkNodeList() :
+        for neighbor in curr_node.get_link_node_list() :
 
-            if not neighbor.isVisible(currNode, tableMap):  # on garanti que le noeud est visible depuis currNode
+            if not neighbor.is_visible(curr_node, tableMap):  # on garanti que le noeud est visible depuis curr_node
                 continue
-            if isNodeInList(closedList, neighbor):          # on garanti qu'il n'est pas dans la liste fermé
+            if is_node_in_list(closed_list, neighbor):          # on garanti qu'il n'est pas dans la liste fermé
                 continue
 
-            neighbor.setGoalDist(neighbor.distFromNode(goalNode))
+            neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))
 
-            new_cost = currNode.getWeight() + neighbor.getGoalDist() + neighbor.distFromNode(currNode)
+            new_cost = curr_node.get_weight() + neighbor.get_goal_dist() + neighbor.dist_from_node(curr_node)
 
-            if neighbor.getWeight() == None or neighbor.getWeight() > new_cost:
-                neighbor.updateNode(currNode)
-                openedList.put((neighbor.getWeight(), neighbor))
+            if neighbor.get_weight() == None or neighbor.get_weight() > new_cost:
+                neighbor.update_node(curr_node)
+                opened_list.put((neighbor.get_weight(), neighbor))
 
 #######################################################################
 # POST TRAITEMENT DU PATH
 #######################################################################
 
-    # On récupère le chemin (à l'envers) (foundPath = [goal, ..., init])
-    foundPath = []
-    while currNode.parent != None:
-        foundPath.append(currNode)
-        currNode = currNode.getParent()
-    foundPath.append(currNode)
+    # On récupère le chemin (à l'envers) (found_path = [goal, ..., init])
+    found_path = []
+    while curr_node.parent != None:
+        found_path.append(curr_node)
+        curr_node = curr_node.get_parent()
+    found_path.append(curr_node)
     
-    finalPath = []
-    nbPts = len(foundPath)
+    final_path = []
+    nb_pts = len(found_path)
 
     # Sinon on parcours la liste à l'envers et supprime les points intermediaire si inutiles (autres points visibles)
-    for i in range(nbPts-1, 1, -1):
-        if foundPath[i].isVisible(foundPath[i-2], tableMap):
-            del foundPath[i-1]
+    for i in range(nb_pts-1, 1, -1):
+        if found_path[i].is_visible(found_path[i-2], tableMap):
+            del found_path[i-1]
             continue
-        if (i < nbPts-1):
-            finalPath.append(foundPath[i].getPosition())
+        if (i < nb_pts-1):
+            final_path.append(found_path[i].get_position())
 
-    finalPath.append(foundPath[1].getPosition())
-    finalPath.append(foundPath[0].getPosition())
+    final_path.append(found_path[1].get_position())
+    final_path.append(found_path[0].get_position())
 
-    return finalPath
+    return final_path

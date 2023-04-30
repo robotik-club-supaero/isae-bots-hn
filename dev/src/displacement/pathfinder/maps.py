@@ -44,41 +44,41 @@ class Maps:
 # Methods
 #######################################################################
 
-    def __init__(self, standardNodeList, avoidingNodeList, obstacleList):
+    def __init__(self, standard_node_list, avoiding_node_list, obstacle_list):
         """Initialization of Maps."""
-        self.robotWidth = int(literal_eval(READER.get("Robot", "robot_larg")))
+        self.robot_width = int(literal_eval(READER.get("Robot", "robot_larg")))
 
-        self.obstacleList = obstacleList            # Liste des obstacles
-        self.standardNodeList = standardNodeList    # Liste des noeuds de passages présents sur la Map        
-        self.avoidingNodeList = avoidingNodeList    # Liste des noeud à utiliser lors de l'évitement
+        self.obstacle_list = obstacle_list            # Liste des obstacles
+        self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        
+        self.avoiding_node_list = avoiding_node_list    # Liste des noeud à utiliser lors de l'évitement
 
-        self.obstacleRobotPos = None                # Position robot à éviter
+        self.obstacle_robot_pos = None                # Position robot à éviter
 
         # Choix map classique ou map d'évitement    #### ATRANSFORMER EN ENTIER POUR AVOIR PLUS QUE 2 MAPS ####
         self.avoid = False
         # Deuxieme essai evitement
-        self.isSecondAttempt = False
+        self.is_second_attempt = False
 
-    def getObstacleList(self):
+    def get_obstacle_list(self):
         if self.avoid:
-            if self.isSecondAttempt:
-                self.obstacleList.pop()
-            return self.obstacleList+[self.obstacleRobotPos]
+            if self.is_second_attempt:
+                self.obstacle_list.pop()
+            return self.obstacle_list+[self.obstacle_robot_pos]
         else:
-            return self.obstacleList
+            return self.obstacle_list
     
-    def getNodeList(self):
+    def get_node_list(self):
         if self.avoid:
-            return self.avoidingNodeList
+            return self.avoiding_node_list
         else:
-            return self.standardNodeList
+            return self.standard_node_list
 
-    def setObstacleRobotPos(self, obstacleRobotPos):
-        self.obstacleRobotPos = obstacleRobotPos
+    def set_obstacle_robot_pos(self, obstacle_robot_pos):
+        self.obstacle_robot_pos = obstacle_robot_pos
 
-    def setAvoid(self, avoid, isSecondAttempt):
+    def set_avoid(self, avoid, is_second_attempt):
         self.avoid = avoid
-        self.isSecondAttempt = isSecondAttempt
+        self.is_second_attempt = is_second_attempt
 
-    def getAvoid(self):
+    def get_avoid(self):
         return self.avoid

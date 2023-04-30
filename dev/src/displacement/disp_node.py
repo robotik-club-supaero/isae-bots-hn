@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -14,7 +14,7 @@
 # pyright: reportMissingImports=false
 
 """
-@file: DisplacementNode.py
+@file: disp_node.py
 @status: OK
 
 Fichier implementant le DisplacementNode.

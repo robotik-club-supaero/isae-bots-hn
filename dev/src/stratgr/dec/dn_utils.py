@@ -29,7 +29,7 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[DEC] "
+NODE_NAME = "[DEC] "
 #SIMULATION = False if os.environ['USER'] == 'pi' else True
 
 #################################################################
@@ -95,30 +95,28 @@ class Color():
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
 	RESET = '\033[0m'
-
+        
 def log_info(log):
     """
     Print standard logs.
     """
-    rospy.loginfo(f"{Color.WHITE}[{_NODENAME_}] {log}{Color.RESET}")
+    rospy.loginfo(NODE_NAME + log)
 
 
 def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{Color.YELLOW}[{_NODENAME_}] {log}{Color.RESET}")
-
+    rospy.logwarn(NODE_NAME + log)
 
 def log_errs(log):
     """
-    Print errors logs (errors concerning actions, not critical)
+    Print errors logs.
     """
-    rospy.logerr(f"{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")
-
+    rospy.logerr(NODE_NAME + log)
 
 def log_fatal(log):
     """
-    Print fatal error logs (critical errors, not concerning actions and never supposed to happen)
+    Print errors logs.
     """
-    rospy.logfatal(f"{Color.BOLD}{Color.UNDERLINE}{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")
+    rospy.logfatal(NODE_NAME + log)

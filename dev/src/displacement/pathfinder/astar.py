@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -29,9 +28,15 @@ d'obstacle définie dans la classe Map.
 
 import time
 
+<<<<<<< HEAD
 from pathfinder.node import Node
 from queue import PriorityQueue
 from pathfinder.exceptions import PathNotFoundError, TimeOutError
+=======
+from .node import Node
+from Queue import PriorityQueue
+from exceptions import PathNotFoundError, TimeOutError
+>>>>>>> origin/action_node
 
 ### CONSTANTES ########################################################
 X_THRESHOLD = 5     # 5mm

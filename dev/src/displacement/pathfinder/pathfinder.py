@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -24,18 +23,32 @@
 #
 #######################################################################
 
+<<<<<<< HEAD
 from pathfinder.maps import Maps
 from pathfinder.astar import a_star
 from pathfinder.exceptions import PathNotFoundError
+=======
+from .maps import Maps
+from .astar import a_star
+from .exceptions import PathNotFoundError
+>>>>>>> origin/action_node
 
 import pathfinder.nodes_creator as nc
 import pathfinder.obstacles_creator as oc
 
+<<<<<<< HEAD
 from pathfinder.obstacle_rect import ObstacleRect
 from pathfinder.obstacle_circ import ObstacleCirc
+=======
+from .obstacle_rect import ObstacleRect
+from .obstacle_circ import ObstacleCirc
+>>>>>>> origin/action_node
 
-from disp_utils import *
-from ast import literal_eval
+
+# from .disp_utils import *
+from disp_utils import READER
+
+from .ast import literal_eval
 
 #######################################################################
 #

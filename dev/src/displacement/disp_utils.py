@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -45,8 +44,7 @@ DEBUG_PRINT = True
 VERSION = 1
 NODE_NAME = "[DSP] "   
 
-SIMULATION = True
-""" False if os.environ['USER'] == 'pi' else True """
+
 
 READER = configparser.ConfigParser()
 try :

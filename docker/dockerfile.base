@@ -26,6 +26,9 @@ RUN pip3 install numpy
 RUN apt install -y python3-tk
 RUN pip install mttkinter
 
+# Install dependency of lidar driver node (hokuyo or sick)
+RUN apt-get install -y ros-noetic-diagnostics
+
 # Add user so that we don't log in as root
 RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio dockeruser
 

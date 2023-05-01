@@ -32,7 +32,7 @@ from enum import Enum, IntEnum
 #################################################################
 
 NODE_NAME = "[ACT] "
-SIMULATION = True #TODO remove this parameter
+SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #-- GAME CONSTANTS --
 

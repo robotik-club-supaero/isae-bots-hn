@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -29,12 +28,16 @@ from ast import literal_eval
 
 from disp_utils import READER
 
+<<<<<<< HEAD
 #################################################################################################
 """ if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
 else: """
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################################################
+=======
+# from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
+>>>>>>> origin/action_node
 
 class Maps:
 

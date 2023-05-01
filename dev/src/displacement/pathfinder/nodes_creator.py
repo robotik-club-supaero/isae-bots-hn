@@ -27,7 +27,7 @@
 import os
 
 import xml.etree.ElementTree as ET
-from node import Node
+from pathfinder.node import Node
 
 from disp_utils import *
 

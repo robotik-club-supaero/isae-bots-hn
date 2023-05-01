@@ -29,9 +29,9 @@ d'obstacle définie dans la classe Map.
 
 import time
 
-from node import Node
-from Queue import PriorityQueue
-from exceptions import PathNotFoundError, TimeOutError
+from pathfinder.node import Node
+from queue import PriorityQueue
+from pathfinder.exceptions import PathNotFoundError, TimeOutError
 
 ### CONSTANTES ########################################################
 X_THRESHOLD = 5     # 5mm

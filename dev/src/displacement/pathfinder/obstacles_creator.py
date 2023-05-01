@@ -29,9 +29,9 @@ TODO: add samples as obstacles
 import numpy as np
 
 from ast import literal_eval
-from obstacle_rect import ObstacleRect
-from obstacle_circ import ObstacleCirc
-from obstacle_tria import ObstacleTria
+from pathfinder.obstacle_rect import ObstacleRect
+from pathfinder.obstacle_circ import ObstacleCirc
+from pathfinder.obstacle_tria import ObstacleTria
 
 from disp_utils import *
 

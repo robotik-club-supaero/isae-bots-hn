@@ -45,11 +45,12 @@ DEBUG_PRINT = True
 VERSION = 1
 NODE_NAME = "[DSP] "   
 
-SIMULATION = False if os.environ['USER'] == 'pi' else True
+SIMULATION = True
+""" False if os.environ['USER'] == 'pi' else True """
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../gr_config.ini"))
 except:
 	print("no file found...")
 

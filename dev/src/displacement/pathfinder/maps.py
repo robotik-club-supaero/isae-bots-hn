@@ -30,10 +30,10 @@ from ast import literal_eval
 from disp_utils import READER
 
 #################################################################################################
-if os.environ['USER'] == 'pi':
+""" if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
-else:
-    from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
+else: """
+from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################################################
 
 class Maps:

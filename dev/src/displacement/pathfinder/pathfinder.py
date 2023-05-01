@@ -24,15 +24,15 @@
 #
 #######################################################################
 
-from maps import Maps
-from astar import a_star
-from exceptions import PathNotFoundError
+from pathfinder.maps import Maps
+from pathfinder.astar import a_star
+from pathfinder.exceptions import PathNotFoundError
 
-import nodes_creator as nc
-import obstacles_creator as oc
+import pathfinder.nodes_creator as nc
+import pathfinder.obstacles_creator as oc
 
-from obstacle_rect import ObstacleRect
-from obstacle_circ import ObstacleCirc
+from pathfinder.obstacle_rect import ObstacleRect
+from pathfinder.obstacle_circ import ObstacleCirc
 
 from disp_utils import *
 from ast import literal_eval

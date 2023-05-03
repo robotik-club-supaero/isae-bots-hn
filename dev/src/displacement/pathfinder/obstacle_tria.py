@@ -48,8 +48,8 @@ class ObstacleTria:
         return self.name
 
     def is_node_in(self, node):
-        x = node.getX()
-        y = node.getY()
+        x = node.get_x()
+        y = node.get_y()
 
         ## Calcul des produits vectoriels 
         a = (self.p2[0]-x)*(self.p3[1]-y) - (self.p2[1]-y)*(self.p3[0]-x)

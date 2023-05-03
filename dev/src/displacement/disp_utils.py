@@ -53,7 +53,7 @@ except:
 	print("no file found...")
 
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
-INIT_POS = READER.get("ROBOT", "init_pos")
+INIT_POS = list(literal_eval(READER.get("ROBOT", "init_pos")))
 
 MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
 

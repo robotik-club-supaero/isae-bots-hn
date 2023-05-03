@@ -45,8 +45,8 @@ class ObstacleRect:
         return self.name
 
     def is_node_in(self, node):
-        x = node.getX()
-        y = node.getY()
+        x = node.get_x()
+        y = node.get_y()
         return self.x_min<x<self.x_max and self.y_min<y<self.y_max
 
     

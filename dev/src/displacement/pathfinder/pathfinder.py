@@ -23,32 +23,19 @@
 #
 #######################################################################
 
-<<<<<<< HEAD
 from pathfinder.maps import Maps
 from pathfinder.astar import a_star
 from pathfinder.exceptions import PathNotFoundError
-=======
-from .maps import Maps
-from .astar import a_star
-from .exceptions import PathNotFoundError
->>>>>>> origin/action_node
 
 import pathfinder.nodes_creator as nc
 import pathfinder.obstacles_creator as oc
-
-<<<<<<< HEAD
 from pathfinder.obstacle_rect import ObstacleRect
 from pathfinder.obstacle_circ import ObstacleCirc
-=======
-from .obstacle_rect import ObstacleRect
-from .obstacle_circ import ObstacleCirc
->>>>>>> origin/action_node
 
 
 # from .disp_utils import *
-from disp_utils import READER
-
-from .ast import literal_eval
+from disp_utils import READER, log_info
+from ast import literal_eval
 
 #######################################################################
 #
@@ -70,7 +57,7 @@ class Pathfinder:
         self.robot_to_avoid_pos = None        
         
         self.color = color   # Color : 0 Home | 1 Away | 
-        self.max_astar_time = int(literal_eval(READER.get("Pathfinder", "max_astar_time")))
+        self.max_astar_time = int(literal_eval(READER.get("PATHFINDER", "max_astar_time")))
         
     def set_init(self, pos):
         self.init_pos = pos
@@ -96,6 +83,7 @@ class Pathfinder:
         
     def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
         if isAvoid:
+            self.set_robot_to_avoid_pos([1500, 1500], 300)
             if self.robot_to_avoid_pos is None:
                 log_info("ERREUR : IL N'Y A PAS EU DE SETAVOIDROBOT.")
                 raise PathNotFoundError

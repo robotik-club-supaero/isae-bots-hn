@@ -54,8 +54,7 @@ def make_node_list(option):
     """
   
     ## CONFIG DATA ####################################################
-
-    if ROBOT_NAME == "PR":
+    if ROBOT_NAME == "\"GR\"":
         data0 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
         data1 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
         data2 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
@@ -75,11 +74,11 @@ def make_node_list(option):
 
     ## BUILDING NODES #################################################
     nodeList = []
-    for nodeParam in data.xpath("/map/node"):
+    for nodeParam in data.findall("node"):
         nodeList.append(Node([int(nodeParam.get("x")),int(nodeParam.get("y"))])) 
-    for linkParam in data.xpath("/map/connection"):
+    for linkParam in data.findall("connection"):
         node1Index = int(linkParam.get("p1")[1:])
         node2Index = int(linkParam.get("p2")[1:])
-        nodeList[node1Index].addLinkNodeList(nodeList[node2Index])
-        nodeList[node2Index].addLinkNodeList(nodeList[node1Index])
+        nodeList[node1Index].add_link_node_list(nodeList[node2Index])
+        nodeList[node2Index].add_link_node_list(nodeList[node1Index])
     return nodeList

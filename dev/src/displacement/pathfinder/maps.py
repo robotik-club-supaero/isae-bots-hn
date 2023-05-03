@@ -28,16 +28,13 @@ from ast import literal_eval
 
 from disp_utils import READER
 
-<<<<<<< HEAD
 #################################################################################################
 """ if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
 else: """
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################################################
-=======
 # from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
->>>>>>> origin/action_node
 
 class Maps:
 
@@ -49,7 +46,7 @@ class Maps:
 
     def __init__(self, standard_node_list, avoiding_node_list, obstacle_list):
         """Initialization of Maps."""
-        self.robot_width = int(literal_eval(READER.get("Robot", "robot_larg")))
+        self.robot_width = int(literal_eval(READER.get("ROBOT", "robot_larg")))
 
         self.obstacle_list = obstacle_list            # Liste des obstacles
         self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        

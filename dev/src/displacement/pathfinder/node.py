@@ -74,6 +74,9 @@ class Node:
         
     def set_parent(self, parent):
         self.parent = parent
+
+    def set_weight(self, weight):
+        self.weight = weight 
         
     def set_goal_dist(self, goal_dist):
         self.goal_dist = goal_dist

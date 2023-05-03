@@ -44,6 +44,6 @@ class ObstacleCirc:
 
     def is_node_in(self, node):
         """Verifie si le node passe en param est dans l'obstacle."""
-        x = node.getX()
-        y = node.getY()
+        x = node.get_x()
+        y = node.get_y()
         return math.sqrt((x-self.x_center)**2+(y-self.y_center)**2)<self.radius

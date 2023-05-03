@@ -50,8 +50,8 @@ def make_obstacle_list(color):
 
     # On rentre les obstacles avec cotes precises et on y rajoute la 
     # largeur du robot qu'on simule
-    robotW = int(READER.get("Robot", "robot_larg"))
-    robotL = int(READER.get("Robot", "robot_long"))
+    robotW = int(READER.get("ROBOT", "robot_larg"))
+    robotL = int(READER.get("ROBOT", "robot_long"))
     robotDiag = np.linalg.norm([robotW/2, robotL/2])
     margin = robotDiag // 2 + 20
 

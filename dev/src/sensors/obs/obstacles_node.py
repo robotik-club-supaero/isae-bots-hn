@@ -109,7 +109,7 @@ class ObstaclesNode:
         if msg.data[0] == 0:  # lidar obstacle
             nbr = self.nb_lidar
             obs = self.lidar_obs_lst
-            self.nb_lidar = (self.nb_lidar + 1) % 
+            self.nb_lidar = (self.nb_lidar + 1) % self.INTERVALLE
 
 
 

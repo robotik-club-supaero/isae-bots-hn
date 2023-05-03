@@ -62,6 +62,8 @@ STOP_RANGE_Y_AVOID = 175 + BECAUSE_BIG_IS_BIG
 
 COEFF_ANGLES = 0.57735026 # pi/6 | 30°
 
+SIMULATION = True
+
 def init_comm(displacementNode):
     global p_dn   # create global variable pointer to DisplacementNode
     p_dn = displacementNode 
@@ -84,12 +86,12 @@ CMD_TEENSY = {
 
 """Dictionnaire des commandes recues de la strat."""
 CMD_STRAT = {
-    0: "standard",        # Déplacement du robot vers un point
-    1: "noAvoidance",     # On désactive l'évitement pour ces déplacements
-    2: "stop",            # Arrête le mouvement
-    3: "accurate",        # Déplacement précis du robot
-    4: "recalage",        # Déplacement de type recalage (contre un bord du terrain typiquement)
-    5: "rotation"         # On ne demande qu'une rotation (Peut servir)
+    "standard":     0,        # Déplacement du robot vers un point
+    "noAvoidance":  1,     # On désactive l'évitement pour ces déplacements
+    "stop":         2,            # Arrête le mouvement
+    "accurate":     3,        # Déplacement précis du robot
+    "recalage":     4,        # Déplacement de type recalage (contre un bord du terrain typiquement)
+    "rotation":     5         # On ne demande qu'une rotation (Peut servir)
 }
 
 """Dictionnaire des callback renvoyees a la strat."""
@@ -130,6 +132,7 @@ def callback_teensy(msg):
     ## On est arrivé a point 
     if msg.data == 0:
         if p_dn.final_move:
+            log_info("Arrived to position")
             p_dn.turn = True
             p_dn.final_turn = True
             p_dn.avoid_mode = False
@@ -308,7 +311,7 @@ def callback_lidar(msg):
                         obstacle_seen = True
                         if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
                             obstacle_stop = True
-                            # p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1], RADIUS_ROBOT_OBSTACLE])
+                            p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1], RADIUS_ROBOT_OBSTACLE])
                     else:
                         if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                             obstacle_seen = True
@@ -349,6 +352,7 @@ def callback_init_pos(msg):
     """Update la position de départ du robot."""
     x, y, z = patch_frame_br(INIT_POS[0], INIT_POS[1], INIT_POS[2], p_dn.color)
     pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
+    p_dn.current_pos = [x, y, z]
 
     ## Init pathfinder with correct color
     p_dn.pathfinder = Pathfinder(p_dn.color) #TODO paramètre à supprimer, une seule grid commune pour le pathfinder

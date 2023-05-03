@@ -28,15 +28,10 @@ d'obstacle définie dans la classe Map.
 
 import time
 
-<<<<<<< HEAD
+
 from pathfinder.node import Node
 from queue import PriorityQueue
 from pathfinder.exceptions import PathNotFoundError, TimeOutError
-=======
-from .node import Node
-from Queue import PriorityQueue
-from exceptions import PathNotFoundError, TimeOutError
->>>>>>> origin/action_node
 
 ### CONSTANTES ########################################################
 X_THRESHOLD = 5     # 5mm
@@ -78,18 +73,22 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     # Le noeud de test courant est initialise au noeud de depart
     goal_node = Node(goal)
     curr_node = Node(init)    
+    nb_elem = 0
 
     # Si l'arrivee est visible depuis le départ, on renvoie directement un chemin vers l'arrivée
     if goal_node.is_visible(curr_node, tableMap):
         return [goal_node.get_position()]
     
     curr_node.set_init_dist(0)
+    curr_node.set_goal_dist(curr_node.dist_from_node(goal_node))
+    curr_node.set_weight(curr_node.get_goal_dist())
     isFirstAccurate = not is_node_out_obstacles(tableMap, curr_node, True)
     is_in_avoid_mode = tableMap.get_avoid()
     
     # Init liste du A*
     opened_list = PriorityQueue() ## La queue des noeuds à regarder
-    opened_list.put((curr_node.weight(), curr_node))
+    opened_list.put((curr_node.get_weight(), nb_elem, curr_node))
+    nb_elem += 1
     closed_list = [] ## La liste des noeuds déjà visités
     
     # Liaison des noeuds de depart et d'arrivee avec les noeuds de la carte
@@ -136,10 +135,10 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     # Boucle de parcours du graphe selon l'algo de A*
     while not opened_list.empty():
         # NB: A peu pres 1000 passages ici quand on ne trouve pas de path (depend de la map et des positions)
-        if time.time() - begin > maxAstarTime:  # interruption de l'Astar
+        if (time.time() - begin) > float(maxAstarTime):  # interruption de l'Astar
             raise TimeOutError
         
-        curr_node = opened_list.get()
+        curr_node = opened_list.get()[2]
         closed_list.append(curr_node)
 
         if curr_node == goal_node :
@@ -158,7 +157,11 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
 
             if neighbor.get_weight() == None or neighbor.get_weight() > new_cost:
                 neighbor.update_node(curr_node)
-                opened_list.put((neighbor.get_weight(), neighbor))
+                print(neighbor.get_position())
+                print(neighbor.get_weight())
+                opened_list.put((neighbor.get_weight(), nb_elem, neighbor))
+                nb_elem += 1
+                print("ok")
 
 #######################################################################
 # POST TRAITEMENT DU PATH
@@ -181,8 +184,8 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
             continue
         if (i < nb_pts-1):
             final_path.append(found_path[i].get_position())
-
-    final_path.append(found_path[1].get_position())
+    if nb_pts > 1:
+        final_path.append(found_path[1].get_position())
     final_path.append(found_path[0].get_position())
 
     return final_path

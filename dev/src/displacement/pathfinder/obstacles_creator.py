@@ -55,24 +55,6 @@ def make_obstacle_list(color):
     robotDiag = np.linalg.norm([robotW/2, robotL/2])
     margin = robotDiag // 2 + 20
 
-    # Galeries
-    galerieHome = ObstacleRect(0, 100+margin, 450, 1170)
-    galerieAway = ObstacleRect(0, 100+margin, 1830, 2550)
-
-    # Rack palets
-    rackCampHome = ObstacleRect(1175-margin, 1325+margin, 0, 102+margin)
-    rackCampAway = ObstacleRect(1175-margin, 1325+margin, 2898-margin, 3000)
-    rackGalerieHome = ObstacleRect(0, 102+margin, 1275, 1425)
-    rackGalerieAway = ObstacleRect(0, 102+margin, 1575, 1725)
-
-    # Sites de fouille
-    digSiteHome = ObstacleRect(1200-margin, 1550+margin, 800-margin, 1150+margin)
-    digSiteAway = ObstacleRect(1200-margin, 1550+margin, 1850-margin, 2200+margin)
-
-    # Statuette piedestal
-    statueHome = ObstacleTria((2000,   0), (1490-margin,   0), (2000, 510+margin))
-    statueAway = ObstacleTria((2000,3000), (1490-margin,3000), (2000,2490-margin))
-
     # Walls 
     wallNorth = ObstacleRect(0, margin, 0, 3000)
     wallSouth = ObstacleRect(2000-margin, 2000, 510, 2490)
@@ -96,15 +78,11 @@ def make_obstacle_list(color):
 
     if color == HOME:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
-        obstacleList.extend([rackCampHome, rackGalerieHome, rackGalerieAway])
-        obstacleList.extend([galerieHome, galerieAway, statueHome, statueAway])
-        obstacleList.extend([digSiteHome,digSiteAway])
+
         #obstacleList.append(baseHome)
     else:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
-        obstacleList.extend([rackCampAway, rackGalerieHome, rackGalerieAway])
-        obstacleList.extend([galerieHome, galerieAway, statueHome, statueAway])
-        obstacleList.extend([digSiteHome,digSiteAway])
+
         #obstacleList.append(baseAway)
 
     log_info("Number of static obstacles : {}.".format(len(obstacleList)))

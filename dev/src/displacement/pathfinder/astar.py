@@ -42,7 +42,7 @@ def is_node_in_list(list, node):
     #Renvoie True si le noeud demandé est dans la liste et False sinon
     for test_node in list:
         if test_node.equals(node):
-            return True
+            return True, test_node
     return False
 
 def is_node_out_obstacles(tableMap, node, isFirst):
@@ -72,7 +72,8 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     
     # Le noeud de test courant est initialise au noeud de depart
     goal_node = Node(goal)
-    curr_node = Node(init)    
+    init_node = Node(init)    
+    curr_node = init_node
     nb_elem = 0
 
     # Si l'arrivee est visible depuis le départ, on renvoie directement un chemin vers l'arrivée
@@ -81,7 +82,9 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     
     curr_node.set_init_dist(0)
     curr_node.set_goal_dist(curr_node.dist_from_node(goal_node))
-    curr_node.set_weight(curr_node.get_goal_dist())
+    curr_node.set_weight(0)
+    goal_node.set_goal_dist(0)
+    goal_node.set_init_dist(goal_node.dist_from_node(curr_node))
     isFirstAccurate = not is_node_out_obstacles(tableMap, curr_node, True)
     is_in_avoid_mode = tableMap.get_avoid()
     
@@ -98,10 +101,9 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
         goal_dist = node.dist_from_node(goal_node)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent
-        if is_in_avoid_mode and goal_dist < 200:  
+        if is_in_avoid_mode and goal_dist < 400:
             node.add_link_node_list(goal_node)
-        else:
-            node.add_link_node_list(goal_node)
+            goal_node.add_link_node_list(node)
 
         # On connecte le noeud de départ
         init_dist = node.dist_from_node(curr_node)
@@ -110,10 +112,11 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
             best_node = node
             best_dist = init_dist
 
-        if init_dist < 1500:
+        if init_dist < 500:
             # On rajoute le noeud s'il est visible et hors des obstacles
             if curr_node.is_visible(node, tableMap) and is_node_out_obstacles(tableMap, node, False):
                 curr_node.add_link_node_list(node)
+                node.add_link_node_list(curr_node)
 
             # On garde le noeud même si la liaison traverse un obstacle si jamais on avait pas de meilleur noeud
             if is_node_out_obstacles(tableMap, node, False):
@@ -132,47 +135,57 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
 
     begin = time.time()
 
+    found = False
+
     # Boucle de parcours du graphe selon l'algo de A*
-    while not opened_list.empty():
+    while not opened_list.empty() and not found:
         # NB: A peu pres 1000 passages ici quand on ne trouve pas de path (depend de la map et des positions)
         if (time.time() - begin) > float(maxAstarTime):  # interruption de l'Astar
             raise TimeOutError
-        
         curr_node = opened_list.get()[2]
-        closed_list.append(curr_node)
-
-        if curr_node == goal_node :
-            break
+        
 
         for neighbor in curr_node.get_link_node_list() :
 
             if not neighbor.is_visible(curr_node, tableMap):  # on garanti que le noeud est visible depuis curr_node
                 continue
-            if is_node_in_list(closed_list, neighbor):          # on garanti qu'il n'est pas dans la liste fermé
-                continue
+            """ if is_node_in_list(closed_list, neighbor):          # on garanti qu'il n'est pas dans la liste fermé
+                continue """
+            
+            if neighbor.equals(goal_node):
+                neighbor.update_node(curr_node)
+                curr_node = neighbor
+                found = not found 
+                break
 
             neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))
 
             new_cost = curr_node.get_weight() + neighbor.get_goal_dist() + neighbor.dist_from_node(curr_node)
 
-            if neighbor.get_weight() == None or neighbor.get_weight() > new_cost:
+            """ in_open = is_node_in_list(opened_list, neighbor)
+            in_close = is_node_in_list(closed_list, neighbor) """
+
+            if neighbor.get_weight() == None or neighbor.get_weight() > new_cost:    
                 neighbor.update_node(curr_node)
-                print(neighbor.get_position())
-                print(neighbor.get_weight())
                 opened_list.put((neighbor.get_weight(), nb_elem, neighbor))
                 nb_elem += 1
-                print("ok")
+        closed_list.append(curr_node)
 
 #######################################################################
 # POST TRAITEMENT DU PATH
 #######################################################################
+
+    if not found :
+        raise PathNotFoundError
+        return 
 
     # On récupère le chemin (à l'envers) (found_path = [goal, ..., init])
     found_path = []
     while curr_node.parent != None:
         found_path.append(curr_node)
         curr_node = curr_node.get_parent()
-    found_path.append(curr_node)
+    if not curr_node.equals(init_node):
+        found_path.append(curr_node)
     
     final_path = []
     nb_pts = len(found_path)

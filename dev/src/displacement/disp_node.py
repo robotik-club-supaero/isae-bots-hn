@@ -205,7 +205,7 @@ class DisplacementNode:
             x,y,_ = patch_frame_br(x,y,0,self.color) """
 
             # Si on est dans un obstacle
-            if self.is_first_accurate[0]:
+            if self.is_first_accurate:
                 xLoc, _ = to_robot_coord(self.current_pos[0], self.current_pos[1], self.current_pos[2], self.path[0])
                 if xLoc > 0: # Marche avant necessaire
                     self.forward = True

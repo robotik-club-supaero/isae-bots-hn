@@ -62,7 +62,7 @@ class Maps:
     def get_obstacle_list(self):
         if self.avoid:
             if self.is_second_attempt:
-                self.obstacle_list.pop()
+                return self.obstacle_list
             return self.obstacle_list+[self.obstacle_robot_pos]
         else:
             return self.obstacle_list

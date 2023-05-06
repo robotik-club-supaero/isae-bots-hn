@@ -359,7 +359,7 @@ def callback_init_pos(msg):
     publish_grid(p_dn.pathfinder.table_map.get_node_list())
 
 
-def callback_position(msg):
+def callback_position(  msg):
     """Update la position actuelle du robot."""
 
     p_dn.current_pos = [msg.x, msg.y, msg.theta]

@@ -12,7 +12,8 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 from std_msgs.msg import Float32MultiArray
 
-from math import fmod, pi, cos, sin
+from math import fmod, pi
+from numpy import cos, sin
 from threading import RLock
 
 from signal import signal, SIGINT
@@ -20,27 +21,48 @@ from sys import exit
 
 from enum import Enum
 
-class D(Enum):
-    current_time = 0
-    robotPosX = 1
-    robotPosY = 2
-    robotPosTheta = 3
-    goalPointPosX = 4
-    goalPointPosY = 5
-    goalPointPosTheta = 6
-    trajectoryS = 7
-    goalSpeedLinear = 8
-    goalSpeedAngular = 9
-    asservErrorX = 10
-    asservErrorY = 11
-    commandV = 12
-    commandOmega = 13
-    commandeMotorR = 14
-    commandeMotorL = 15
-    rampSpeed = 16
-    rampState = 17
-    BrState = 18
+# class D(Enum):
+#     current_time = 0
+#     robotPosX = 1
+#     robotPosY = 2
+#     robotPosTheta = 3
+#     goalPointPosX = 4
+#     goalPointPosY = 5
+#     goalPointPosTheta = 6
+#     trajectoryS = 7
+#     goalSpeedLinear = 8
+#     goalSpeedAngular = 9
+#     asservErrorX = 10
+#     asservErrorY = 11
+#     commandV = 12
+#     commandOmega = 13
+#     commandeMotorR = 14
+#     commandeMotorL = 15
+#     rampSpeed = 16
+#     rampState = 17
+#     BrState = 18
 
+D = (
+    'current_time',
+    'robotPosX',
+    'robotPosY',
+    'robotPosTheta',
+    'goalPointPosX',
+    'goalPointPosY',
+    'goalPointPosTheta',
+    'trajectoryS',
+    'goalSpeedLinear',
+    'goalSpeedAngular',
+    'asservErrorX',
+    'asservErrorY',
+    'commandV',
+    'commandOmega',
+    'commandeMotorR',
+    'commandeMotorL',
+    'rampSpeed',
+    'rampState',
+    'BrState'
+)
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -85,7 +107,7 @@ class GraphNode(pg.GraphicsWindow):
                     self.tab[i][:-1] = self.tab[i][1:]   # quand on a assez de données on shift en supprimant la donnée la plus ancienne
                     self.tab[i][-1] = msg.data[i]
 
-            self.tab[D.robotPosTheta][-1] = fmod(msg.data[D.robotPosTheta],360)
+            # self.tab[D.index('robotPositionTheta')][-1] = fmod(msg.data[D.robotPosTheta],360)
             # self.tab[15][-1] *= 100  # to see the errors
             # self.tab[16][-1] *= 100
             self.nbDonnees += 1
@@ -99,42 +121,54 @@ class GraphNode(pg.GraphicsWindow):
                 return
             for i in self.graphs:
                 if i == 0:  # States
-                    self.curves[0].setData(self.tab[D.current_time], self.tab[D.BrState])  #stateAsserv #assigne les données aux abscisses
-                    self.curves[1].setData(self.tab[D.current_time], self.tab[D.rampState])
+                    self.curves[0].setData(self.tab[D.index('current_time')], self.tab[D.index('BrState')])  #stateAsserv #assigne les données aux abscisses
+                    self.curves[1].setData(self.tab[D.index('current_time')], self.tab[D.index('rampState')])
 
                 if i == 1:  # Ramp Goal speed
-                    self.curves[2].setData(self.tab[D.current_time], self.tab[D.rampSpeed])
+                    self.curves[2].setData(self.tab[D.index('current_time')], self.tab[D.index('rampSpeed')])
 
                 if i == 2:  # HN Goal Speeds
-                    self.curves[3].setData(self.tab[D.current_time], self.tab[D.goalSpeedLinear])
-                    self.curves[4].setData(self.tab[D.current_time], self.tab[D.goalSpeedAngular])
+                    self.curves[3].setData(self.tab[D.index('current_time')], self.tab[D.index('goalSpeedLinear')])
+                    self.curves[4].setData(self.tab[D.index('current_time')], self.tab[D.index('goalSpeedAngular')])
 
                 if i == 3:  # Trajectory s
-                    self.curves[5].setData(self.tab[D.current_time], self.tab[D.trajectoryS])
+                    self.curves[5].setData(self.tab[D.index('current_time')], self.tab[D.index('trajectoryS')])
 
                 if i == 4:  # Point positions
-                    self.curves[6].setData(self.tab[D.robotPosX], self.tab[D.robotPosy])
+                    self.curves[6].setData(self.tab[D.index('robotPosX')], self.tab[D.index('robotPosY')])
                     self.curves[7].setData(
-                        self.tab[D.robotPosX] + self.alpha*cos(self.tab[D.robotPosTheta]),
-                        self.tab[D.robotPosY] + self.alpha*sin(self.tab[D.robotPosTheta])
+                        [
+                            self.tab[D.index('robotPosX')][j] + self.alpha*cos(self.tab[D.index('robotPosTheta')][j])
+                            for j in range(len(self.tab[D.index('robotPosX')]))
+                        ],
+                        [
+                            self.tab[D.index('robotPosY')][j] + self.alpha*cos(self.tab[D.index('robotPosTheta')][j])
+                            for j in range(len(self.tab[D.index('robotPosY')]))
+                        ]
                         )
-                    self.curves[8].setData(self.tab[D.goalPointPosX], self.tab[D.goalPointPosY])
+                    self.curves[8].setData(self.tab[D.index('goalPointPosX')], self.tab[D.index('goalPointPosY')])
                     self.curves[9].setData(
-                        self.tab[D.goalPointPosX] + self.alpha*cos(self.tab[D.goalPointPosTheta]),
-                        self.tab[D.goalPointPosY] + self.alpha*sin(self.tab[D.goalPointPosTheta])
+                        [
+                            self.tab[D.index('goalPointPosX')][j] + self.alpha*cos(self.tab[D.index('goalPointPosTheta')][j])
+                            for j in range(len(self.tab[D.index('goalPointPosX')]))
+                        ],
+                        [
+                            self.tab[D.index('goalPointPosY')][j] + self.alpha*cos(self.tab[D.index('goalPointPosTheta')][j])
+                            for j in range(len(self.tab[D.index('goalPointPosY')]))
+                        ]
                         )
 
                 if i == 5:  # Errors
-                    self.curves[10].setData(self.tab[D.current_time], self.tab[D.asservErrorX])
-                    self.curves[11].setData(self.tab[D.current_time], self.tab[D.asservErrorY])
+                    self.curves[10].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorX')])
+                    self.curves[11].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorY')])
 
                 if i == 6:  # Asserv commands
-                    self.curves[12].setData(self.tab[D.current_time], self.tab[D.commandV])
-                    self.curves[13].setData(self.tab[D.current_time], self.tab[D.commandOmega])
+                    self.curves[12].setData(self.tab[D.index('current_time')], self.tab[D.index('commandV')])
+                    self.curves[13].setData(self.tab[D.index('current_time')], self.tab[D.index('commandOmega')])
 
                 if i == 7:  # Motor commands
-                    self.curves[14].setData(self.tab[D.current_time], self.tab[D.commandeMotorR])
-                    self.curves[15].setData(self.tab[D.current_time], self.tab[D.commandeMotorL])
+                    self.curves[14].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorR')])
+                    self.curves[15].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorL')])
 
 
     def setRanges(self):

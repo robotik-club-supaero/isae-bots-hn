@@ -41,6 +41,9 @@ RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio docker
 # Install PyQt
 RUN apt-get install -y python3-pyqt5
 
+# Install pyqtgrapph
+# RUN pip install -y pyqtgraph==0.10.0
+
 #ENV QT_QUICK_BACKEND=software
 
 # Install additional PyQt5 packages

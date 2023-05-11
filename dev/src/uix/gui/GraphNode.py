@@ -3,6 +3,8 @@
 # plot en live le contenu du topic /logTotale
 
 import os
+PATH = os.path.dirname(os.path.abspath(__file__))
+
 import roslib
 import rospy
 
@@ -19,28 +21,6 @@ from threading import RLock
 from signal import signal, SIGINT
 from sys import exit
 
-from enum import Enum
-
-# class D(Enum):
-#     current_time = 0
-#     robotPosX = 1
-#     robotPosY = 2
-#     robotPosTheta = 3
-#     goalPointPosX = 4
-#     goalPointPosY = 5
-#     goalPointPosTheta = 6
-#     trajectoryS = 7
-#     goalSpeedLinear = 8
-#     goalSpeedAngular = 9
-#     asservErrorX = 10
-#     asservErrorY = 11
-#     commandV = 12
-#     commandOmega = 13
-#     commandeMotorR = 14
-#     commandeMotorL = 15
-#     rampSpeed = 16
-#     rampState = 17
-#     BrState = 18
 
 D = (
     'current_time',
@@ -74,6 +54,8 @@ class GraphNode(pg.GraphicsWindow):
 
 
     NBPOINTS = 800
+    NBPOINTS_ADAPTED = [800]+[1]*6+[800]*12  # adapted for each field
+
     nbDonnees = 0
     index = 0
     LENTAB = 19  # number of fields ?
@@ -99,13 +81,24 @@ class GraphNode(pg.GraphicsWindow):
             if self.lastTime > msg.data[0] : # si retour dans le temps ,la base roulante a redemarre
                 self.resetTab()
             self.lastTime = msg.data[0]
-            if self.nbDonnees < self.NBPOINTS :  # tant que l'on a pas assez de données on ne shift pas
-                for i in range(self.LENTAB):
+            # if self.nbDonnees < self.NBPOINTS :  # tant que l'on a pas assez de données on ne shift pas
+            #     for i in range(self.LENTAB):
+            #         self.tab[i].append(msg.data[i])
+            # else :
+            #     for i in range(self.LENTAB):
+            #         self.tab[i][:-1] = self.tab[i][1:]   # quand on a assez de données on shift en supprimant la donnée la plus ancienne
+            #         self.tab[i][-1] = msg.data[i]
+
+
+            for i in range(self.LENTAB):
+
+                if self.nbDonnees < self.NBPOINTS_ADAPTED[i] :  # tant que l'on a pas assez de données on ne shift pas
                     self.tab[i].append(msg.data[i])
-            else :
-                for i in range(self.LENTAB):
+
+                else:
                     self.tab[i][:-1] = self.tab[i][1:]   # quand on a assez de données on shift en supprimant la donnée la plus ancienne
                     self.tab[i][-1] = msg.data[i]
+
 
             # self.tab[D.index('robotPositionTheta')][-1] = fmod(msg.data[D.robotPosTheta],360)
             # self.tab[15][-1] *= 100  # to see the errors
@@ -182,8 +175,8 @@ class GraphNode(pg.GraphicsWindow):
                 self.axes[i].setYRange(-1.1,10.1)
             if i == 3:
                 self.axes[i].setYRange(-0.1,1.1)
-            if i == 7:
-                self.axes[i].setYRange(-10,360)
+            # if i == 7:
+            #     self.axes[i].setYRange(-10,360)
             else :  
                 self.axes[i].getViewBox().enableAutoRange(self.axes[i].getViewBox().YAxis,enable=True)   
 
@@ -197,6 +190,8 @@ class GraphNode(pg.GraphicsWindow):
         self.app =  QtGui.QApplication([])
         super(pg.GraphicsWindow,self).__init__()
         super(pg.GraphicsWindow,self).setWindowTitle('GraphNode')
+
+        super(pg.GraphicsWindow,self).setWindowIcon(QtGui.QIcon(os.path.join(PATH, 'image_files/icon_graphnode.png')))
 
         self.axes = [None for i in range(8)] #TODO set nb
         self.curves = [None for i in range(16)] #TODO set nb

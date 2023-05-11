@@ -135,7 +135,7 @@ class GraphNode(pg.GraphicsWindow):
                             for j in range(len(self.tab[D.index('robotPosX')]))
                         ],
                         [
-                            self.tab[D.index('robotPosY')][j] + self.alpha*cos(self.tab[D.index('robotPosTheta')][j])
+                            self.tab[D.index('robotPosY')][j] + self.alpha*sin(self.tab[D.index('robotPosTheta')][j])
                             for j in range(len(self.tab[D.index('robotPosY')]))
                         ]
                         )
@@ -146,7 +146,7 @@ class GraphNode(pg.GraphicsWindow):
                             for j in range(len(self.tab[D.index('goalPointPosX')]))
                         ],
                         [
-                            self.tab[D.index('goalPointPosY')][j] + self.alpha*cos(self.tab[D.index('goalPointPosTheta')][j])
+                            self.tab[D.index('goalPointPosY')][j] + self.alpha*sin(self.tab[D.index('goalPointPosTheta')][j])
                             for j in range(len(self.tab[D.index('goalPointPosY')]))
                         ]
                         )
@@ -228,10 +228,10 @@ class GraphNode(pg.GraphicsWindow):
         self.axes[4] = self.addPlot(title = "Point positions")
         self.axes[4].addLegend()
         self.axes[4].showGrid(x = True, y = True)
-        self.curves[6] = self.axes[4].plot([],[], pen=None, symbol='x', symbolBrush = 'b', symbolPen =None, symbolSize = 10, name = "Robot", )
-        self.curves[7] = self.axes[4].plot([],[], pen=None, symbol='x', symbolBrush = 'r', symbolPen =None, symbolSize = 10, name = "Asserv Point")
-        self.curves[8] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'g', symbolPen =None, symbolSize = 5, name = "Goal Point")
-        self.curves[9] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'r', symbolPen =None, symbolSize = 5, name = "Asserv Goal")
+        self.curves[6] = self.axes[4].plot([],[], pen=None, symbol='x', symbolBrush = 'g', symbolPen =None, symbolSize = 15, name = "Robot", )
+        self.curves[7] = self.axes[4].plot([],[], pen=None, symbol='+', symbolBrush = 'r', symbolPen =None, symbolSize = 15, name = "Asserv Point")
+        self.curves[8] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'g', symbolPen =None, symbolSize = 8, name = "Goal Point")
+        self.curves[9] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'r', symbolPen =None, symbolSize = 8, name = "Asserv Goal")
         self.axes[4].setAspectLocked(True)
 
 

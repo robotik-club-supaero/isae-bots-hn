@@ -12,8 +12,8 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 from std_msgs.msg import Float32MultiArray
 
-from math import fmod, pi
-from numpy import cos, sin
+from math import fmod, pi, cos, sin
+
 from threading import RLock
 
 from signal import signal, SIGINT

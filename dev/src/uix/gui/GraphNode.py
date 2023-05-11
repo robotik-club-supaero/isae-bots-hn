@@ -30,6 +30,8 @@ D = (
     'goalPointPosX',
     'goalPointPosY',
     'goalPointPosTheta',
+    'goalPointSpeedX',
+    'goalPointSpeedY',
     'trajectoryS',
     'goalSpeedLinear',
     'goalSpeedAngular',
@@ -54,11 +56,11 @@ class GraphNode(pg.GraphicsWindow):
 
 
     NBPOINTS = 800
-    NBPOINTS_ADAPTED = [800]+[1]*6+[800]*12  # adapted for each field
+    NBPOINTS_ADAPTED = [800]+[1]*8+[800]*12  # adapted for each field
 
     nbDonnees = 0
     index = 0
-    LENTAB = 19  # number of fields ?
+    LENTAB = len(D)  # number of fields
     tab = [[] for i in range(LENTAB)]
     lastTime = 0
     isStopped = False
@@ -150,18 +152,21 @@ class GraphNode(pg.GraphicsWindow):
                             for j in range(len(self.tab[D.index('goalPointPosY')]))
                         ]
                         )
+                    
+                    self.curves[10].setData( [self.tab[D.index('goalPointPosX')][-1], self.tab[D.index('goalPointSpeedX')][-1]],
+                                             [self.tab[D.index('goalPointPosY')][-1], self.tab[D.index('goalPointSpeedY')][-1]] )
 
                 if i == 5:  # Errors
-                    self.curves[10].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorX')])
-                    self.curves[11].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorY')])
+                    self.curves[11].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorX')])
+                    self.curves[12].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorY')])
 
                 if i == 6:  # Asserv commands
-                    self.curves[12].setData(self.tab[D.index('current_time')], self.tab[D.index('commandV')])
-                    self.curves[13].setData(self.tab[D.index('current_time')], self.tab[D.index('commandOmega')])
+                    self.curves[13].setData(self.tab[D.index('current_time')], self.tab[D.index('commandV')])
+                    self.curves[14].setData(self.tab[D.index('current_time')], self.tab[D.index('commandOmega')])
 
                 if i == 7:  # Motor commands
-                    self.curves[14].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorR')])
-                    self.curves[15].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorL')])
+                    self.curves[15].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorR')])
+                    self.curves[16].setData(self.tab[D.index('current_time')], self.tab[D.index('commandeMotorL')])
 
 
     def setRanges(self):
@@ -194,7 +199,7 @@ class GraphNode(pg.GraphicsWindow):
         super(pg.GraphicsWindow,self).setWindowIcon(QtGui.QIcon(os.path.join(PATH, 'image_files/icon_graphnode.png')))
 
         self.axes = [None for i in range(8)] #TODO set nb
-        self.curves = [None for i in range(16)] #TODO set nb
+        self.curves = [None for i in range(17)] #TODO set nb
 
 
 
@@ -232,28 +237,32 @@ class GraphNode(pg.GraphicsWindow):
         self.curves[7] = self.axes[4].plot([],[], pen=None, symbol='+', symbolBrush = 'r', symbolPen =None, symbolSize = 15, name = "Asserv Point")
         self.curves[8] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'g', symbolPen =None, symbolSize = 8, name = "Goal Point")
         self.curves[9] = self.axes[4].plot([],[], pen=None, symbol='o', symbolBrush = 'r', symbolPen =None, symbolSize = 8, name = "Asserv Goal")
+        
+        self.curves[10] = self.axes[4].plot([],[], pen='r', name = "Asserv Goal Speed")
+
+        
         self.axes[4].setAspectLocked(True)
 
 
         self.axes[5] = self.addPlot(title = "Errors")
         self.axes[5].addLegend()
         self.axes[5].showGrid(x = True, y = True)
-        self.curves[10] = self.axes[5].plot([],[], pen = 'b', name = "Error X")
-        self.curves[11] = self.axes[5].plot([],[], pen = 'r', name = "Error Y")
+        self.curves[11] = self.axes[5].plot([],[], pen = 'b', name = "Error X")
+        self.curves[12] = self.axes[5].plot([],[], pen = 'r', name = "Error Y")
 
 
         self.axes[6] = self.addPlot(title = "Asserv commands")
         self.axes[6].addLegend()
         self.axes[6].showGrid(x = True, y = True)
-        self.curves[12] = self.axes[6].plot([],[], pen = 'b', name = "Command V")
-        self.curves[13] = self.axes[6].plot([],[], pen = 'r', name = "Command omega")
+        self.curves[13] = self.axes[6].plot([],[], pen = 'b', name = "Command V")
+        self.curves[14] = self.axes[6].plot([],[], pen = 'r', name = "Command omega")
 
 
         self.axes[7] = self.addPlot(title = "Motor commands")
         self.axes[7].addLegend()
         self.axes[7].showGrid(x = True, y = True)
-        self.curves[14] = self.axes[7].plot([],[], pen = 'b', name = "Command R")
-        self.curves[15] = self.axes[7].plot([],[], pen = 'r', name = "Command L")
+        self.curves[15] = self.axes[7].plot([],[], pen = 'b', name = "Command R")
+        self.curves[16] = self.axes[7].plot([],[], pen = 'r', name = "Command L")
 
 
         self.setRanges()

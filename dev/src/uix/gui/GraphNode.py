@@ -130,31 +130,27 @@ class GraphNode(pg.GraphicsWindow):
                     self.curves[5].setData(self.tab[D.index('current_time')], self.tab[D.index('trajectoryS')])
 
                 if i == 4:  # Point positions
-                    self.curves[6].setData(self.tab[D.index('robotPosX')], self.tab[D.index('robotPosY')])
-                    self.curves[7].setData(
-                        [
-                            self.tab[D.index('robotPosX')][j] + self.alpha*cos(self.tab[D.index('robotPosTheta')][j])
-                            for j in range(len(self.tab[D.index('robotPosX')]))
-                        ],
-                        [
-                            self.tab[D.index('robotPosY')][j] + self.alpha*sin(self.tab[D.index('robotPosTheta')][j])
-                            for j in range(len(self.tab[D.index('robotPosY')]))
-                        ]
-                        )
-                    self.curves[8].setData(self.tab[D.index('goalPointPosX')], self.tab[D.index('goalPointPosY')])
-                    self.curves[9].setData(
-                        [
-                            self.tab[D.index('goalPointPosX')][j] + self.alpha*cos(self.tab[D.index('goalPointPosTheta')][j])
-                            for j in range(len(self.tab[D.index('goalPointPosX')]))
-                        ],
-                        [
-                            self.tab[D.index('goalPointPosY')][j] + self.alpha*sin(self.tab[D.index('goalPointPosTheta')][j])
-                            for j in range(len(self.tab[D.index('goalPointPosY')]))
-                        ]
-                        )
+
+                    robotPos = (self.tab[D.index('robotPosX')][-1], self.tab[D.index('robotPosY')][-1])
+                    robotOffsetPos = (self.tab[D.index('robotPosX')][-1] + self.alpha*cos(self.tab[D.index('robotPosTheta')][-1]),
+                                     self.tab[D.index('robotPosY')][-1] + self.alpha*sin(self.tab[D.index('robotPosTheta')][-1]))
                     
-                    self.curves[10].setData( [self.tab[D.index('goalPointPosX')][-1], self.tab[D.index('goalPointSpeedX')][-1]],
-                                             [self.tab[D.index('goalPointPosY')][-1], self.tab[D.index('goalPointSpeedY')][-1]] )
+                    goalPos = (self.tab[D.index('goalPointPosX')][-1], self.tab[D.index('goalPointPosY')][-1])
+                    goalOffsetPos = (self.tab[D.index('goalPointPosX')][-1] + self.alpha*cos(self.tab[D.index('goalPointPosTheta')][-1]),
+                                     self.tab[D.index('goalPointPosY')][-1] + self.alpha*sin(self.tab[D.index('goalPointPosTheta')][-1]))
+                    
+                    self.curves[6].setData([robotPos[0]],[robotPos[1]])
+
+                    self.curves[7].setData([robotOffsetPos[0]],[robotOffsetPos[1]])
+                    
+                    self.curves[8].setData([goalPos[0]],[goalPos[1]])
+
+                    self.curves[9].setData([goalOffsetPos[0]],[goalOffsetPos[1]])
+
+                    
+                    self.curves[10].setData([goalOffsetPos[0], goalOffsetPos[0] + self.tab[D.index('goalPointSpeedX')][-1]],
+                                            [goalOffsetPos[1], goalOffsetPos[1] + self.tab[D.index('goalPointSpeedY')][-1]])
+
 
                 if i == 5:  # Errors
                     self.curves[11].setData(self.tab[D.index('current_time')], self.tab[D.index('asservErrorX')])

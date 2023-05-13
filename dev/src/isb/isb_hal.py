@@ -50,11 +50,13 @@ def initPin(pinNb, mode):
     '''mode is "input" or "output"'''
 
     if mode == "input":
-        print(f"Pin {pinNb} changed to input, res =  {pca95xx.config(pin=pinNb, mode=1)}")
+        pca95xx.config(pin=pinNb, mode=1)
+        # print(f"Pin {pinNb} changed to input, res =  {pca95xx.config(pin=pinNb, mode=1)}")
     elif mode == "output":
-        print(f"Pin {pinNb} changed to output, res = {pca95xx.config(pin=pinNb, mode=0)}")
+        pca95xx.config(pin=pinNb, mode=0)
+        # print(f"Pin {pinNb} changed to output, res = {pca95xx.config(pin=pinNb, mode=0)}")
     else:
-        print("Mode not supported")
+        print("ERROR : Mode not supported")
 
 
 def readPin(pinNb):

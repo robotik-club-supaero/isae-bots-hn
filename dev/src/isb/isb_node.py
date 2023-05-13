@@ -103,8 +103,7 @@ class ISBNode:
 
 		# --- Variables
 		self.match = False
-		self.color = -1
-		self.strat = -1
+		self.color = 0
 
 		self.buttonStates = [-1]*self.NB_BUTTONS
 		self.triggerState = -1
@@ -118,8 +117,11 @@ class ISBNode:
 		self.subIsbMatch = rospy.Subscriber("/okPosition", Int16, self.callBackBR)
 
 		self.initPins()
+		log_info("Pin initiallized")
 
 		self.setAllLeds(0)		
+
+		log_info("ISB node is ready")
 
 		self.currentTime = perf_counter()
 
@@ -202,13 +204,13 @@ class ISBNode:
 				if self.color == 0 and self.buttonStates[self.COLOR_BUTTON_ID] == 1:
 					log_info("Set color to AWAY")
 					self.color = 1
-					self.pubStart.publish(data=1)
+					self.pubColor.publish(data=1)
 
 
 				if self.color == 1 and self.buttonStates[self.COLOR_BUTTON_ID] == 0:
 					log_info("Set color to HOME")
 					self.color = 0
-					self.pubStart.publish(data=0)
+					self.pubColor.publish(data=0)
 
 
 				self.currentTime = perf_counter()

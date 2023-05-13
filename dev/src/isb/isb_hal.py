@@ -44,31 +44,28 @@ They return with input() either 0 or 2^pinNb
 Pins from 8 to 15 are ?? (for the noepixels we guess)
 '''
 
-# config pin 0 to 7 to input (mode 1)
-for pinNb in range(0, 8):
-    print(f"Pin {pinNb} changed to input : {pca95xx.config(pin=pinNb, mode=1)}")
-
-# config pin 8 to 15 to output (mode 0)
-for pinNb in range(8, 16):
-    print(f"Pin {pinNb} changed to output : {pca95xx.config(pin=pinNb, mode=0)}")
 
 
-# read button pin values
-for pinNb in range(0,8):
-    print(f"Pin {pinNb} read value : {pca95xx.input(pin=pinNb)}")
+def initPin(pinNb, mode):
+    '''mode is "input" or "output"'''
 
-# write pin 8 value
-# print(f"Pin {pinNb} output result : ", pca95xx.output(pin=8, value=0))
+    if mode == "input":
+        print(f"Pin {pinNb} changed to input, res =  {pca95xx.config(pin=pinNb, mode=1)}")
+    elif mode == "output":
+        print(f"Pin {pinNb} changed to output, res = {pca95xx.config(pin=pinNb, mode=0)}")
+    else:
+        print("Mode not supported")
 
 
-# send data at 800000 bits/s
+def readPin(pinNb):
+    res = pca95xx.input(pin=pinNb)
+    # print(f"Pin {pinNb} read value : {res}")
+    if res == 0: return 0
+    else: return 1
 
-T = 0.00000125
-while(True):
-    t = time_ns()
-    pca95xx.output(pin=8, value=1)
-    while time_ns() - t < 0.00000125: pass
 
-    t = time_ns()
-    pca95xx.output(pin=8, value=0)
-    while time_ns() - t < 0.00000125: pass
+
+def writePin(pinNb, value):
+    pca95xx.output(pin=pinNb, value=value)
+    # print(f"Pin {pinNb} set to output {value}, res = ", pca95xx.output(pin=pinNb, value=value))
+

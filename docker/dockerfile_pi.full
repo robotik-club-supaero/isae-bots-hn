@@ -100,13 +100,16 @@ COPY ./docker/cwiid-3.0.0.tar.xz .
 RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 
 # Install PyQt
-RUN apt-get install -y python3-pyqt5
+# RUN apt-get install -y python3-pyqt5
 
 # install bluetooth
 RUN apt-get install -y bluez bluetooth
 
-# install smbus
-RUN pip install -y smbus
+# Install smbus for isb
+RUN pip3 install smbus
+
+# Install dependency of lidar driver node (hokuyo or sick)
+RUN apt-get install -y ros-noetic-diagnostics
 
 # Setup the work directory and entrypoint
 WORKDIR '/app'

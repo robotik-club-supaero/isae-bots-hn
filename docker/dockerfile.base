@@ -3,9 +3,9 @@
 # - ROS 1 noetic + deps
 # - Python 3.8 + deps
 
-# FROM isaebots_desktop_env_core:latest
+FROM isaebots_desktop_env_core:latest
 # FROM test_img:latest
-FROM --platform=linux/arm/v7 test_img:latest
+# FROM --platform=linux/arm/v7 test_img:latest
 # ARG TARGETPLATFORM
 # ARG BUILDPLATFORM
 # RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
@@ -42,7 +42,7 @@ RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio docker
 RUN apt-get install -y python3-pyqt5
 
 # Install pyqtgrapph
-RUN pip install -y pyqtgraph==0.10.0
+RUN pip install pyqtgraph==0.10.0
 
 #ENV QT_QUICK_BACKEND=software
 

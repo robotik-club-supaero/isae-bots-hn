@@ -67,6 +67,7 @@ SIMULATION = True
 def init_comm(displacementNode):
     global p_dn   # create global variable pointer to DisplacementNode
     p_dn = displacementNode 
+    ok_comm = True 
 
 #######################################################################
 # Dictionnaires des interfaces
@@ -109,6 +110,9 @@ COM_STRAT = {
 # CALLBACK FUNCTIONS
 #######################################################################
 
+global ok_comm
+ok_comm = False 
+
 def setup_color(msg):
     """
     Callback function from topic /sm/color.
@@ -119,6 +123,7 @@ def setup_color(msg):
     else: 
         p_dn.color = msg.data
         log_info("Received color : {}".format(COLOR[p_dn.color]))
+        callback_init_pos(msg)
 
 def callback_teensy(msg):
     """Traitement des msg recues de la teensy."""
@@ -359,8 +364,10 @@ def callback_init_pos(msg):
     publish_grid(p_dn.pathfinder.table_map.get_node_list())
 
 
-def callback_position(  msg):
+def callback_position(msg):
     """Update la position actuelle du robot."""
+
+    if not ok_comm: return 
 
     p_dn.current_pos = [msg.x, msg.y, msg.theta]
 

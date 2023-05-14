@@ -148,14 +148,14 @@ ACTIONS_SCORE = {
 }
 
 ACTIONS_POS = {
-	'takeCherriesPerpendicular':[500, 500, 0],
-	'depositCherries':[600, 600, 0]
+	'takeCherriesPerpendicular':[1000, 1000, 0],
+	'depositCherries':[1500, 1500, 0]
 }
 
 CAKES_POS = {
-	0: [200, 200, 0]
+	0: [1000, 1000, 0]
 }
 
 DEPOSIT_POS = {
-	0: [400, 400, 0]
+	0: [1500, 1500, 0]
 }

@@ -106,16 +106,7 @@ class ActuatorNode():
 		self.square_layout_pub = rospy.Publisher("/simu/squareLayout", Int16, queue_size=10, latch=True)
 		self.square_info_pub = rospy.Publisher("/simu/squareInfo", Int16, queue_size=10, latch=True)
         
-        ###################
-        #                 #
-        #       GR        #
-        #                 #
-        ###################
-
-		self.arm_taking_sub = rospy.Subscriber('/arm_order', Int16, self.take_sample_response)
-		self.arm_taking_pub = rospy.Publisher('/arm_feedback', Int16, queue_size=10, latch=True)
-		self.arm_deposing_sub = rospy.Subscriber('/arm_order', Int16, self.deposit_sample_response)
-		self.arm_deposing_pub = rospy.Publisher('arm_feedback', Int16, queue_size=10, latch=True)
+        
 
 		#### Variables ####
 

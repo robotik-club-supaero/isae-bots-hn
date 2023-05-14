@@ -263,7 +263,7 @@ start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
 repartitor_sub = rospy.Subscriber('/strat/repartitor_dec', Int16MultiArray, cb_next_action)
 disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
-position_sub = rospy.Subscriber('/disp/current_position', Pose2D, cb_position)
+position_sub = rospy.Subscriber('/current_position', Pose2D, cb_position)
 
 # SPECIFIC TO CURRENT YEAR
 global cherries_sub, elevator_sub, doors_sub, clamp_sub

@@ -74,7 +74,7 @@ class LidarNode:
         # initialisation des publishers
         self.pub_obstacles = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
         # initialisation des suscribers
-        self.sub_pos = rospy.Subscriber("/disp/current_position", Pose2D, self.update_position)
+        self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
         self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
 

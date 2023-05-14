@@ -84,7 +84,7 @@ class ActuatorNode():
 		#### Communication - pubs & subs ####
 		# Sub a /color pour s'initialiser au set de la couleur
 		self.sub_color = rospy.Subscriber("/game/color", Int16, self.update_color)
-		self.sub_pos = rospy.Subscriber("/disp/current_position", Pose2D, self.update_position)
+		self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
 		
 		# Simule la reponse du BN sur le bras à cerises
 		self.cherries_sub = rospy.Subscriber('/strat/cherries', Int16, self.cherries_response)

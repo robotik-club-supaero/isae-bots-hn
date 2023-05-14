@@ -74,11 +74,11 @@ class SensorsNode:
         
         # Publishers & Subscribers nécessaires pour le noeud
 
-        self.pub_obstaclesInfo=rospy.Publisher("/sensors/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
+        self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
 
         self.subLidar=rospy.Subscriber("/lidar/obstaclesLidar", Int16MultiArray, self.update_obstacles)
         self.subSonars = rospy.Subscriber("/sonar/obstaclesSonar", Int16MultiArray, self.update_obstacles)
-        self.sub_rospy=rospy.Subscriber("/disp/current_position", Pose2D, self.update_position)
+        self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
 
     def update_color(self, msg):

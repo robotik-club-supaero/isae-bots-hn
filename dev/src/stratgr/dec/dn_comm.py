@@ -159,7 +159,7 @@ def stop_IT():
 start_sub = rospy.Subscriber("/game/start", Int16, start_match)
 color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
 strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
-position_sub = rospy.Subscriber("/disp/current_position", Pose2D, recv_position)
+position_sub = rospy.Subscriber("/current_position", Pose2D, recv_position)
 
 #global next_action_pub
 next_action_pub = rospy.Publisher("/strat/repartitor_dec", Int16MultiArray, queue_size=10, latch=True)

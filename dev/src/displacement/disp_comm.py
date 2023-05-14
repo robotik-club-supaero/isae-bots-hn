@@ -403,11 +403,11 @@ def publish_grid(grid):
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
 
 # Comm Teensy
-pub_teensy = rospy.Publisher('/teensy/nextPositionTeensy', Quaternion, queue_size=10, latch=True)
-sub_teensy = rospy.Subscriber("/teensy/okPosition", Int16, callback_teensy) 
+pub_teensy = rospy.Publisher('/nextPositionTeensy', Quaternion, queue_size=10, latch=True)
+sub_teensy = rospy.Subscriber("/okPosition", Int16, callback_teensy) 
 
 # Comm Lidar
-sub_lidar = rospy.Subscriber("/sensors/obstaclesInfo", Int16MultiArray, callback_lidar)
+sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
 pub_lidar = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
 
 # Comm Strat
@@ -416,7 +416,7 @@ sub_strat = rospy.Subscriber("/disp/next_displacement", Quaternion, callback_str
 sub_initPos = rospy.Subscriber("/disp/initPos", Int16, callback_init_pos)
 
 # Comm Position
-sub_pos = rospy.Subscriber("/disp/current_position", Pose2D, callback_position)
+sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 
 """ # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/param/speedStrat", Float32MultiArray, callback_speed)

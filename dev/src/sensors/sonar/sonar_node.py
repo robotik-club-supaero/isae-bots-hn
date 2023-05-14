@@ -72,7 +72,7 @@ class SonarNode:
             self.nb_sonars += 1
 
         self.obs_pub = rospy.Publisher("/sensors/sonar_obstacles", Int16MultiArray, queue_size=10, latch=False)
-        self.pos_sub = rospy.Subscriber("/disp/current_position", Pose2D, self.recv_position)
+        self.pos_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
         self.son_sub = rospy.Subscriber("/ultrasonicDistances", Point, self.recv_obstacle)  # can change topic name ?
     
     def recv_position(self, msg):

@@ -67,6 +67,7 @@ SIMULATION = True
 def init_comm(displacementNode):
     global p_dn   # create global variable pointer to DisplacementNode
     p_dn = displacementNode 
+    global ok_comm
     ok_comm = True 
 
 #######################################################################
@@ -387,11 +388,10 @@ def callback_position(msg):
     """Update la position actuelle du robot."""
 
     if not ok_comm: return 
-
     p_dn.current_pos = [msg.x, msg.y, msg.theta]
-
+    
     # On reset les marges si assez proche du point de reset
-    if p_dn.avoid_mode and np.linalg.norm(p_dn.current_pos[:2]-p_dn.reset_point) < 20:
+    if p_dn.avoid_mode and np.linalg.norm([p_dn.current_pos[0] - p_dn.reset_point[0], p_dn.current_pos[1] - p_dn.reset_point[1]]) < 20:
         p_dn.is_reset_possible = True    
 
 def publish_path(path):

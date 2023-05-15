@@ -73,19 +73,31 @@ def init_comm(displacementNode):
 # Dictionnaires des interfaces
 #######################################################################
 
-"""Dictionnaire des commandes envoyees a la Teensy."""
+'''Dictionnaire des commandes envoyees a la Teensy'''
+# CMD_TEENSY = {
+#     "disp":                 0,      # Déplacement du robot vers un point (transitoire, pas le dernier)
+#     "dispFinal":            1,      # Déplacement du robot vers un point final de traj
+#     "stop":                 2,      # Arrête le mouvement
+#     "accurate":             3,      # Déplacement précis du robot vers l'avant
+#     "recalage":             4,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
+#     "rotation":             5,      # Cas où on fait une rotation simple
+#     "set":                  6,      # Fixe la position de départ
+#     "wii":                  7       # Cas d'utilisation de la manette wii
+# }
+
 CMD_TEENSY = {
-    "disp":                 0,      # Déplacement du robot vers un point (transitoire, pas le dernier)
-    "dispFinal":            1,      # Déplacement du robot vers un point final de traj
+    "disp":                 1,      # Déplacement du robot vers un point (transitoire, pas le dernier)
+    "dispFinal":            0,      # Déplacement du robot vers un point final de traj
     "stop":                 2,      # Arrête le mouvement
-    "accurate":             3,      # Déplacement précis du robot vers l'avant
-    "recalage":             4,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
-    "rotation":             5,      # Cas où on fait une rotation simple
-    "set":                  6,      # Fixe la position de départ
-    "wii":                  7       # Cas d'utilisation de la manette wii
+    "accurate":             5,      # Déplacement précis du robot vers l'avant
+    "recalage":             6,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
+    "rotation":             9,      # Cas où on fait une rotation simple
+    "set":                  3,      # Fixe la position de départ
+    "wii":                  4       # Cas d'utilisation de la manette wii
 }
 
-"""Dictionnaire des commandes recues de la strat."""
+
+'''Dictionnaire des commandes recues de la strat'''
 CMD_STRAT = {
     "standard":     0,        # Déplacement du robot vers un point
     "noAvoidance":  1,     # On désactive l'évitement pour ces déplacements
@@ -95,14 +107,21 @@ CMD_STRAT = {
     "rotation":     5         # On ne demande qu'une rotation (Peut servir)
 }
 
-"""Dictionnaire des callback renvoyees a la strat."""
+'''Dictionnaire des callback renvoyees a la strat'''
 COM_STRAT = {
     "asserv error":         -2,     # Erreur de l'asserv (difficile à gérer)
     "path not found":       -1,     # La recherche de chemin n'a pas aboutie
-    "ok pos":               0,      # Le robot est arrivé au point demandé
+    "ok pos":               1,      # Le robot est arrivé au point demandé
     "stop":                 1,      # Le robot s'arrête
     "go":                   2,      # Le robot redémarre
     "stop blocked":         3       # On s'arrete car la destination est bloquee par l'adversaire
+}
+
+'''Dictionnaire des callbacks reçus de la teensy'''
+CB_TEENSY = {
+    "errorAsserv": 0,
+    "okPos": 1,
+    "okTurn": 2
 }
 
 
@@ -129,13 +148,13 @@ def callback_teensy(msg):
     """Traitement des msg recues de la teensy."""
 
     ## Problème asserv
-    if msg.data == -1:
+    if msg.data == CB_TEENSY["errorAsserv"]:
         log_info("ERROR - asserv.")
         pub_strat.publish(COM_STRAT["asserv error"])
         return
 
-    ## On est arrivé a point 
-    if msg.data == 0:
+    ## On est arrivé a point (okPos)
+    if msg.data == CB_TEENSY["okPos"]:
         if p_dn.final_move:
             log_info("Arrived to position")
             p_dn.turn = True
@@ -147,7 +166,7 @@ def callback_teensy(msg):
         return
     
     ## okTurn de la part de la Teensy
-    if msg.data == 1:
+    if msg.data == CB_TEENSY["okTurn"]:
         p_dn.turn = False
         p_dn.resume = False
 

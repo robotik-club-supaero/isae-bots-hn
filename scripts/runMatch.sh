@@ -2,20 +2,20 @@
 
 
 # Launch docker container
-make main CMD="echo lol"
-#PERIPH=$(find /dev -name ttyACM* 2>/dev/null)
+echo 'Running match'
 
-#echo "Périphériques connectés:"
-#echo $PERIPH
+PERIPH=$(find /dev -name ttyACM* 2>/dev/null)
+echo "Périphériques connectés:"
+echo $PERIPH
 
-#source /opt/ros/noetic/setup.bash
-#cd ~/pr/hn
-#killall -9 roslaunch python
-#source devel/setup.bash
-#cd ../scripts
+make main CMD="export ROS_IP=192.168.222.11; export ROS_MASTER_URI=http://192.168.222.11:11311; roslaunch scripts/match.launch; $SHELL"
 
-#export ROS_IP=192.168.43.12
-#export ROS_MASTER_URI=http://192.168.43.12:11311
+
+#export ROS_IP=192.168.222.11
+#export ROS_MASTER_URI=http://192.168.222.11:11311
+
+
+
 
 #roslaunch match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR" | tee matchLog.log
 # the tee command allows to save logs in the matchLog file while keeping the display in the terminal (stdout)

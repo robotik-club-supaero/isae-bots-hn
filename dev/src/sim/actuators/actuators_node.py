@@ -154,28 +154,28 @@ class ActuatorNode():
 	def doors_response(self, msg):
 		sleep(DOORS_TIME)
 		if msg.data == 1:
-			self.cherries_pub.publish(data=0)
+			self.doors_pub.publish(data=0)
 			log_info("Réponse simulée : Portes ouvertes")
 		else:
-			self.cherries_pub.publish(data=0)
+			self.doors_pub.publish(data=0)
 			log_info("Réponse simulée : Portes fermées")
 
 	def clamp_response(self, msg):
 		sleep(CLAMP_TIME)
 		if msg.data == 1:
-			self.cherries_pub.publish(data=0)
+			self.clamp_pub.publish(data=0)
 			log_info("Réponse simulée : Pince ouverte")
 		else:
-			self.cherries_pub.publish(data=0)
+			self.clamp_pub.publish(data=0)
 			log_info("Réponse simulée : Pince fermée")
 
 	def elevator_response(self, msg):
 		sleep(CHERRIES_TAKING)
 		if msg.data in range(0,9):
-			self.cherries_pub.publish(data=0)
+			self.elevator_pub.publish(data=0)
 			log_info("Réponse simulée : ascenseur déplacé")
 		else:
-			self.cherries_pub.publish(data=1)
+			self.elevator_pub.publish(data=1)
 			log_info("Problème sur l'étage demandé")
 
 
@@ -186,6 +186,7 @@ class ActuatorNode():
 #################################################################
 def main():
 	rospy.init_node("pr_bn_response")
+	node = ActuatorNode()
 	log_info("Initializing Actuator Node.")
 	log_info("Simulation of BN responses.")
 	rospy.spin()

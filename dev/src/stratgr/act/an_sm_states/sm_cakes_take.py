@@ -103,11 +103,9 @@ class ObsTakeCakes(smach.State):
             
             elif userdata.nb_actions_done[0] == 6:
                 userdata.pucks_taken[0] += 3
+                userdata.nb_actions_done[0] += 1
                 userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
                 return 'elevator'
-            
-            elif userdata.nb_actions_done[0] == 7:
-                return 'closeDoors'
 
         add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')

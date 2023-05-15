@@ -107,7 +107,7 @@ def recv_position(msg):
 
 
 def recv_action_done(msg):
-    if msg.exit == 0:
+    if msg.exit == 1:
         log_info("Last action succeeded.")
         p_dn.nb_actions_done[0] += 1
         return

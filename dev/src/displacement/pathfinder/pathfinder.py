@@ -83,10 +83,8 @@ class Pathfinder:
         
     def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
         if isAvoid:
-            self.set_robot_to_avoid_pos([1500, 1500], 300)
             if self.robot_to_avoid_pos is None:
-                log_info("ERREUR : IL N'Y A PAS EU DE SETAVOIDROBOT.")
-                raise PathNotFoundError
+                self.set_robot_to_avoid_pos([-1000, -1000], 200)
             self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
             self.table_map.set_avoid(True, isSecondAttempt)
         else:

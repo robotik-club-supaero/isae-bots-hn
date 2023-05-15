@@ -111,7 +111,7 @@ CMD_STRAT = {
 COM_STRAT = {
     "asserv error":         -2,     # Erreur de l'asserv (difficile à gérer)
     "path not found":       -1,     # La recherche de chemin n'a pas aboutie
-    "ok pos":               1,      # Le robot est arrivé au point demandé
+    "ok pos":               0,      # Le robot est arrivé au point demandé
     "stop":                 1,      # Le robot s'arrête
     "go":                   2,      # Le robot redémarre
     "stop blocked":         3       # On s'arrete car la destination est bloquee par l'adversaire

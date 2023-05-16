@@ -50,7 +50,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################
 
 ## CONSTANTES
-BECAUSE_BIG_IS_BIG  = 100 if ROBOT_NAME=="GR" else 0
+BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
 STOP_RANGE_STANDARD = 500 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_AVOIDING = 350 + BECAUSE_BIG_IS_BIG
 RADIUS_ROBOT_OBSTACLE = 300
@@ -287,6 +287,7 @@ def callback_lidar(msg):
         ####
         dist_min = 5000
         stop_range = STOP_RANGE_STANDARD
+        max_range = 2*stop_range
         stop_front_x = STOP_RANGE_X_STAND
         stop_front_y = STOP_RANGE_Y_STAND
         # Distance à l'obstacle lidar pour laquelle on s'arrete en deplacement classique  # TODO : à paramétrer
@@ -367,12 +368,15 @@ def callback_lidar(msg):
 
             # Update de la vitesse??
             if obstacle_seen: 
-                pub_lidar.publish(data=1) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentir
+                speed_coeff = (dist_obs-max_range)/(stop_range/max_range)
+                speed_coeff = min(1, max(0, speed_coeff))
+                speed = 80 - int(speed_coeff*80)
+                pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
+            else:
+                pub_speed.publish(data=80)
 
-        p_dn.handle_obstacle(obstacle_seen, obstacle_stop, is_dest_blocked)
-    except:
-        pass    
-
+    except : pass
+        
 def callback_init_pos(msg):
     """Update la position de départ du robot."""
     x, y, z = patch_frame_br(INIT_POS[0], INIT_POS[1], INIT_POS[2], p_dn.color)
@@ -427,7 +431,7 @@ sub_teensy = rospy.Subscriber("/okPosition", Int16, callback_teensy)
 
 # Comm Lidar
 sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
-pub_lidar = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
+pub_speed = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
 
 # Comm Strat
 pub_strat = rospy.Publisher("/disp/done_displacement", Int16, queue_size=10, latch=False)

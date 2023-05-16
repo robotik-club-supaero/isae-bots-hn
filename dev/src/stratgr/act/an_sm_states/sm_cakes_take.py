@@ -41,7 +41,7 @@ class ObsTakeCakes(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','openDoors','closeDoors','redo','openClamp','closeClamp','elevator'],
-			                    input_keys=['nb_actions_done','next_pos','color','taken_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'],
+			                    input_keys=['nb_actions_done','next_pos','color','take_cakes_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'],
 			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'])
 
     def execute(self, userdata):
@@ -51,9 +51,12 @@ class ObsTakeCakes(smach.State):
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
-            x, y, z = CAKES_POS[userdata.taken_area[0]]
+            x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
             #TODO Le shift à cause des portes
-            x, y, z = x-DOORS_SHIFT, y-DOORS_SHIFT, z
+            if x < MAX_X/2 :
+                x += DOORS_SHIFT
+            else :
+                x -= DOORS_SHIFT
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
@@ -62,7 +65,7 @@ class ObsTakeCakes(smach.State):
             return 'openDoors'
 
         elif userdata.nb_actions_done[0] == 2:
-            x, y, z = CAKES_POS[userdata.taken_area[0]]
+            x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
         
@@ -122,8 +125,8 @@ class ObsTakeCakes(smach.State):
 #################################################################
 
 TakeCakes = smach.StateMachine( outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','taken_area','stage_to_go'],
-                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','taken_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'])
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','take_cakes_area','stage_to_go'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','take_cakes_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go'])
 							
 with TakeCakes:
     smach.StateMachine.add('OBS_TAKE_CAKES', 

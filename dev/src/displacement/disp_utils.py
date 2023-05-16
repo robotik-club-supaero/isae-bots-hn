@@ -62,6 +62,8 @@ COLOR = {
       1: 'AWAY'
 }
 
+ONE_PI = np.pi
+
 def to_robot_coord(x_robot, y_robot, cap, pos):
     """Fonction transposant pos dans le repere local du robot."""
     x_loc = np.cos(cap)*(pos[0]-x_robot)+np.sin(cap)*(pos[1]-y_robot)
@@ -77,7 +79,7 @@ def patch_frame_br(x, y, theta, color):
     """Easier patch"""
     if COLOR[color] == "HOME":
         return x, y, theta
-    return 2000-x, y, -theta
+    return 2000-x, y, theta+ONE_PI
 
 #######################################################################
 # LOGS functions

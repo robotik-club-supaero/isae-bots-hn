@@ -68,7 +68,8 @@ class Setup(smach.State):
 		
 		## Data about the match
 		userdata.deposit_area = [-1] # Coordonnées de là où on dépose les gâteaux
-		userdata.taken_area = [-1] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
+		userdata.take_cakes_area = [-1] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
+		userdata.take_cherries_area = [-1] 	# Coordonnées du rack de cerises qui nous intéressent.
 		userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
 		userdata.cherries_loaded = [0] # Permet de savoir si le robot transporte des cerises ou non. 0: Non ; 1: Oui 
 		userdata.stage_to_go = [0]
@@ -120,11 +121,12 @@ class Repartitor(smach.State):
 	def __init__(self):
 		smach.State.__init__(	self, 	
 		       					outcomes=ACTIONS_LIST,
-								input_keys=['nb_actions_done', 'next_action'],
+								input_keys=['nb_actions_done', 'next_action', 'pucks_taken'],
 								output_keys=['nb_actions_done', 'next_action'])
 
 	def execute(self, userdata):
 		log_info('[Repartitor] Requesting next action ...')
+		log_info('[PUCKS ACTUALLY TAKEN] = ' + str(userdata.pucks_taken[0]))
 		repartitor_pub.publish(Empty()) 	         # demande nextAction au DN
 
 		userdata.next_action = -2 				   # reset variable prochaine action

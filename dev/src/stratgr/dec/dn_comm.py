@@ -169,5 +169,6 @@ next_action_sub = rospy.Subscriber("/strat/repartitor_act", Empty, send_action_n
 done_action_sub = rospy.Subscriber("/strat/end_of_action", EndOfActionMsg, recv_action_done)
 
 take_cakes_pub       = rospy.Publisher('/strat/take_cakes', Int16, queue_size=10, latch=True)
+take_cherries_pub       = rospy.Publisher('/strat/take_cherries', Int16, queue_size=10, latch=True)
 deposit_cakes_pub = rospy.Publisher('/strat/deposit_cakes', Int16, queue_size=10, latch=True)
 stage_pub       = rospy.Publisher('/strat/stage', Int16, queue_size=10, latch=True)

@@ -19,7 +19,7 @@
 #################################################################
 
 import time
-from dn_comm  import next_action_pub, stop_IT, take_cakes_pub, deposit_cakes_pub
+from dn_comm  import next_action_pub, stop_IT, take_cakes_pub, deposit_cakes_pub, take_cherries_pub
 from dn_utils import log_info, LIST_OF_ACTIONS
 
 #################################################################
@@ -46,7 +46,7 @@ def test_strat():
     
     Note: Define below the actions of this strategy 
         -
-        -
+        - 11 5
         -
     """
     time.sleep(0.01)
@@ -55,6 +55,7 @@ def test_strat():
 
     if p_dn.nb_actions_done[0] == 0:
         p_dn.curr_action = LIST_OF_ACTIONS['takeCherriesPerpendicular']
+        take_cherries_pub.publish(0)
         log_info("Next action : Take Cherries Perpendicular")
         next_action_pub.publish(data=p_dn.curr_action)
         return
@@ -67,27 +68,34 @@ def test_strat():
     
     if p_dn.nb_actions_done[0] == 2:
         p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
-        take_cakes_pub.publish(0)
+        take_cakes_pub.publish(11)
         log_info("Next action : Take Cakes")
         next_action_pub.publish(data=p_dn.curr_action)
         return
     
     if p_dn.nb_actions_done[0] == 3:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 4:
         p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
-        deposit_cakes_pub.publish(0)
+        deposit_cakes_pub.publish(2)
         log_info("Next action : Deposit Cakes")
         next_action_pub.publish(data=p_dn.curr_action)
         return
     
-    if p_dn.nb_actions_done[0] == 4:
+    if p_dn.nb_actions_done[0] == 5:
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
-    if p_dn.nb_actions_done[0] == 5:
-        p_dn.nb_actions_done[0] =-1  # to prevent repeated end action
-        log_info("End of strategy : HOMOLOGATION")
+    if p_dn.nb_actions_done[0] == 6:
+        p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
+        log_info("End of strategy : TEST")
         stop_IT()
         return
 

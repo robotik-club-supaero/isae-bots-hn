@@ -146,12 +146,19 @@ def cb_elevator(msg):
     if not ok_comm: return
     p_smData.cb_elevator[0] = msg.data
 
-def cb_taken_area(msg):
+def cb_take_cakes_area(msg):
     """
     Callback of the state of the elevator (for the cakes)
     """
     if not ok_comm: return
-    p_smData.taken_area[0] = msg.data
+    p_smData.take_cakes_area[0] = msg.data
+
+def cb_take_cherries_area(msg):
+    """
+    Callback of the state of the elevator (for the cakes)
+    """
+    if not ok_comm: return
+    p_smData.take_cherries_area[0] = msg.data
 
 def cb_deposit_area(msg):
     """
@@ -271,7 +278,8 @@ cherries_sub = rospy.Subscriber('/strat/cherries_feedback', Int16, cb_arm)
 doors_sub    = rospy.Subscriber('/strat/doors_feedback', Int16, cb_doors)
 clamp_sub    = rospy.Subscriber('/strat/clamp_feedback', Int16, cb_clamp)
 elevator_sub = rospy.Subscriber('/strat/elevator_feedback', Int16, cb_elevator)
-take_cakes_sub    = rospy.Subscriber('/strat/take_cakes', Int16, cb_taken_area)
+take_cakes_sub    = rospy.Subscriber('/strat/take_cakes', Int16, cb_take_cakes_area)
+take_cherries_sub    = rospy.Subscriber('/strat/take_cherries', Int16, cb_take_cherries_area)
 deposit_cakes_sub = rospy.Subscriber('/strat/deposit_cakes', Int16, cb_deposit_area)
 stage_sub    = rospy.Subscriber('/strat/stage', Int16, cb_stage_to_deposit)
 

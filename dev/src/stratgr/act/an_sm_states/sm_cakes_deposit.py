@@ -81,7 +81,13 @@ class ObsDepositCakes(smach.State):
         elif userdata.nb_actions_done[0] == 7:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
             x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
-            x, y, z = x-DOORS_SHIFT, y-DOORS_SHIFT, z
+            if y < 500:
+                y += DOORS_SHIFT
+            else :
+                if x < MAX_X/2 :
+                    x += DOORS_SHIFT
+                else :
+                    x -= DOORS_SHIFT
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
         

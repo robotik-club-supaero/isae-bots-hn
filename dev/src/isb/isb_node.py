@@ -121,6 +121,7 @@ class ISBNode:
 		self.pubColor = rospy.Publisher("/game/color", Int16, queue_size=10, latch=True)
 
 		self.pubBRIdle = rospy.Publisher("/br/idle", Int16, queue_size=10, latch=True)
+		self.pubResetStepper = rospy.Publisher("/strat/elevator", Int16, queue_size=10, latch=True)
 
 		self.subIsbMatch = rospy.Subscriber("/okPosition", Int16, self.callBackBR)
 
@@ -244,6 +245,11 @@ class ISBNode:
 						self.pubBRIdle.publish(data=1)
 					else:
 						self.brIdle = self.buttonStates[BR_IDLE_BUTTON_ID]
+
+				# Reset stepper message
+				if self.isButtonTriggered[RESET_STEPPER_BUTTON_ID]:
+					log_info("Reset stepper position")
+					self.pubResetStepper.publish(data=-1)
 
 				self.currentTime = perf_counter()
 

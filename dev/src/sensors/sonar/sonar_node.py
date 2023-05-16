@@ -36,7 +36,7 @@ from geometry_msgs.msg import Pose2D, Point
 
 _NODENAME_ = "[SON]"
 _BOT_NAME_ = rospy.get_param("robot_name")
-_CFG_FILE_ = "pr_init.cfg" if _BOT_NAME_ == "PR" else "gr_init.cfg"
+_CFG_FILE_ = "gr_config.ini"
 
 def log_info(msg):
     """

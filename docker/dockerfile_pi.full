@@ -111,6 +111,13 @@ RUN pip3 install smbus
 # Install dependency of lidar driver node (hokuyo or sick)
 RUN apt-get install -y ros-noetic-diagnostics
 
+# Add udev file
+COPY ./install/10-usb-serial.rules /etc/udev/rules.d/10-usb-serial.rules
+
+# Add service file
+COPY ./service/match.service /etc/systemd/system/match.service
+
+
 # Setup the work directory and entrypoint
 WORKDIR '/app'
 COPY ./docker/autosetup.sh /autosetup.sh

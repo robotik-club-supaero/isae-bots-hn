@@ -25,6 +25,6 @@ do
     fi
 
     
-    # scp "$file" "pi@$gr:isae-bots-hn-2023/$file"
+    scp "$file" "pi@gr:isae-bots-hn-2023/$file"
     echo "$file"
 done

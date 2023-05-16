@@ -8,7 +8,7 @@ PERIPH=$(find /dev -name ttyACM* 2>/dev/null)
 echo "Périphériques connectés:"
 echo $PERIPH
 
-make main CMD="export ROS_IP=192.168.222.11; export ROS_MASTER_URI=http://192.168.222.11:11311; roslaunch scripts/match.launch; $SHELL"
+make main CMD="source /dev/devel/setup.bash; roslaunch scripts/match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR"; $SHELL"
 
 
 #export ROS_IP=192.168.222.11

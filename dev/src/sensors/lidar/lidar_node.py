@@ -28,12 +28,6 @@ from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
-#################################################################
-if os.environ['USER'] == 'pi':
-	SIMULATION = False
-else:
-	SIMULATION = True
-#################################################################
 
 OBS_RESOLUTION = 100
 

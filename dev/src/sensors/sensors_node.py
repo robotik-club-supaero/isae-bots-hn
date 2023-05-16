@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
 #    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
@@ -11,62 +12,42 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-# pyright: reportMissingImports=false
-
-#################################################################
-#                                                               #
-#                           IMPORTS                             #
-#                                                               #
-#################################################################
 
 import os
+import roslib
 import rospy
+
 import numpy as np
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 from geometry_msgs.msg import Pose2D
-
-#################################################################
-#                                                               #
-#                            UTILS                              #
-#                                                               #
-#################################################################
-
-_NODENAME_ = "[OBS]"
-
-def log_errs(msg):
-    rospy.logerr(f"{_NODENAME_} {msg}")
-
-def log_info(msg):
-    rospy.loginfo(f"{_NODENAME_} {msg}")
+from std_msgs.msg import Int16MultiArray
+from std_msgs.msg import MultiArrayLayout
+from std_msgs.msg import MultiArrayDimension
 
 
-def line_angle(x0, y0, x1, y1):
-    """
-    Function for checking line angles
-    """
-    if x1 == x0:
-        if y1 == y0: log_errs("Same coordinates of the two points given.")
-        theta = np.sign(y1 - y0)*np.pi/2
-    elif y1 == y0:
-        theta = (1 - np.sign(x1 - x0))*np.pi/2
-    else:
-        theta = np.arctan((y1 - y0)/(x1 - x0))
+# pour le test#
+def lineAngle(x0, y0, x1, y1):
 
-    if x0 < x1:
-        return theta
-    # sinon cas ou l'arctan vaut en fait theta +- pi
-    if y0 < y1:
-        return theta + np.pi
-    else:
-        return theta - np.pi
-    
-#################################################################
-#                                                               #
-#                           OBS Node                            #
-#                                                               #
-#################################################################
+	if x1 == x0:
+		if y1 == y0:
+			rospy.logerr("ERREUR : memes coordonnes pour les deux points de la line")
+		theta = np.sign(y1 - y0)*np.pi/2
 
-class ObstaclesNode:
+	elif y1 == y0:
+		theta = (1 - np.sign(x1 - x0))*np.pi/2
+
+	else:
+		theta = np.arctan((y1 - y0)/(x1 - x0))
+
+	if x0>x1:  # cas ou l'arctan vaut en fait theta +- pi
+		if y0<y1:
+			theta = theta + np.pi
+		else:
+			theta = theta - np.pi
+	return theta
+
+
+
+class SensorsNode:
     DISTANCEMIN = 100
     INTERVALLE = 1
     LIMITEBASSE = 10
@@ -78,38 +59,50 @@ class ObstaclesNode:
     y_robot=0
     cap = 0
 
-    def __init__(self):
-        log_info("Initializing OBS node ...")
-
-        self.x_robot = None
-        self.y_robot = None
-        self.c_robot = None
-        self.lidar_obs_lst = []
-        self.sonar_obs_lst = []
-        self.nb_lidar = 1
-        self.nb_sonar = 1
-
-        self.obs_pub = rospy.Publisher("/sensors/info_obstacles", Int16MultiArray, queue_size=10, latch=False)
-        self.lidar_sub = rospy.Subscriber("/sensors/lidar_obstacles", Int16MultiArray, self.update_obstacles)
-        self.sonar_sub = rospy.Subscriber("/sensors/sonar_obstacles", Int16MultiArray, self.update_obstacles)
-        self.pos_sub = rospy.Subscriber("/disp/current_position", Pose2D, self.recv_position)
-
-    def recv_position(self, msg):
-        """
-        Feedback on current position via /disp/current_position topic.
-        """
+    def update_position(self,msg):
+        """Fonction de callback de position."""
+        
         self.x_robot = msg.x
         self.y_robot = msg.y
         self.c_robot = msg.theta
 
-    def recv_obstacle(self, msg):
-        """
-        Feedback on detected obstacles.
-        """
-        if msg.data[0] == 0:  # lidar obstacle
-            nbr = self.nb_lidar
-            obs = self.lidar_obs_lst
-            self.nb_lidar = (self.nb_lidar + 1)# % 
+        '''
+        ####
+        x = 800
+        y = 1200
+        d = (int)(np.linalg.norm([self.x_robot - x, self.y_robot- y]))
+        theta = lineAngle(self.x_robot, self.y_robot, x, y)
+        dx = (int)(abs(d*np.cos(theta)))
+        dy = (int)(abs(d*np.sin(theta)))
+        newmsg = Int16MultiArray()
+
+        #newmsg.data = [0, [1000, 1300, 300, 300]]
+        newmsg.data = [0, x, y, d, dx, dy]
+
+        layout = MultiArrayLayout()
+        layout.data_offset = 1
+
+        dimensions = []
+        dim1 = MultiArrayDimension()
+        dim1.label = "obstacle_nb"
+        dim1.size = 1
+        dim1.stride = 5*1
+
+        dim2 = MultiArrayDimension()
+        dim2.label = "info"
+        dim2.size = 5
+        dim2.stride = 5
+
+        dimensions.append(dim1)
+        dimensions.append(dim2)
+
+        layout.dim = dimensions
+
+        newmsg.layout = layout
+
+        self.pub_obstaclesInfo.publish(newmsg)
+        ####
+        '''
 
 
 
@@ -135,7 +128,7 @@ class ObstaclesNode:
                 newObstacles.append([msg.data[2*i +1], msg.data[2*i + 2]])
             for newObstacle in newObstacles:
                 dx = 0
-                dy = 0   
+                dy = 0
                 #on va déterminer les directions et vitesses (partie à améliorer)
                 if (len(obstacles) != 0):                              #pour chaque obstacle on va chercher l'obstacle précédent le plus proche
                     nearestObstacle = obstacles[0]                                 #si ce dernier est assez proche, on suppose que c'est le même obstacle qui s'est déplacé
@@ -187,19 +180,23 @@ class ObstaclesNode:
 
             newmsg.layout = layout
 
-            self.obs_pub.publish(newmsg)
+            self.pub_obstaclesInfo.publish(newmsg)
 
+         
+	
+    def __init__(self):
+        
+        rospy.init_node('SensorsNode')
+        rospy.loginfo("Initialisation du Traitement des Capteurs")
 
-#################################################################
-#                                                               #
-#                             MAIN                              #
-#                                                               #
-#################################################################
+        self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
 
-def main():
-    rospy.init_node("OBS node")
-    node = ObstaclesNode()
-    rospy.spin()
+        # initialisation des suscribers
+        self.subLidar=rospy.Subscriber("/sensors/obstaclesLidar", Int16MultiArray, self.update_obstacles)
+        self.subSonars = rospy.Subscriber("/sensors/obstaclesSonar", Int16MultiArray, self.update_obstacles)
+        self.sub_rospy=rospy.Subscriber("/current_position", Pose2D, self.update_position)
 
+    
 if __name__ == '__main__':
-    main()
+    node = SensorsNode()
+    rospy.spin()

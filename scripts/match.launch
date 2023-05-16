@@ -28,28 +28,28 @@ roslaunch main.launch method:='sim'
 			<param name="port" value="$(eval arg('ACT'))"/>
 			<param name="baud" value="115200"/>
 		</node>
-		<node pkg="isae_robotics_sonar" type="SonarNode.py" name="SonarNode" output="screen" />
+		<node pkg="sensors" type="sonar_node.py" name="SonarNode" output="screen" />
 	</group>
 	
 	<group if="$(eval arg('LIDAR') != 'None')"> <!-- Le LIDAR est present -->
 		<node pkg="hokuyo_node" type="hokuyo_node" name="Hokuyo" output="screen" >
 			<param name="port" type="string" value="$(eval arg('LIDAR'))"/>
 		</node>
-		<node pkg="isae_robotics_lidar" type="LidarNode.py" name="LidarNode" output="screen" />
-		<node pkg="isae_robotics_sensors" type="SensorsNode.py" name="SensorNode" output="screen" />
+		<node pkg="sensors" type="lidar_node.py" name="LidarNode" output="screen" />
+		<node pkg="sensors" type="sensors_node.py" name="SensorNode" output="screen" />
 	</group>
 
 	<!-- deplacements -->
-	<node name="DisplacementNode" pkg="isae_robotics_displacement"  type="DisplacementNode.py" output="screen" cwd="node" required="true"/>
+	<node name="DisplacementNode" pkg="displacement"  type="disp_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- strategie -->
-	<node name="DecisionNode" pkg="isae_robotics_strat"  type="titanic_dn.py" output="screen" cwd="node" required="true"/>
-	<node name="ActionNode" pkg="isae_robotics_strat"  type="titanic_an.py" output="screen" cwd="node" required="true"/>
+	<node name="DecisionNode" pkg="stratgr"  type="dec_node.py" output="screen" cwd="node" required="true"/>
+	<node name="ActionNode" pkg="stratgr"  type="act_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- isb -->
-	<node name="IsbNode" pkg="isae_robotics_isb"  type="isbNode.py" output="screen" cwd="node" required="true"/>
+	<node name="IsbNode" pkg="isb"  type="isb_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- points -->
-	<node name="PointsNode" pkg="isae_robotics_lcd"  type="pointsNode.py" output="screen" cwd="node" required="true"/>
+	<node name="PointsNode" pkg="lcd"  type="points_node.py" output="screen" cwd="node" required="true"/>
 	
 </launch>

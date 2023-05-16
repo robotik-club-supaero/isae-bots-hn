@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
 #    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
@@ -11,7 +12,6 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-# pyright: reportMissingImports=false
 
 #################################################################
 #                                                               #
@@ -71,8 +71,8 @@ class SonarNode:
             self.sonars_lst.append(list(ast.literal_eval(v)))
             self.nb_sonars += 1
 
-        self.obs_pub = rospy.Publisher("/sensors/sonar_obstacles", Int16MultiArray, queue_size=10, latch=False)
-        self.pos_sub = rospy.Subscriber("/disp/current_position", Pose2D, self.recv_position)
+        self.obs_pub = rospy.Publisher("/sensors/obstaclesSonar", Int16MultiArray, queue_size=10, latch=False)
+        self.pos_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
         self.son_sub = rospy.Subscriber("/ultrasonicDistances", Point, self.recv_obstacle)  # can change topic name ?
     
     def recv_position(self, msg):

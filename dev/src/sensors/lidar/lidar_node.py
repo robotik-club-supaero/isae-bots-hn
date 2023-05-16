@@ -1,16 +1,24 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
 """
 @file: LidarNode.py
 @status: OK
 
-Fichier de gestion des obstacles LIDAR.
+Fichier de gestion des obstacles LIDAR
 """
 
-# pyright: reportMissingImports=false
-
-from __future__ import division
 
 import os, sys
 import rospy
@@ -31,11 +39,6 @@ else:
 
 OBS_RESOLUTION = 100
 
-def patchFrameBR(x, y, theta):
-	"""Easier patch."""
-	if SIMULATION:
-		return x, y, theta
-	return x, 3000-y, -theta
 
 def LOG_INFO(msg):
     rospy.loginfo("LID "+msg)
@@ -71,7 +74,7 @@ class LidarNode:
         LOG_INFO("Initializing Lidar Node.")
 
         # initialisation des publishers
-        self.pub_obstacles = rospy.Publisher("/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
+        self.pub_obstacles = rospy.Publisher("/sensors/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
         # initialisation des suscribers
         self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
@@ -79,11 +82,9 @@ class LidarNode:
 
     def update_position(self,msg):
         """Fonction de callback de position."""
-        # TODO - remove patch
-        x,y,c = patchFrameBR(msg.x,msg.y,msg.theta)
-        self.x_robot = x
-        self.y_robot = y
-        self.c_robot = c
+        self.x_robot = msg.x
+        self.y_robot = msg.y
+        self.c_robot = msg.theta
  
     def update_obstacle(self, msg):
         """Fonction de callback des obstacles lidar."""

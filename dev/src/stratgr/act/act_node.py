@@ -30,7 +30,7 @@ import smach_ros
 import time
 
 from an_sm import init_sm
-from an_msgs import init_msgs
+from an_comm import init_comm
 from an_utils import log_info, log_errs, log_warn
 
 
@@ -60,8 +60,15 @@ def main():
 
     log_info("Initializing Action Node ...")
     sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
-    init_sm(sm)
-    init_msgs(sm)
+
+    # Init SM in other files 
+    ''' Les fonctions d'init sont là pour palier aux erreurs dûes aux topics.
+    En gros, les topics du genre position envoient en permanence leurs infos à la comm qui modif les variables de la sm. Cependant, la comm s'initialisait avant la sm et posait des problèmes
+    d'accès de varibales (car pas init dans la sm). Donc on a ces 2 fonctions init qui bloquent l'activité de leur noeud tant qu'elles ne sont pas appelées. Ainsi, on peut init la sm PUIS la comm
+    sans engendrer de problèmes. 
+    '''
+    init_sm(sm)    # Init les variables de la sm 
+    init_comm(sm)  # Init les cb et topic en ayant correctement accès aux variables
     
     #############################################################
     # SM CALL

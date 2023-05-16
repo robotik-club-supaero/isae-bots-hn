@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -25,9 +26,9 @@ import smach
 
 from geometry_msgs.msg import Quaternion
 
-from an_const import ROBOT_SIDES, DISP_ORDERS, CB_DISP_MOTION
-from an_msgs import next_motion_pub
-from an_utils import log_info, log_errs, log_warn
+from an_const import COLOR, DISPLACEMENT
+from an_comm import disp_pub
+from an_utils import log_info, log_errs, log_warn, patch_frame_br
 
 #################################################################
 #                                                               #
@@ -41,12 +42,10 @@ STOP_DEST_TIMEOUT = 3   #[s]
 
 def set_next_destination(userdata, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
-	if not userdata.color in [e.value for e in ROBOT_SIDES]:
-		raise ValueError
-	if userdata.color == ROBOT_SIDES.HOME:  
-		userdata.next_pos = Quaternion(x_d, y_d, t_d, w)        	
-	if userdata.color == ROBOT_SIDES.AWAY:
-		userdata.next_pos = Quaternion(x_d, 3000-y_d, -t_d, w)
+	if not userdata.color in list(COLOR.keys()):
+		raise ValueError	
+	x_d, y_d, t_d = patch_frame_br(x_d, y_d, t_d, userdata.color)
+	userdata.next_pos = Quaternion(x_d, y_d, t_d, w)
 
 #################################################################
 #                                                               #
@@ -54,7 +53,7 @@ def set_next_destination(userdata, x_d, y_d, t_d, w):
 #                                                               #
 #################################################################
 
-class SM_Displacement(smach.State):
+class Displacement(smach.State):
 	"""
 	STATE MACHINE : Substate Displacement.
 
@@ -62,17 +61,18 @@ class SM_Displacement(smach.State):
 	"""
 
 	def __init__(self):
-		smach.State.__init__(self, outcomes=['preempted','done','redo','fail'],
-			input_keys=['nb_actions_done','cb_dsp','cb_pos','next_pos'],
-			output_keys=['nb_actions_done','cb_dsp'])
+		smach.State.__init__(	self, 	
+		       					outcomes=['preempted','done','redo','fail'],
+								input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color'],
+								output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos'])
 		
 	def execute(self, userdata):
-		# Init the callback var of dsp result
-		userdata.cb_dsp[0] = CB_DISP_MOTION.NONE
+		# Init the callback var of dsp result. CHECK an_const to see details on cb_disp
+		userdata.cb_disp[0] = -3 
 
 		dest = userdata.next_pos
 		log_info(f"Displacement Request: toward ({dest.x}, {dest.y}, {dest.z}) with w= {dest.w}")
-		next_motion_pub.publish(dest)
+		disp_pub.publish(dest)
 
 		init_time = time.time()
 		while (time.time() - init_time < DISP_TIMEOUT):
@@ -82,54 +82,53 @@ class SM_Displacement(smach.State):
 				self.service_preempt()
 				return 'preempted'
 
-			if userdata.cb_dsp[0] == CB_DISP_MOTION.ERROR_ASSERV:
+			if userdata.cb_disp[0] == -2:
 				log_errs("Displacement result: error asserv.")
 				# --- try and correct if it's a problem of same position order reject
 				curr_x, curr_y, _ = userdata.cb_pos[0]
 				if abs(curr_x-dest.x) < 5 and abs(curr_y-dest.y) < 5:
 					log_warn("--- error asserv fixed: rotation around same point.")
-					set_next_destination(userdata, dest.x, dest.y, dest.z, int(DISP_ORDERS.ROTATION))
-					return "redo"	
-				return "fail"
+					set_next_destination(userdata, dest.x, dest.y, dest.z, DISPLACEMENT['rotation'])
+					return 'redo'	
+				return 'fail'
 
-			if userdata.cb_dsp[0] == CB_DISP_MOTION.NOPATH_FOUND:
+			if userdata.cb_disp[0] == -1:
 				log_errs("Displacement result: no path found with PF.")
 				return 'fail'
 
-			if userdata.cb_dsp[0] == CB_DISP_MOTION.DISP_SUCCESS:
+			if userdata.cb_disp[0] == 0:
 				log_info('Displacement result: success displacement')
 				userdata.nb_actions_done[0] += 1
 				return 'done'
 
-			if userdata.cb_dsp[0] == CB_DISP_MOTION.PATH_BLOCKED:
+			if userdata.cb_disp[0] == 1:
 				stop_time = time.time()
-				while userdata.cb_dsp[0] != CB_DISP_MOTION.DISP_RESTART and time.time()-stop_time < STOP_PATH_TIMEOUT:
+				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_PATH_TIMEOUT:
 					time.sleep(0.01)
-
 					if self.preempt_requested():
 						self.service_preempt()
 						return 'preempted'
 
 				# Once out of the waiting loop
-				if userdata.cb_dsp[0] == CB_DISP_MOTION.DISP_RESTART:	# on est repartis et on attend
+				if userdata.cb_disp[0] == 2:	# on est repartis et on attend
 					log_info('Displacement restart ...')
-					userdata.cb_dsp[0] = CB_DISP_MOTION.NONE
+					userdata.cb_disp[0] = -3
 					return 'redo'
 				# Else, we are still blocked...
 				return 'fail'
 
-			if userdata.cb_dsp[0] == CB_DISP_MOTION.DEST_BLOCKED:
+			if userdata.cb_disp[0] == 3:
 				stop_time = time.time()
-				while userdata.cb_dsp[0] != CB_DISP_MOTION.DISP_RESTART and time.time()-stop_time < STOP_DEST_TIMEOUT:
+				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_DEST_TIMEOUT:
 					time.sleep(0.01)
 
 					if self.preempt_requested():
 						self.service_preempt()
 						return 'preempted'
 										
-				if userdata.cb_dsp[0] == CB_DISP_MOTION.DISP_RESTART:
+				if userdata.cb_disp[0] == 2:
 					log_info('Displacement restart ...')
-					userdata.cb_dsp[0] = CB_DISP_MOTION.NONE
+					userdata.cb_disp[0] = -3
 					return 'redo'
 			
 				log_warn('Displacement result: dest is blocked.')

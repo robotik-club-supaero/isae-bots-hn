@@ -25,11 +25,9 @@ import rospy
 import signal
 import time
 
-from dn_utils    import CONFIG_READER, log_errs, log_fatal, log_info, log_warn, \
-                      STRAT_NAMES, DN_LIST_ACTION_NAMES
-from dn_msgs     import init_msgs
-from dn_strats   import init_strats, \
-                      homologation_strat, tests_strat, match_strat
+from dn_utils    import READER, ACTIONS_LIST, log_errs, log_fatal, log_info, log_warn
+from dn_comm     import init_comm
+from dn_strats   import init_strats, test_strat
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
@@ -58,15 +56,18 @@ class DecisionsNode:
 
         self.match_started = False
         self.color = 0
-        self.strat = int(CONFIG_READER.get("STRAT", "strat_choice"))
-        self.strategies = [e.value for e in STRAT_NAMES]
 
         self.start_time = 0
-        self.match_time = int(CONFIG_READER.get("STRAT", "match_time"))
+        self.match_time = int(READER.get("STRAT", "match_time"))
         self.delay_park = 13  # TODO: change it to named constant
 
-        self.actions_ls = [e.value for e in DN_LIST_ACTION_NAMES]
+        self.strat = int(READER.get("STRAT", "strat_choice"))
+        self.strategies = [test_strat]
+
+        self.actions_ls = ACTIONS_LIST
         self.actions_nb = len(self.actions_ls)
+        self.park_action = False
+        self.kill_action = False
         self.curr_action = []
         self.nb_actions_done = [0]
 
@@ -85,7 +86,7 @@ def main():
 
     node = DecisionsNode()
 
-    init_msgs(node)
+    init_comm(node)
     init_strats(node)
 
     log_info("Waiting for match to start")

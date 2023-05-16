@@ -29,13 +29,13 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-_NODENAME_ = "DEC"
-#SIMULATION = False if os.environ['USER'] == 'pi' else True
+NODE_NAME = "[DEC] "
+SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #################################################################
 # CONFIG 
-CONFIG_READER = configparser.ConfigParser()
-CONFIG_READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.cfg'))
+READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.ini'))
 
 #################################################################
 # WINDOW
@@ -48,44 +48,34 @@ class ROBOT_SIDES(IntEnum):
     AWAY = 1
 
 #################################################################
-# STRATS PARAMS
-class STRAT_INDEX(IntEnum):
-    HOMOLOGATION = 0
-    TESTS = 1
-    MATCH = 2
 
-class STRAT_NAMES(str, Enum):
-    HOMOLOGATION = "homologation_strat"
-    TESTS = "tests_strat"
-    MATCH = "match_strat"
+ACTIONS_LIST = [
+    'takeCherriesPerpendicular',
+    'takeCherriesWall',
+    'depositCherries',
+    'takeCakes',
+    'depositCakes',
+    'park',
+    'preempted',
+    'end',
+    'waiting'
+    ]
 
-class DN_LIST_ACTION_INDEX(IntEnum):
-    PARK = 0
-    END = 1
-    PREEMPTED = 2
-    #...
-    #...
+LIST_OF_ACTIONS = {
+    'takeCherriesPerpendicular': [0],
+    'takeCherriesWall':          [1],
+    'depositCherries':           [2],
+    'takeCakes':                 [3],
+    'depositCakes':              [4],
+    'park':                      [5],
+    'end':                       [6],
+    'waiting':                   [7]
+}
 
-class DN_LIST_ACTION_NAMES(str, Enum):
-    PARK = 'park'
-    END = 'end'
-    PREEMPTED = 'preempted'
-    #... 
-
-class CB_NEXT_ACTION(IntEnum):
-    NONE    = -3
-    PARK_IT = -2  # park interrupt
-    STOP_IT = -1  # stop interrupt
-    #ACTION_1 = 0
-    #ACTION_2 = 0
-    #ACTION_3 = 0
-    #ACTION_4 = 0
-    #ACTION_5 = 0
-    #ACTION_6 = 0
-    #ACTION_7 = 0
-    #...
-
-
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
 
 #################################################################
 #                                                               #
@@ -105,30 +95,28 @@ class Color():
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
 	RESET = '\033[0m'
-
+        
 def log_info(log):
     """
     Print standard logs.
     """
-    rospy.loginfo(f"{Color.WHITE}[{_NODENAME_}] {log}{Color.RESET}")
+    rospy.loginfo(NODE_NAME + log)
 
 
 def log_warn(log):
     """
     Print warning logs.
     """
-    rospy.logwarn(f"{Color.YELLOW}[{_NODENAME_}] {log}{Color.RESET}")
-
+    rospy.logwarn(NODE_NAME + log)
 
 def log_errs(log):
     """
-    Print errors logs (errors concerning actions, not critical)
+    Print errors logs.
     """
-    rospy.logerr(f"{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")
-
+    rospy.logerr(NODE_NAME + log)
 
 def log_fatal(log):
     """
-    Print fatal error logs (critical errors, not concerning actions and never supposed to happen)
+    Print errors logs.
     """
-    rospy.logfatal(f"{Color.BOLD}{Color.UNDERLINE}{Color.RED}[{_NODENAME_}] {log}{Color.RESET}")
+    rospy.logfatal(NODE_NAME + log)

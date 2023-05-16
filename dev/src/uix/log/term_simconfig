@@ -92,7 +92,7 @@
       parent = subframe2
       type = HPaned
     [[[terminal5]]]
-      command = clear && sleep 2 && make term CMD="echo 'Actuators?' ..."; bash
+      command = clear; make term CMD="./dev/src/uix/log/echo_logs.sh '/ACN'"
       order = 0
       title = [ACN] Actuator Node | SIM
       parent = topscreen2

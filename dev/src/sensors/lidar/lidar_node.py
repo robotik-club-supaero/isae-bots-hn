@@ -20,15 +20,13 @@ Fichier de gestion des obstacles LIDAR
 """
 
 
-import os, sys
-import rospy
-
-from math import *
+from math import atan2, sin, cos
 from lidar_lib import *
+from displacement.disp_utils import patch_frame_br, log_info, log_errs
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
+from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
 #################################################################
 if os.environ['USER'] == 'pi':
@@ -49,6 +47,12 @@ def handler(rcv_sig, frame):
 	rospy.signal_shutdown(rcv_sig)
 	sys.exit()
 
+    
+COLOR = {
+      0: 'HOME',
+      1: 'AWAY'
+}
+
 #######################################################################
 # LIDAR NODE
 #######################################################################
@@ -64,6 +68,7 @@ class LidarNode:
         self.y_robot = 0
         self.c_robot = 0
         self.radius = 42
+        self.color = None
 
         self.iterData = 0
         self.sizeData = 5
@@ -71,13 +76,25 @@ class LidarNode:
 
         ### LAUNCH NODE ###############################################
         rospy.init_node('LidarNode')
-        LOG_INFO("Initializing Lidar Node.")
+        log_info("Initializing Lidar Node.")
 
         # initialisation des publishers
         self.pub_obstacles = rospy.Publisher("/sensors/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
         # initialisation des suscribers
         self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
+        self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
+
+    def update_color(self, msg):
+        """
+        Callback function from topic /sm/color.
+        """
+        if msg.data not in [0,1]:
+            log_errs(f"Wrong value of color given ({msg.data})...")
+            return
+        else: 
+            self.color = msg.data
+            log_info("Received color : {}".format(COLOR[self.color]))
 
 
     def update_position(self,msg):
@@ -99,9 +116,9 @@ class LidarNode:
         range_min = msg.range_min
         range_max = msg.range_max
         
-        raw_dists = absol_coord(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
-        obs_dists = localisation(raw_dists)
-        self.obstaclesLists[self.iterData % self.sizeData] = obs_dists
+        raw_data = lidar_to_table(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
+        obs_detected = clusterisation(raw_data)
+        self.obstaclesLists[self.iterData % self.sizeData] = obs_detected
         self.iterData += 1
         self.treats_obstacle()
 
@@ -133,30 +150,20 @@ class LidarNode:
             for i in range(self.sizeData):
                 if( i != indexOfMax):
                     for obstacle in obstaclesLists[i]:
-                        if(dist(potentialObstacle, obstacle) < OBS_RESOLUTION):
+                        if(euclidean_distance(potentialObstacle, obstacle) < OBS_RESOLUTION):
                             nbOcc += 1
             if(nbOcc > 2):
                 x_robot = self.x_robot
                 y_robot = self.y_robot
                 x = potentialObstacle[0]
                 y = potentialObstacle[1]
-                theta = 0
+                theta = atan2((y-y_robot)/(x-x_robot))
 
-                if x > x_robot:
-                    theta = atan((y - y_robot)/(x-x_robot))
-                elif x < x_robot :
-                    theta = pi + atan((y - y_robot)/(x-x_robot))
-                else :
-                    if y > y_robot:
-                        theta = pi/2
-                    else:
-                        theta = -pi/2
-
-                calculatedObstacles.append([potentialObstacle[0] + self.radius * cos(theta),  potentialObstacle[1] + self.radius * sin(theta)])
+                calculatedObstacles.append([x - self.radius * cos(theta),  y - self.radius * sin(theta)])
 
         msg = Int16MultiArray()
 
-        data = [0]
+        data = [0] # Le 0 est l'identifiant du LiDAR dans le SensorsNode.
         for position in calculatedObstacles:
             for coordinate in position:
                 data.append((int)(coordinate))

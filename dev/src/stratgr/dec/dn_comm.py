@@ -22,9 +22,7 @@ import os
 import time
 import rospy
 import threading
-from dn_utils import log_info, log_errs, log_warn, \
-                    ROBOT_SIDES, STRAT_NAMES, STRAT_INDEX, CB_NEXT_ACTION, \
-                    TERM_SIZE
+from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
@@ -38,7 +36,7 @@ from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 
 p_dn = None
 
-def init_msgs(dn):
+def init_comm(dn):
     """
     Init the decision node in this file (no double imports)
     """
@@ -77,10 +75,12 @@ def setup_color(msg):
     if p_dn is None: return  # safety if the function is called before DEC node init
 
     p_dn.color = msg.data
-    if p_dn.color == ROBOT_SIDES.HOME:
-        log_info("Received color : HOME")
-    else:
-        log_info("Received color : AWAY")
+    if msg.data not in [0,1]:
+        log_errs(f"Wrong value of color given ({msg.data})...")
+        return
+    else: 
+        p_dn.color = msg.data
+        log_info("Received color : {}".format(COLOR[p_dn.color]))
 
 
 def setup_strat(msg):
@@ -89,19 +89,12 @@ def setup_strat(msg):
     """
     if p_dn is None: return  # safety if the function is called before DEC node init
 
-    if msg.data == STRAT_INDEX.HOMOLOGATION:
-        p_dn.strat_index = STRAT_INDEX.HOMOLOGATION
-        log_info(f"Received strat: {STRAT_NAMES.HOMOLOGATION}")
+    if msg.data not in range(len(p_dn.strategies)):
+        log_errs(f"Wrong value of strat given ({msg.data})...")
         return
-    if msg.data == STRAT_INDEX.TESTS:
-        p_dn.strat_index = STRAT_INDEX.TESTS
-        log_info(f"Received strat: {STRAT_NAMES.TESTS}")
-        return
-    if msg.data == STRAT_INDEX.MATCH:
-        p_dn.strat_index = STRAT_INDEX.MATCH
-        log_info(f"Received strat: {STRAT_NAMES.MATCH}")
-        return
-    log_errs(f"Wrong strat index received: {msg.data}")
+    else:
+        p_dn.strat = msg.data
+        log_info(f"Received strat: {p_dn.strategies[p_dn.strat]}")
 
 
 def recv_position(msg):
@@ -145,7 +138,7 @@ def park_IT():
     """
     log_info('\033[1m\033[36m' + "#"*19 + " Park interrupt " + "#"*18 + '\033[0m')
 
-    next_action_pub.publish(data=[CB_NEXT_ACTION.PARK_IT])
+    next_action_pub.publish(data=[5])
 
 
 def stop_IT():
@@ -154,7 +147,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish(data=[CB_NEXT_ACTION.STOP_IT])
+    next_action_pub.publish(data=[7])
 
 #################################################################
 #                                                               #
@@ -162,20 +155,20 @@ def stop_IT():
 #                                                               #
 #################################################################
 
-def init_pubs():
-    return
-#global next_action_pub
-next_action_pub = rospy.Publisher("/strat/next_action_answer", Int16MultiArray, queue_size=10, latch=True)
-
-
-def init_subs():
-    return
 #global start_sub, color_sub, strat_sub, position_sub
 start_sub = rospy.Subscriber("/game/start", Int16, start_match)
 color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
 strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
-position_sub = rospy.Subscriber("/disp/current_position", Pose2D, recv_position)
+position_sub = rospy.Subscriber("/current_position", Pose2D, recv_position)
+
+#global next_action_pub
+next_action_pub = rospy.Publisher("/strat/repartitor_dec", Int16MultiArray, queue_size=10, latch=True)
 
 #global next_action_sub
-next_action_sub = rospy.Subscriber("/strat/next_action_request", Empty, send_action_next)
-done_action_sub = rospy.Subscriber("/strat/done_action", EndOfActionMsg, recv_action_done)
+next_action_sub = rospy.Subscriber("/strat/repartitor_act", Empty, send_action_next)
+done_action_sub = rospy.Subscriber("/strat/end_of_action", EndOfActionMsg, recv_action_done)
+
+take_cakes_pub       = rospy.Publisher('/strat/take_cakes', Int16, queue_size=10, latch=True)
+take_cherries_pub       = rospy.Publisher('/strat/take_cherries', Int16, queue_size=10, latch=True)
+deposit_cakes_pub = rospy.Publisher('/strat/deposit_cakes', Int16, queue_size=10, latch=True)
+stage_pub       = rospy.Publisher('/strat/stage', Int16, queue_size=10, latch=True)

@@ -46,5 +46,10 @@ par les commandes
 git fetch
 git rebase
 ```
+ou (équivalent)
 
-Explication : le `git pull` squeeze tous les commits de modifs récupérés, ce qui entraine une perte de l'historique des commits...
+```bash
+git pull --rebase
+```
+
+Explication : le `git pull` squeeze tous les commits de modifs récupérés, ce qui entraine une perte de l'historique des commits

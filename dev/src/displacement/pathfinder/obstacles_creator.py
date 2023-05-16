@@ -65,6 +65,12 @@ def make_obstacle_list(color):
     baseHome = ObstacleRect(400-margin, 1000+margin, 0, 400+margin)
     baseAway = ObstacleRect(400-margin, 1000+margin, 2600-margin, 3000)
 
+    # Cherries
+    cherriesPerpendicular1 = ObstacleRect(985, 1015, 0, 300)
+    cherriesPerpendicular2 = ObstacleRect(985, 1015, 2700, 3000)
+    cherriesWall1 = ObstacleRect(0, 30, 1350, 1650)
+    cherriesWall2 = ObstacleRect(1970, 2000, 1350, 1650)
+
     # Samples
     # s_radius = 150 / 2
     # s_margin = 10
@@ -78,10 +84,12 @@ def make_obstacle_list(color):
 
     if color == HOME:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
+        obstacleList.extend([cherriesPerpendicular1, cherriesPerpendicular2, cherriesWall1, cherriesWall2])
 
         #obstacleList.append(baseHome)
     else:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
+        obstacleList.extend([cherriesPerpendicular1, cherriesPerpendicular2, cherriesWall1, cherriesWall2])
 
         #obstacleList.append(baseAway)
 

@@ -296,6 +296,7 @@ def callback_lidar(msg):
         if not p_dn.move or (not p_dn.avoid_mode) or p_dn.finish: return
         if p_dn.avoid_mode: 
             stop_range = STOP_RANGE_AVOIDING
+            max_range = 2*stop_range
             stop_front_x = STOP_RANGE_X_AVOID
             stop_front_y = STOP_RANGE_Y_AVOID
 

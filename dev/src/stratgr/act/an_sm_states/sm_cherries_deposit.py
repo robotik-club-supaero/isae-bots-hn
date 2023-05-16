@@ -62,7 +62,6 @@ class ObsDepositCherries(smach.State):
             ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
             return 'deposit'
 
-        add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 
                   

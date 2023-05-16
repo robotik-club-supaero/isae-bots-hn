@@ -110,7 +110,6 @@ class ObsTakeCakes(smach.State):
                 userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
                 return 'elevator'
 
-        add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 
                   

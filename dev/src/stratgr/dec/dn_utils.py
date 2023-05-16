@@ -77,6 +77,17 @@ COLOR = {
       1: 'AWAY'
 }
 
+ACTIONS_SCORE = {
+	'init_score':               5, #Bucket posé
+    'funnyCounter':            10, #funny action et compte des cerises corrects (5+5)
+    'parking':                 15,
+    'depositStage':             1,
+    'legendary':                4,
+    'cherryOnCake':             3,
+    'cherryBucket':             1,
+    'bonus':                   20
+}
+
 #################################################################
 #                                                               #
 #                            UTILS                              #

@@ -56,10 +56,10 @@ def make_obstacle_list(color):
     margin = robotDiag // 2 + 20
 
     # Walls 
-    wallNorth = ObstacleRect(0, margin, 0, 3000)
-    wallSouth = ObstacleRect(2000-margin, 2000, 510, 2490)
-    wallEast = ObstacleRect(0, 2000, 0, margin)
-    wallWest = ObstacleRect(0, 2000, 3000-margin, 3000)
+    wallNorth = ObstacleRect(0, 0, 0, 3000)
+    wallSouth = ObstacleRect(2000, 2000, 510, 2490)
+    wallEast = ObstacleRect(0, 2000, 0, 0)
+    wallWest = ObstacleRect(0, 2000, 3000, 3000)
 
     # Bases
     baseHome = ObstacleRect(400-margin, 1000+margin, 0, 400+margin)

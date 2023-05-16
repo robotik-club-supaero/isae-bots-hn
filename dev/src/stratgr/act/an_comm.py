@@ -174,6 +174,16 @@ def cb_stage_to_deposit(msg):
     if not ok_comm: return
     p_smData.stage_to_deposit[0] = msg.data
 
+def cb_score(msg):
+    """
+    Callback function to update sm variable XXXXX.
+
+    <copy> this template for your update / callback functions.
+    """
+    if not ok_comm: return
+    p_smData.score[0] += msg.data
+    score_pub.publish(p_smData.score[0])
+
 def cb_XXXXX(msg):
     """
     Callback function to update sm variable XXXXX.
@@ -282,4 +292,5 @@ take_cakes_sub    = rospy.Subscriber('/strat/take_cakes', Int16, cb_take_cakes_a
 take_cherries_sub    = rospy.Subscriber('/strat/take_cherries', Int16, cb_take_cherries_area)
 deposit_cakes_sub = rospy.Subscriber('/strat/deposit_cakes', Int16, cb_deposit_area)
 stage_sub    = rospy.Subscriber('/strat/stage', Int16, cb_stage_to_deposit)
+score_sub = rospy.Subscriber('/addScore', Int16, cb_score)
 

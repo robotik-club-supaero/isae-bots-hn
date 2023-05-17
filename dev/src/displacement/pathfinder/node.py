@@ -143,7 +143,6 @@ class Node:
                     tp = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]+math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
                     tm = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]-math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
                     if 0 < tp < node_dist or 0 < tm < node_dist:
-
                         return False
                     
             elif obstacle.get_name() == "T":

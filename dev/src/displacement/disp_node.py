@@ -39,7 +39,7 @@ from time import time
 
 # import fonction du Pathfinder
 from pathfinder.pathfinder import Pathfinder
-from pathfinder.exceptions import PathNotFoundError, TimeOutError
+from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
 
 # import msgs
 from geometry_msgs.msg import Quaternion
@@ -162,6 +162,11 @@ class DisplacementNode:
         
         except TimeOutError:
             result['message'] = "Time out"
+            result['success'] = False
+            return result
+
+        except DestBlockedError:
+            result['message'] = "Dest Blocked"
             result['success'] = False
             return result
 

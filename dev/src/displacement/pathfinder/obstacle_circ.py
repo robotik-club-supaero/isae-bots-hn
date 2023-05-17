@@ -36,6 +36,12 @@ class ObstacleCirc:
     def get_y_center(self):
         return self.y_center
     
+    def set_x_center(self, x):
+        self.x_center = x
+
+    def set_y_center(self, y):
+        self.y_center = y
+
     def get_radius(self):
         return self.radius
     
@@ -50,3 +56,6 @@ class ObstacleCirc:
 
     def is_equals(self, obstacle):
         return (self.x_center == obstacle.x_center) and (self.y_center == obstacle.y_center) and (self.radius == obstacle.radius)
+    
+    def copy(self):
+        return ObstacleCirc(self.x_center, self.y_center, self.radius)

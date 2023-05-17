@@ -31,7 +31,7 @@ import time
 
 from pathfinder.node import Node
 from queue import PriorityQueue
-from pathfinder.exceptions import PathNotFoundError, TimeOutError
+from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
 
 ### CONSTANTES ########################################################
 X_THRESHOLD = 5     # 5mm
@@ -75,6 +75,9 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     init_node = Node(init)    
     curr_node = init_node
     nb_elem = 0
+
+    if not is_node_out_obstacles(tableMap, goal_node, True):
+        raise DestBlockedError
 
     if not tableMap.get_avoid():
         final_path = []

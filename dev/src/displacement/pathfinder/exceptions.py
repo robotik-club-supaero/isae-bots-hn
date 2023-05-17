@@ -24,3 +24,5 @@ class PathNotFoundError(RuntimeError):
 class TimeOutError(RuntimeError):
     """Exception raised when timed out in PF."""
     pass
+class DestBlockedError(RuntimeError):
+    pass

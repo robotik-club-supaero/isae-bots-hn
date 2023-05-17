@@ -67,6 +67,8 @@ class Pathfinder:
 
     def set_robot_to_avoid_pos(self, pos, radius):
         self.robot_to_avoid_pos = [pos, radius]
+        self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
+
 
     def get_robot_to_avoid_pos(self):
         return self.robot_to_avoid_pos
@@ -87,8 +89,7 @@ class Pathfinder:
     def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
         if isAvoid:
             if self.robot_to_avoid_pos is None:
-                self.set_robot_to_avoid_pos([1900, 2900], 0)
-                log_info("AJOUT DE L'ADVERSAIRE")
+                self.set_robot_to_avoid_pos([-1000, -1000], 0)
             self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
             self.table_map.set_avoid(True, isSecondAttempt)
         else:

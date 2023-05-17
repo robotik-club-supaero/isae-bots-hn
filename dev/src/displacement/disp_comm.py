@@ -28,6 +28,7 @@ Fichier du DisplacementNode contenant les outils de communication.
 import os
 import rospy
 import numpy as np
+import time
 
 from ast import literal_eval
 
@@ -51,8 +52,8 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 
 ## CONSTANTES
 BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 500 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 350 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_STANDARD = 300 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_AVOIDING = 300 + BECAUSE_BIG_IS_BIG
 RADIUS_ROBOT_OBSTACLE = 300
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
@@ -267,20 +268,35 @@ def callback_strat(msg):
                 p_dn.set_avoid_reset_point()
         ## Sinon, erreur de la recherche de chemin
         else:       
-            log_warn("ERROR - Reason: " + result['message'])
-            # Retour de l'erreur a la strat
-            pub_strat.publish(Int16(COM_STRAT["path not found"]))
+            if result['message'] == "Dest Blocked":
+                log_info("Waiting cause Dest Blocked")
+                begin_time = time.time()
+                while (time.time() - begin_time < 3) :
+                    time.sleep(0.01)
+                    result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
+                    if result['success'] == True :
+                        break
+                
+                if time.time() - begin_time >= 3:
+                    log_warn("ERROR - Reason: " + result['message'])
+                    # Retour de l'erreur a la strat
+                    pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
-            # Retry without opponents chaos
-            if p_dn.avoid_mode:
-                result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, True)
-                if result['success']:
-                    log_info("Path found without chaos: [{}]".format(p_dn.path))
-                    p_dn.set_avoid_reset_point()
-                else:
-                    log_info("Error without chaos: {}".format(result['message']))
             else:
-                log_info("Error: {}".format(result['message']))
+                log_warn("ERROR - Reason: " + result['message'])
+                # Retour de l'erreur a la strat
+                pub_strat.publish(Int16(COM_STRAT["path not found"]))
+
+                # Retry without opponents chaos
+                if p_dn.avoid_mode:
+                    result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, True)
+                    if result['success']:
+                        log_info("Path found without chaos: [{}]".format(p_dn.path))
+                        p_dn.set_avoid_reset_point()
+                    else:
+                        log_info("Error without chaos: {}".format(result['message']))
+                else:
+                    log_info("Error: {}".format(result['message']))
 
     ## On envoie le premier point a la Teensy
     p_dn.move = True 
@@ -288,6 +304,7 @@ def callback_strat(msg):
 
 
 def callback_lidar(msg):
+    if not ok_comm: return
     """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
     ## Initialise parametre d'obstacle
     obstacle_info = np.zeros(5)     # infos sur l'obstacle
@@ -298,7 +315,7 @@ def callback_lidar(msg):
     ####
     dist_min = 5000
     stop_range = STOP_RANGE_STANDARD
-    max_range = 2*stop_range
+    max_range = 600
     stop_front_x = STOP_RANGE_X_STAND
     stop_front_y = STOP_RANGE_Y_STAND
     # Distance à l'obstacle lidar pour laquelle on s'arrete en deplacement classique  # TODO : à paramétrer
@@ -313,7 +330,8 @@ def callback_lidar(msg):
 
     ## TRAITEMENT DE CHAQUE OBSTACLE
     nb_obstacles = (msg.layout.dim[0]).size
-    print("NB OBST :", nb_obstacles)
+    if nb_obstacles == 0 : 
+        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)
     for i in range(nb_obstacles):
         if obstacle_stop: break
         for j in range(5):
@@ -345,14 +363,13 @@ def callback_lidar(msg):
             #-> On setup la vitesse suivant la pos locale du 
             #   robot adverse
             if msg.data[0] == 0:
-                print("OUI1")
                 if dist_obs > dist_min: continue
                 if dist_obs < stop_range:
                     obstacle_seen = True
                     if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
-                        print("OUI2")
                         obstacle_stop = True
-                        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1], RADIUS_ROBOT_OBSTACLE])
+                        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
+                        
                 else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                         obstacle_seen = True
@@ -369,9 +386,8 @@ def callback_lidar(msg):
 
         # Update de la vitesse??
         if obstacle_seen: 
-            log_info("LE LIDAR VOIT UN TRUC")
-            speed_coeff = (dist_obs-max_range)/(stop_range/max_range)
-            speed_coeff = min(1, max(0, speed_coeff))
+            speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
+            speed_coeff = min(0.75, max(0, speed_coeff))
             speed = 80 - int(speed_coeff*80)
             pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
         else:
@@ -406,8 +422,14 @@ def callback_end(msg):
 
 def callback_delete(msg):
     if not ok_comm: return
-    log_info("DELETE DES OBSTACLES")
-    p_dn.pathfinder.remove_obstacle(CAKES_OBST[msg.data])
+    obst = CAKES_OBST[msg.data].copy()
+    if obst.get_name() == "C":
+        x, y = obst.get_x_center(), obst.get_y_center()
+        x, y, _ = patch_frame_br(x, y, 0, p_dn.color)
+        obst.set_x_center(x)
+        obst.set_y_center(y)
+
+    p_dn.pathfinder.remove_obstacle(obst)
 
 def publish_path(path):
     """Publish path to the interfaceNode."""    

@@ -87,7 +87,6 @@ class SIM_ObstaclesNode:
         ###############################################################
         # calculatedObstacles = 
         obstacles_pos = [(1775,775,0,0,0)]  #[(1200,600)]
-        loginfo(f"Sending obstacle info : {obstacles_pos}")
 
         data = [0]
         for pos in obstacles_pos:

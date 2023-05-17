@@ -52,6 +52,7 @@ class ObsTakeCakes(smach.State):
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
             x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
+            pub_delete_obst.publish(data=userdata.take_cakes_area[0])
             #TODO Le shift à cause des portes
             if x < MAX_X/2 :
                 x += DOORS_SHIFT
@@ -66,7 +67,6 @@ class ObsTakeCakes(smach.State):
 
         elif userdata.nb_actions_done[0] == 2:
             x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
-            pub_delete_obst.publish(data=userdata.take_cakes_area[0])
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
         

@@ -53,6 +53,9 @@ def is_node_out_obstacles(tableMap, node, isFirst):
         return True
     for obstacle in tableMap.get_obstacle_list():
         if obstacle.is_node_in(node):
+            """ print(obstacle.get_name())
+            print(obstacle.get_x_center())
+            print(obstacle.get_radius()) """
             return False
     return True
 

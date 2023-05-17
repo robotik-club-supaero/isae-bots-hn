@@ -52,9 +52,9 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 
 ## CONSTANTES
 BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 300 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 300 + BECAUSE_BIG_IS_BIG
-RADIUS_ROBOT_OBSTACLE = 300
+STOP_RANGE_STANDARD = 200 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_AVOIDING = 200 + BECAUSE_BIG_IS_BIG
+RADIUS_ROBOT_OBSTACLE = 350
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
@@ -324,7 +324,7 @@ def callback_lidar(msg):
     if not p_dn.move or (not p_dn.avoid_mode) or p_dn.matchEnded: return
     if p_dn.avoid_mode: 
         stop_range = STOP_RANGE_AVOIDING
-        max_range = 2*stop_range
+        max_range = 600
         stop_front_x = STOP_RANGE_X_AVOID
         stop_front_y = STOP_RANGE_Y_AVOID
 
@@ -340,6 +340,7 @@ def callback_lidar(msg):
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
         x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
+        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -373,6 +374,8 @@ def callback_lidar(msg):
                 else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                         obstacle_seen = True
+                    else :
+                        obstacle_seen = False
 ####################################################################################################################################
 ####################################################################################################################################
         
@@ -386,10 +389,33 @@ def callback_lidar(msg):
 
         # Update de la vitesse??
         if obstacle_seen: 
-            speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
-            speed_coeff = min(0.75, max(0, speed_coeff))
-            speed = 80 - int(speed_coeff*80)
-            pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
+            print("OBJET DEVANT")
+            print(dist_obs)
+            print(stop_range)
+            if dist_obs <= stop_range:
+                log_info("Waiting cause Path Blocked")
+                pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
+                print("NOUVEAU CHEMIN")
+                begin_time = time.time()
+                while (time.time() - begin_time < 3) and (dist_obs <= stop_range) :
+                    time.sleep(0.01)
+                    result = p_dn.build_path(True, p_dn.is_first_accurate, False)
+                    if result['success'] == True :
+                        print("YOUPI")
+                        break
+                
+                if time.time() - begin_time >= 3:
+                    log_warn("ERROR - Reason: " + "Path blocked")
+                    # Retour de l'erreur a la strat
+                    pub_strat.publish(Int16(COM_STRAT["path not found"]))
+                else :
+                    p_dn.next_point(True)
+
+            else :
+                speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
+                speed_coeff = min(0.75, max(0, speed_coeff))
+                speed = 80 - int(speed_coeff*80)
+                pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
         else:
             pub_speed.publish(data=80)
 

@@ -77,6 +77,7 @@ class Pathfinder:
         return self.table_map
 
     def remove_obstacle(self, obstacle):
+        log_info("DELETE LES OBST")
         self.table_map.remove_obstacle(obstacle)
 
     def set_max_astar_time(self, time):

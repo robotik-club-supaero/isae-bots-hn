@@ -32,6 +32,7 @@ import numpy as np
 
 import configparser
 from ast import literal_eval
+from pathfinder.obstacle_circ import ObstacleCirc
 
 #################################################################
 #																#
@@ -60,6 +61,26 @@ MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
 COLOR = {
       0: 'HOME',
       1: 'AWAY'
+}
+
+robotW = int(READER.get("ROBOT", "robot_larg"))
+robotL = int(READER.get("ROBOT", "robot_long"))
+robotDiag = np.linalg.norm([robotW/2, robotL/2])
+MARGIN = robotDiag // 2 + 20
+
+CAKES_OBST = {
+    0 : ObstacleCirc(225, 575, 60+MARGIN),
+    1 : ObstacleCirc(1775, 575, 60+MARGIN),
+    2 : ObstacleCirc(225, 2425, 60+MARGIN),
+    3 : ObstacleCirc(1775, 2425, 60+MARGIN),
+    4 : ObstacleCirc(225, 775, 60+MARGIN),
+    5 : ObstacleCirc(1775, 775, 60+MARGIN),
+    6 : ObstacleCirc(225, 2225, 60+MARGIN),
+    7 : ObstacleCirc(1775, 2225, 60+MARGIN),
+    8 : ObstacleCirc(725, 1125, 60+MARGIN),
+    9 : ObstacleCirc(1275, 1125, 60+MARGIN),
+    10: ObstacleCirc(725, 1875, 60+MARGIN),
+    11: ObstacleCirc(1275, 1875, 60+MARGIN)
 }
 
 ONE_PI = np.pi

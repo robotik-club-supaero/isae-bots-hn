@@ -74,6 +74,9 @@ class Pathfinder:
     def get_table_map(self):
         return self.table_map
 
+    def remove_obstacle(self, obstacle):
+        self.table_map.remove_obstacle(obstacle)
+
     def set_max_astar_time(self, time):
         self.max_astar_time = time
 
@@ -84,7 +87,8 @@ class Pathfinder:
     def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
         if isAvoid:
             if self.robot_to_avoid_pos is None:
-                self.set_robot_to_avoid_pos([-1000, -1000], 200)
+                self.set_robot_to_avoid_pos([1900, 2900], 0)
+                log_info("AJOUT DE L'ADVERSAIRE")
             self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
             self.table_map.set_avoid(True, isSecondAttempt)
         else:

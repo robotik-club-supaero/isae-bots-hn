@@ -66,6 +66,13 @@ class Maps:
             return self.obstacle_list+[self.obstacle_robot_pos]
         else:
             return self.obstacle_list
+        
+    def remove_obstacle(self, obstacle):
+        for i in range(len(self.obstacle_list)):
+            if type(self.obstacle_list[i]) == type(obstacle):
+                if obstacle.is_equals(self.obstacle_list[i]):
+                    del self.obstacle_list[i]
+                    break
     
     def get_node_list(self):
         if self.avoid:

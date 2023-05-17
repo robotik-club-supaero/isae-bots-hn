@@ -157,7 +157,7 @@ class DisplacementNode:
             result['message'] = "Path found" 
             result['success'] = True
 
-        except PathNotFoundError:
+        except PathNotFoundError:   
             result['message'] = "Path not found"
             result['success'] = False
             return result

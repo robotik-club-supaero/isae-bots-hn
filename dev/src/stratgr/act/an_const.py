@@ -87,7 +87,8 @@ DISPLACEMENT = {
       'stop'             : 2,
       'accurate'         : 3,
       'recalage'         : 4,
-      'rotation'         : 5
+      'rotation'         : 5,
+      'marcheArr'        : 8
 }
 
 CB_DISP = {

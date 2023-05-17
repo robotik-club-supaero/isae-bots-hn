@@ -24,7 +24,7 @@ import sys
 import time
 import smach
 from an_const import *
-from an_comm import end_of_action_pub, add_score
+from an_comm import end_of_action_pub, add_score, pub_delete_obst
 from an_sm_states.sm_displacement import Displacement, set_next_destination
 from an_sm_states.sm_cakes_substates import *
 
@@ -66,6 +66,7 @@ class ObsTakeCakes(smach.State):
 
         elif userdata.nb_actions_done[0] == 2:
             x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
+            pub_delete_obst.publish(data=userdata.take_cakes_area[0])
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
         

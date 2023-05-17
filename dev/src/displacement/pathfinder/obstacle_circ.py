@@ -47,3 +47,6 @@ class ObstacleCirc:
         x = node.get_x()
         y = node.get_y()
         return math.sqrt((x-self.x_center)**2+(y-self.y_center)**2)<self.radius
+
+    def is_equals(self, obstacle):
+        return (self.x_center == obstacle.x_center) and (self.y_center == obstacle.y_center) and (self.radius == obstacle.radius)

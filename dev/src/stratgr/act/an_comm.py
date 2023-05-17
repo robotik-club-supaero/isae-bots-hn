@@ -269,6 +269,7 @@ cherries_pub = rospy.Publisher('/strat/cherries', Int16, queue_size=10, latch=Tr
 doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
 clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
 elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
+pub_delete_obst = rospy.Publisher('/deleteObs', Int16, queue_size=10, latch=True)
 
 
 """

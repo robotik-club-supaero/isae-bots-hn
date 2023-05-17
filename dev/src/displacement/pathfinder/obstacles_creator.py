@@ -57,7 +57,7 @@ def make_obstacle_list(color):
 
     # Walls 
     wallNorth = ObstacleRect(0, 0, 0, 3000)
-    wallSouth = ObstacleRect(2000, 2000, 510, 2490)
+    wallSouth = ObstacleRect(2000, 2000, 0, 3000)
     wallEast = ObstacleRect(0, 2000, 0, 0)
     wallWest = ObstacleRect(0, 2000, 3000, 3000)
 
@@ -70,6 +70,23 @@ def make_obstacle_list(color):
     cherriesPerpendicular2 = ObstacleRect(985, 1015, 2700, 3000)
     cherriesWall1 = ObstacleRect(0, 30, 1350, 1650)
     cherriesWall2 = ObstacleRect(1970, 2000, 1350, 1650)
+
+    # Cakes
+    cakes1 = ObstacleCirc(225, 575, 60+margin)
+    cakes2 = ObstacleCirc(1775, 575, 60+margin)
+    cakes3 = ObstacleCirc(225, 2425, 60+margin)
+    cakes4 = ObstacleCirc(1775, 2425, 60+margin)
+    cakes5 = ObstacleCirc(225, 775, 60+margin)
+    cakes6 = ObstacleCirc(1775, 775, 60+margin)
+    cakes7 = ObstacleCirc(225, 2225, 60+margin)
+    cakes8 = ObstacleCirc(1775, 2225, 60+margin)
+    cakes9 = ObstacleCirc(725, 1125, 60+margin)
+    cakes10= ObstacleCirc(1275, 1125, 60+margin)
+    cakes11= ObstacleCirc(725, 1875, 60+margin)
+    cakes12= ObstacleCirc(1275, 1875, 60+margin)
+
+    # Test
+    test = ObstacleRect(1250, 1950, 1125, 1200)
 
     # Samples
     # s_radius = 150 / 2
@@ -85,11 +102,15 @@ def make_obstacle_list(color):
     if color == HOME:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
         obstacleList.extend([cherriesPerpendicular1, cherriesPerpendicular2, cherriesWall1, cherriesWall2])
+        obstacleList.extend([cakes1, cakes2, cakes3, cakes4, cakes5, cakes6, cakes7, cakes8, cakes9, cakes10, cakes11, cakes12])
+        #obstacleList.extend([test])
 
         #obstacleList.append(baseHome)
     else:
         obstacleList.extend([wallNorth, wallEast, wallWest, wallSouth])
         obstacleList.extend([cherriesPerpendicular1, cherriesPerpendicular2, cherriesWall1, cherriesWall2])
+        obstacleList.extend([cakes1, cakes2, cakes3, cakes4, cakes5, cakes6, cakes7, cakes8, cakes9, cakes10, cakes11, cakes12])
+        #obstacleList.extend([test])
 
         #obstacleList.append(baseAway)
 

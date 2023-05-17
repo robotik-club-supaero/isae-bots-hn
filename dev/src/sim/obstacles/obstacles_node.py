@@ -86,8 +86,7 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        obstacles_pos = [(1775,775,0,0,0)]  #[(1200,600)]
-        loginfo(f"Sending obstacle info : {obstacles_pos}")
+        obstacles_pos = [(1775,775, np.linalg.norm([self.x_robot-1775, self.y_robot-775]) ,0,0)]  #[(1200,600)]
 
         data = [0]
         for pos in obstacles_pos:

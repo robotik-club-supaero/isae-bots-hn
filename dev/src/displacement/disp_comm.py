@@ -356,20 +356,6 @@ def callback_lidar(msg):
                 else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                         obstacle_seen = True
-
-        #-> Si le robot recule
-        else:
-            if msg.data[0] not in [0,1]: 
-                log_errs("Wrong msg from callback_obstacle.")
-                continue
-            
-            if msg.data[0] == 1: # sonar
-                dprint("sonar osbtacle, info obstacle=[{}] -- NOT HANDLED".format(obstacle_info))
-                # if abs(yLocObs) < 120:
-                #     obstacle_seen = True
-                #     p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1]],RADIUS_ROBOT_OBSTACLE)  # TODO : à paramétrer    
-                # ecart sur le cote a partir duquel on considere l'obstacle  
-                # pour la simulation Docker, sinon un obstacle loin mais proche en xLoc est detecte
 ####################################################################################################################################
 ####################################################################################################################################
         

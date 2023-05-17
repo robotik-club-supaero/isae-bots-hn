@@ -113,7 +113,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
         goal_dist = node.dist_from_node(goal_node)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent
-        if is_in_avoid_mode and goal_dist < 500:
+        if is_in_avoid_mode and goal_dist < 600:
             node.add_link_node_list(goal_node)
             goal_node.add_link_node_list(node)
 
@@ -124,7 +124,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
             best_node = node
             best_dist = init_dist
 
-        if init_dist < 500:
+        if init_dist < 600:
             # On rajoute le noeud s'il est visible et hors des obstacles
             if curr_node.is_visible(node, tableMap) and is_node_out_obstacles(tableMap, node, False):
                 curr_node.add_link_node_list(node)

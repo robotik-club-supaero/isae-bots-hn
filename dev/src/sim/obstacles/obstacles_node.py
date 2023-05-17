@@ -91,7 +91,7 @@ class SIM_ObstaclesNode:
         else:
             obstacles_pos = [(1000,800, np.linalg.norm([self.x_robot-1000, self.y_robot-800]) ,0,0)]
 
-        loginfo("Pos obst :" + str(obstacles_pos))
+        #loginfo("Pos obst :" + str(obstacles_pos))
 
         #obstacles_pos = []
 

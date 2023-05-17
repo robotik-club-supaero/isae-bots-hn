@@ -134,11 +134,12 @@ class Displacement(smach.State):
 					dest2.x = step_x
 					dest2.y = step_y
 					dest2.w = DISPLACEMENT['marcheArr']
+					log_info("PASSAGE")
 					disp_pub.publish(dest2)
 					begin_time = time.time()
 					while userdata.cb_disp[0] != 0 and time.time()-begin_time < STOP_DEST_TIMEOUT:
 						time.sleep(0.1)
-
+				log_info("RECHERCHE DE CHEMIN")
 				disp_pub.publish(dest)
 				stop_time = time.time()
 				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_DEST_TIMEOUT:

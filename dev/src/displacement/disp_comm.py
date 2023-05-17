@@ -223,8 +223,10 @@ def callback_strat(msg):
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
 
     elif msg.w == CMD_STRAT["marcheArr"]:
-        p_dn.blocked = False
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
+        if p_dn.blocked:
+            p_dn.blocked = False
+            pub_strat.publish(Int16(COM_STRAT["ok pos"]))
 
     elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
         ## Setup de la vitesse
@@ -260,18 +262,21 @@ def callback_strat(msg):
 
         ## Si on a trouvé un chemin
         if result['success']:
-            log_info("Found path: \n"+str(p_dn.path))
-            p_dn.blocked = False
-            p_dn.backward = False
-            # Affichage du path
-            if len(p_dn.path) > 0:
-                publish_path(p_dn.path)
-            if p_dn.avoid_mode:
-                #Calcul du point de reset des marges d'évitement
-                p_dn.set_avoid_reset_point()
-        ## Sinon, erreur de la recherche de chemin
-            p_dn.move = True 
-            p_dn.next_point(False)
+            if p_dn.blocked:
+                p_dn.blocked = False
+                log_info("COOL")
+                pub_strat.publish(Int16(COM_STRAT["go"]))
+            else :
+                log_info("Found path: \n"+str(p_dn.path))
+                # Affichage du path
+                if len(p_dn.path) > 0:
+                    publish_path(p_dn.path)
+                if p_dn.avoid_mode:
+                    #Calcul du point de reset des marges d'évitement
+                    p_dn.set_avoid_reset_point()
+            ## Sinon, erreur de la recherche de chemin
+                p_dn.move = True 
+                p_dn.next_point(False)
         else:       
             if result['message'] == "Dest Blocked":
                 log_warn("ERROR - Reason: " + result['message'])
@@ -329,13 +334,13 @@ def callback_lidar(msg):
         p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0) """
     for i in range(nb_obstacles):
         obstacle_seen = True
-        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
         if obstacle_stop: break
         for j in range(5):
             # Params de l'obstacle
             obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
+        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
         x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
 
 ####################################################################################################################################

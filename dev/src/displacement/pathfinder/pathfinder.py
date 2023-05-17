@@ -96,5 +96,5 @@ class Pathfinder:
         else:
             self.table_map.set_avoid(False, False)
             
-        print(self.table_map.get_obstacle_robot_pos().get_x_center())
+        print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
         return a_star(self.init_pos, self.goal_pos, self.table_map, isFirstAccurate, self.max_astar_time)

@@ -41,8 +41,8 @@ class ObsTakeCherriesPerpendicular(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','take','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded','take_cherries_area'],
-			                    output_keys=['nb_actions_done','next_pos','cherries_loaded'])
+			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded','take_cherries_area','backward'],
+			                    output_keys=['nb_actions_done','next_pos','cherries_loaded','backward'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -77,8 +77,8 @@ class ObsTakeCherriesPerpendicular(smach.State):
 #################################################################
 
 TakeCherriesPerpendicular = smach.StateMachine( outcomes=['preempted', 'end'],
-                                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','take_cherries_area','nb_errors'],
-                                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors','take_cherries_area'])
+                                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','take_cherries_area','nb_errors','backward'],
+                                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors','take_cherries_area','backward'])
 							
 with TakeCherriesPerpendicular:
     smach.StateMachine.add('OBS_TAKE_CHERRIES_PERPENDICULAR', 

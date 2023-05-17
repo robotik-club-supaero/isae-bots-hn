@@ -109,7 +109,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     best_node = None
     best_dist = 0
     for node in tableMap.get_node_list():
-        node.set_weight(None)
+        node.set_weight(10000)
         goal_dist = node.dist_from_node(goal_node)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent

@@ -54,7 +54,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
 STOP_RANGE_STANDARD = 200 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_AVOIDING = 200 + BECAUSE_BIG_IS_BIG
-RADIUS_ROBOT_OBSTACLE = 300
+RADIUS_ROBOT_OBSTACLE = 350
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
@@ -194,7 +194,6 @@ def callback_strat(msg):
     p_dn.move = False
     p_dn.match_ended = False 
     p_dn.avoid_mode = False
-    p_dn.blocked = False
 
     # p_dn.finalTurn = False
     # p_dn.stop_obstacle_detection = False
@@ -204,102 +203,100 @@ def callback_strat(msg):
     log_info("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
     p_dn.path = []
 
-    if not p_dn.blocked or p_dn.backward:
     ## Commande d'arrêt
-        if msg.w == CMD_STRAT["stop"]:
-            pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
-            p_dn.match_ended = True
+    if msg.w == CMD_STRAT["stop"]:
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
+        p_dn.match_ended = True
 
-        elif msg.w == CMD_STRAT["accurate"]:
-            p_dn.path = [[msg.x, msg.y, msg.z]]
-            p_dn.accurate = True
-            pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
+    elif msg.w == CMD_STRAT["accurate"]:
+        p_dn.path = [[msg.x, msg.y, msg.z]]
+        p_dn.accurate = True
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
 
-        elif msg.w == CMD_STRAT["recalage"]:
-            p_dn.path = [[msg.x, msg.y, msg.z]]
-            p_dn.recalage = True
-            pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
-        
-        elif msg.w == CMD_STRAT["rotation"]:
-            p_dn.rotation = True
-            pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
+    elif msg.w == CMD_STRAT["recalage"]:
+        p_dn.path = [[msg.x, msg.y, msg.z]]
+        p_dn.recalage = True
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
+    
+    elif msg.w == CMD_STRAT["rotation"]:
+        p_dn.rotation = True
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
 
-        elif msg.w == CMD_STRAT["marcheArr"]:
-            pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
+    elif msg.w == CMD_STRAT["marcheArr"]:
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
 
-        elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
-            ## Setup de la vitesse
+    elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
+        ## Setup de la vitesse
 
-            dest_pos = [msg.x, msg.y, msg.z]
-            curr_pos = p_dn.current_pos
+        dest_pos = [msg.x, msg.y, msg.z]
+        curr_pos = p_dn.current_pos
 
-            ## - Déplacement standard
-            if msg.w == CMD_STRAT["standard"] :
-                log_info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
-                p_dn.avoid_mode = True
-                p_dn.is_reset_possible = False
-                p_dn.move = True
+        ## - Déplacement standard
+        if msg.w == CMD_STRAT["standard"] :
+            log_info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
+            p_dn.avoid_mode = True
+            p_dn.is_reset_possible = False
+            p_dn.move = True
 
-                ## Setup du Pathfinder
-                p_dn.max_astar_time = MAX_ASTAR_TIME
-                p_dn.pathfinder.set_goal(dest_pos)
-                p_dn.pathfinder.set_init(curr_pos)            
+            ## Setup du Pathfinder
+            p_dn.max_astar_time = MAX_ASTAR_TIME
+            p_dn.pathfinder.set_goal(dest_pos)
+            p_dn.pathfinder.set_init(curr_pos)            
 
-            ## - Deplacement sans evitement
-            else:   
-                log_info("Displacement without avoidance :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
-                p_dn.avoid_mode = False
-                p_dn.is_reset_possible = False
-                p_dn.move = True
+        ## - Deplacement sans evitement
+        else:   
+            log_info("Displacement without avoidance :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
+            p_dn.avoid_mode = False
+            p_dn.is_reset_possible = False
+            p_dn.move = True
 
-                ## Setup du Pathfinder
-                p_dn.max_astar_time = MAX_ASTAR_TIME
-                p_dn.pathfinder.set_goal(dest_pos)
-                p_dn.pathfinder.set_init(curr_pos)
+            ## Setup du Pathfinder
+            p_dn.max_astar_time = MAX_ASTAR_TIME
+            p_dn.pathfinder.set_goal(dest_pos)
+            p_dn.pathfinder.set_init(curr_pos)
 
-            result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
-            log_info("Result ici")
+        result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
 
-            ## Si on a trouvé un chemin
-            if result['success']:
-                log_info("Ah bon !!")
-                log_info("Found path: \n"+str(p_dn.path))
-                p_dn.blocked = False
-                p_dn.backward = False
-                # Affichage du path
-                if len(p_dn.path) > 0:
-                    publish_path(p_dn.path)
-                if p_dn.avoid_mode:
-                    #Calcul du point de reset des marges d'évitement
-                    p_dn.set_avoid_reset_point()
-            ## Sinon, erreur de la recherche de chemin
-                p_dn.move = True 
-                p_dn.next_point(False)
-            else:       
-                if result['message'] == "Dest Blocked":
-                    log_warn("ERROR - Reason: " + result['message'])
-                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+        ## Si on a trouvé un chemin
+        if result['success']:
+            log_info("Found path: \n"+str(p_dn.path))
+            p_dn.blocked = False
+            p_dn.backward = False
+            # Affichage du path
+            if len(p_dn.path) > 0:
+                publish_path(p_dn.path)
+            if p_dn.avoid_mode:
+                #Calcul du point de reset des marges d'évitement
+                p_dn.set_avoid_reset_point()
+        ## Sinon, erreur de la recherche de chemin
+            p_dn.move = True 
+            p_dn.next_point(False)
+        else:       
+            if result['message'] == "Dest Blocked":
+                log_warn("ERROR - Reason: " + result['message'])
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
 
-                else:
-                    log_warn("ERROR - Reason: " + result['message'])
-                    # Retour de l'erreur a la strat
-                    pub_strat.publish(Int16(COM_STRAT["path not found"]))
+            else:
+                log_warn("ERROR - Reason: " + result['message'])
+                # Retour de l'erreur a la strat
+                pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
-                    # Retry without opponents chaos
-                    """ if p_dn.avoid_mode:
-                        result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, True)
-                        if result['success']:
-                            log_info("Path found without chaos: [{}]".format(p_dn.path))
-                            p_dn.set_avoid_reset_point()
-                        else:
-                            log_info("Error without chaos: {}".format(result['message']))
+                # Retry without opponents chaos
+                """ if p_dn.avoid_mode:
+                    result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, True)
+                    if result['success']:
+                        log_info("Path found without chaos: [{}]".format(p_dn.path))
+                        p_dn.set_avoid_reset_point()
                     else:
-                        log_info("Error: {}".format(result['message'])) """
+                        log_info("Error without chaos: {}".format(result['message']))
+                else:
+                    log_info("Error: {}".format(result['message'])) """
 
-        ## On envoie le premier point a la Teensy
+    ## On envoie le premier point a la Teensy
 
 
 def callback_lidar(msg):
+    
     if not ok_comm: return
     """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
     ## Initialise parametre d'obstacle
@@ -317,7 +314,8 @@ def callback_lidar(msg):
     # Distance à l'obstacle lidar pour laquelle on s'arrete en deplacement classique  # TODO : à paramétrer
     ####
 
-    if not p_dn.move or (not p_dn.avoid_mode) or p_dn.matchEnded: return
+    if (not p_dn.avoid_mode) or p_dn.matchEnded: 
+        return
     if p_dn.avoid_mode: 
         stop_range = STOP_RANGE_AVOIDING
         max_range = 600
@@ -326,9 +324,11 @@ def callback_lidar(msg):
 
     ## TRAITEMENT DE CHAQUE OBSTACLE
     nb_obstacles = (msg.layout.dim[0]).size
-    if nb_obstacles == 0 : 
-        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)
+    """ if nb_obstacles == 0 : 
+        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0) """
     for i in range(nb_obstacles):
+        obstacle_seen = True
+        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
         if obstacle_stop: break
         for j in range(5):
             # Params de l'obstacle
@@ -336,7 +336,6 @@ def callback_lidar(msg):
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
         x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
-        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -346,9 +345,9 @@ def callback_lidar(msg):
             if msg.data[0] not in [0,1]:
                 log_errs("Wrong msg from callback_obstacle.")
                 continue
-            if msg.data[0] == 0:  # msg du lidar
+            """ if msg.data[0] == 0:  # msg du lidar
                 if dist_obs < 0.9*stop_range:
-                    obstacle_stop = True
+                    obstacle_stop = True """
         #-> Si le robot avance
         elif p_dn.forward: 
             #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
@@ -365,7 +364,7 @@ def callback_lidar(msg):
                     obstacle_seen = True
                     if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
                         obstacle_stop = True
-                        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
+                        
                         
                 else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
@@ -379,37 +378,27 @@ def callback_lidar(msg):
             if dist_obs < dist_min: dist_min = dist_obs
             
         # Reset des marges lors d'un évitement
-        if p_dn.avoid_mode and dist_min > RESET_RANGE and p_dn.is_reset_possible:  # TODO : à paramétrer LA DISTANCE A PARTIR DE LAQUELLE ON CONSIDERE QUE CE N'EST PLUS UN EVITEMENT ####
-            p_dn.avoid_mode = False
+        """ if p_dn.avoid_mode and dist_min > RESET_RANGE and p_dn.is_reset_possible:  # TODO : à paramétrer LA DISTANCE A PARTIR DE LAQUELLE ON CONSIDERE QUE CE N'EST PLUS UN EVITEMENT ####
+            p_dn.avoid_mode = False """
 
         # Update de la vitesse??
         if p_dn.blocked :
-            if not p_dn.backward:
-                p_dn.backward = True
-                step_x, step_y = 0, 0
-                if p_dn.path[0][0] > p_dn.current_pos[0] :
-                    step_x = p_dn.current_pos[0] - 50
-                else :
-                    step_x = p_dn.current_pos[0] + 50
-                if p_dn.path[0][1] > p_dn.current_pos[1] :
-                    step_y = p_dn.current_pos[1] - 50
-                else :
-                    step_y = p_dn.current_pos[1] + 50
-                pub_teensy.publish(Quaternion(step_x, step_y, p_dn.current_pos[2], CMD_TEENSY["marcheArr"]))
             if obstacle_seen:
                 if dist_obs > stop_range:
                     p_dn.blocked = False
-                    p_dn.backward = False
                     pub_strat.publish(Int16(COM_STRAT["go"]))
+                else:
+                    result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
+                    if result['success'] == True:
+                        p_dn.blocked = False
+                        pub_strat.publish(Int16(COM_STRAT["go"]))
             else :
                 p_dn.blocked = False
-                p_dn.backward = False
                 pub_strat.publish(Int16(COM_STRAT["go"]))
         else :
-            if obstacle_seen: 
+            if obstacle_seen:
                 if dist_obs <= stop_range:
                     p_dn.blocked = True
-                    p_dn.backward = False
                     log_info("Waiting cause Path Blocked")
                     pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
                     log_warn("ERROR - Reason: Path Blocked")

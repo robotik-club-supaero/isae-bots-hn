@@ -40,8 +40,8 @@ class ObsPark(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp'],
-			                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color'],
-			                    output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos'])
+			                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color','backward'],
+			                    output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos','backward'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -65,8 +65,8 @@ class ObsPark(smach.State):
 #################################################################
 
 Park = smach.StateMachine(  outcomes=['preempted', 'end'],
-			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color'],
-			                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos'])
+			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','backward'],
+			                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','backward'])
 							
 with Park:
 	smach.StateMachine.add('OBS_PARK', 

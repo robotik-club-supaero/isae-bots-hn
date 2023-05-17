@@ -88,6 +88,7 @@ class Setup(smach.State):
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.error_reaction = [-1]
 		userdata.nb_errors = [0]
+		userdata.backward = False 
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)

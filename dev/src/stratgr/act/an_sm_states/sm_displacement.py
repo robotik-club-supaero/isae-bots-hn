@@ -37,8 +37,8 @@ from an_utils import log_info, log_errs, log_warn, patch_frame_br
 #################################################################
 
 DISP_TIMEOUT = 30       #[s]
-STOP_PATH_TIMEOUT = 4   #[s]
-STOP_DEST_TIMEOUT = 3   #[s]
+STOP_PATH_TIMEOUT = 6   #[s]
+STOP_DEST_TIMEOUT = 6   #[s]
 
 def set_next_destination(userdata, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
@@ -63,8 +63,8 @@ class Displacement(smach.State):
 	def __init__(self):
 		smach.State.__init__(	self, 	
 		       					outcomes=['preempted','done','redo','fail'],
-								input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color'],
-								output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos'])
+								input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color','backward'],
+								output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos','backward'])
 		
 	def execute(self, userdata):
 		# Init the callback var of dsp result. CHECK an_const to see details on cb_disp
@@ -118,7 +118,28 @@ class Displacement(smach.State):
 				return 'fail'
 
 			if userdata.cb_disp[0] == 3:
+				if not userdata.backward :
+					userdata.backward = True
+
+					step_x, step_y = 0, 0
+					if dest.x > userdata.cb_pos[0][0] :
+						step_x = userdata.cb_pos[0][0] - 50
+					else :
+						step_x = userdata.cb_pos[0][0] + 50
+					if dest.y > userdata.cb_pos[0][1] :
+						step_y = userdata.cb_pos[0][1] - 50
+					else :
+						step_y = userdata.cb_pos[0][1] + 50
+					dest.x = step_x
+					dest.y = step_y
+					dest.w = DISPLACEMENT['marcheArr']
+					disp_pub.publish(dest)
+					begin_time = time.time()
+					while userdata.cb_disp[0] != 0 and time.time()-begin_time < STOP_DEST_TIMEOUT:
+						time.sleep(0.1)
+
 				stop_time = time.time()
+
 				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_DEST_TIMEOUT:
 					time.sleep(0.01)
 

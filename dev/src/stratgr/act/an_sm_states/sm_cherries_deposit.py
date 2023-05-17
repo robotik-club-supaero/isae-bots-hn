@@ -41,8 +41,8 @@ class ObsDepositCherries(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','deposit','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded'],
-			                    output_keys=['nb_actions_done','next_pos','cherries_loaded'])
+			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded','backward'],
+			                    output_keys=['nb_actions_done','next_pos','cherries_loaded','backward'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -76,8 +76,8 @@ class ObsDepositCherries(smach.State):
 #################################################################
 
 DepositCherries = smach.StateMachine(   outcomes=['preempted', 'end'],
-                                        input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_errors'],
-                                        output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors'])
+                                        input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_errors','backward'],
+                                        output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors','backward'])
 							
 with DepositCherries:
     smach.StateMachine.add('OBS_DEPOSIT_CHERRIES', 

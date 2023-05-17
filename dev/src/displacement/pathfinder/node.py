@@ -41,7 +41,7 @@ class Node:
         self.init_dist = None    # Distance au noeud de départ (avec le chemin envisagé)
 
         self.parent = None      # Noeud parent       
-        self.weight = None      # Poids du noeud dans l'algorithme A*
+        self.weight = 10000      # Poids du noeud dans l'algorithme A*
     
 #######################################################################
 # Getters & Setters

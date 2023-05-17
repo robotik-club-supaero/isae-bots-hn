@@ -127,7 +127,8 @@ ALL_KEY_LIST = [
     'error_reaction',
     'nb_errors',
     'stage_to_go',
-    'stage_to_deposit'
+    'stage_to_deposit',
+    'backward'
     ]
 
 ACTIONS_LIST = [

@@ -22,7 +22,6 @@ Fichier de gestion des obstacles LIDAR
 
 from math import atan2, sin, cos
 from lidar_lib import *
-from displacement.disp_utils import patch_frame_br, log_info, log_errs
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
@@ -32,8 +31,11 @@ from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimen
 OBS_RESOLUTION = 100
 
 
-def LOG_INFO(msg):
-    rospy.loginfo("LID "+msg)
+def log_info(msg):
+    rospy.loginfo("[LID] "+msg)
+
+def log_err(msg):
+    rospy.logerr("[LID] "+msg)
 
 def handler(rcv_sig, frame):
 	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
@@ -41,11 +43,6 @@ def handler(rcv_sig, frame):
 	rospy.signal_shutdown(rcv_sig)
 	sys.exit()
 
-    
-COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
-}
 
 #######################################################################
 # LIDAR NODE
@@ -62,7 +59,6 @@ class LidarNode:
         self.y_robot = 0
         self.c_robot = 0
         self.radius = 42
-        self.color = None
 
         self.iterData = 0
         self.sizeData = 5
@@ -77,18 +73,8 @@ class LidarNode:
         # initialisation des suscribers
         self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
-        self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
 
-    def update_color(self, msg):
-        """
-        Callback function from topic /sm/color.
-        """
-        if msg.data not in [0,1]:
-            log_errs(f"Wrong value of color given ({msg.data})...")
-            return
-        else: 
-            self.color = msg.data
-            log_info("Received color : {}".format(COLOR[self.color]))
+
 
 
     def update_position(self,msg):

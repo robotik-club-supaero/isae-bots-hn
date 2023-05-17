@@ -14,5 +14,13 @@ Launch script for GR (sim for now)
 	<node name="ACN" pkg="sim" type="actuators_node.py" output="screen" cwd="node" required="true"/>
 	<node name="DSP" pkg="displacement" type="disp_node.py" output="screen" cwd="node" required="true"/>
 
+	<!-- sensor nodes -->
+	<node name="LID" pkg="sensors" type="lidar_node.py" output="screen" cwd="node" required="true"/>
+	<node name="SON" pkg="sensors" type="sonar_node.py" output="screen" cwd="node" required="true"/>
+	<node name="SEN" pkg="sensors" type="sensors_node.py" output="screen" cwd="node" required="true"/>
+
+	<!-- sim nodes -->
+	<node name="OBS" pkg="sim" type="obstacles_node.py" output="screen" cwd="node" required="true"/>
+
 
 </launch>

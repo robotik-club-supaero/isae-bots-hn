@@ -83,7 +83,7 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        obstacles_pos = []  #[(1200,600)]
+        obstacles_pos = [(1200,600)]  #[(1200,600)]
 
         data = [0]
         for pos in obstacles_pos:

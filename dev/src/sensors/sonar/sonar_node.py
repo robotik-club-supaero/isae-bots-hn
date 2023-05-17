@@ -35,7 +35,7 @@ from geometry_msgs.msg import Pose2D, Point
 #################################################################
 
 _NODENAME_ = "[SON]"
-_BOT_NAME_ = rospy.get_param("robot_name")
+# _BOT_NAME_ = rospy.get_param("robot_name")
 _CFG_FILE_ = "gr_config.ini"
 
 def log_info(msg):
@@ -56,7 +56,7 @@ class SonarNode:
     """
 
     def __init__(self):
-        log_info("Initializing SONAR node ...")
+        log_info("Initializing SonarNode ...")
         
         # Get sonars from config file of the robot
         reader = configparser.ConfigParser()
@@ -141,7 +141,7 @@ class SonarNode:
 #################################################################
 
 def main():
-    rospy.init_node("SON node")
+    rospy.init_node("SonarNode")
     node = SonarNode()
     rospy.spin()
 

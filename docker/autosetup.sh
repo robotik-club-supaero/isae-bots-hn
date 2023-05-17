@@ -22,6 +22,12 @@ chmod +x ./dev/src/stratgr/act/act_node.py \
          ./dev/src/stratgr/dec/dec_node.py \
          ./dev/src/stratpr/act/act_node.py \
          ./dev/src/stratpr/dec/dec_node.py \
+         ./dev/src/sensors/sensors_node.py \
+         ./dev/src/sensors/lidar/lidar_node.py \
+         ./dev/src/sensors/sonar/sonar_node.py \
+         ./dev/src/isb/isb_node.py \
+         ./dev/src/lcd/points_node.py
+
 
 
 # Make the scripts to display logs executable

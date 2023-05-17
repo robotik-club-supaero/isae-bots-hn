@@ -42,17 +42,11 @@ TABLE_W = 2000          # largeur de table (selon x)
 
 LOCAL_LIM = 100         # distance lim de regroupement/localisation
 
-SIMULATION = False if os.environ['HOSTNAME'] == 'pi' else True
-
 READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
+
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
 
-if not SIMULATION: 
-    READER.read(os.path.join(os.path.dirname(__file__),"../../start.ini"))
-elif ROBOT_NAME == "PR":
-    READER.read(os.path.join(os.path.dirname(__file__),"../../pr_start.ini"))
-elif ROBOT_NAME == "GR":
-    READER.read(os.path.join(os.path.dirname(__file__),"../../gr_start.ini")) 
 
 
 #######################################################################

@@ -24,12 +24,19 @@ from std_msgs.msg import MultiArrayLayout
 from std_msgs.msg import MultiArrayDimension
 
 
+
+def log_info(msg):
+     rospy.loginfo("[SEN] "+ msg)
+
+def log_err(msg):
+    rospy.logerr("[SEN] "+ msg)
+
 # pour le test#
 def lineAngle(x0, y0, x1, y1):
 
 	if x1 == x0:
 		if y1 == y0:
-			rospy.logerr("ERREUR : memes coordonnes pour les deux points de la line")
+			log_err("ERREUR : memes coordonnes pour les deux points de la line")
 		theta = np.sign(y1 - y0)*np.pi/2
 
 	elif y1 == y0:
@@ -112,12 +119,10 @@ class SensorsNode:
     def update_obstacles(self, msg):
         #le premier indice de la liste vaut 0 si ce sont des obstacles LIDAR, 1 si SONAR
         if msg.data[0] == 0:
-            #rospy.loginfo('Par ici')
             count = self.countLidar
             obstacles = self.obstaclesLidar
             self.countLidar = (self.countLidar + 1) % self.INTERVALLE
         elif msg.data[0] == 1:
-            #rospy.loginfo('Par la')
             count = self.countSonars
             obstacles = self.obstaclesSonars
             self.countSonars = (self.countSonars + 1) % self.INTERVALLE
@@ -187,7 +192,7 @@ class SensorsNode:
     def __init__(self):
         
         rospy.init_node('SensorsNode')
-        rospy.loginfo("Initialisation du Traitement des Capteurs")
+        log_info("Initializing SensorsNode ...")
 
         self.pub_obstaclesInfo=rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
 

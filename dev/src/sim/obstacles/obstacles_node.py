@@ -45,13 +45,16 @@ def oscillationX(ti, xmin, xmax, w, phi):
 #                                                               #
 #################################################################
 
+def loginfo(msg):
+    rospy.loginfo(f"{_NODENAME_} " + msg)
+
 class SIM_ObstaclesNode:
     """
     SIM OBS node: obstacles ros node for simulation.
     """
 
     def __init__(self):
-        rospy.loginfo(f"{_NODENAME_} Initializing OBS node ...")
+        loginfo("Initializing OBS node ...")
 
         self.position_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
         self.obs_info_pub = rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
@@ -83,7 +86,8 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        obstacles_pos = []  #[(1200,600)]
+        obstacles_pos = [(1775,775,0,0,0)]  #[(1200,600)]
+        loginfo(f"Sending obstacle info : {obstacles_pos}")
 
         data = [0]
         for pos in obstacles_pos:
@@ -93,12 +97,12 @@ class SIM_ObstaclesNode:
         dim1 = MultiArrayDimension()
         dim1.label = "nbObstacles"
         dim1.size = len(obstacles_pos)
-        dim1.stride = 2* len(obstacles_pos)
+        dim1.stride = 5* len(obstacles_pos)
 
         dim2 = MultiArrayDimension()
         dim2.label = "coordinates"
-        dim2.size = 2
-        dim2.stride = 2
+        dim2.size = 5
+        dim2.stride = 5
 
         dimensions = []
         dimensions.append(dim1)
@@ -112,7 +116,7 @@ class SIM_ObstaclesNode:
         newmsg.data = data
         newmsg.layout = layout
 
-        self.obs_lidar_pub.publish(newmsg)
+        self.obs_info_pub.publish(newmsg)
 
 
 #######################################################################

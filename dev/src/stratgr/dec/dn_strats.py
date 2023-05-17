@@ -19,7 +19,7 @@
 #################################################################
 
 import time
-from dn_comm  import next_action_pub, stop_IT, take_cakes_pub, deposit_cakes_pub, take_cherries_pub, score_pub, stage_pub
+from dn_comm  import next_action_pub, stop_IT, take_cakes_pub, deposit_cakes_pub, take_cherries_pub, score_pub, stage_pub, end_pub
 from dn_utils import log_info, LIST_OF_ACTIONS, ACTIONS_SCORE
 
 #################################################################
@@ -146,6 +146,7 @@ def homologation():
         return
 
     if p_dn.nb_actions_done[0] == 3:
+        end_pub.publish(data=1)
         p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
         log_info("End of strategy : HOMOLOGATION")
         stop_IT()

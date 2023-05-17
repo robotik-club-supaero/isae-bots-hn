@@ -146,9 +146,9 @@
       parent = botscreen3
       type = Terminal
     [[[terminal12]]]
-      command = ""
+      command = clear && sleep 3 && make term CMD="rostopic echo /teensy/obstacle_seen"
       order = 1
-      title = "Empty terminal"
+      title = SPEED
       parent = botscreen3
       type = Terminal 
   [[test_disp]]

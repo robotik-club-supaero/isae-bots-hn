@@ -71,6 +71,7 @@ class Displacement(smach.State):
 		userdata.cb_disp[0] = -3 
 
 		dest = userdata.next_pos
+		dest2 = userdata.next_pos
 		log_info(f"Displacement Request: toward ({dest.x}, {dest.y}, {dest.z}) with w= {dest.w}")
 		disp_pub.publish(dest)
 
@@ -122,24 +123,24 @@ class Displacement(smach.State):
 					userdata.backward = True
 
 					step_x, step_y = 0, 0
-					if dest.x > userdata.cb_pos[0][0] :
+					if dest2.x > userdata.cb_pos[0][0] :
 						step_x = userdata.cb_pos[0][0] - 50
 					else :
 						step_x = userdata.cb_pos[0][0] + 50
-					if dest.y > userdata.cb_pos[0][1] :
+					if dest2.y > userdata.cb_pos[0][1] :
 						step_y = userdata.cb_pos[0][1] - 50
 					else :
 						step_y = userdata.cb_pos[0][1] + 50
-					dest.x = step_x
-					dest.y = step_y
-					dest.w = DISPLACEMENT['marcheArr']
-					disp_pub.publish(dest)
+					dest2.x = step_x
+					dest2.y = step_y
+					dest2.w = DISPLACEMENT['marcheArr']
+					disp_pub.publish(dest2)
 					begin_time = time.time()
 					while userdata.cb_disp[0] != 0 and time.time()-begin_time < STOP_DEST_TIMEOUT:
 						time.sleep(0.1)
 
+				disp_pub.publish(dest)
 				stop_time = time.time()
-
 				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_DEST_TIMEOUT:
 					time.sleep(0.01)
 

@@ -52,9 +52,9 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 
 ## CONSTANTES
 BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 200 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 200 + BECAUSE_BIG_IS_BIG
-RADIUS_ROBOT_OBSTACLE = 350
+STOP_RANGE_STANDARD = 250 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_AVOIDING = 250 + BECAUSE_BIG_IS_BIG
+RADIUS_ROBOT_OBSTACLE = 300
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
@@ -223,6 +223,7 @@ def callback_strat(msg):
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
 
     elif msg.w == CMD_STRAT["marcheArr"]:
+        p_dn.blocked = False
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
 
     elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
@@ -282,7 +283,7 @@ def callback_strat(msg):
                 pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
                 # Retry without opponents chaos
-                """ if p_dn.avoid_mode:
+                if p_dn.avoid_mode:
                     result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, True)
                     if result['success']:
                         log_info("Path found without chaos: [{}]".format(p_dn.path))
@@ -290,7 +291,7 @@ def callback_strat(msg):
                     else:
                         log_info("Error without chaos: {}".format(result['message']))
                 else:
-                    log_info("Error: {}".format(result['message'])) """
+                    log_info("Error: {}".format(result['message']))
 
     ## On envoie le premier point a la Teensy
 
@@ -382,20 +383,7 @@ def callback_lidar(msg):
             p_dn.avoid_mode = False """
 
         # Update de la vitesse??
-        if p_dn.blocked :
-            if obstacle_seen:
-                if dist_obs > stop_range:
-                    p_dn.blocked = False
-                    pub_strat.publish(Int16(COM_STRAT["go"]))
-                else:
-                    result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
-                    if result['success'] == True:
-                        p_dn.blocked = False
-                        pub_strat.publish(Int16(COM_STRAT["go"]))
-            else :
-                p_dn.blocked = False
-                pub_strat.publish(Int16(COM_STRAT["go"]))
-        else :
+        if not p_dn.blocked :
             if obstacle_seen:
                 if dist_obs <= stop_range:
                     p_dn.blocked = True

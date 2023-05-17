@@ -86,10 +86,10 @@ class Displacement(smach.State):
 				log_errs("Displacement result: error asserv.")
 				# --- try and correct if it's a problem of same position order reject
 				curr_x, curr_y, _ = userdata.cb_pos[0]
-				if abs(curr_x-dest.x) < 5 and abs(curr_y-dest.y) < 5:
+				""" if abs(curr_x-dest.x) < 5 and abs(curr_y-dest.y) < 5:
 					log_warn("--- error asserv fixed: rotation around same point.")
 					set_next_destination(userdata, dest.x, dest.y, dest.z, DISPLACEMENT['rotation'])
-					return 'redo'	
+					return 'redo'	 """
 				return 'fail'
 
 			if userdata.cb_disp[0] == -1:

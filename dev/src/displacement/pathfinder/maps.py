@@ -82,6 +82,9 @@ class Maps:
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos):
         self.obstacle_robot_pos = obstacle_robot_pos
+    
+    def get_obstacle_robot_pos(self):
+        return self.obstacle_robot_pos
 
     def set_avoid(self, avoid, is_second_attempt):
         self.avoid = avoid

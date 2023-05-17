@@ -79,8 +79,8 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     curr_node = init_node
     nb_elem = 0
 
-    if not is_node_out_obstacles(tableMap, goal_node, True):
-        raise DestBlockedError
+    """ if not is_node_out_obstacles(tableMap, goal_node, True):
+        raise DestBlockedError """
 
     if not tableMap.get_avoid():
         final_path = []

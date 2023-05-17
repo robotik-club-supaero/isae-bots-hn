@@ -125,7 +125,8 @@ COM_STRAT = {
 CB_TEENSY = {
     "errorAsserv": 0,
     "okPos": 1,
-    "okTurn": 2
+    "okTurn": 2,
+    "marcheArrOK": 3
 }
 
 
@@ -180,6 +181,13 @@ def callback_teensy(msg):
             p_dn.next_point(True)
         return
     
+    if msg.data == CB_TEENSY["marcheArrOK"]:
+        if p_dn.blocked:
+            p_dn.blocked = False
+            pub_strat.publish(Int16(COM_STRAT["ok pos"]))
+        log_info("Reverse Gear done.")
+        return
+    
     log_info("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
     
 
@@ -224,9 +232,6 @@ def callback_strat(msg):
 
     elif msg.w == CMD_STRAT["marcheArr"]:
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
-        if p_dn.blocked:
-            p_dn.blocked = False
-            pub_strat.publish(Int16(COM_STRAT["ok pos"]))
 
     elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
         ## Setup de la vitesse
@@ -392,8 +397,6 @@ def callback_lidar(msg):
             if obstacle_seen:
                 if dist_obs <= stop_range:
                     p_dn.blocked = True
-                    log_info("Waiting cause Path Blocked")
-                    pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
                     log_warn("ERROR - Reason: Path Blocked")
                     
                     pub_strat.publish(Int16(COM_STRAT["stop blocked"]))

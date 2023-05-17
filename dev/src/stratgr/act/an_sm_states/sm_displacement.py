@@ -37,8 +37,8 @@ from an_utils import log_info, log_errs, log_warn, patch_frame_br
 #################################################################
 
 DISP_TIMEOUT = 30       #[s]
-STOP_PATH_TIMEOUT = 6   #[s]
-STOP_DEST_TIMEOUT = 6   #[s]
+STOP_PATH_TIMEOUT = 3   #[s]
+STOP_DEST_TIMEOUT = 3   #[s]
 
 def set_next_destination(userdata, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""

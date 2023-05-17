@@ -61,8 +61,8 @@ ROBOT_LARG = int(READER.get('ROBOT', 'robot_larg'))
 ROBOT_LONG = int(READER.get('ROBOT', 'robot_long'))
 ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
-DOORS_SHIFT = ROBOT_DIAG + 50
-ARM_SHIFT = ROBOT_DIAG + 50
+DOORS_SHIFT = ROBOT_DIAG//2 + 30
+ARM_SHIFT = ROBOT_DIAG//2 + 30
 
 ONE_PI = np.pi
 TWO_PI = np.pi * 2
@@ -87,7 +87,8 @@ DISPLACEMENT = {
       'stop'             : 2,
       'accurate'         : 3,
       'recalage'         : 4,
-      'rotation'         : 5
+      'rotation'         : 5,
+      'marcheArr'        : 8
 }
 
 CB_DISP = {
@@ -154,8 +155,14 @@ ACTIONS_STATES = {
     }
 
 ACTIONS_SCORE = {
-	'init_score':               0, 
-    'parking':                 20
+	'init_score':               5, #Bucket posé
+    'funnyCounter':            10, #funny action et compte des cerises corrects (5+5)
+    'parking':                 15,
+    'depositStage':             1,
+    'legendary':                4,
+    'cherryOnCake':             3,
+    'cherryBucket':             1,
+    'bonus':                   20
 }
 
 CHERRIES_POS = {

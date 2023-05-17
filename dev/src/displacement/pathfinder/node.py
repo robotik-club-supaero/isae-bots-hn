@@ -80,13 +80,13 @@ class Node:
         
     def set_goal_dist(self, goal_dist):
         self.goal_dist = goal_dist
-        if self.init_dist != None:
-            self.weight = self.init_dist+self.goal_dist
+        """ if self.init_dist != None:
+            self.weight = self.init_dist+self.goal_dist """
         
     def set_init_dist(self, startDist):
         self.init_dist = startDist
-        if self.goal_dist != None: 
-            self.weight = self.init_dist+self.goal_dist
+        """ if self.goal_dist != None: 
+            self.weight = self.init_dist+self.goal_dist """
 
     def add_link_node_list(self,node):
         """Adds a node to the linkNodeList."""
@@ -143,6 +143,7 @@ class Node:
                     tp = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]+math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
                     tm = -((self.get_x()-x)*line_vect[0]+(self.get_y()-y)*line_vect[1]-math.sqrt(det4))/(line_vect[0]**2+line_vect[1]**2)
                     if 0 < tp < node_dist or 0 < tm < node_dist:
+
                         return False
                     
             elif obstacle.get_name() == "T":
@@ -160,6 +161,7 @@ class Node:
                     t_max = (x_max-self.get_x())/line_vect[0]
 
                     if (y_min<self.get_y()+t_min*line_vect[1]<y_max and 0<t_min<node_dist) or (y_min<self.get_y()+t_max*line_vect[1]<y_max and 0<t_max<node_dist):
+
                         return False
     
                 if line_vect[1] != 0 :
@@ -167,6 +169,7 @@ class Node:
                     t_max = (y_max-self.get_y())/line_vect[1]
                     
                     if (x_min<self.get_x()+t_min*line_vect[0]<x_max and 0<t_min<node_dist ) or (x_min<self.get_x()+t_max*line_vect[0]<x_max and 0<t_max<node_dist):
+
                         return False
             
             else:

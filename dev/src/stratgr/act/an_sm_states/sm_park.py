@@ -54,7 +54,6 @@ class ObsPark(smach.State):
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
-        add_score(ACTIONS_SCORE['parking'])
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done'
 

@@ -69,12 +69,17 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
 #######################################################################
 # PHASE D'INITIALISATION
 #######################################################################
-    
+
     # Le noeud de test courant est initialise au noeud de depart
     goal_node = Node(goal)
     init_node = Node(init)    
     curr_node = init_node
     nb_elem = 0
+
+    if not tableMap.get_avoid():
+        final_path = []
+        final_path.append(goal_node.get_position())
+        return final_path
 
     # Si l'arrivee est visible depuis le départ, on renvoie directement un chemin vers l'arrivée
     if goal_node.is_visible(curr_node, tableMap):
@@ -98,10 +103,11 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
     best_node = None
     best_dist = 0
     for node in tableMap.get_node_list():
+        node.set_weight(None)
         goal_dist = node.dist_from_node(goal_node)
 
         # Lors d'un evitement on ne connecte le noeud d'arrive qu'aux noeud adjacent
-        if is_in_avoid_mode and goal_dist < 400:
+        if is_in_avoid_mode and goal_dist < 500:
             node.add_link_node_list(goal_node)
             goal_node.add_link_node_list(node)
 
@@ -144,7 +150,6 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
             raise TimeOutError
         curr_node = opened_list.get()[2]
         
-
         for neighbor in curr_node.get_link_node_list() :
 
             if not neighbor.is_visible(curr_node, tableMap):  # on garanti que le noeud est visible depuis curr_node
@@ -158,8 +163,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
                 found = not found 
                 break
 
-            neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))
-
+            neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))        
             new_cost = curr_node.get_weight() + neighbor.get_goal_dist() + neighbor.dist_from_node(curr_node)
 
             """ in_open = is_node_in_list(opened_list, neighbor)
@@ -177,7 +181,6 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
 
     if not found :
         raise PathNotFoundError
-        return 
 
     # On récupère le chemin (à l'envers) (found_path = [goal, ..., init])
     found_path = []

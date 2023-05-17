@@ -140,9 +140,9 @@
       parent = topscreen3
       type = Terminal
     [[[terminal11]]]
-      command = ""
+      command = clear && sleep 3 && make term CMD="rostopic echo /game/score" 
       order = 0
-      title = "Empty terminal"
+      title = SCORE
       parent = botscreen3
       type = Terminal
     [[[terminal12]]]

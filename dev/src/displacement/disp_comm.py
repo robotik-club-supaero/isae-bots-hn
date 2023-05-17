@@ -94,7 +94,8 @@ CMD_TEENSY = {
     "recalage":             6,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
     "rotation":             9,      # Cas où on fait une rotation simple
     "set":                  3,      # Fixe la position de départ
-    "wii":                  4       # Cas d'utilisation de la manette wii
+    "wii":                  4,       # Cas d'utilisation de la manette wii
+    "marcheArr":            8
 }
 
 
@@ -105,7 +106,8 @@ CMD_STRAT = {
     "stop":         2,            # Arrête le mouvement
     "accurate":     3,        # Déplacement précis du robot
     "recalage":     4,        # Déplacement de type recalage (contre un bord du terrain typiquement)
-    "rotation":     5         # On ne demande qu'une rotation (Peut servir)
+    "rotation":     5,         # On ne demande qu'une rotation (Peut servir)
+    "marcheArr":    8
 }
 
 '''Dictionnaire des callback renvoyees a la strat'''
@@ -225,10 +227,9 @@ def callback_strat(msg):
         dest_pos = [msg.x, msg.y, msg.z]
         curr_pos = p_dn.current_pos
 
-        log_info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
-
         ## - Déplacement standard
         if msg.w == CMD_STRAT["standard"] :
+            log_info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
             p_dn.avoid_mode = True
             p_dn.is_reset_possible = False
             p_dn.move = True
@@ -238,9 +239,17 @@ def callback_strat(msg):
             p_dn.pathfinder.set_goal(dest_pos)
             p_dn.pathfinder.set_init(curr_pos)
 
-        ## - Deplacement avec evitement
+        ## - Deplacement sans evitement
         else:   
+            log_info("Displacement without avoidance :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
             p_dn.avoid_mode = False
+            p_dn.is_reset_possible = False
+            p_dn.move = True
+
+            ## Setup du Pathfinder
+            p_dn.max_astar_time = MAX_ASTAR_TIME
+            p_dn.pathfinder.set_goal(dest_pos)
+            p_dn.pathfinder.set_init(curr_pos)
 
         result = p_dn.build_path(p_dn.avoid_mode, p_dn.is_first_accurate, False)
 
@@ -399,6 +408,11 @@ def callback_position(msg):
     if p_dn.avoid_mode and np.linalg.norm([p_dn.current_pos[0] - p_dn.reset_point[0], p_dn.current_pos[1] - p_dn.reset_point[1]]) < 20:
         p_dn.is_reset_possible = True    
 
+def callback_delete(msg):
+    if not ok_comm: return
+    log_info("DELETE DES OBSTACLES")
+    p_dn.pathfinder.remove_obstacle(CAKES_OBST[msg.data])
+
 def publish_path(path):
     """Publish path to the interfaceNode."""    
     if SIMULATION:
@@ -441,6 +455,9 @@ sub_initPos = rospy.Subscriber("/disp/initPos", Int16, callback_init_pos)
 
 # Comm Position
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
+
+# Obstacles
+sub_delete = rospy.Subscriber("/deleteObs", Int16, callback_delete)
 
 """ # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/param/speedStrat", Float32MultiArray, callback_speed)

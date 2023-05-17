@@ -64,37 +64,64 @@ class ObsDepositCakes(smach.State):
             return 'elevator'
         
         elif userdata.nb_actions_done[0] == 3:
-                return 'openClamp'
+            return 'openClamp'
         
-        elif userdata.nb_actions_done[0] == 4:
-            userdata.stage_to_go[0] = userdata.stage_to_deposit[0]
-            return 'elevator'
-        
-        elif userdata.nb_actions_done[0] == 5:
-            return 'closeClamp'
-        
-        elif userdata.nb_actions_done[0] == 6:
-            userdata.pucks_taken[0] -= userdata.stage_to_deposit[0]
-            userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
-            return 'elevator'
-        
-        elif userdata.nb_actions_done[0] == 7:
-            ## On se déplace jusqu'au site de la pile de gâteaux visée
-            x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
-            if y < 500:
-                y += DOORS_SHIFT
-            else :
-                if x < MAX_X/2 :
-                    x += DOORS_SHIFT
+        if userdata.stage_to_deposit[0] == -1:
+
+            if userdata.nb_actions_done[0] == 4:
+                userdata.stage_to_go[0] = 8
+                userdata.pucks_taken[0] = 0
+                return 'elevator'
+
+            elif userdata.nb_actions_done[0] == 5:
+                ## On se déplace jusqu'au site de la pile de gâteaux visée
+                x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
+                if y < 500:
+                    y += DOORS_SHIFT
                 else :
-                    x -= DOORS_SHIFT
-            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
-            return 'disp'
-        
-        elif userdata.nb_actions_done[0] == 8:
+                    if x < MAX_X/2 :
+                        x += DOORS_SHIFT
+                    else :
+                        x -= DOORS_SHIFT
+                set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+                return 'disp'
+            
+            elif userdata.nb_actions_done[0] == 6:
+                return 'closeClamp'
+            
+            elif userdata.nb_actions_done[0] == 7:
                 return 'closeDoors'
 
-        add_score(ACTIONS_SCORE['parking'])
+        else:
+
+            if userdata.nb_actions_done[0] == 4:
+                userdata.stage_to_go[0] = userdata.stage_to_deposit[0]
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 5:
+                return 'closeClamp'
+            
+            elif userdata.nb_actions_done[0] == 6:
+                userdata.pucks_taken[0] -= userdata.stage_to_deposit[0]
+                userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
+                return 'elevator'
+            
+            elif userdata.nb_actions_done[0] == 7:
+                ## On se déplace jusqu'au site de la pile de gâteaux visée
+                x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
+                if y < 500:
+                    y += DOORS_SHIFT
+                else :
+                    if x < MAX_X/2 :
+                        x += DOORS_SHIFT
+                    else :
+                        x -= DOORS_SHIFT
+                set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+                return 'disp'
+            
+            elif userdata.nb_actions_done[0] == 8:
+                    return 'closeDoors'
+
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 
                   

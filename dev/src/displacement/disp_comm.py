@@ -289,106 +289,106 @@ def callback_strat(msg):
 
 def callback_lidar(msg):
     """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
-    try:
-        ## Initialise parametre d'obstacle
-        obstacle_info = np.zeros(5)     # infos sur l'obstacle
-        obstacle_seen = False           # doit-on s'arreter ?
-        obstacle_stop = False
-        is_dest_blocked = False           # la destination est-elle accessible ?
-        
-        ####
-        dist_min = 5000
-        stop_range = STOP_RANGE_STANDARD
+    ## Initialise parametre d'obstacle
+    obstacle_info = np.zeros(5)     # infos sur l'obstacle
+    obstacle_seen = False           # doit-on s'arreter ?
+    obstacle_stop = False
+    is_dest_blocked = False           # la destination est-elle accessible ?
+    
+    ####
+    dist_min = 5000
+    stop_range = STOP_RANGE_STANDARD
+    max_range = 2*stop_range
+    stop_front_x = STOP_RANGE_X_STAND
+    stop_front_y = STOP_RANGE_Y_STAND
+    # Distance à l'obstacle lidar pour laquelle on s'arrete en deplacement classique  # TODO : à paramétrer
+    ####
+
+    if not p_dn.move or (not p_dn.avoid_mode): return
+    if p_dn.avoid_mode: 
+        stop_range = STOP_RANGE_AVOIDING
         max_range = 2*stop_range
-        stop_front_x = STOP_RANGE_X_STAND
-        stop_front_y = STOP_RANGE_Y_STAND
-        # Distance à l'obstacle lidar pour laquelle on s'arrete en deplacement classique  # TODO : à paramétrer
-        ####
+        stop_front_x = STOP_RANGE_X_AVOID
+        stop_front_y = STOP_RANGE_Y_AVOID
 
-        if not p_dn.move or (not p_dn.avoid_mode) or p_dn.finish: return
-        if p_dn.avoid_mode: 
-            stop_range = STOP_RANGE_AVOIDING
-            max_range = 2*stop_range
-            stop_front_x = STOP_RANGE_X_AVOID
-            stop_front_y = STOP_RANGE_Y_AVOID
+    ## TRAITEMENT DE CHAQUE OBSTACLE
+    log_info((msg.layout.dim[0]).size)
 
-        ## TRAITEMENT DE CHAQUE OBSTACLE
-        nb_obstacles = (msg.layout.dim[0]).size
-        for i in range(nb_obstacles):
-            if obstacle_stop: break
-            for j in range(5):
-                # Params de l'obstacle
-                obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
-            # Info obstacles dans repere local du robot
-            dist_obs = obstacle_info[2]
-            x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
+    nb_obstacles = (msg.layout.dim[0]).size
+    for i in range(nb_obstacles):
+        if obstacle_stop: break
+        for j in range(5):
+            # Params de l'obstacle
+            obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
+        # Info obstacles dans repere local du robot
+        dist_obs = obstacle_info[2]
+        x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
 
 ####################################################################################################################################
 ####################################################################################################################################
-            # Si le robot tourne sur son axe (nb: on ne verif pas dans 
-            # le cas du avoidMode ou resume car plutot bien alignes)
-            if p_dn.turn and not p_dn.avoid_mode and not p_dn.resume:
-                if msg.data[0] not in [0,1]:
-                    log_errs("Wrong msg from callback_obstacle.")
-                    continue
-                if msg.data[0] == 0:  # msg du lidar
-                    if dist_obs < 0.9*stop_range:
+        # Si le robot tourne sur son axe (nb: on ne verif pas dans 
+        # le cas du avoidMode ou resume car plutot bien alignes)
+        if p_dn.turn and not p_dn.avoid_mode and not p_dn.resume:
+            if msg.data[0] not in [0,1]:
+                log_errs("Wrong msg from callback_obstacle.")
+                continue
+            if msg.data[0] == 0:  # msg du lidar
+                if dist_obs < 0.9*stop_range:
+                    obstacle_stop = True
+        #-> Si le robot avance
+        elif p_dn.forward: 
+            #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
+            #-> NE PAS CHERCHER DE PATH INUTILEMENT SI LA DESTINATION EST DANS LA ZONE DE BLOCAGE DE L'OBSTACLE
+            if msg.data[0] not in [0,1]:
+                log_errs("Wrong msg from callback_obstacle.")
+                continue
+            #-> Si lidar : on regarde les adversaires devant !
+            #-> On setup la vitesse suivant la pos locale du 
+            #   robot adverse
+            if msg.data[0] == 0:
+                if dist_obs > dist_min: continue
+                if dist_obs < stop_range:
+                    obstacle_seen = True
+                    if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
                         obstacle_stop = True
-            #-> Si le robot avance
-            elif p_dn.forward: 
-                #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
-                #-> NE PAS CHERCHER DE PATH INUTILEMENT SI LA DESTINATION EST DANS LA ZONE DE BLOCAGE DE L'OBSTACLE
-                if msg.data[0] not in [0,1]:
-                    log_errs("Wrong msg from callback_obstacle.")
-                    continue
-                #-> Si lidar : on regarde les adversaires devant !
-                #-> On setup la vitesse suivant la pos locale du 
-                #   robot adverse
-                if msg.data[0] == 0:
-                    if dist_obs > dist_min: continue
-                    if dist_obs < stop_range:
+                        p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1], RADIUS_ROBOT_OBSTACLE])
+                else:
+                    if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                         obstacle_seen = True
-                        if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
-                            obstacle_stop = True
-                            p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1], RADIUS_ROBOT_OBSTACLE])
-                    else:
-                        if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
-                            obstacle_seen = True
 
-            #-> Si le robot recule
-            else:
-                if msg.data[0] not in [0,1]: 
-                    log_errs("Wrong msg from callback_obstacle.")
-                    continue
-                
-                if msg.data[0] == 1: # sonar
-                    dprint("sonar osbtacle, info obstacle=[{}] -- NOT HANDLED".format(obstacle_info))
-                    # if abs(yLocObs) < 120:
-                    #     obstacle_seen = True
-                    #     p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1]],RADIUS_ROBOT_OBSTACLE)  # TODO : à paramétrer    
-                    # ecart sur le cote a partir duquel on considere l'obstacle  
-                    # pour la simulation Docker, sinon un obstacle loin mais proche en xLoc est detecte
-####################################################################################################################################
-####################################################################################################################################
+        #-> Si le robot recule
+        else:
+            if msg.data[0] not in [0,1]: 
+                log_errs("Wrong msg from callback_obstacle.")
+                continue
             
-            if msg.data[0] == 0: # msg du lidar
-                # Calcul de la distance à l'obstacle le plus proche
-                if dist_obs < dist_min: dist_min = dist_obs
-                
-            # Reset des marges lors d'un évitement
-            if p_dn.avoid_mode and dist_min > RESET_RANGE and p_dn.is_reset_possible:  # TODO : à paramétrer LA DISTANCE A PARTIR DE LAQUELLE ON CONSIDERE QUE CE N'EST PLUS UN EVITEMENT ####
-                p_dn.avoid_mode = False
+            if msg.data[0] == 1: # sonar
+                dprint("sonar osbtacle, info obstacle=[{}] -- NOT HANDLED".format(obstacle_info))
+                # if abs(yLocObs) < 120:
+                #     obstacle_seen = True
+                #     p_dn.pathfinder.setRobotToAvoidPos([obstacle_info[0], obstacle_info[1]],RADIUS_ROBOT_OBSTACLE)  # TODO : à paramétrer    
+                # ecart sur le cote a partir duquel on considere l'obstacle  
+                # pour la simulation Docker, sinon un obstacle loin mais proche en xLoc est detecte
+####################################################################################################################################
+####################################################################################################################################
+        
+        if msg.data[0] == 0: # msg du lidar
+            # Calcul de la distance à l'obstacle le plus proche
+            if dist_obs < dist_min: dist_min = dist_obs
+            
+        # Reset des marges lors d'un évitement
+        if p_dn.avoid_mode and dist_min > RESET_RANGE and p_dn.is_reset_possible:  # TODO : à paramétrer LA DISTANCE A PARTIR DE LAQUELLE ON CONSIDERE QUE CE N'EST PLUS UN EVITEMENT ####
+            p_dn.avoid_mode = False
 
-            # Update de la vitesse??
-            if obstacle_seen: 
-                speed_coeff = (dist_obs-max_range)/(stop_range/max_range)
-                speed_coeff = min(1, max(0, speed_coeff))
-                speed = 80 - int(speed_coeff*80)
-                pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
-            else:
-                pub_speed.publish(data=80)
+        # Update de la vitesse??
+        if obstacle_seen: 
+            speed_coeff = (dist_obs-max_range)/(stop_range/max_range)
+            speed_coeff = min(1, max(0, speed_coeff))
+            speed = 80 - int(speed_coeff*80)
+            pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
+        else:
+            pub_speed.publish(data=80)
 
-    except : pass
         
 def callback_init_pos(msg):
     """Update la position de départ du robot."""

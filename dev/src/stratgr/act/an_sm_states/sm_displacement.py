@@ -119,7 +119,7 @@ class Displacement(smach.State):
 				return 'fail'
 
 			if userdata.cb_disp[0] == 3:
-				if not userdata.backward :
+				""" if not userdata.backward :
 					userdata.backward = True
 
 					step_x, step_y = 0, 0
@@ -138,7 +138,7 @@ class Displacement(smach.State):
 					disp_pub.publish(dest2)
 					begin_time = time.time()
 					while userdata.cb_disp[0] != 0 and time.time()-begin_time < STOP_DEST_TIMEOUT:
-						time.sleep(0.1)
+						time.sleep(0.1) """
 				log_info("RECHERCHE DE CHEMIN")
 				disp_pub.publish(dest)
 				stop_time = time.time()

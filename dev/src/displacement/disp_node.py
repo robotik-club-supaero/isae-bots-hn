@@ -94,7 +94,7 @@ class DisplacementNode:
         self.refresh_update_obstacle = 0.5
         self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
-        self.backward = False
+        self.stop = False
         self.current_pos = [0,0,0]                # La position actuelle du robot
 
         # ## Variables de mode de DEPLACEMENT

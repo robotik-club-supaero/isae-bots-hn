@@ -267,9 +267,8 @@ def callback_strat(msg):
 
         ## Si on a trouvé un chemin
         if result['success']:
-            if p_dn.blocked:
-                p_dn.blocked = False
-                log_info("COOL")
+            if p_dn.stop:
+                p_dn.stop = False
                 pub_strat.publish(Int16(COM_STRAT["go"]))
             else :
                 log_info("Found path: \n"+str(p_dn.path))
@@ -397,6 +396,8 @@ def callback_lidar(msg):
             if obstacle_seen:
                 if dist_obs <= stop_range:
                     p_dn.blocked = True
+                    p_dn.stop = True 
+                    pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
                     log_warn("ERROR - Reason: Path Blocked")
                     
                     pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
@@ -422,6 +423,9 @@ def callback_lidar(msg):
                     pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
             else:
                 pub_speed.publish(data=80)
+        else:
+            if dist_obs > stop_range:
+                p_dn.blocked = False
 
         
 def callback_init_pos(msg):

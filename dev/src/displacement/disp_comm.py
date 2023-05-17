@@ -221,7 +221,10 @@ def callback_strat(msg):
         p_dn.rotation = True
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
 
-    elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"]:
+    elif msg.w == CMD_STRAT["marcheArr"]:
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
+
+    elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
         ## Setup de la vitesse
 
         dest_pos = [msg.x, msg.y, msg.z]
@@ -237,7 +240,7 @@ def callback_strat(msg):
             ## Setup du Pathfinder
             p_dn.max_astar_time = MAX_ASTAR_TIME
             p_dn.pathfinder.set_goal(dest_pos)
-            p_dn.pathfinder.set_init(curr_pos)
+            p_dn.pathfinder.set_init(curr_pos)            
 
         ## - Deplacement sans evitement
         else:   

@@ -10,21 +10,12 @@ import i2c_lcd_driver
 from subprocess   import Popen, PIPE
 from std_msgs.msg import Int16
 
-#################################################################################################
-if os.environ['USER'] == 'pi':
-	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
-	simulation = False
-else:
-	from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
-	simulation = True
-#################################################################################################
 
 displayFrequency = 10
 
 shortBlinkTime = 0.1
 longBlinkTime = 0.4
 
-blinkingBackground = True  # choose false to deactivate
 
 nbCharsToDisplay = 10
 
@@ -41,6 +32,9 @@ def handler(rcv_sig, frame):
 
 class PointsNode:
 
+	blinkingBackground = True  # choose false to deactivate
+
+
 	def __init__(self):    
 		self.subScore = rospy.Subscriber("/score", Int16, self.cbScore)
 		self.lcd = i2c_lcd_driver.lcd()
@@ -51,7 +45,7 @@ class PointsNode:
 		blink_time = time.time()
 		blinkTimer = longBlinkTime
 
-		if simulation: return  # skip all if in simulation mode
+		rospy.loginfo("Entering Point Node loop")
 
 		# display match logs in case of a real match
 		while True:
@@ -64,12 +58,12 @@ class PointsNode:
 			self.lcd.lcd_display_string(logLine[:min(l, nbCharsToDisplay)], line=2)
 
 			# at some point disable the blinking (when it's ready for example)
-			if logLine == "thing": blinkingBackground = False
+			if logLine == "thing": self.blinkingBackground = False
 
 
 			while time.time() - begin_time < 1/displayFrequency: # to be sure we display at the right frequency if the process takes some time
 
-				if not blinkingBackground: self.backlightState == 1  # to make sure the backlight is on when the match starts
+				if not self.blinkingBackground: self.backlightState == 1  # to make sure the backlight is on when the match starts
 
 				elif time.time() - blink_time > blinkTimer: 
 
@@ -122,5 +116,4 @@ class PointsNode:
 if __name__ == '__main__':
 	rospy.init_node('points_node')
 	points = PointsNode()
-	LOG_INFO('Initializing Points Node.')
 	rospy.spin()

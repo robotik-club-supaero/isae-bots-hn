@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
 #    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
@@ -11,40 +12,37 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-# pyright: reportMissingImports=false
-
 """
 @file: LidarNode.py
 @status: OK
 
-Fichier de gestion des obstacles LIDAR.
+Fichier de gestion des obstacles LIDAR
 """
 
-# pyright: reportMissingImports=false
-
-from __future__ import division
 
 from math import atan2, sin, cos
 from lidar_lib import *
-from displacement.disp_utils import patch_frame_br, log_info, log_errs
 
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
-#################################################################
-if os.environ['USER'] == 'pi':
-	SIMULATION = False
-else:
-	SIMULATION = True
-#################################################################
 
 OBS_RESOLUTION = 100
 
-COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
-}
+
+def log_info(msg):
+    rospy.loginfo("[LID] "+msg)
+
+def log_err(msg):
+    rospy.logerr("[LID] "+msg)
+
+def handler(rcv_sig, frame):
+	"""Force the node to quit on SIGINT, avoid escalating to SIGTERM."""
+	LOG_INFO("ISB Node forced to terminate...")
+	rospy.signal_shutdown(rcv_sig)
+	sys.exit()
+
 
 #######################################################################
 # LIDAR NODE
@@ -61,7 +59,6 @@ class LidarNode:
         self.y_robot = 0
         self.c_robot = 0
         self.radius = 42
-        self.color = None
 
         self.iterData = 0
         self.sizeData = 5
@@ -72,30 +69,19 @@ class LidarNode:
         log_info("Initializing Lidar Node.")
 
         # initialisation des publishers
-        self.pub_obstacles = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
+        self.pub_obstacles = rospy.Publisher("/sensors/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
         # initialisation des suscribers
         self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
         self.sub_hokuyo = rospy.Subscriber("/scan", LaserScan, self.update_obstacle)
-        self.sub_color = rospy.Subscriber('/game/color', Int16, self.update_color)
 
-    def update_color(self, msg):
-        """
-        Callback function from topic /sm/color.
-        """
-        if msg.data not in [0,1]:
-            log_errs(f"Wrong value of color given ({msg.data})...")
-            return
-        else: 
-            self.color = msg.data
-            log_info("Received color : {}".format(COLOR[self.color]))
+
 
 
     def update_position(self,msg):
-        """Fonction de callback de la position."""
-        x,y,c = patch_frame_br(msg.x,msg.y,msg.theta, self.color)
-        self.x_robot = x
-        self.y_robot = y
-        self.c_robot = c
+        """Fonction de callback de position."""
+        self.x_robot = msg.x
+        self.y_robot = msg.y
+        self.c_robot = msg.theta
  
     def update_obstacle(self, msg):
         """Fonction de callback des obstacles lidar."""

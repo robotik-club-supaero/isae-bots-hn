@@ -20,11 +20,13 @@
 #################################################################
 
 import sys
-import time
+from time import perf_counter, sleep
 import rospy
 import signal
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
 from geometry_msgs.msg import Quaternion
+
+from isb_hal import initPin, readPin, writePin
 
 #################################################################
 #                                                               #
@@ -34,13 +36,6 @@ from geometry_msgs.msg import Quaternion
 
 _NODENAME_ = "[ISB]"
 
-NB_PIXEL = 8
-NB_STRAT = 4
-
-# --- LED idx | Uninitialized = stays black 
-MATCH_px = [0]
-COLOR_px = [1]
-STRAT_px = [7,6]  # higher weight pixel on the right... (reverse from usual)
 
 
 def log_info(msg):
@@ -72,38 +67,31 @@ def sig_handler(s_rcv, frame):
     rospy.signal_shutdown(signal.SIGTERM)
     sys.exit()
 
-#######################################################################
-# COLORS 
-#######################################################################
 
-class pixelColor:
-	RD = Quaternion(0, 255, 000, 000)  # red
-	GN = Quaternion(0, 000, 255, 000)  # green
-	BL = Quaternion(0, 000, 000, 255)  # blue
-	WH = Quaternion(0, 255, 255, 255)  # white
-	BK = Quaternion(0, 000, 000, 000)  # black
-	GY = Quaternion(0, 128, 128, 128)  # gray
-	YE = Quaternion(0, 255, 255, 000)  # yellow
-	OR = Quaternion(0, 255, 114, 000)  # orange
-	PK = Quaternion(0, 223, 112, 173)  # pink
-	VT = Quaternion(0,  92, 000, 255)  # violet / purple
-	BN = Quaternion(0,  81,  41,  16)  # brown
-	CY = Quaternion(0, 000, 255, 255)  # cyan 
-	NB = Quaternion(0, 000, 118, 214)  # navy blue
-
-# -- Colors distribution
-# MATCH : 	0 = red 	| 1 = green	
-# COLOR : 	0 = yellow	| 1 = purple
-# STRAT :   0 = black 	| 1 = cyan
-MATCH_COLORS = [pixelColor.RD, 	pixelColor.GN]
-COLOR_COLORS = [pixelColor.YE, 	pixelColor.VT]
-STRAT_COLORS = [pixelColor.BK, 	pixelColor.CY]
-
-STRATS = [0, 1, 2, 3]
 
 #######################################################################
 # ISB NODE
 #######################################################################
+
+REFRESH_PERIOD = 0.05 # s
+
+
+NB_LEDS = 10
+NB_BUTTONS = 5
+
+
+LED_PINS = [15,14,13,12,11,10,9,8,7,6]
+BUTTONS_PINS = [0,1,2,3,4]
+TRIGGER_PIN = 5
+
+BUTTON_LEDS_IDS = [9,8,7,6,5]
+TRIGGER_LED_ID = 0
+BR_IDLE_LED_ID = 1
+
+MATCH_BUTTON_ID = 0
+COLOR_BUTTON_ID = 1
+BR_IDLE_BUTTON_ID = 2
+RESET_STEPPER_BUTTON_ID = 3
 
 class ISBNode:
 	"""
@@ -113,115 +101,159 @@ class ISBNode:
 	def __init__(self):	
 		log_info("Initializing ISB Node ...")
 
+
 		# --- Variables
+		self.currentTime = 0.0
+
 		self.match = False
-		self.color = -1
-		self.strat = -1
+		self.color = 0
+
+		self.buttonStates = [-1]*NB_BUTTONS
+		self.isButtonTriggered = [False]*NB_BUTTONS
+		self.triggerState = -1
+
+		self.brIdle = -1
 
 		self.isBlinking = [True, True, False, False, False, False, True, True]
-		self.off = True
 
 		# --- Publishers & subscribers
-		self.pubIsbPixel = rospy.Publisher("/isbSetSinglePixel", Quaternion, queue_size=10, latch=True)
-		self.pubReset = rospy.Publisher("/isbReset", Empty, queue_size=10, latch=True)
-		self.pubStart = rospy.Publisher("/start", Int16, queue_size=10, latch=True)
-		self.pubColor = rospy.Publisher("/color", Int16, queue_size=10, latch=True)
-		self.pubStrat = rospy.Publisher("/strat", Int16, queue_size=10, latch=True)
+		self.pubStart = rospy.Publisher("/game/start", Int16, queue_size=10, latch=True)
+		self.pubColor = rospy.Publisher("/game/color", Int16, queue_size=10, latch=True)
 
-		self.subIsbMatch = rospy.Subscriber("/isbMatchState", Int16, self.matchUpdate)
-		self.subIsbColor = rospy.Subscriber("/isbSide", Int16, self.colorUpdate)
-		self.subIsbStrat = rospy.Subscriber("/isbStrat", Int16, self.stratUpdate)
+		self.pubBRIdle = rospy.Publisher("/br/idle", Int16, queue_size=10, latch=True)
+		self.pubResetStepper = rospy.Publisher("/strat/elevator", Int16, queue_size=10, latch=True)
 
-		## WHY ??
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
-		self.pubReset.publish(Empty())
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
-		self.setAllPixels(pixelColor.BK)
+		self.subIsbMatch = rospy.Subscriber("/okPosition", Int16, self.callBackBR)
 
-		self.blinking()
+		self.initPins()
+		log_info("Pin initiallized")
+
+		self.setAllLeds(0)		
+
+		log_info("ISB node is ready")
+
+
 
 	# --- Pixel handling functions
 
-	def setPixel(self, px_id, color):
-		"""Publish pixel color to ISB."""
-		self.pubIsbPixel.publish(Quaternion(px_id, color.y, color.z, color.w))
+	def initPins(self):
 
-	def setAllPixels(self, color):
-		for i in range(NB_PIXEL):
-			self.setPixel(i, color)
+		for id_pin in LED_PINS:
+			initPin(id_pin, "output")
 
-	def blinking(self):
-		# Loop until match start, blink leds red/black
-		while not self.match:
-			time.sleep(0.5)
-			for px in range(NB_PIXEL):
-				if not self.isBlinking[px]:
-					continue
-				if self.off:
-					self.setPixel(px, pixelColor.BK)
-				else:
-					self.setPixel(px, pixelColor.WH)
-			self.off = 1 - self.off
+		for id_pin in BUTTONS_PINS:
+			initPin(id_pin, "input")
+
+		initPin(TRIGGER_PIN, "input")
+
+
+
+	def writeLed(self, led_id, state):
+		'''state of 0 or 1'''
 		
+		writePin(LED_PINS[led_id], state)
 
-	# --- Update functions
-
-	def matchUpdate(self, msg):
-		"""Update match state, publish on /start the change."""
-		if not msg.data in [0, 1]:
-			return 
-
-		if msg.data==1:
-			self.match = True
-			self.pubStart.publish(data=1)
-		else:
-			self.match = False
-			self.pubStart.publish(data=0)
-
-		for px in MATCH_px:
-			self.setPixel(px, MATCH_COLORS[msg.data])
-			self.isBlinking[px] = not self.match
+	
+	def setAllLeds(self, state):
+		for k in range(NB_LEDS):
+			self.writeLed(k, state)
 
 
-	def colorUpdate(self, msg):
-		"""Update color state, publish on /color the change."""
-		if not msg.data in [0, 1]:
-			return
+	def readButtons(self):
 
-		if msg.data==0:
-			self.color = 0
-			self.pubColor.publish(msg)
-		else:
-			self.color = 1
-			self.pubColor.publish(msg)
+		for k in range(NB_BUTTONS):
+			res = readPin(BUTTONS_PINS[k])
 
-		for px in COLOR_px:
-			self.setPixel(px, COLOR_COLORS[self.color])
-			self.isBlinking[px] = False
+			# update button triggered list
+			self.isButtonTriggered[k] = self.buttonStates[k] == res
+			self.buttonStates[k] = res
 
-		
-	def stratUpdate(self, msg):
-		"""Update strat, set color special to each one."""
-		
-		# Relay msg to AN and DN...
-		self.pubStrat.publish(msg)
+			# apply state to corresponding led
+			self.writeLed(BUTTON_LEDS_IDS[k], self.buttonStates[k])
 
-		self.strat = msg.data
-		pin0 = int(self.strat % 2)
-		pin1 = int(self.strat / 2)
 
-		self.setPixel(STRAT_px[0], STRAT_COLORS[pin0])
-		self.setPixel(STRAT_px[1], STRAT_COLORS[pin1])
-		self.isBlinking[STRAT_px[0]] = False
-		self.isBlinking[STRAT_px[1]] = False
-		# for id, px in enumerate(STRAT_px):
-		# 	self.setPixel(px, STRAT_COLORS[msg.data[id]])
-		# 	self.isBlinking[px] = False
+	def readTrigger(self):
+
+		res = readPin(TRIGGER_PIN)
+
+		# only change trigger state if previous state is not -1
+		if res == 1:
+			self.triggerState = 1
+			self.writeLed(TRIGGER_LED_ID, self.triggerState)  # trigger is ready to be pulled
+
+		if self.triggerState == 1 and res == 0:
+			self.triggerState = 0  # triggers match starts
+
+
+	# --- Callback functions
+
+	def callBackBR(self, msg):
+
+		if msg.data == 5:  # OK_READY
+			self.writeLed(BR_IDLE_LED_ID, 1)
+
+		elif msg.data == 6:  # OK_IDLE
+			self.writeLed(BR_IDLE_LED_ID, 0)
+
+
+
+	def run(self):
+
+		while True:
+
+			if perf_counter() - self.currentTime > REFRESH_PERIOD:
+
+				self.readButtons()
+				self.readTrigger()
+
+				# Send match message if the trigger is released
+				if self.isButtonTriggered[MATCH_BUTTON_ID]:
+
+					if  not self.match and self.triggerState == 0:
+						log_info("Match started")
+						self.match = True
+						self.pubStart.publish(data=1)
+						self.pubStart.publish(data=1)  # another one to be sure
+
+
+				# Send color message
+				if self.isButtonTriggered[COLOR_BUTTON_ID]:
+
+					if self.color == 0 and self.buttonStates[COLOR_BUTTON_ID] == 1:
+						log_info("Set color to AWAY")
+						self.color = 1
+						self.pubColor.publish(data=1)
+
+
+					elif self.color == 1 and self.buttonStates[COLOR_BUTTON_ID] == 0:
+						log_info("Set color to HOME")
+						self.color = 0
+						self.pubColor.publish(data=0)
+
+
+				# Send BR idle message
+				if self.isButtonTriggered[BR_IDLE_BUTTON_ID]:
+
+					if self.brIdle == 1 and self.buttonStates[BR_IDLE_BUTTON_ID] == 0:
+						log_info("Set BR to Idle")
+						self.brIdle = 0
+						self.pubBRIdle.publish(data=0)
+
+					elif self.brIdle == 0 and self.buttonStates[BR_IDLE_BUTTON_ID] == 1:
+						log_info("Set BR to Ready")
+						self.brIdle = 1
+						self.pubBRIdle.publish(data=1)
+					else:
+						self.brIdle = self.buttonStates[BR_IDLE_BUTTON_ID]
+
+				# Reset stepper message
+				if self.isButtonTriggered[RESET_STEPPER_BUTTON_ID]:
+					log_info("Reset stepper position")
+					self.pubResetStepper.publish(data=-1)
+
+				self.currentTime = perf_counter()
+
+			sleep(0.001)
 		
 
 #######################################################################
@@ -229,9 +261,14 @@ class ISBNode:
 #######################################################################
 
 def main():
-	rospy.init_node('ISB node')
+	rospy.init_node('isb_node')
 	signal.signal(signal.SIGINT, sig_handler)
+
 	node = ISBNode()
+
+	# main loop
+	node.run()
+
 	rospy.spin()
 
 

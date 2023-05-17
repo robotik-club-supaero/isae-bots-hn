@@ -1,0 +1,15 @@
+[Unit]
+Description=Start match service
+After=network.target
+
+[Service]
+Type=simple
+
+User=pi
+Group=pi
+UMask=007
+
+ExecStart=/home/pi/pr/scripts/runMatch.sh
+
+[Install]
+WantedBy=multi-user.target

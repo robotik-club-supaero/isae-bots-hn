@@ -37,8 +37,6 @@ import numpy as np
 from math import sqrt
 from time import time
 
-print("version : ",sys.version)
-
 # import fonction du Pathfinder
 from pathfinder.pathfinder import Pathfinder
 from pathfinder.exceptions import PathNotFoundError, TimeOutError

@@ -9,7 +9,7 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QMenuBar, QStatusBar, QShortcut
 from PyQt5.QtCore import Qt, QTimer, QRect, QMetaObject,QRectF, QPoint, QLine
-from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush, QTransform, QCursor, QPolygonF, QPainterPath
+from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QPixmap, QKeySequence, QBrush, QTransform, QCursor, QPolygonF, QPainterPath, QMatrix3x3
 
 import numpy as np
 from numpy import pi, sqrt, cos, sin, arctan2
@@ -42,6 +42,8 @@ class MatchBoard(QWidget):
 	matchBoardSizeFactor = 0.2
 	matchBoardDims = (2000*matchBoardSizeFactor, 3000*matchBoardSizeFactor)  # px
 
+	scale = 1
+
 	def __init__(self):
 		super().__init__()
 
@@ -63,8 +65,38 @@ class MatchBoard(QWidget):
 		self.lastReleasedPosition = None
 		self.matchBoardClicked = False
 
+		self.painter = QPainter()
+		self.painter.setRenderHint(QPainter.Antialiasing)
 
 
+		# Creating the transformations for the map
+		a = pi/180 * 10
+		tx = 0
+		ty = 0
+		sx = 0.5
+		sy = 0.5
+		sina = sin(a)
+		cosa = cos(a)
+
+		translationTransform = QTransform(1, 0, 0, 1, tx, ty)
+		rotationTransform = QTransform(cosa, sina, -sina, cosa, 0, 0)
+		scalingTransform = QTransform(sx, 0, 0, sy, 0, 0)
+
+		self.transform1 = QTransform()  # TODO : remove ?
+		self.transform1 = translationTransform * scalingTransform * rotationTransform
+
+		t = self.transform1
+		self.matrix = np.array([[t.m11(), t.m12(), t.m13()], [t.m21(), t.m22(), t.m23()], [t.m31(), t.m32(), t.m33()]])
+
+
+		translationTransform = QTransform(1, 0, 0, 1, 0, 0)
+		rotationTransform = QTransform(cosa, sina, -sina, cosa, 0, 0)
+		scalingTransform = QTransform(1/sx, 0, 0, 1/sy, 0, 0)
+
+		self.transform2 = QTransform()  # TODO : remove ?
+		self.transform1 = translationTransform * scalingTransform * rotationTransform
+		t = self.transform2
+		self.invMatrix = np.array([[t.m11(), t.m12(), t.m13()], [t.m21(), t.m22(), t.m23()], [t.m31(), t.m32(), t.m33()]])
 
 	# def switchOrientation(self, orientation):
 	# 	'''Called by button press'''
@@ -73,6 +105,8 @@ class MatchBoard(QWidget):
 	# 	elif self.bgOrientation == "horizontal": self.setVerticalOrientation()
 	# 	else: print("ERROR : No orientation defined")
 
+		self.test = False
+
 
 	def setVerticalOrientation(self):
 
@@ -80,7 +114,9 @@ class MatchBoard(QWidget):
 		self.matchBoardDims = (2000*self.matchBoardSizeFactor, 3000*self.matchBoardSizeFactor)
 
 		self.setFixedSize(self.matchBoardDims[0], self.matchBoardDims[1])
-		if self.bgOrientation is not None: self.bg_image = self.bg_image.transformed(QTransform().rotate(-90))
+		# if self.bgOrientation is not None: self.bg_image = self.bg_image.transformed(QTransform().rotate(-90))
+
+		self.scale = 0.5
 
 		self.bgOrientation = "vertical"
 
@@ -91,21 +127,36 @@ class MatchBoard(QWidget):
 		self.matchBoardDims = (3000*self.matchBoardSizeFactor, 2000*self.matchBoardSizeFactor)
 
 		self.setFixedSize(self.matchBoardDims[0], self.matchBoardDims[1])
-		if self.bgOrientation is not None: self.bg_image = self.bg_image.transformed(QTransform().rotate(90))
+		# if self.bgOrientation is not None: self.bg_image = self.bg_image.transformed(QTransform().rotate(90))
+
+		self.scale = 1
 
 		self.bgOrientation = "horizontal"
 
 
 
+
 	def mouseMoveEvent(self, QMouseEvent):
 
-		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		# inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		inputPos = np.array([QMouseEvent.pos().x(), QMouseEvent.pos().y(), 1])
+
+		# print(self.matrix)
+		# inputPos = self.matrix @ inputPos[:2,:2]
+		# print(inputPos)
+
 		self.clickOrderAngle = arctan2(inputPos[1] - self.clickCircleCenter.y(), inputPos[0] - self.clickCircleCenter.x())
 
 			
 	def mousePressEvent(self, QMouseEvent):
 
-		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		# inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		inputPos = np.array([QMouseEvent.x(), QMouseEvent.y(), 1])
+
+		# print(self.matrix)
+		# mat = np.linalg.inv(self.matrix)
+		# inputPos = np.dot(self.invMatrix, inputPos)[:2]  # invert matrix ?
+		# print(inputPos)
 
 		self.clickCircleCenter = QPoint(inputPos[0], inputPos[1])
 		self.clickOrderAngle = 0  # as first position angle
@@ -115,8 +166,14 @@ class MatchBoard(QWidget):
 
 	def mouseReleaseEvent(self, QMouseEvent):
 
-		inputPos = (QMouseEvent.pos().x(), QMouseEvent.pos().y())
+		inputPos = np.array([QMouseEvent.pos().x(), QMouseEvent.pos().y(), 1])
 
+		# print(self.matrix)
+		# mat = np.linalg.inv(self.matrix)
+		# inputPos = np.dot(mat, inputPos)[:2]  # invert matrix ?
+		# print(inputPos)
+
+		
 		self.lastReleasedPosition = self.toBoardPos(inputPos)
 		self.matchBoardClicked = False
 
@@ -129,27 +186,38 @@ class MatchBoard(QWidget):
 
 	
 	def paintEvent(self, event):
-		painter = QPainter()
-		painter.begin(self)
 
-		painter.setRenderHint(QPainter.Antialiasing)
+		self.painter.begin(self)
 
-		# painter.translate(QPoint(100,10))
-		# painter.rotate(10.0)  # can be used to flip the table (vertical or horizontal), it flips the whole coordinate system
-		# painter.scale(0.8, 0.8)  # idem with scale, can be ued to zoom in or out
+		# self.painter.setTransform(self.transform1)
+
+		if not self.test:
+			# self.painter.translate(QPoint(100,10))
+			self.painter.rotate(10.0)  # can be used to flip the table (vertical or horizontal), it flips the whole coordinate system
+			print(event)
+			# self.painter.scale(0.5, 0.5)  # idem with scale, can be used to zoom in or out
 
 
-		#painter.setFont(QFont('Open Sans', 12))
-		# painter.drawText(event.rect(), Qt.AlignCenter, self.text)
+		# if self.bgOrientation is not None:
+
+		# 	if self.bgOrientation == "vertical":
+		# 		self.painter.rotate(-45)
+		# 		# self.bg_image = self.bg_image.transformed(QTransform().rotate(-90))
+		# 	else:
+		# 		self.painter.rotate(90)
+		# 		self.bg_image = self.bg_image.transformed(QTransform().rotate(45))
+
+		#self.painter.setFont(QFont('Open Sans', 12))
+		# self.painter.drawText(event.rect(), Qt.AlignCenter, self.text)
 
 
 
 		# vertical
-		# painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, 500 - X_MARGIN, 750 - Y_MARGIN),
+		# self.painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, 500 - X_MARGIN, 750 - Y_MARGIN),
 		# 				   self.bg_image)
 
 		# horizontal
-		painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, self.matchBoardDims[0] - X_MARGIN, self.matchBoardDims[1] - Y_MARGIN),
+		self.painter.drawPixmap(QRect(X_MARGIN, Y_MARGIN, self.matchBoardDims[0] - X_MARGIN, self.matchBoardDims[1] - Y_MARGIN),
 						   self.bg_image)
 
 
@@ -157,30 +225,32 @@ class MatchBoard(QWidget):
 		#### CLICK ORDER ####
 		if self.lastClickedPosition is not None:
 
-			painter.setPen(QPen(QColor(57, 173, 240), CLICK_LINE_WIDTH, Qt.SolidLine))
-			painter.drawLine(self.clickCircleCenter, self.clickCircleCenter + QPoint( int(CLICK_LINE_RADIUS*cos(self.clickOrderAngle)), int(CLICK_LINE_RADIUS*sin(self.clickOrderAngle)) ))
+			self.painter.setPen(QPen(QColor(57, 173, 240), CLICK_LINE_WIDTH, Qt.SolidLine))
+			self.painter.drawLine(self.clickCircleCenter, self.clickCircleCenter + QPoint( int(CLICK_LINE_RADIUS*cos(self.clickOrderAngle)), int(CLICK_LINE_RADIUS*sin(self.clickOrderAngle)) ))
 
-			painter.setPen(QPen(Qt.black, 1, Qt.SolidLine))
-			painter.setBrush(QColor(57, 173, 240))
+			self.painter.setPen(QPen(Qt.black, 1, Qt.SolidLine))
+			self.painter.setBrush(QColor(57, 173, 240))
 
-			painter.drawEllipse(self.clickCircleCenter, CLICK_CIRCLE_RADIUS, CLICK_CIRCLE_RADIUS)
+			self.painter.drawEllipse(self.clickCircleCenter, CLICK_CIRCLE_RADIUS, CLICK_CIRCLE_RADIUS)
 
 		
 
-		#### ROBOT ###
+		#### PAINT ROBOT ###
 
-		painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
+		self.painter.setPen(QPen(Qt.black, 3, Qt.SolidLine))
 		brush = QBrush(QColor(200, 20, 20), Qt.SolidPattern)
 
 		path = QPainterPath()
 		path.addPolygon(self.robot_shape)
 
-		painter.drawPolygon(self.robot_shape)
-		painter.fillPath(path, brush)
+		self.painter.drawPolygon(self.robot_shape)
+		self.painter.fillPath(path, brush)
 
-		painter.drawLine(self.robot_line)
+		self.painter.drawLine(self.robot_line)
 
-		painter.end()
+
+
+		self.painter.end()
 
 
 
@@ -192,9 +262,11 @@ class MatchBoard(QWidget):
 
 
 	def toPixelPos(self, pos):
+		'''Takes a position in mm (0 to 3000) and turns it into a pixel pos'''
 		return (self.matchBoardSizeFactor*(pos[0] + XBORDERLEFT), self.matchBoardDims[1] - self.matchBoardSizeFactor*(pos[1] + YBORDER))
 
 	def toBoardPos(self, pos):
+		'''Inverse operation'''
 		return (pos[0]/self.matchBoardSizeFactor - XBORDERLEFT, YBORDER - (pos[1] - self.matchBoardDims[1])/self.matchBoardSizeFactor)
 
 

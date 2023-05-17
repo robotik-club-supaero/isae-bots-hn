@@ -4,6 +4,12 @@
 # - Python 3.8 + deps
 
 FROM isaebots_desktop_env_core:latest
+# FROM test_img:latest
+# FROM --platform=linux/arm/v7 test_img:latest
+# ARG TARGETPLATFORM
+# ARG BUILDPLATFORM
+# RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
 SHELL ["/bin/bash", "-c"]
 
 #############################################################
@@ -37,6 +43,9 @@ RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio docker
 
 # Install PyQt
 RUN apt-get install -y python3-pyqt5
+
+# Install pyqtgrapph
+RUN pip install pyqtgraph==0.10.0
 
 #ENV QT_QUICK_BACKEND=software
 
@@ -73,6 +82,17 @@ RUN apt-get install -y python3-pyqt5
 #     gstreamer1.0-plugins-ugly \
 #     alsa-base \
 #     alsa-utils
+
+
+
+# BN installs
+# RUN adduser $USER dialout
+
+RUN apt-get install -y ros-noetic-rosserial-arduino
+RUN apt-get install -y ros-noetic-rosserial-python
+RUN apt-get install -y ros-noetic-rosserial
+
+COPY ./docker/49-teensy.rules /etc/udev/rules.d/
 
 # Setup the work directory and entrypoint
 WORKDIR '/app'

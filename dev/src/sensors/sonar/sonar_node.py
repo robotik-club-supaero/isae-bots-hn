@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
 #    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
@@ -11,7 +12,6 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-# pyright: reportMissingImports=false
 
 #################################################################
 #                                                               #
@@ -35,8 +35,8 @@ from geometry_msgs.msg import Pose2D, Point
 #################################################################
 
 _NODENAME_ = "[SON]"
-_BOT_NAME_ = rospy.get_param("robot_name")
-_CFG_FILE_ = "pr_init.cfg" if _BOT_NAME_ == "PR" else "gr_init.cfg"
+# _BOT_NAME_ = rospy.get_param("robot_name")
+_CFG_FILE_ = "gr_config.ini"
 
 def log_info(msg):
     """
@@ -56,7 +56,7 @@ class SonarNode:
     """
 
     def __init__(self):
-        log_info("Initializing SONAR node ...")
+        log_info("Initializing SonarNode ...")
         
         # Get sonars from config file of the robot
         reader = configparser.ConfigParser()
@@ -71,7 +71,7 @@ class SonarNode:
             self.sonars_lst.append(list(ast.literal_eval(v)))
             self.nb_sonars += 1
 
-        self.obs_pub = rospy.Publisher("/sensors/sonar_obstacles", Int16MultiArray, queue_size=10, latch=False)
+        self.obs_pub = rospy.Publisher("/sensors/obstaclesSonar", Int16MultiArray, queue_size=10, latch=False)
         self.pos_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
         self.son_sub = rospy.Subscriber("/ultrasonicDistances", Point, self.recv_obstacle)  # can change topic name ?
     
@@ -141,7 +141,7 @@ class SonarNode:
 #################################################################
 
 def main():
-    rospy.init_node("SON node")
+    rospy.init_node("SonarNode")
     node = SonarNode()
     rospy.spin()
 

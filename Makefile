@@ -19,10 +19,10 @@ BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
 	--volume="${PWD}/dev":"/app/dev" \
+	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
-#	--volume="${PWD}/doc":"/app/doc" \
-#	--volume="${PWD}/scripts":"/app/scripts"
+#	--volume="${PWD}/doc":"/app/doc"
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
@@ -56,6 +56,13 @@ build-core:
 build-base: build-core
 	@docker build -f ${BASE_DOCKERFILE} -t ${IMAGE_NAME}_base .
 
+.PHONY: build-image-desktop
+build-image-desktop:
+	@docker build -f ${PWD}/docker/dockerfile_desktop.full -t isaebots_desktop_env_full .
+
+.PHONY: build-image-pi
+build-image-pi:
+	@docker buildx build --platform=linux/arm/v7 -f ${PWD}/docker/dockerfile_pi.full -t isaebots_pi_env_full . --load
 
 #############################################################
 # TASKS
@@ -71,16 +78,7 @@ kill:
 	
 # Start a terminal inside the Docker container
 .PHONY: main
-main:# kill
-#	@docker run --rm -it --net=host \
-		--name ${PS_NAME} \
-		${DOCKER_VOLUMES} \
-		--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
-    	-e DISPLAY=${DISPLAY} \
-		${DOCKER_ENV_VAR} \
-		${IMAGE_NAME}_base \
-		"${CMD}"
-
+main:
 
 #	the 'privileged' flag is necessary otherwise we get a Dbus error, but the kernel is more exposed this way..
 #	we log in as a user and not root (preferable)

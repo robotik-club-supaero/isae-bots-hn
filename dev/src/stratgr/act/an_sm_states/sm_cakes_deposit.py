@@ -83,7 +83,7 @@ class ObsDepositCakes(smach.State):
                         x += DOORS_SHIFT
                     else :
                         x -= DOORS_SHIFT
-                set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+                set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])
                 return 'disp'
             
             elif userdata.nb_actions_done[0] == 6:
@@ -116,7 +116,7 @@ class ObsDepositCakes(smach.State):
                         x += DOORS_SHIFT
                     else :
                         x -= DOORS_SHIFT
-                set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+                set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])
                 return 'disp'
             
             elif userdata.nb_actions_done[0] == 8:

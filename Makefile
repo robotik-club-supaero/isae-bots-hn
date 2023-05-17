@@ -19,10 +19,10 @@ BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
 	--volume="${PWD}/dev":"/app/dev" \
+	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
-#	--volume="${PWD}/doc":"/app/doc" \
-#	--volume="${PWD}/scripts":"/app/scripts"
+#	--volume="${PWD}/doc":"/app/doc"
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \

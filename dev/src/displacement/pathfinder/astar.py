@@ -163,7 +163,7 @@ def a_star(init, goal, tableMap, isFirstAccurate, maxAstarTime):
                 found = not found 
                 break
 
-            neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))
+            neighbor.set_goal_dist(neighbor.dist_from_node(goal_node))        
             new_cost = curr_node.get_weight() + neighbor.get_goal_dist() + neighbor.dist_from_node(curr_node)
 
             """ in_open = is_node_in_list(opened_list, neighbor)

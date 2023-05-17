@@ -107,7 +107,7 @@ def test_strat():
         return
 
 
-def tests_strat():
+def homologation():
     """
     DN Strat: tests (for all tests before the cup)
     
@@ -118,8 +118,38 @@ def tests_strat():
     """
     time.sleep(0.01)
 
-    log_info("Entered tests_strat section")
+    log_info("Entered homologation strat")
 
+    if p_dn.nb_actions_done[0] == 0:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 1:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 2:
+        score = 6*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=score)
+        p_dn.curr_action = LIST_OF_ACTIONS['park']
+        log_info("Next action : Park")
+        next_action_pub.publish(data=p_dn.curr_action)
+        score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
+        score_pub.publish(data=score)
+        return
+
+    if p_dn.nb_actions_done[0] == 3:
+        p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
+        log_info("End of strategy : HOMOLOGATION")
+        stop_IT()
+        return
 
     return
 

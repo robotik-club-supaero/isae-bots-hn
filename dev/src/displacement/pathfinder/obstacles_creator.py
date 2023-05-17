@@ -56,20 +56,20 @@ def make_obstacle_list(color):
     margin = robotDiag // 2 + 20
 
     # Walls 
-    wallNorth = ObstacleRect(0, 0, 0, 3000)
-    wallSouth = ObstacleRect(2000, 2000, 0, 3000)
-    wallEast = ObstacleRect(0, 2000, 0, 0)
-    wallWest = ObstacleRect(0, 2000, 3000, 3000)
+    wallNorth = ObstacleRect(margin, margin, margin, 3000-margin)
+    wallSouth = ObstacleRect(2000-margin, 2000-margin, margin, 3000-margin)
+    wallEast = ObstacleRect(margin, 2000-margin, margin, margin)
+    wallWest = ObstacleRect(margin, 2000-margin, 3000-margin, 3000-margin)
 
     # Bases
     baseHome = ObstacleRect(400-margin, 1000+margin, 0, 400+margin)
     baseAway = ObstacleRect(400-margin, 1000+margin, 2600-margin, 3000)
 
     # Cherries
-    cherriesPerpendicular1 = ObstacleRect(985, 1015, 0, 300)
-    cherriesPerpendicular2 = ObstacleRect(985, 1015, 2700, 3000)
-    cherriesWall1 = ObstacleRect(0, 30, 1350, 1650)
-    cherriesWall2 = ObstacleRect(1970, 2000, 1350, 1650)
+    cherriesPerpendicular1 = ObstacleRect(985-margin, 1015+margin, 0, 300+margin)
+    cherriesPerpendicular2 = ObstacleRect(985-margin, 1015+margin, 2700-margin, 3000)
+    cherriesWall1 = ObstacleRect(0, 30+margin, 1350-margin, 1650+margin)
+    cherriesWall2 = ObstacleRect(1970-margin, 2000, 1350-margin, 1650+margin)
 
     # Cakes
     cakes1 = ObstacleCirc(225, 575, 60+margin)

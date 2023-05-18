@@ -501,8 +501,8 @@ pub_teensy = rospy.Publisher('/nextPositionTeensy', Quaternion, queue_size=10, l
 sub_teensy = rospy.Subscriber("/okPosition", Int16, callback_teensy) 
 
 # Comm Lidar
-#sub_lidar = rospy.Subscriber("/obstaclesMatch", Int16MultiArray, callback_lidar)
-sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
+sub_lidar = rospy.Subscriber("/obstaclesMatch", Int16MultiArray, callback_lidar)
+#sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
 pub_speed = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
 
 # Comm Strat

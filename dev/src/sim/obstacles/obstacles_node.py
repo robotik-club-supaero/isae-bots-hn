@@ -57,7 +57,7 @@ class SIM_ObstaclesNode:
         loginfo("Initializing OBS node ...")
 
         self.position_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
-        self.obs_info_pub = rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
+        self.obs_info_pub = rospy.Publisher("/obstaclesSimu", Int16MultiArray, queue_size=10, latch=False)
         self.obs_lidar_pub = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
 
         self.curr_time = time.time()
@@ -86,14 +86,14 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        """ if time.time() - self.curr_time <= 22:
+        if time.time() - self.curr_time <= 22:
             obstacles_pos = []  #[(1200,600)]
         else:
-            obstacles_pos = [(1000,800, np.linalg.norm([self.x_robot-1000, self.y_robot-800]) ,0,0)] """
+            obstacles_pos = [(1000,800, np.linalg.norm([self.x_robot-1000, self.y_robot-800]) ,0,0)]
 
         #loginfo("Pos obst :" + str(obstacles_pos))
 
-        obstacles_pos = []
+        #obstacles_pos = []
 
         data = [0]
         for pos in obstacles_pos:

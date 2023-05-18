@@ -27,7 +27,7 @@ import smach
 from geometry_msgs.msg import Quaternion
 
 from an_const import COLOR, DISPLACEMENT
-from an_comm import disp_pub
+from an_comm import disp_pub, oskour_pub
 from an_utils import log_info, log_errs, log_warn, patch_frame_br
 
 #################################################################
@@ -71,6 +71,7 @@ class Displacement(smach.State):
 		dest = userdata.next_pos
 		dest2 = userdata.next_pos
 		log_info(f"Displacement Request: toward ({dest.x}, {dest.y}, {dest.z}) with w= {dest.w}")
+		oskour_pub.publish(data=1)
 		disp_pub.publish(dest)
 
 		init_time = time.time()

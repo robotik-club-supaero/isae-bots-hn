@@ -272,7 +272,7 @@ clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
 elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
 pub_delete_obst = rospy.Publisher('/deleteObs', Int16, queue_size=10, latch=True)
 deguis_pub = rospy.Publisher('/strat/deguisement', Int16, queue_size=10, latch=True)
-
+oskour_pub = rospy.Publisher('/oskour', Int16, queue_size=10, latch=True)
 
 """
 Initialize all subscribers of AN.

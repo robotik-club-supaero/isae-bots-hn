@@ -182,9 +182,9 @@ def callback_teensy(msg):
         return
     
     if msg.data == CB_TEENSY["marcheArrOK"]:
-        if p_dn.blocked:
+        """ if p_dn.blocked:
             p_dn.blocked = False
-            pub_strat.publish(Int16(COM_STRAT["ok pos"]))
+            pub_strat.publish(Int16(COM_STRAT["ok pos"])) """
         log_info("Reverse Gear done.")
         return
     
@@ -268,7 +268,6 @@ def callback_strat(msg):
         ## Si on a trouvé un chemin
         if result['success']:
             if p_dn.stop:
-                p_dn.stop = False
                 pub_strat.publish(Int16(COM_STRAT["go"]))
             else :
                 log_info("Found path: \n"+str(p_dn.path))
@@ -459,6 +458,11 @@ def callback_end(msg):
     if msg.data == 1:
         p_dn.matchEnded = True
 
+def callback_oskour(msg):
+    if not ok_comm: return
+    if msg.data == 1:
+        p_dn.stop = False
+
 def callback_delete(msg):
     if not ok_comm: return
     obst = CAKES_OBST[msg.data].copy()
@@ -516,6 +520,8 @@ sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 
 # Obstacles
 sub_delete = rospy.Subscriber("/deleteObs", Int16, callback_delete)
+
+sub_oskour = rospy.Subscriber("/oskour", Int16, callback_oskour)
 
 """ # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/param/speedStrat", Float32MultiArray, callback_speed)

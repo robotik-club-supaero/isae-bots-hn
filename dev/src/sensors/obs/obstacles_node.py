@@ -90,8 +90,8 @@ class ObstaclesNode:
         self.nb_sonar = 1
 
         self.obs_pub = rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
-        self.lidar_sub = rospy.Subscriber("/sensors/lidar_obstacles", Int16MultiArray, self.update_obstacles)
-        self.sonar_sub = rospy.Subscriber("/sensors/sonar_obstacles", Int16MultiArray, self.update_obstacles)
+        self.lidar_sub = rospy.Subscriber("/sensors/obstaclesLidar", Int16MultiArray, self.update_obstacles)
+        self.sonar_sub = rospy.Subscriber("/sensors/obstaclesSonar", Int16MultiArray, self.update_obstacles)
         self.pos_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
 
     def recv_position(self, msg):

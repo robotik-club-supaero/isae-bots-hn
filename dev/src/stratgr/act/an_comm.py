@@ -76,6 +76,7 @@ def setup_color(msg):
     """
     Callback function from topic /sm/color.
     """
+    if not ok_comm : return
     if msg.data not in [0,1]:
         log_errs(f"Wrong value of color given ({msg.data})...")
         return

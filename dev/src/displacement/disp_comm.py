@@ -336,6 +336,9 @@ def callback_lidar(msg):
     nb_obstacles = (msg.layout.dim[0]).size
     """ if nb_obstacles == 0 : 
         p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0) """
+    if nb_obstacles == 0:
+        if p_dn.blocked: 
+            p_dn.blocked = False
     for i in range(nb_obstacles):
         obstacle_seen = True
         if obstacle_stop: break
@@ -498,6 +501,7 @@ pub_teensy = rospy.Publisher('/nextPositionTeensy', Quaternion, queue_size=10, l
 sub_teensy = rospy.Subscriber("/okPosition", Int16, callback_teensy) 
 
 # Comm Lidar
+#sub_lidar = rospy.Subscriber("/obstaclesMatch", Int16MultiArray, callback_lidar)
 sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
 pub_speed = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
 

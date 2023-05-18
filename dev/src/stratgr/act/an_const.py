@@ -128,7 +128,8 @@ ALL_KEY_LIST = [
     'nb_errors',
     'stage_to_go',
     'stage_to_deposit',
-    'backward'
+    'backward',
+    'park'
     ]
 
 ACTIONS_LIST = [

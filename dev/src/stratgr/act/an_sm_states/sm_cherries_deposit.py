@@ -41,13 +41,16 @@ class ObsDepositCherries(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','deposit','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded','backward'],
-			                    output_keys=['nb_actions_done','next_pos','cherries_loaded','backward'])
+			                    input_keys=['nb_actions_done','next_pos','color','cherries_loaded','backward','park'],
+			                    output_keys=['nb_actions_done','next_pos','cherries_loaded','backward','park'])
 
     def execute(self, userdata):
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
+        
+        if userdata.park[0] == 1:
+            return 'done'
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
@@ -76,8 +79,8 @@ class ObsDepositCherries(smach.State):
 #################################################################
 
 DepositCherries = smach.StateMachine(   outcomes=['preempted', 'end'],
-                                        input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_errors','backward'],
-                                        output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors','backward'])
+                                        input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_arm','cherries_loaded','nb_errors','backward','park'],
+                                        output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','cherries_loaded','nb_errors','backward','park'])
 							
 with DepositCherries:
     smach.StateMachine.add('OBS_DEPOSIT_CHERRIES', 

@@ -22,7 +22,7 @@ import os
 import time
 import rospy
 import threading
-from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
+from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR, LIST_OF_ACTIONS
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
@@ -137,8 +137,8 @@ def park_IT():
     Interrupt : time to park
     """
     log_info('\033[1m\033[36m' + "#"*19 + " Park interrupt " + "#"*18 + '\033[0m')
-
-    next_action_pub.publish(data=[5])
+    p_dn.go_park = True
+    park_pub.publish(data=1)
 
 
 def stop_IT():
@@ -147,7 +147,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish(data=[7])
+    next_action_pub.publish(data=LIST_OF_ACTIONS['stop'])
 
 #################################################################
 #                                                               #
@@ -174,3 +174,4 @@ deposit_cakes_pub = rospy.Publisher('/strat/deposit_cakes', Int16, queue_size=10
 stage_pub       = rospy.Publisher('/strat/stage', Int16, queue_size=10, latch=True)
 score_pub = rospy.Publisher('/addScore', Int16, queue_size=10, latch=True)
 end_pub = rospy.Publisher('/game/end', Int16, queue_size=10, latch=True)
+park_pub = rospy.Publisher('/park', Int16, queue_size=10, latch=True)

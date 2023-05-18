@@ -51,6 +51,8 @@ class ObsPark(smach.State):
         ## Move to parking position
         x, y, z = PARKING_POS
         if userdata.nb_actions_done[0] == 0:
+            if userdata.color == 1:
+                z = -z
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 

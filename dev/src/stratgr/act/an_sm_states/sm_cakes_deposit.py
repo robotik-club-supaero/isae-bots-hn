@@ -41,13 +41,16 @@ class ObsDepositCakes(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','redo','openDoors','closeDoors','openClamp','closeClamp','elevator'],
-			                    input_keys=['nb_actions_done','next_pos','color','deposit_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward'],
-			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward'])
+			                    input_keys=['nb_actions_done','next_pos','color','deposit_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'],
+			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'])
 
     def execute(self, userdata):
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
+        
+        if userdata.park[0] == 1:
+            return 'done'
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
@@ -136,8 +139,8 @@ class ObsDepositCakes(smach.State):
 #################################################################
 
 DepositCakes = smach.StateMachine( outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','deposit_area','stage_to_go','stage_to_deposit','backward'],
-                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','deposit_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward'])
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','deposit_area','stage_to_go','stage_to_deposit','backward','park'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','deposit_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'])
 							
 with DepositCakes:
     smach.StateMachine.add('OBS_DEPOSIT_CAKES', 

@@ -42,8 +42,6 @@ STOP_DEST_TIMEOUT = 3   #[s]
 
 def set_next_destination(userdata, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
-	if not userdata.color in list(COLOR.keys()):
-		raise ValueError	
 	x_d, y_d, t_d = patch_frame_br(x_d, y_d, t_d, userdata.color)
 	userdata.next_pos = Quaternion(x_d, y_d, t_d, w)
 

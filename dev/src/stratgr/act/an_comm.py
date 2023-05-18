@@ -185,14 +185,14 @@ def cb_score(msg):
     p_smData.score[0] += msg.data
     score_pub.publish(p_smData.score[0])
 
-def cb_XXXXX(msg):
+def cb_park(msg):
     """
     Callback function to update sm variable XXXXX.
 
     <copy> this template for your update / callback functions.
     """
     if not ok_comm: return
-    p_smData.XXX[0] = msg.data
+    p_smData.park[0] = msg.data
 
 #################################################################
 #                                                               #
@@ -283,6 +283,7 @@ color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
 repartitor_sub = rospy.Subscriber('/strat/repartitor_dec', Int16MultiArray, cb_next_action)
 disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
 position_sub = rospy.Subscriber('/current_position', Pose2D, cb_position)
+park_sub = rospy.Subscriber('/park', Int16, cb_park)
 
 # SPECIFIC TO CURRENT YEAR
 global cherries_sub, elevator_sub, doors_sub, clamp_sub

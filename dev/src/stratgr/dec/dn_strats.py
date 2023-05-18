@@ -53,6 +53,9 @@ def test_strat():
 
     #if p_dn is None: return  # safety if the function is called before DEC node init TODO : not supposed to happen ?
 
+    if p_dn.go_park :
+        p_dn.nb_actions_done[0] = 13
+
     if p_dn.nb_actions_done[0] == 0:
         p_dn.curr_action = LIST_OF_ACTIONS['takeCherriesPerpendicular']
         take_cherries_pub.publish(0)
@@ -91,6 +94,66 @@ def test_strat():
         return
     
     if p_dn.nb_actions_done[0] == 5:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 6:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 7:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 8:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 9:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 10:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 11:
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(5)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 12:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 13:
         score = 6*ACTIONS_SCORE['depositStage']
         score_pub.publish(data=score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
@@ -99,8 +162,9 @@ def test_strat():
         score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
         score_pub.publish(data=score)
         return
+    
 
-    if p_dn.nb_actions_done[0] == 6:
+    if p_dn.nb_actions_done[0] == 14:
         p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
         log_info("End of strategy : TEST")
         stop_IT()
@@ -161,9 +225,63 @@ def match_strat():
     
     Note: Define below the actions of this strategy
         - 
-        -
+    
         -
     """
     time.sleep(0.01)
+
+    if p_dn.nb_actions_done[0] == 0:
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCherries']
+        log_info("Next action : Deposit Cherries")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 1:
+        score = 10*ACTIONS_SCORE['cherryBucket']
+        score_pub.publish(data=score)
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCherriesPerpendicular']
+        take_cherries_pub.publish(0)
+        log_info("Next action : Take Cherries Perpendicular")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 2:
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCherries']
+        log_info("Next action : Deposit Cherries")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 3:
+        score = 10*ACTIONS_SCORE['cherryBucket']
+        score_pub.publish(data=score)
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(11)
+        log_info("Next action : Take Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+
+    if p_dn.nb_actions_done[0] == 4:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 5:
+        score = 3*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=score)
+        p_dn.curr_action = LIST_OF_ACTIONS['park']
+        log_info("Next action : Park")
+        next_action_pub.publish(data=p_dn.curr_action)
+        score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
+        score_pub.publish(data=score)
+        return
+
+    if p_dn.nb_actions_done[0] == 6:
+        p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
+        log_info("End of strategy : TEST")
+        stop_IT()
+        return
 
     pass

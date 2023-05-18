@@ -65,6 +65,7 @@ class Setup(smach.State):
 		userdata.color = 0
 		userdata.score = [ACTIONS_SCORE['init_score']]
 		userdata.nb_actions_done = [0]
+		userdata.park = [0] 
 		
 		## Data about the match
 		userdata.deposit_area = [-1] # Coordonnées de là où on dépose les gâteaux

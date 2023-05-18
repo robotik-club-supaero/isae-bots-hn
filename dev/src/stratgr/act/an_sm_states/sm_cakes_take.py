@@ -41,13 +41,16 @@ class ObsTakeCakes(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','openDoors','closeDoors','redo','openClamp','closeClamp','elevator'],
-			                    input_keys=['nb_actions_done','next_pos','color','take_cakes_area','pucks_taken','nb_errors','cb_doors','backward','cb_clamp','cb_elevator','stage_to_go'],
-			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','backward'])
+			                    input_keys=['nb_actions_done','next_pos','color','take_cakes_area','pucks_taken','nb_errors','cb_doors','backward','cb_clamp','cb_elevator','stage_to_go','park'],
+			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','backward','park'])
 
     def execute(self, userdata):
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
+        
+        if userdata.park[0] == 1:
+            return 'done'
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
@@ -125,8 +128,8 @@ class ObsTakeCakes(smach.State):
 #################################################################
 
 TakeCakes = smach.StateMachine( outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','take_cakes_area','stage_to_go','backward'],
-                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','take_cakes_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','backward'])
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','take_cakes_area','stage_to_go','backward','park'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','take_cakes_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','backward','park'])
 							
 with TakeCakes:
     smach.StateMachine.add('OBS_TAKE_CAKES', 

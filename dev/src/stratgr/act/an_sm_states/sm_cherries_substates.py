@@ -65,6 +65,11 @@ class TakeCherries(smach.State) :
         
         #Wait for the end of action
 
+
+        time.sleep(3)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
+
         begin_time = time.time()
         while (time.time() - begin_time < ARM_TIMING_TAKE) :
             time.sleep(0.01)
@@ -105,6 +110,13 @@ class DepositBucket(smach.State) :
         log_info("Ordering Depose Cherries in the Bucket")
         userdata.cb_arm[0] = -1
         cherries_pub.publish(1) # Publish 1 to tell to the BN to deploy the arm in order to recover the cherries
+        
+        
+        
+        time.sleep(3)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
+        
         begin_time = time.time()
         while (time.time() - begin_time < ARM_TIMING_DEPOSE) :
             if self.preempt_requested():

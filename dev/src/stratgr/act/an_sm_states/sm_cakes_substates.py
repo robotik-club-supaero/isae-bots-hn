@@ -68,6 +68,10 @@ class MoveElevator(smach.State) :
         
         #Wait for the end of action
 
+        time.sleep(6)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
+
         begin_time = time.time()
         while (time.time() - begin_time < ELEVATOR_TIMING) :
             time.sleep(0.01)
@@ -110,6 +114,12 @@ class OpenClamp(smach.State) :
         #Wait for the end of action
 
         begin_time = time.time()
+
+
+        time.sleep(1)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
+    
         while (time.time() - begin_time < CLAMP_TIMING) :
             time.sleep(0.01)
             if self.preempt_requested():
@@ -149,6 +159,10 @@ class CloseClamp(smach.State) :
         clamp_pub.publish(0) # On publie 0 pour fermer la pince
         
         #Wait for the end of action
+
+        time.sleep(1)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
 
         begin_time = time.time()
         while (time.time() - begin_time < CLAMP_TIMING) :
@@ -191,6 +205,9 @@ class OpenDoors(smach.State) :
         doors_pub.publish(1) # On publie 1 pour dire au BN d'ouvrir les portes.
         
         #Wait for the end of action
+        time.sleep(1)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
 
         begin_time = time.time()
         while (time.time() - begin_time < DOORS_TIMING) :
@@ -233,6 +250,10 @@ class CloseDoors(smach.State) :
         doors_pub.publish(0) # On publie 0 pour dire au BN de fermer les portes.
         
         #Wait for the end of action
+
+        time.sleep(1)
+        userdata.nb_actions_done[0] += 1
+        return 'done'
 
         begin_time = time.time()
         while (time.time() - begin_time < DOORS_TIMING) :

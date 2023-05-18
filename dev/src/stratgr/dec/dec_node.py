@@ -63,7 +63,7 @@ class DecisionsNode:
         self.go_park = False
 
         self.strat = int(READER.get("STRAT", "strat_choice"))
-        self.strategies = [test_strat, match_strat, homologation]
+        self.strategies = [match_strat, homologation, test_strat]
 
         self.actions_ls = ACTIONS_LIST
         self.actions_nb = len(self.actions_ls)

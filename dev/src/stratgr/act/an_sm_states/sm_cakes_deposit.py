@@ -41,8 +41,8 @@ class ObsDepositCakes(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','done','disp','redo','openDoors','closeDoors','openClamp','closeClamp','elevator'],
-			                    input_keys=['nb_actions_done','next_pos','color','deposit_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'],
-			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'])
+			                    input_keys=['nb_actions_done','next_pos','color','deposit_area','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park','open_clamp','open_doors','elevator_zero'],
+			                    output_keys=['nb_actions_done','next_pos','pucks_taken','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park','open_clamp','open_doors','elevator_zero'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -50,6 +50,21 @@ class ObsDepositCakes(smach.State):
             return 'preempted'
         
         if userdata.park[0] == 1:
+            if userdata.open_clamp:
+                if userdata.elevator_zero:
+                    userdata.open_clamp = False
+                    return 'closeClamp'
+                else :
+                    userdata.elevator_zero = True
+                    userdata.stage_to_go[0] = 0
+                    return 'elevator'
+            if not userdata.open_clamp and userdata.elevator_zero :
+                userdata.stage_to_go[0] = 1
+                userdata.elevator_zero = False
+                return 'elevator' 
+            if userdata.open_doors:
+                userdata.open_doors = False
+                return 'closeDoors'
             return 'done'
             
         if userdata.nb_actions_done[0] == 0:
@@ -60,13 +75,16 @@ class ObsDepositCakes(smach.State):
 
         elif userdata.nb_actions_done[0] == 1:
             ## On lance l'action de prendre les palets.
+            userdata.open_doors = True
             return 'openDoors'
 
         elif userdata.nb_actions_done[0] == 2:
             userdata.stage_to_go[0] = 0
+            userdata.elevator_zero = True
             return 'elevator'
         
         elif userdata.nb_actions_done[0] == 3:
+            userdata.open_clamp = True
             return 'openClamp'
         
         if userdata.stage_to_deposit[0] == -1:
@@ -74,6 +92,7 @@ class ObsDepositCakes(smach.State):
             if userdata.nb_actions_done[0] == 4:
                 userdata.stage_to_go[0] = 8
                 userdata.pucks_taken[0] = 0
+                userdata.elevator_zero = False
                 return 'elevator'
 
             elif userdata.nb_actions_done[0] == 5:
@@ -90,23 +109,28 @@ class ObsDepositCakes(smach.State):
                 return 'disp'
             
             elif userdata.nb_actions_done[0] == 6:
+                userdata.open_clamp = False
                 return 'closeClamp'
             
             elif userdata.nb_actions_done[0] == 7:
+                userdata.open_doors = False
                 return 'closeDoors'
 
         else:
 
             if userdata.nb_actions_done[0] == 4:
                 userdata.stage_to_go[0] = userdata.stage_to_deposit[0]
+                userdata.elevator_zero = (userdata.stage_to_go[0] == 0)
                 return 'elevator'
             
             elif userdata.nb_actions_done[0] == 5:
+                userdata.open_clamp = False
                 return 'closeClamp'
             
             elif userdata.nb_actions_done[0] == 6:
                 userdata.pucks_taken[0] -= userdata.stage_to_deposit[0]
                 userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
+                userdata.elevator_zero = (userdata.stage_to_go[0] == 0)
                 return 'elevator'
             
             elif userdata.nb_actions_done[0] == 7:
@@ -123,6 +147,7 @@ class ObsDepositCakes(smach.State):
                 return 'disp'
             
             elif userdata.nb_actions_done[0] == 8:
+                    userdata.open_doors = False
                     return 'closeDoors'
 
         end_of_action_pub.publish(exit=1, reason='success')
@@ -139,8 +164,8 @@ class ObsDepositCakes(smach.State):
 #################################################################
 
 DepositCakes = smach.StateMachine( outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','deposit_area','stage_to_go','stage_to_deposit','backward','park'],
-                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','deposit_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park'])
+                                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','cb_doors','cb_clamp','cb_elevator','pucks_taken','nb_errors','deposit_area','stage_to_go','stage_to_deposit','backward','park','open_clamp','open_doors','elevator_zero'],
+                                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','pucks_taken','deposit_area','nb_errors','cb_doors','cb_clamp','cb_elevator','stage_to_go','stage_to_deposit','backward','park','open_clamp','open_doors','elevator_zero'])
 							
 with DepositCakes:
     smach.StateMachine.add('OBS_DEPOSIT_CAKES', 

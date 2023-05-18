@@ -69,7 +69,8 @@ LIST_OF_ACTIONS = {
     'depositCakes':              [4],
     'park':                      [5],
     'end':                       [6],
-    'waiting':                   [7]
+    'waiting':                   [7],
+    'depositCherriesNear':       [8]
 }
 
 COLOR = {

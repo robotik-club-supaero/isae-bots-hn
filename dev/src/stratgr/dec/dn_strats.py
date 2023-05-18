@@ -231,27 +231,12 @@ def match_strat():
     time.sleep(0.01)
 
     if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = LIST_OF_ACTIONS['depositCherries']
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCherriesNear']
         log_info("Next action : Deposit Cherries")
         next_action_pub.publish(data=p_dn.curr_action)
         return
     
     if p_dn.nb_actions_done[0] == 1:
-        score = 10*ACTIONS_SCORE['cherryBucket']
-        score_pub.publish(data=score)
-        p_dn.curr_action = LIST_OF_ACTIONS['takeCherriesPerpendicular']
-        take_cherries_pub.publish(0)
-        log_info("Next action : Take Cherries Perpendicular")
-        next_action_pub.publish(data=p_dn.curr_action)
-        return
-
-    if p_dn.nb_actions_done[0] == 2:
-        p_dn.curr_action = LIST_OF_ACTIONS['depositCherries']
-        log_info("Next action : Deposit Cherries")
-        next_action_pub.publish(data=p_dn.curr_action)
-        return
-    
-    if p_dn.nb_actions_done[0] == 3:
         score = 10*ACTIONS_SCORE['cherryBucket']
         score_pub.publish(data=score)
         p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
@@ -260,7 +245,7 @@ def match_strat():
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
-    if p_dn.nb_actions_done[0] == 4:
+    if p_dn.nb_actions_done[0] == 2:
         stage_pub.publish(data=-1)
         p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
         deposit_cakes_pub.publish(2)
@@ -268,7 +253,7 @@ def match_strat():
         next_action_pub.publish(data=p_dn.curr_action)
         return
     
-    if p_dn.nb_actions_done[0] == 5:
+    if p_dn.nb_actions_done[0] == 3:
         score = 3*ACTIONS_SCORE['depositStage']
         score_pub.publish(data=score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
@@ -278,7 +263,7 @@ def match_strat():
         score_pub.publish(data=score)
         return
 
-    if p_dn.nb_actions_done[0] == 6:
+    if p_dn.nb_actions_done[0] == 4:
         p_dn.nb_actions_done[0] = -1  # to prevent repeated end action
         log_info("End of strategy : TEST")
         stop_IT()

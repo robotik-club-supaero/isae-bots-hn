@@ -60,10 +60,28 @@ class ObsDepositCherries(smach.State):
                 z = -z
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
-
+        
         if userdata.nb_actions_done[0] == 1:
+            ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
+            x, y, z = DEPOSIT_CHERRIES_POS
+            y -= ROBOT_LARG/2
+            if userdata.color == 1:
+                z = -z
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['recalage'])
+            return 'disp'
+        
+        if userdata.nb_actions_done[0] == 2:
             ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
             return 'deposit'
+        
+        if userdata.nb_actions_done[0] == 3:
+            ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
+            x, y, z = DEPOSIT_CHERRIES_POS
+            y -= ARM_SHIFT
+            if userdata.color == 1:
+                z = -z
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['noAvoidance'])
+            return 'disp'
 
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 

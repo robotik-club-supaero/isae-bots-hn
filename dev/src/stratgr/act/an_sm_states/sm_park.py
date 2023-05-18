@@ -24,7 +24,7 @@ import sys
 import time
 import smach
 from an_const import *
-from an_comm import end_of_action_pub, add_score
+from an_comm import end_of_action_pub, add_score, deguis_pub
 from an_sm_states.sm_displacement import Displacement, set_next_destination
 
 #################################################################
@@ -55,6 +55,10 @@ class ObsPark(smach.State):
                 z = -z
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
+        
+        if userdata.nb_actions_done[0] == 1:
+             deguis_pub.publish(data=1)
+             return 'done'
 
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done'

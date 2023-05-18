@@ -339,6 +339,7 @@ def callback_lidar(msg):
     if nb_obstacles == 0:
         if p_dn.blocked: 
             p_dn.blocked = False
+        pub_speed.publish(data=80)
     for i in range(nb_obstacles):
         obstacle_seen = True
         if obstacle_stop: break
@@ -419,21 +420,22 @@ def callback_lidar(msg):
                         pub_strat.publish(Int16(COM_STRAT["path not found"]))
                     else :
                         p_dn.next_point(True) """
-                else :
-                    speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
-                    speed_coeff = min(0.75, max(0, speed_coeff))
-                    speed = 80 - int(speed_coeff*80)
-                    pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
-            else:
-                pub_speed.publish(data=80)
         else:
             if dist_obs > stop_range:
                 p_dn.blocked = False
+
+        speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
+        speed_coeff = min(0.75, max(0, speed_coeff))
+        speed = 80 - int(speed_coeff*80)
+        pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
 
         
 def callback_init_pos(msg):
     """Update la position de départ du robot."""
     x, y, z = patch_frame_br(INIT_POS[0], INIT_POS[1], INIT_POS[2], p_dn.color)
+    if p_dn.color == 1:
+        if abs(z - HLF_PI) <= 0.1:
+            z = -z
     pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
     p_dn.current_pos = [x, y, z]
 

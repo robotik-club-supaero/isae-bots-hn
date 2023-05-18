@@ -60,6 +60,10 @@ def make_obstacle_list(color):
     wallSouth = ObstacleRect(2000-margin, 2000-margin, margin, 3000-margin)
     wallEast = ObstacleRect(margin, 2000-margin, margin, margin)
     wallWest = ObstacleRect(margin, 2000-margin, 3000-margin, 3000-margin)
+    """ wallNorth = ObstacleRect(0, 0, 0, 3000)
+    wallSouth = ObstacleRect(2000, 2000, 0, 3000)
+    wallEast = ObstacleRect(0, 2000, 0, 0)
+    wallWest = ObstacleRect(0, 2000, 3000, 3000) """
 
     # Bases
     baseHome = ObstacleRect(400-margin, 1000+margin, 0, 400+margin)

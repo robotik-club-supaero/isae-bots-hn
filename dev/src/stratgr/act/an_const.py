@@ -129,7 +129,10 @@ ALL_KEY_LIST = [
     'stage_to_go',
     'stage_to_deposit',
     'backward',
-    'park'
+    'park',
+    'open_clamp',
+    'open_doors',
+    'elevator_zero'
     ]
 
 ACTIONS_LIST = [
@@ -139,15 +142,17 @@ ACTIONS_LIST = [
     'takeCakes',
     'depositCakes',
     'park',
-    'preempted',
     'end',
-    'waiting'
+    'waiting',
+    'depositCherriesNear',
+    'preempted'
     ]
 
 ACTIONS_STATES = {
     'takeCherriesPerpendicular':'TAKE_CHERRIES_PERPENDICULAR',
     'takeCherriesWall':'TAKE_CHERRIES_WALL',
     'depositCherries':'DEPOSIT_CHERRIES',
+    'depositCherriesNear':'DEPOSIT_CHERRIES_NEAR',
     'takeCakes':'TAKE_CAKES',
     'depositCakes':'DEPOSIT_CAKES',
     'park':'PARK',

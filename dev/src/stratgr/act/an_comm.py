@@ -98,7 +98,7 @@ def cb_next_action(msg):
         p_sm.request_preempt()
         log_info("Received park signal (end of match)")
         return
-    if msg.data[0] not in [0,1,2,3,4,5]: # Index de ACTIONS_LIST dans an_const
+    if msg.data[0] not in [0,1,2,3,4,5,6,7,8]: # Index de ACTIONS_LIST dans an_const
         log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
     p_smData.next_action = msg.data[0]
@@ -271,6 +271,7 @@ doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
 clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
 elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
 pub_delete_obst = rospy.Publisher('/deleteObs', Int16, queue_size=10, latch=True)
+deguis_pub = rospy.Publisher('/strat/deguisement', Int16, queue_size=10, latch=True)
 
 
 """

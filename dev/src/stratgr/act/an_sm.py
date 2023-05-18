@@ -33,6 +33,7 @@ from an_sm_states.sm_cherries_take_wall import TakeCherriesWall
 from an_sm_states.sm_cherries_deposit import DepositCherries
 from an_sm_states.sm_cakes_take import TakeCakes
 from an_sm_states.sm_cakes_deposit import DepositCakes
+from an_sm_states.sm_cherries_deposit_near import DepositCherriesNear
 
 from an_const import *
 from an_utils import *
@@ -89,7 +90,10 @@ class Setup(smach.State):
 		userdata.next_pos = Quaternion(x=0, y=0, z=0, w=1)
 		userdata.error_reaction = [-1]
 		userdata.nb_errors = [0]
-		userdata.backward = False 
+		userdata.backward = False
+		userdata.open_clamp = False
+		userdata.open_doors = False 
+		userdata.elevator_zero = False
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)
@@ -204,6 +208,9 @@ def init_sm(sm):
 								transitions={'preempted':'END','end':'REPARTITOR'})
 		smach.StateMachine.add('DEPOSIT_CHERRIES', 
 			 					DepositCherries,
+								transitions={'preempted':'END','end':'REPARTITOR'})
+		smach.StateMachine.add('DEPOSIT_CHERRIES_NEAR', 
+			 					DepositCherriesNear,
 								transitions={'preempted':'END','end':'REPARTITOR'})
 		smach.StateMachine.add('TAKE_CAKES', 
 			 					TakeCakes,

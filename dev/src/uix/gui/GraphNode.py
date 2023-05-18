@@ -65,7 +65,7 @@ class GraphNode(pg.GraphicsWindow):
     lastTime = 0
     isStopped = False
 
-    alpha = 0.15 # asserv parameter
+    alpha = 0.10 # asserv parameter
 
     
     def keyPressEvent(self,e):

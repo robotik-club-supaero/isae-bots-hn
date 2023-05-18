@@ -8,10 +8,12 @@ roslaunch main.launch method:='sim'
 	<arg name='BR' default="None" />
 	<arg name='ACT' default="None" />
 	<arg name='LIDAR' default="None" />
-	
+	<arg name='NANONPX' default="None" />
+
 	<rosparam param="BR" subst_value="True">$(arg BR)</rosparam>
 	<rosparam param="ACT" subst_value="True">$(arg ACT)</rosparam>
 	<rosparam param="LIDAR" subst_value="True">$(arg LIDAR)</rosparam>
+	<rosparam param="NANONPX" subst_value="True">$(arg NANONPX)</rosparam>
 	
 
 	<!-- Disjonction de cas -->
@@ -37,6 +39,13 @@ roslaunch main.launch method:='sim'
 		</node>
 		<node pkg="sensors" type="lidar_node.py" name="LidarNode" output="screen" />
 		<node pkg="sensors" type="sensors_node.py" name="SensorNode" output="screen" />
+	</group>
+
+	<group if="$(eval arg('NANONPX') != 'None')"> <!-- La Nano est presente -->
+		<!-- on est sur le vrai robot -->
+		<node pkg="rosserial_python" type="serial_node.py" name="NanoPxNode" output="screen">
+			<param name="port" value="$(eval arg('NANONPX'))"/>
+		</node>
 	</group>
 
 	<!-- deplacements -->

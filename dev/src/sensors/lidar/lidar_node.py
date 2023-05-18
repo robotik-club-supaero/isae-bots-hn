@@ -137,7 +137,7 @@ class LidarNode:
                 y_robot = self.y_robot
                 x = potentialObstacle[0]
                 y = potentialObstacle[1]
-                theta = atan2((y-y_robot)/(x-x_robot))
+                theta = atan2((y-y_robot),(x-x_robot))
 
                 calculatedObstacles.append([x - self.radius * cos(theta),  y - self.radius * sin(theta)])
 

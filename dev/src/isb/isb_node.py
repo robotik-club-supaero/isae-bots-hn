@@ -88,7 +88,6 @@ BUTTON_LEDS_IDS = [9,8,7,6,5]
 TRIGGER_LED_ID = 0
 BR_IDLE_LED_ID = 1
 
-MATCH_BUTTON_ID = 0
 COLOR_BUTTON_ID = 1
 BR_IDLE_BUTTON_ID = 2
 RESET_STEPPER_BUTTON_ID = 3
@@ -165,7 +164,7 @@ class ISBNode:
 			res = readPin(BUTTONS_PINS[k])
 
 			# update button triggered list
-			self.isButtonTriggered[k] = self.buttonStates[k] == res
+			self.isButtonTriggered[k] = self.buttonStates[k] != res
 			self.buttonStates[k] = res
 
 			# apply state to corresponding led
@@ -207,13 +206,11 @@ class ISBNode:
 				self.readTrigger()
 
 				# Send match message if the trigger is released
-				if self.isButtonTriggered[MATCH_BUTTON_ID]:
-
-					if  not self.match and self.triggerState == 0:
-						log_info("Match started")
-						self.match = True
-						self.pubStart.publish(data=1)
-						self.pubStart.publish(data=1)  # another one to be sure
+				if  not self.match and self.triggerState == 0:
+					log_info("Match started")
+					self.match = True
+					self.pubStart.publish(data=1)
+					self.pubStart.publish(data=1)  # another one to be sure
 
 
 				# Send color message

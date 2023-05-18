@@ -57,7 +57,7 @@ class SIM_ObstaclesNode:
         loginfo("Initializing OBS node ...")
 
         self.position_sub = rospy.Subscriber("/current_position", Pose2D, self.recv_position)
-        self.obs_info_pub = rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
+        self.obs_info_pub = rospy.Publisher("/obstaclesSimu", Int16MultiArray, queue_size=10, latch=False)
         self.obs_lidar_pub = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
 
         self.curr_time = time.time()

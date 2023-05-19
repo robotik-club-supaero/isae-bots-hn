@@ -80,11 +80,11 @@ class MoveElevator(smach.State) :
                 return 'preempted'
             
             #React to the feedback
-            if userdata.cb_elevator[0] == 0 : #Success
+            if userdata.cb_elevator[0] == 1 : #Success
                 log_info("Move Elevator : success")
                 userdata.nb_actions_done[0] += 1
                 return 'done'
-            elif userdata.cb_elevator[0] == 1 : #Error durring the recovery
+            elif userdata.cb_elevator[0] == 0 : #Error durring the recovery
                 log_info("Move Elevator : error encountered")
                 userdata.nb_errors[0] += 1
                 return 'fail'

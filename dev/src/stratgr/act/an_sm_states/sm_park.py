@@ -59,6 +59,7 @@ class ObsPark(smach.State):
 
         if userdata.nb_actions_done[0] == 1:
              force_end_pub.publish(data=0)
+             time.sleep(0.5)
              deguis_pub.publish(data=1)
              return 'done'
 

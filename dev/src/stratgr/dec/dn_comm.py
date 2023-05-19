@@ -172,6 +172,6 @@ take_cakes_pub       = rospy.Publisher('/strat/take_cakes', Int16, queue_size=10
 take_cherries_pub       = rospy.Publisher('/strat/take_cherries', Int16, queue_size=10, latch=True)
 deposit_cakes_pub = rospy.Publisher('/strat/deposit_cakes', Int16, queue_size=10, latch=True)
 stage_pub       = rospy.Publisher('/strat/stage', Int16, queue_size=10, latch=True)
-score_pub = rospy.Publisher('/addScore', Int16, queue_size=10, latch=True)
+score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
 end_pub = rospy.Publisher('/game/end', Int16, queue_size=10, latch=True)
 park_pub = rospy.Publisher('/park', Int16, queue_size=10, latch=True)

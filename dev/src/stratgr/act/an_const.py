@@ -204,5 +204,5 @@ DEPOSIT_POS = {
 	1: [1775, 225, -HLF_PI],
 	2: [225, 1125, 0], # Normalement ONE_PI mais dernier match donc osef
 	3: [1775, 1875, 0],
-	4: [225, 2850, HLF_PI]
+	4: [225, 2650, HLF_PI]
 }

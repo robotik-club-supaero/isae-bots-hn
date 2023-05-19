@@ -68,6 +68,8 @@ class ObsPushCakes(smach.State):
             return 'disp'
 
         elif userdata.nb_actions_done[0] == 2:
+            log_info("Aaaaah")
+            time.sleep(0.5)
             x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
             y += 150
             set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])

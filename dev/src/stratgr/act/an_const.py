@@ -202,7 +202,7 @@ CAKES_POS = {
 DEPOSIT_POS = {
 	0: [725, 225, -HLF_PI],
 	1: [1775, 225, -HLF_PI],
-	2: [225, 1125, 0], # Normalement ONE_PI mais dernier match donc osef
+	2: [225, 1125, -HLF_PI], # Normalement ONE_PI mais dernier match donc osef
 	3: [1775, 1875, 0],
 	4: [225, 2750, HLF_PI]
 }

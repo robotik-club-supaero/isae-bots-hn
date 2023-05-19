@@ -147,7 +147,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish(data=LIST_OF_ACTIONS['stop'])
+    next_action_pub.publish(data=LIST_OF_ACTIONS['end'])
 
 #################################################################
 #                                                               #

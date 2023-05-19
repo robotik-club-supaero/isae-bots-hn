@@ -98,7 +98,7 @@ def cb_next_action(msg):
         p_sm.request_preempt()
         log_info("Received park signal (end of match)")
         return
-    if msg.data[0] not in [0,1,2,3,4,5,6,7,8]: # Index de ACTIONS_LIST dans an_const
+    if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
         log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
     p_smData.next_action = msg.data[0]

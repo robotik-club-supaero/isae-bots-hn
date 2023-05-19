@@ -77,6 +77,8 @@ class ObsDepositCakes(smach.State):
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
             x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
+            if userdata.color == 1:
+                z = -z
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
@@ -88,13 +90,17 @@ class ObsDepositCakes(smach.State):
         elif userdata.nb_actions_done[0] == 2:
                 ## On se déplace jusqu'au site de la pile de gâteaux visée
                 x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
-                if y < 500:
+                """ # Modif pour le dernier match on se gare là
+                    if y < 500:
                     y += DOORS_SHIFT
                 else :
                     if x < MAX_X/2 :
                         x += DOORS_SHIFT
                     else :
-                        x -= DOORS_SHIFT
+                        x -= DOORS_SHIFT """
+                y -= DOORS_SHIFT
+                if userdata.color == 1:
+                    z = -z
                 set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])
                 return 'disp'
 

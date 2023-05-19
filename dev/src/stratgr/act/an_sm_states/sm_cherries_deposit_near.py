@@ -62,11 +62,11 @@ class ObsDepositCherriesNear(smach.State):
             set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])
             return 'disp'
         
-        if userdata.nb_actions_done[0] == 1:
+        """ if userdata.nb_actions_done[0] == 1:
             ## On lance l'action de baisser le bras pour récupérer les cerises et remonter le bras.
-            return 'deposit'
+            return 'deposit' """
         
-        if userdata.nb_actions_done[0] == 2:
+        if userdata.nb_actions_done[0] == 1:
             ## On se déplace jusqu'au site des cerises perpendiculaires au mur (en se mettant dans la bonne orientation pour le bras)
             x, y, z = DEPOSIT_CHERRIES_POS
             y -= ARM_SHIFT

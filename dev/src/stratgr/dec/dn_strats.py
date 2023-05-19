@@ -255,21 +255,29 @@ def match_strat():
     if p_dn.nb_actions_done[0] == 1:
         score = 10*ACTIONS_SCORE['cherryBucket']
         score_pub.publish(data=score)
-        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
-        take_cakes_pub.publish(11)
-        log_info("Next action : Take Cakes")
+        p_dn.curr_action = LIST_OF_ACTIONS['pushCakes']
+        deposit_cakes_pub.publish(2)
+        log_info("Next action : Push Cakes")
         next_action_pub.publish(data=p_dn.curr_action)
         return
 
     if p_dn.nb_actions_done[0] == 2:
-        stage_pub.publish(data=-1)
-        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
-        deposit_cakes_pub.publish(2)
-        log_info("Next action : Deposit Cakes")
+        score = 6*ACTIONS_SCORE['depositStage']
+        p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
+        take_cakes_pub.publish(12)
+        log_info("Next action : Take Cakes")
         next_action_pub.publish(data=p_dn.curr_action)
         return
     
     if p_dn.nb_actions_done[0] == 3:
+        stage_pub.publish(data=-1)
+        p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
+        deposit_cakes_pub.publish(4)
+        log_info("Next action : Deposit Cakes")
+        next_action_pub.publish(data=p_dn.curr_action)
+        return
+    
+    if p_dn.nb_actions_done[0] == 4:
         score = 3*ACTIONS_SCORE['depositStage']
         score_pub.publish(data=score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']

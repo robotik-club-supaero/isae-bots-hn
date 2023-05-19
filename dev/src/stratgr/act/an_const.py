@@ -145,6 +145,7 @@ ACTIONS_LIST = [
     'end',
     'waiting',
     'depositCherriesNear',
+    'pushCakes',
     'preempted'
     ]
 
@@ -158,7 +159,8 @@ ACTIONS_STATES = {
     'park':'PARK',
     'preempted':'END',
     'end':'END',
-    'waiting':'WAITING'
+    'waiting':'WAITING',
+    'pushCakes':'PUSH_CAKES'
     }
 
 ACTIONS_SCORE = {
@@ -193,12 +195,14 @@ CAKES_POS = {
 	8: [725, 1125, ONE_PI], # Marron
 	9: [1275, 1125, 0],
 	10:[725, 1875, ONE_PI],
-	11:[1275, 1875, 0]
+	11:[1275, 1875, 0],
+	12:[725, 1875, HLF_PI] # Le même que le 10 mais pour le dernier match on le prend par le bas
 }
 
 DEPOSIT_POS = {
 	0: [725, 225, -HLF_PI],
 	1: [1775, 225, -HLF_PI],
-	2: [225, 1125, ONE_PI],
-	3: [1775, 1875, 0]
+	2: [225, 1125, 0], # Normalement ONE_PI mais dernier match donc osef
+	3: [1775, 1875, 0],
+	4: [225, 2850, HLF_PI]
 }

@@ -49,10 +49,10 @@ READ_TIME = 0.5
 READ_FAIL_PROB = 0  # entre 0 et 1
 
 ## Constants GR
-CHERRIES_TAKING = 1
-DOORS_TIME = 1
-CLAMP_TIME = 1
-ELEVATOR_TIME = 1
+CHERRIES_TAKING = 0
+DOORS_TIME = 0
+CLAMP_TIME = 0
+ELEVATOR_TIME = 0
 
 #############################
 

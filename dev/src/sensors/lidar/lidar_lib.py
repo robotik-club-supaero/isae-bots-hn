@@ -36,7 +36,6 @@ import configparser
 # CONSTANTS
 #######################################################################
 
-TABLE_MARGIN = 100      # marge aux bords de table
 TABLE_H = 3000          # hauteur de table (selon y)
 TABLE_W = 2000          # largeur de table (selon x)
 
@@ -46,6 +45,10 @@ READER = configparser.ConfigParser()
 READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
 
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
+ROBOT_LARG = int(READER.get("ROBOT", "robot_larg"))
+ROBOT_LONG = int(READER.get("ROBOT", "robot_long"))
+ROBOT_DIAG = np.linalg.norm([ROBOT_LARG/2, ROBOT_LONG/2])
+TABLE_MARGIN = ROBOT_DIAG/2 + 20      # marge aux bords de table
 
 
 

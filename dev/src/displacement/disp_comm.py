@@ -52,8 +52,8 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 
 ## CONSTANTES
 BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 450 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 450 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_STANDARD = 250 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_AVOIDING = 250 + BECAUSE_BIG_IS_BIG
 RADIUS_ROBOT_OBSTACLE = 300
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
@@ -232,8 +232,14 @@ def callback_strat(msg):
 
     elif msg.w == CMD_STRAT["marcheArr"]:
         pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
+    
+    elif msg.w == CMD_STRAT["noAvoidance"]:
+        p_dn.avoid_mode = False
+        p_dn.is_reset_possible = False
+        p_dn.move = True
+        pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['dispFinal']))
 
-    elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] :
+    elif msg.w == CMD_STRAT["standard"] : #or msg.w == CMD_STRAT["noAvoidance"] :
         ## Setup de la vitesse
 
         dest_pos = [msg.x, msg.y, msg.z]
@@ -333,9 +339,8 @@ def callback_lidar(msg):
 
     ## TRAITEMENT DE CHAQUE OBSTACLE
     nb_obstacles = (msg.layout.dim[0]).size
-    """ if nb_obstacles == 0 : 
-        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0) """
     if nb_obstacles == 0:
+        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)
         if p_dn.blocked: 
             p_dn.blocked = False
         pub_speed.publish(data=80)
@@ -347,7 +352,7 @@ def callback_lidar(msg):
             obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
-        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
+        #log_info("DIST OBS :" + str(dist_obs))
         x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
 
 ####################################################################################################################################
@@ -377,8 +382,8 @@ def callback_lidar(msg):
                     obstacle_seen = True
                     if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
                         obstacle_stop = True
-                        
-                        
+                        p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
+                                                
                 else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
                         obstacle_seen = True
@@ -402,6 +407,7 @@ def callback_lidar(msg):
                     p_dn.stop = True 
                     pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
                     log_warn("ERROR - Reason: Path Blocked")
+                    p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
                     
                     pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
                     """ print("NOUVEAU CHEMIN")
@@ -431,10 +437,10 @@ def callback_lidar(msg):
         
 def callback_init_pos(msg):
     """Update la position de départ du robot."""
-    x, y, z = patch_frame_br(INIT_POS[0], INIT_POS[1], INIT_POS[2], p_dn.color)
-    if p_dn.color == 1:
-        if abs(z - HLF_PI) <= 0.1:
-            z = -z
+    if p_dn.color == 0:
+        x, y, z = INIT_POS[0], INIT_POS[1], INIT_POS[2]
+    else:
+        x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
     pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
     p_dn.current_pos = [x, y, z]
 
@@ -458,7 +464,7 @@ def callback_end(msg):
     if msg.data == 1:
         p_dn.matchEnded = True
 
-def callback_oskour(msg):
+def callback_true_path(msg):
     if not ok_comm: return
     if msg.data == 1:
         p_dn.stop = False
@@ -521,7 +527,7 @@ sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 # Obstacles
 sub_delete = rospy.Subscriber("/deleteObs", Int16, callback_delete)
 
-sub_oskour = rospy.Subscriber("/oskour", Int16, callback_oskour)
+sub_true_path = rospy.Subscriber("/true_path", Int16, callback_true_path)
 
 """ # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/param/speedStrat", Float32MultiArray, callback_speed)

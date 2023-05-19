@@ -50,8 +50,8 @@ def log_errs(log):
 def patch_frame_br(x, y, theta, color):
     if color == 0:
         return x, y, theta
-    # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
     return 2000-x, y, theta+ONE_PI # Si la symétrie est selon l'axe y.
+    # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
 
 #################################################################
 # Colors gestion												#

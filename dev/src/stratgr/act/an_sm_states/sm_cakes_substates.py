@@ -82,7 +82,7 @@ class MoveElevator(smach.State) :
             #React to the feedback
             if userdata.cb_elevator[0] == 1 : #Success
                 log_info("Move Elevator : success")
-                userdata.nb_actions_done[0] += 1
+                #userdata.nb_actions_done[0] += 1
                 return 'done'
             elif userdata.cb_elevator[0] == 0 : #Error durring the recovery
                 log_info("Move Elevator : error encountered")

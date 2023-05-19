@@ -200,7 +200,7 @@ def homologation():
         return
     
     if p_dn.nb_actions_done[0] == 2:
-        score = 6*ACTIONS_SCORE['depositStage']
+        score = 3*ACTIONS_SCORE['depositStage']
         score_pub.publish(data=score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")

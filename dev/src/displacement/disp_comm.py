@@ -441,7 +441,7 @@ def callback_lidar(msg):
             p_dn.blocked = False
 
         speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
-        speed_coeff = min(0.75, max(0.5, speed_coeff))
+        speed_coeff = min(0.5, max(0, speed_coeff))
         speed = 80 - int(speed_coeff*80)
         pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
 

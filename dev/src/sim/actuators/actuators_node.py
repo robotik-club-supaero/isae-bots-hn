@@ -172,10 +172,10 @@ class ActuatorNode():
 	def elevator_response(self, msg):
 		sleep(CHERRIES_TAKING)
 		if msg.data in range(0,9):
-			self.elevator_pub.publish(data=0)
+			self.elevator_pub.publish(data=1)
 			log_info("Réponse simulée : ascenseur déplacé")
 		else:
-			self.elevator_pub.publish(data=1)
+			self.elevator_pub.publish(data=0)
 			log_info("Problème sur l'étage demandé")
 
 

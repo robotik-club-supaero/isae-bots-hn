@@ -254,7 +254,7 @@ def match_strat():
         return
     
     if p_dn.nb_actions_done[0] == 1:
-        p_dn.score += 10*ACTIONS_SCORE['cherryBucket']
+        p_dn.score += 8*ACTIONS_SCORE['cherryBucket']
         score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['pushCakes']
         deposit_cakes_pub.publish(2)

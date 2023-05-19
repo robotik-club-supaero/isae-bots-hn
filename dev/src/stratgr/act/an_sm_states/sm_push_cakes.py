@@ -64,7 +64,11 @@ class ObsPushCakes(smach.State):
         if userdata.nb_actions_done[0] == 1:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
             x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
-            set_next_destination(userdata, x, y, z, DISPLACEMENT['noAvoidance'])
+            if userdata.color == 1:
+                z = -z
+            pub_delete_obst.publish(data=2)
+            pub_delete_obst.publish(data=6)
+            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
 
         elif userdata.nb_actions_done[0] == 2:

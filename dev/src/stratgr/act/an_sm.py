@@ -93,7 +93,7 @@ class Setup(smach.State):
 		userdata.backward = False
 		userdata.open_clamp = False
 		userdata.open_doors = False 
-		userdata.elevator_zero = False
+		userdata.elevator_zero = True
 
 		## Enable pubs and subs in pr_an_comm.py
 		time.sleep(0.01)

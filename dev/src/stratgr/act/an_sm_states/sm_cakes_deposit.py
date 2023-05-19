@@ -49,7 +49,7 @@ class ObsDepositCakes(smach.State):
             self.service_preempt()
             return 'preempted'
         
-        if userdata.park[0] == 1:
+        """ if userdata.park[0] == 1:
             if userdata.open_clamp:
                 if userdata.elevator_zero:
                     userdata.open_clamp = False
@@ -65,8 +65,15 @@ class ObsDepositCakes(smach.State):
             if userdata.open_doors:
                 userdata.open_doors = False
                 return 'closeDoors'
-            return 'done'
+            return 'done' """
             
+        if userdata.park[0] == 1:
+            if userdata.open_doors:
+                userdata.open_doors = False
+                return 'closeDoors'
+            else:
+                return 'done'
+
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
             x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
@@ -77,8 +84,25 @@ class ObsDepositCakes(smach.State):
             ## On lance l'action de prendre les palets.
             userdata.open_doors = True
             return 'openDoors'
-
+        
         elif userdata.nb_actions_done[0] == 2:
+                ## On se déplace jusqu'au site de la pile de gâteaux visée
+                x, y, z = DEPOSIT_POS[userdata.deposit_area[0]]
+                if y < 500:
+                    y += DOORS_SHIFT
+                else :
+                    if x < MAX_X/2 :
+                        x += DOORS_SHIFT
+                    else :
+                        x -= DOORS_SHIFT
+                set_next_destination(userdata, x, y, z, DISPLACEMENT['marcheArr'])
+                return 'disp'
+
+        elif userdata.nb_actions_done[0] == 3:
+                userdata.open_doors = False
+                return 'closeDoors'
+
+        """ elif userdata.nb_actions_done[0] == 2:
             userdata.stage_to_go[0] = 0
             userdata.elevator_zero = True
             return 'elevator'
@@ -148,7 +172,7 @@ class ObsDepositCakes(smach.State):
             
             elif userdata.nb_actions_done[0] == 8:
                     userdata.open_doors = False
-                    return 'closeDoors'
+                    return 'closeDoors' """
 
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 

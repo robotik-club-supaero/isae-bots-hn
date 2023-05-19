@@ -86,6 +86,7 @@ CAKES_OBST = {
 
 ONE_PI = np.pi
 HLF_PI = np.pi/2
+QRT_PI = np.pi/4
 
 def to_robot_coord(x_robot, y_robot, cap, pos):
     """Fonction transposant pos dans le repere local du robot."""

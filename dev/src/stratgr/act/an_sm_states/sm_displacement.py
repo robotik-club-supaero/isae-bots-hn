@@ -27,7 +27,7 @@ import smach
 from geometry_msgs.msg import Quaternion
 
 from an_const import COLOR, DISPLACEMENT
-from an_comm import disp_pub, true_path_pub
+from an_comm import disp_pub
 from an_utils import log_info, log_errs, log_warn, patch_frame_br
 
 #################################################################
@@ -71,7 +71,6 @@ class Displacement(smach.State):
 		dest = userdata.next_pos
 		dest2 = userdata.next_pos
 		log_info(f"Displacement Request: toward ({dest.x}, {dest.y}, {dest.z}) with w= {dest.w}")
-		true_path_pub.publish(data=1)
 		disp_pub.publish(dest)
 
 		init_time = time.time()
@@ -139,14 +138,19 @@ class Displacement(smach.State):
 					while userdata.cb_disp[0] != 0 and time.time()-begin_time < STOP_DEST_TIMEOUT:
 						time.sleep(0.1) """
 				log_info("RECHERCHE DE CHEMIN")
+				userdata.cb_disp[0] = -3
 				disp_pub.publish(dest)
 				stop_time = time.time()
+				
 				while userdata.cb_disp[0] != 2 and time.time()-stop_time < STOP_DEST_TIMEOUT:
 					time.sleep(0.01)
 
 					if self.preempt_requested():
 						self.service_preempt()
 						return 'preempted'
+					
+					if userdata.cb_disp[0] == 3:
+						disp_pub.publish(dest)
 										
 				if userdata.cb_disp[0] == 2:
 					log_info('Displacement restart ...')

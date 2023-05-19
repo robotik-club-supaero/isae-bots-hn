@@ -68,9 +68,9 @@ class MoveElevator(smach.State) :
         
         #Wait for the end of action
 
-        time.sleep(6)
+        """ time.sleep(6)
         userdata.nb_actions_done[0] += 1
-        return 'done'
+        return 'done' """
 
         begin_time = time.time()
         while (time.time() - begin_time < ELEVATOR_TIMING) :

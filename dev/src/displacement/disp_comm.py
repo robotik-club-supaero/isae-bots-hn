@@ -28,6 +28,7 @@ Fichier du DisplacementNode contenant les outils de communication.
 import os
 import rospy
 import numpy as np
+from math import sin
 import time
 
 from ast import literal_eval
@@ -51,10 +52,11 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################
 
 ## CONSTANTES
-BECAUSE_BIG_IS_BIG  = 100 # if ROBOT_NAME=="GR" else 0
-STOP_RANGE_STANDARD = 250 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_AVOIDING = 250 + BECAUSE_BIG_IS_BIG
-RADIUS_ROBOT_OBSTACLE = 300
+BECAUSE_BIG_IS_BIG  = 0 # if ROBOT_NAME=="GR" else 0
+STOP_RANGE_STANDARD = 350
+STOP_RANGE_AVOIDING = 350
+DIST_MIN = 50
+RADIUS_ROBOT_OBSTACLE = 180
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
 STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
@@ -118,7 +120,8 @@ COM_STRAT = {
     "ok pos":               0,      # Le robot est arrivé au point demandé
     "stop":                 1,      # Le robot s'arrête
     "go":                   2,      # Le robot redémarre
-    "stop blocked":         3       # On s'arrete car la destination est bloquee par l'adversaire
+    "stop blocked":         3,       # On s'arrete car la destination est bloquee par l'adversaire
+    "possible path":        4
 }
 
 '''Dictionnaire des callbacks reçus de la teensy'''
@@ -209,6 +212,7 @@ def callback_strat(msg):
     # p_dn.paused = False
 
     log_info("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
+    #log_info("Robot State : " + str(p_dn.blocked))
     p_dn.path = []
 
     ## Commande d'arrêt
@@ -274,6 +278,8 @@ def callback_strat(msg):
         ## Si on a trouvé un chemin
         if result['success']:
             if p_dn.stop:
+                log_info("New Possible Path")
+                p_dn.stop = False
                 pub_strat.publish(Int16(COM_STRAT["go"]))
             else :
                 log_info("Found path: \n"+str(p_dn.path))
@@ -287,7 +293,10 @@ def callback_strat(msg):
                 p_dn.move = True 
                 p_dn.next_point(False)
         else:       
-            if result['message'] == "Dest Blocked":
+            if p_dn.stop:
+                log_warn("ERROR - Reason: Path Blocked")
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+            elif result['message'] == "Dest Blocked":
                 log_warn("ERROR - Reason: " + result['message'])
                 pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
 
@@ -340,18 +349,21 @@ def callback_lidar(msg):
     ## TRAITEMENT DE CHAQUE OBSTACLE
     nb_obstacles = (msg.layout.dim[0]).size
     if nb_obstacles == 0:
-        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)
-        if p_dn.blocked: 
-            p_dn.blocked = False
+        # On est pas dans l'état bloqué et la pos ennemie est quelconque. On publie la vitesse nominale.
+        p_dn.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)    
+        p_dn.blocked = False
+        p_dn.stop = False
         pub_speed.publish(data=80)
     for i in range(nb_obstacles):
-        obstacle_seen = True
-        if obstacle_stop: break
+        # Si on est déjà à l'arrêt on ne rentre pas dans la boucle.
+        #if obstacle_stop: break
         for j in range(5):
             # Params de l'obstacle
             obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
+        if dist_min < dist_obs: 
+            dist_min = dist_obs
         #log_info("DIST OBS :" + str(dist_obs))
         x_loc_obs, y_loc_obs = to_robot_coord(p_dn.current_pos[0], p_dn.current_pos[1], p_dn.current_pos[2], obstacle_info)
 
@@ -377,23 +389,24 @@ def callback_lidar(msg):
             #-> On setup la vitesse suivant la pos locale du 
             #   robot adverse
             if msg.data[0] == 0:
-                if dist_obs > dist_min: continue
-                if dist_obs < stop_range:
-                    obstacle_seen = True
-                    if y_loc_obs == 0 or abs(y_loc_obs) < x_loc_obs*COEFF_ANGLES: 
+                if dist_obs <= DIST_MIN: continue
+                obstacle_seen = True
+                if dist_obs <= stop_range:
+                    if x_loc_obs >= abs(y_loc_obs) : 
+                        log_info("Adversary Detected In Front")
                         obstacle_stop = True
                         p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
                                                 
-                else:
+                """ else:
                     if x_loc_obs < stop_front_x and abs(y_loc_obs) < stop_front_y:
-                        obstacle_seen = True
+                        obstacle_seen = True """
 
 ####################################################################################################################################
 ####################################################################################################################################
         
-        if msg.data[0] == 0: # msg du lidar
+        """ if msg.data[0] == 0: # msg du lidar
             # Calcul de la distance à l'obstacle le plus proche
-            if dist_obs < dist_min: dist_min = dist_obs
+            if dist_obs < dist_min: dist_min = dist_obs """
             
         # Reset des marges lors d'un évitement
         """ if p_dn.avoid_mode and dist_min > RESET_RANGE and p_dn.is_reset_possible:  # TODO : à paramétrer LA DISTANCE A PARTIR DE LAQUELLE ON CONSIDERE QUE CE N'EST PLUS UN EVITEMENT ####
@@ -401,33 +414,31 @@ def callback_lidar(msg):
 
         # Update de la vitesse??
         if not p_dn.blocked :
-            if obstacle_seen:
-                if dist_obs <= stop_range:
-                    p_dn.blocked = True
-                    p_dn.stop = True 
-                    pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
-                    log_warn("ERROR - Reason: Path Blocked")
-                    p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
-                    
-                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-                    """ print("NOUVEAU CHEMIN")
-                    begin_time = time.time()
-                    while (time.time() - begin_time < 3) and (dist_obs <= stop_range) :
-                        time.sleep(0.01)
-                        result = p_dn.build_path(True, p_dn.is_first_accurate, False)
-                        if result['success'] == True :
-                            print("YOUPI")
-                            break
-                    
-                    if time.time() - begin_time >= 3:
-                        log_warn("ERROR - Reason: " + "Path blocked")
-                        # Retour de l'erreur a la strat
-                        pub_strat.publish(Int16(COM_STRAT["path not found"]))
-                    else :
-                        p_dn.next_point(True) """
-        else:
-            if dist_obs > stop_range:
-                p_dn.blocked = False
+            if obstacle_stop:
+                p_dn.blocked = True
+                p_dn.stop = True 
+                pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
+                log_warn("Object Detected : Need To Wait")
+                p_dn.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                """ print("NOUVEAU CHEMIN")
+                begin_time = time.time()
+                while (time.time() - begin_time < 3) and (dist_obs <= stop_range) :
+                    time.sleep(0.01)
+                    result = p_dn.build_path(True, p_dn.is_first_accurate, False)
+                    if result['success'] == True :
+                        print("YOUPI")
+                        break
+                
+                if time.time() - begin_time >= 3:
+                    log_warn("ERROR - Reason: " + "Path blocked")
+                    # Retour de l'erreur a la strat
+                    pub_strat.publish(Int16(COM_STRAT["path not found"]))
+                else :
+                    p_dn.next_point(True) """
+                
+        if dist_obs > stop_range:
+            p_dn.blocked = False
 
         speed_coeff = (dist_obs-max_range)/(stop_range-max_range)
         speed_coeff = min(0.75, max(0.5, speed_coeff))
@@ -463,11 +474,6 @@ def callback_end(msg):
     if not ok_comm: return
     if msg.data == 1:
         p_dn.matchEnded = True
-
-def callback_true_path(msg):
-    if not ok_comm: return
-    if msg.data == 1:
-        p_dn.stop = False
 
 def callback_delete(msg):
     if not ok_comm: return
@@ -527,7 +533,6 @@ sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 # Obstacles
 sub_delete = rospy.Subscriber("/deleteObs", Int16, callback_delete)
 
-sub_true_path = rospy.Subscriber("/true_path", Int16, callback_true_path)
 
 """ # Publication parametres de jeu & gains
 sub_speed = rospy.Subscriber("/param/speedStrat", Float32MultiArray, callback_speed)

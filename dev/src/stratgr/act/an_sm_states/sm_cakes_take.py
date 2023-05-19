@@ -49,9 +49,9 @@ class ObsTakeCakes(smach.State):
             self.service_preempt()
             return 'preempted'
         
-        if userdata.park[0] == 1:
+        """ if userdata.park[0] == 1:
             if userdata.open_clamp:
-                if userdata.elevator_zero:
+                if userdata.elevator_zero:  
                     userdata.open_clamp = False
                     return 'closeClamp'
                 else :
@@ -65,7 +65,15 @@ class ObsTakeCakes(smach.State):
             if userdata.open_doors:
                 userdata.open_doors = False
                 return 'closeDoors'
-            return 'done'
+            return 'done' """
+        
+        if userdata.park[0] == 1:
+            if userdata.open_doors:
+                userdata.open_doors = False
+                return 'closeDoors'
+            else:
+                return 'done'
+        
             
         if userdata.nb_actions_done[0] == 0:
             ## On se déplace jusqu'au site de la pile de gâteaux visée
@@ -78,18 +86,30 @@ class ObsTakeCakes(smach.State):
                 x -= DOORS_SHIFT
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
-
+        
         elif userdata.nb_actions_done[0] == 1:
+            if userdata.elevator_zero:
+                userdata.elevator_zero = False
+                userdata.stage_to_go[0] = 8
+                return 'elevator'
+            else:
+                userdata.nb_actions_done[0] += 1
+
+        elif userdata.nb_actions_done[0] == 2:
             ## On lance l'action de prendre les palets.
             userdata.open_doors = True
             return 'openDoors'
 
-        elif userdata.nb_actions_done[0] == 2:
+        elif userdata.nb_actions_done[0] == 3:
             x, y, z = CAKES_POS[userdata.take_cakes_area[0]]
             set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
             return 'disp'
         
-        if userdata.pucks_taken[0] > 0 :    
+        elif userdata.nb_actions_done[0] == 4:
+            userdata.open_doors = False
+            return 'closeDoors'
+        
+        """ if userdata.pucks_taken[0] > 0 :    
             if userdata.nb_actions_done[0] == 3:
                 userdata.stage_to_go[0] = 3
                 userdata.elevator_zero = False
@@ -138,7 +158,7 @@ class ObsTakeCakes(smach.State):
                 userdata.nb_actions_done[0] += 1
                 userdata.stage_to_go[0] = 9-userdata.pucks_taken[0]
                 userdata.elevator_zero = (userdata.stage_to_go[0] == 0)
-                return 'elevator'
+                return 'elevator' """
 
         end_of_action_pub.publish(exit=1, reason='success')
         return 'done' 

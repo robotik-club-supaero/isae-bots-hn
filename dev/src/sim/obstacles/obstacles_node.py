@@ -86,10 +86,10 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        if time.time() - self.curr_time <= 30:
+        if time.time() - self.curr_time <= 15:
             obstacles_pos = []  #[(1200,600)]
         else:
-            obstacles_pos = [(1000,800+20*(time.time()-self.curr_time-30), np.linalg.norm([self.x_robot-1000, self.y_robot-800+20*(time.time()-self.curr_time-30)]) ,0,0)]
+            obstacles_pos = [(1000,800+30*(time.time()-self.curr_time-15), np.linalg.norm([self.x_robot-1000, self.y_robot-800+30*(time.time()-self.curr_time-15)]) ,0,0)]
         """ else :
             obstacles_pos = [(1000,1200, np.linalg.norm([self.x_robot-1000, self.y_robot-1200]) ,0,0)] """
         #loginfo("Pos obst :" + str(obstacles_pos))

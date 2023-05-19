@@ -274,7 +274,7 @@ def match_strat():
     if p_dn.nb_actions_done[0] == 3:
         stage_pub.publish(data=-1)
         p_dn.curr_action = LIST_OF_ACTIONS['depositCakes']
-        deposit_cakes_pub.publish(4)
+        deposit_cakes_pub.publish(5)
         log_info("Next action : Deposit Cakes")
         next_action_pub.publish(data=p_dn.curr_action)
         return

@@ -70,8 +70,8 @@ def test_strat():
         return
     
     if p_dn.nb_actions_done[0] == 2:
-        score = 10*ACTIONS_SCORE['cherryBucket']
-        score_pub.publish(data=score)
+        p_dn.score += 10*ACTIONS_SCORE['cherryBucket']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
         take_cakes_pub.publish(11)
         log_info("Next action : Take Cakes")
@@ -154,13 +154,13 @@ def test_strat():
         return
     
     if p_dn.nb_actions_done[0] == 13:
-        score = 6*ACTIONS_SCORE['depositStage']
-        score_pub.publish(data=score)
+        p_dn.score += 6*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
-        score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
-        score_pub.publish(data=score)
+        p_dn.score += ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
+        score_pub.publish(data=p_dn.score)
         return
     
 
@@ -200,7 +200,8 @@ def homologation():
         return
     
     if p_dn.nb_actions_done[0] == 2:
-        score = 3*ACTIONS_SCORE['depositStage']
+        p_dn.score += 3*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
         take_cakes_pub.publish(0)
         log_info("Next action : Take Cakes")
@@ -216,13 +217,13 @@ def homologation():
         return
     
     if p_dn.nb_actions_done[0] == 4:
-        score = 3*ACTIONS_SCORE['depositStage']
-        score_pub.publish(data=score)
+        p_dn.score += 3*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
-        score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
-        score_pub.publish(data=score)
+        p_dn.score += ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
+        score_pub.publish(data=p_dn.score)
         return
 
     if p_dn.nb_actions_done[0] == 5:
@@ -253,8 +254,8 @@ def match_strat():
         return
     
     if p_dn.nb_actions_done[0] == 1:
-        score = 10*ACTIONS_SCORE['cherryBucket']
-        score_pub.publish(data=score)
+        p_dn.score += 10*ACTIONS_SCORE['cherryBucket']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['pushCakes']
         deposit_cakes_pub.publish(2)
         log_info("Next action : Push Cakes")
@@ -262,7 +263,8 @@ def match_strat():
         return
 
     if p_dn.nb_actions_done[0] == 2:
-        score = 6*ACTIONS_SCORE['depositStage']
+        p_dn.score += 6*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['takeCakes']
         take_cakes_pub.publish(12)
         log_info("Next action : Take Cakes")
@@ -278,13 +280,13 @@ def match_strat():
         return
     
     if p_dn.nb_actions_done[0] == 4:
-        score = 3*ACTIONS_SCORE['depositStage']
-        score_pub.publish(data=score)
+        p_dn.score += 3*ACTIONS_SCORE['depositStage']
+        score_pub.publish(data=p_dn.score)
         p_dn.curr_action = LIST_OF_ACTIONS['park']
         log_info("Next action : Park")
         next_action_pub.publish(data=p_dn.curr_action)
-        score = ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter']
-        score_pub.publish(data=score)
+        p_dn.score += (ACTIONS_SCORE['parking']+ACTIONS_SCORE['funnyCounter'])
+        score_pub.publish(data=p_dn.score)
         return
 
     if p_dn.nb_actions_done[0] == 4:

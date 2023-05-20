@@ -25,7 +25,7 @@ import rospy
 import signal
 import time
 
-from dn_utils    import READER, ACTIONS_LIST, log_errs, log_fatal, log_info, log_warn
+from dn_utils    import READER, ACTIONS_LIST, log_errs, log_fatal, log_info, log_warn, ACTIONS_SCORE
 from dn_comm     import init_comm
 from dn_strats   import init_strats, test_strat, homologation, match_strat
 
@@ -56,7 +56,7 @@ class DecisionsNode:
 
         self.match_started = False
         self.color = 0
-        self.score = 0
+        self.score = ACTIONS_SCORE['init']
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))

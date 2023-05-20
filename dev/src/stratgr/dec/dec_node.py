@@ -56,7 +56,7 @@ class DecisionsNode:
 
         self.match_started = False
         self.color = 0
-        self.score = ACTIONS_SCORE['init']
+        self.score = ACTIONS_SCORE['init_score']
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))

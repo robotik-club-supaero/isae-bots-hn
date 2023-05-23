@@ -4,9 +4,11 @@
 # 	make <target> <arg>=<val>
 # 	
 #
-# Demos:
+# Intallation:
 #	make build-core
 # 	make build-base
+#	make create-container
+#	make main
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
@@ -23,12 +25,12 @@ DOCKER_VOLUMES = \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 #	--volume="/var/run/dbus/system_bus_socket":"/var/run/dbus/system_bus_socket"
-#	--volume="${PWD}/doc":"/app/doc"
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev"
 
+# .PHONY means that the Makefile command doesn't use any file as a source
 .PHONY: help
 help:
 	@echo "=== HELP message ===================================="
@@ -65,22 +67,6 @@ build-image-desktop:
 build-image-pi:
 	@docker buildx build --platform=linux/arm/v7 -f ${PWD}/docker/dockerfile_pi.full -t isaebots_pi_env_full . --load
 
-#############################################################
-# TASKS
-#############################################################
-
-# Kill any running Docker containers
-.PHONY: kill
-
-# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker container ls -q)
-kill: 
-	@echo "Closing already running container"
-	@docker container prune -f
-	
-
-
-
-
 
 .PHONY: create-container
 create-container:
@@ -103,8 +89,19 @@ create-container:
         echo "Container $(CONTAINER_NAME) is already created"; \
     fi
 
+#############################################################
+# TASKS
+#############################################################
 
-# This one removes the container before running it again to make a new one
+# Kill any running Docker containers
+#.PHONY: kill
+# /!\ doesn't kill a running container, only stopped containers (to do it use docker kill $(docker container ls -q)
+#kill: 
+#	@echo "Closing already running container"
+#	@docker container prune -f
+	
+
+# Removes the container before running it again to make a new one
 .PHONY: clear-container
 clear-container:
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
@@ -125,7 +122,6 @@ clear-container:
 # Start a terminal inside the Docker container, and then close the container (difference with make term)
 .PHONY: main
 main: create-container
-
 #	Check if container is running
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Starting container $(CONTAINER_NAME) ..."; \
@@ -140,10 +136,10 @@ main: create-container
 	@docker kill $(CONTAINER_NAME) > /dev/null;
 
 
+
 # Start a terminal inside the Docker container, doesn't close it at on exit
 .PHONY: term
 term:
-
 #	Check if container is running
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
@@ -152,8 +148,7 @@ term:
     fi
 
 	
-
-
+# Terminal used for the simulation with special bindkeys
 .PHONY: sim_term
 sim_term:
 	@docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh

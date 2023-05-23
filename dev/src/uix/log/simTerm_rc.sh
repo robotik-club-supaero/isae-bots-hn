@@ -18,7 +18,7 @@ bind -x '"\C-K":"if [[ $ROSLAUNCH_RUNNING == 1 ]]; then echo $COMMANDK; ROSLAUNC
 COMMANDR="[SIM COMMAND] :  Restart simulation"
 COMMANDR2="\033[31m[ERROR] Stop the roslaunch before restarting\033[0m"
 COM2="ps -ef | grep /bin/bash | grep -vE 'exit|auto|grep|dev' | awk '{print \$2}'"
-bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNCH_RUNNING=1; kill -s SIGHUP $(eval $COM2); else echo -e $COMMANDR2; fi"'
+bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNCH_RUNNING=1; kill $(eval $COM2); else echo -e $COMMANDR2; fi"'
 # pour exit le roslaunch (ce qui ferme le main du docker et donc relance tous les terminaux docker), on envoie un SIGHUP au roslaunch (qui a été config pour exit à réception d'un 
 # SIGHUP via la commande trap), pour avoir son PID on parse le résultat de la commande ps aussi
 

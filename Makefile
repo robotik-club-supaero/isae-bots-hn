@@ -10,7 +10,7 @@
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
-PS_NAME = dev_ps
+CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash
 CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
@@ -22,6 +22,7 @@ DOCKER_VOLUMES = \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
+#	--volume="/var/run/dbus/system_bus_socket":"/var/run/dbus/system_bus_socket"
 #	--volume="${PWD}/doc":"/app/doc"
 
 DOCKER_ENV_VAR = \
@@ -76,26 +77,92 @@ kill:
 	@echo "Closing already running container"
 	@docker container prune -f
 	
-# Start a terminal inside the Docker container
-.PHONY: main
-main:
 
-#	the 'privileged' flag is necessary otherwise we get a Dbus error, but the kernel is more exposed this way..
-#	we log in as a user and not root (preferable)
 
-	@docker run --privileged --rm -it --net=host \
-		--name ${PS_NAME} \
+
+
+
+.PHONY: create-container
+create-container:
+
+#	the 'privileged' flag is necessary ? otherwise we get a Dbus error, but the kernel is more exposed this way
+#	we should log in as a user and not root (preferable)
+
+#	Check if container has been created, if not create it
+	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
+        echo "Creating container $(CONTAINER_NAME) ..."; \
+		docker run -it --net=host \
+		--name ${CONTAINER_NAME} \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
 		-u 0 \
 		${IMAGE_NAME}_base \
-		"${CMD}"
+		"${CMD}"; \
+		echo "Created container successfully"; \
+    else \
+        echo "Container $(CONTAINER_NAME) is already created"; \
+    fi
 
+
+# This one removes the container before running it again to make a new one
+.PHONY: clear-container
+clear-container:
+	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
+		echo "Container $(CONTAINER_NAME) doesn't exist yet"; \
+	else \
+		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
+		docker container rm $(CONTAINER_NAME) > /dev/null; \
+		docker run -it --net=host \
+		--name ${CONTAINER_NAME} \
+		${DOCKER_VOLUMES} \
+		${DOCKER_ENV_VAR} \
+		-u 0 \
+		${IMAGE_NAME}_base \
+		"${CMD}"; \
+	fi
+
+
+# Start a terminal inside the Docker container, and then close the container (difference with make term)
+.PHONY: main
+main: create-container
+
+#	Check if container is running
+	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
+        echo "Starting container $(CONTAINER_NAME) ..."; \
+		docker start $(CONTAINER_NAME) > /dev/null; \
+    else \
+        echo "Container $(CONTAINER_NAME) is already running"; \
+    fi
+
+	@docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+
+	@echo "Stopping container $(CONTAINER_NAME) ..."
+	@docker kill $(CONTAINER_NAME) > /dev/null;
+
+
+# Start a terminal inside the Docker container, doesn't close it at on exit
 .PHONY: term
 term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+
+#	Check if container is running
+	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
+        echo "Container $(CONTAINER_NAME) is not started yet"; \
+    else \
+        docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
+    fi
+
 	
+
 
 .PHONY: sim_term
 sim_term:
-	@docker exec -it $(shell docker ps -aqf "name=${PS_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh
+	@docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh
+
+
+# Running container called NAME :
+# docker ps -aqf status=running --filter name=NAME
+# OR
+# docker ps -qf name=NAME
+
+# Stopped container called NAME
+# docker ps -aqf status=exited --filter name=NAME

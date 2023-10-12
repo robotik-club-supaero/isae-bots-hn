@@ -61,11 +61,11 @@ build-base: build-core
 
 .PHONY: build-image-desktop
 build-image-desktop:
-	@docker build -f ${PWD}/docker/dockerfile_desktop.full -t isaebots_desktop_env_full .
+	@docker build -f ${PWD}/docker/dockerfile.desktopfull -t isaebots_desktop_env_full .
 
 .PHONY: build-image-pi
 build-image-pi:
-	@docker buildx build --platform=linux/arm/v7 -f ${PWD}/docker/dockerfile_pi.full -t isaebots_pi_env_full . --load
+	@docker buildx build --platform=linux/arm/v7 -f ${PWD}/docker/dockerfile.pi -t isaebots_pi_env_full . --load
 
 
 .PHONY: create-container

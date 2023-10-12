@@ -32,7 +32,13 @@ RUN export SSL_CERT_DIR=/etc/ssl/certs
 # RUN rosdep init
 COPY ./docker/20-default.list /etc/ros/rosdep/sources.list.d/20-default.list
 
-RUN sudo rosdep fix-permissions
+# Installations BN
+RUN apt-get install -y ros-noetic-rosserial-arduino
+RUN apt-get install -y ros-noetic-rosserial-python
+RUN apt-get install -y ros-noetic-rosserial
+
+# Installations HN
+RUN rosdep fix-permissions
 RUN rosdep update
 RUN apt-get install -y ros-noetic-smach ros-noetic-smach-viewer
 

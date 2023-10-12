@@ -44,7 +44,7 @@ RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio docker
 # Install PyQt
 RUN apt-get install -y python3-pyqt5
 
-# Install pyqtgrapph
+# Install pyqtgraph
 RUN pip install pyqtgraph==0.10.0
 
 #ENV QT_QUICK_BACKEND=software
@@ -87,10 +87,6 @@ RUN pip install pyqtgraph==0.10.0
 
 # BN installs
 # RUN adduser $USER dialout
-
-RUN apt-get install -y ros-noetic-rosserial-arduino
-RUN apt-get install -y ros-noetic-rosserial-python
-RUN apt-get install -y ros-noetic-rosserial
 
 COPY ./docker/49-teensy.rules /etc/udev/rules.d/
 

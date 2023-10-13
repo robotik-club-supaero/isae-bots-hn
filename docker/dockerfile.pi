@@ -105,6 +105,9 @@ RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 # install bluetooth
 RUN apt-get install -y bluez bluetooth
 
+# Install pyserial to communicate with the nano board via USB (without ROS)
+RUN pip install pyserial
+
 # Install smbus for isb and lcd
 RUN pip3 install smbus
 

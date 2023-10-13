@@ -105,11 +105,17 @@ RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 # install bluetooth
 RUN apt-get install -y bluez bluetooth
 
-# Install smbus for isb
+# Install smbus for isb and lcd
 RUN pip3 install smbus
 
 # Install dependency of lidar driver node (hokuyo or sick)
 RUN apt-get install -y ros-noetic-diagnostics
+
+# Install lib Adafruit-SSD1306 for oled screen
+RUN pip3 install Adafruit-SSD1306==1.6.2
+
+# Install lib vlc for speaker
+RUN pip3 install vlc
 
 # Add udev file
 COPY ./install/10-usb-serial.rules /etc/udev/rules.d/10-usb-serial.rules

@@ -11,17 +11,18 @@
 #	make main
 
 # Detection of architecture (PC or pi)
-# architecture = "$(shell uname -m)"
-architecture = "x86_64"
-
+architecture = $(shell uname -m)
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
+IMAGE_NAME_PI = isaebots_pi_env_full
 CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash
 CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
 BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
+PI_DOCKERFILE = ${PWD}/docker/dockerfile.pi
+PI_PLATFORM = linux/arm64/v8
 
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
@@ -29,20 +30,23 @@ DOCKER_VOLUMES = \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
-# --volume="/var/run/dbus":"/var/run/dbus"
-
-# -v "/etc/localtime:/etc/localtime:ro" \
-# -v "/etc/asound.conf:/etc/asound.conf" \
-# --device /dev/snd:/dev/snd
 
 
-#TODO que si sur la pi
-docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $4}' | cut -d/ -f1)
+DOCKER_VOLUMES_PI = \
+	--volume="${PWD}/dev":"/app/dev" \
+	--volume="/dev":"/dev" \
+	--volume="${PWD}/scripts":"/app/scripts"
+
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
+	--env="WDIR=dev"
+
+docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $4}' | cut -d/ -f1)
+
+DOCKER_ENV_VAR_PI = \
 	--env="WDIR=dev" \
-	--env PULSE_SERVER=tcp:172.17.0.1:34567
+	--env PULSE_SERVER=tcp:${docker_ip}:34567
 
 # --env PULSE_SERVER=tcp:172.17.0.1:34567 fait marcher pulseaudio dans le docker sur la pi pour avoir du son en TCP
 # ref du tuto : https://github.com/mviereck/x11docker/wiki/Container-sound:-ALSA-or-Pulseaudio
@@ -87,32 +91,43 @@ build-core:
 build-base: build-core
 	@docker build -f ${BASE_DOCKERFILE} -t ${IMAGE_NAME}_base .
 
-.PHONY: build-image-desktop
-build-image-desktop:
-	@docker build -f ${PWD}/docker/dockerfile.desktopfull -t isaebots_desktop_env_full .
-
+# Build the image for the raspberry pi (64 bits so architecture linux/arm64/v8)
+# To be able to do that, docker buildx needs to be installed (cf tuto installs on new pi)
 .PHONY: build-image-pi
 build-image-pi:
-	@docker buildx build --platform=linux/arm64/v8 -f ${PWD}/docker/dockerfile.pi -t isaebots_pi_env_full . --load
+	@docker buildx build --platform=${PI_PLATFORM} -f ${PI_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
 
 
 .PHONY: create-container
 create-container:
 
-#	the 'privileged' flag is necessary ? otherwise we get a Dbus error, but the kernel is more exposed this way
+#	the 'privileged' flag is necessary ? might be so that we get access to the GPIO and other stuff
 #	we should log in as a user and not root (preferable)
 
 #	Check if container has been created, if not create it
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
-		docker run -it --privileged --net=host \
-		--name ${CONTAINER_NAME} \
-		${DOCKER_VOLUMES} \
-		${DOCKER_ENV_VAR} \
-		-u dockeruser \
-		${IMAGE_NAME}_base \
-		"${CMD}"; \
-		echo "Created container successfully"; \
+		if [ "${architecture}" = "x86_64" ]; then \
+			docker run -it --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES} \
+			${DOCKER_ENV_VAR} \
+			-u dockeruser \
+			${IMAGE_NAME}_base \
+			"${CMD}"; \
+			echo "Created PC container successfully"; \
+		elif [ "${architecture}" = "aarch64" ]; then \
+			docker run -it --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES_PI} \
+			${DOCKER_ENV_VAR_PI} \
+			-u dockeruser \
+			${IMAGE_NAME_PI} \
+			"${CMD}"; \
+			echo "Created pi container successfully"; \
+		else \
+			echo "The architecture is $(architecture), not recognized"; \
+		fi \
     else \
         echo "Container $(CONTAINER_NAME) is already created"; \
     fi
@@ -137,13 +152,27 @@ clear-container:
 	else \
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
-		docker run -it --privileged --net=host \
-		--name ${CONTAINER_NAME} \
-		${DOCKER_VOLUMES} \
-		${DOCKER_ENV_VAR} \
-		-u dockeruser \
-		${IMAGE_NAME}_base \
-		"${CMD}"; \
+		if [ "${architecture}" = "x86_64" ]; then \
+			docker run -it --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES} \
+			${DOCKER_ENV_VAR} \
+			-u dockeruser \
+			${IMAGE_NAME}_base \
+			"${CMD}"; \
+			echo "Replaced PC container successfully"; \
+		elif [ "${architecture}" = "aarch64" ]; then \
+			docker run -it --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES_PI} \
+			${DOCKER_ENV_VAR_PI} \
+			-u dockeruser \
+			${IMAGE_NAME_PI} \
+			"${CMD}"; \
+			echo "Replaced pi container successfully"; \
+		else \
+			echo "The architecture is $(architecture), not recognized"; \
+		fi \
 	fi
 
 
@@ -158,7 +187,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	@docker exec -it ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -172,7 +201,7 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
+        docker exec -it ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
     fi
 
 	

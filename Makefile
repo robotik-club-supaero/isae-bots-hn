@@ -10,6 +10,11 @@
 #	make create-container
 #	make main
 
+# Detection of architecture (PC or pi)
+# architecture = "$(shell uname -m)"
+architecture = "x86_64"
+
+
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
 CONTAINER_NAME = isaebots
@@ -60,6 +65,17 @@ help:
 test:
 	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
 
+.PHONY: print-architecture
+print-architecture:
+	@if [ "${architecture}" = "x86_64" ]; then \
+		echo "The architecture is $(architecture), we are on the PC"; \
+	elif [ "${architecture}" = "aarch64" ]; then \
+		echo "The architecture is $(architecture), we are on the pi"; \
+	else \
+		echo "The architecture is $(architecture), wtf is that"; \
+	fi
+
+
 # Build the core image
 .PHONY: build-core
 build-core:
@@ -77,7 +93,7 @@ build-image-desktop:
 
 .PHONY: build-image-pi
 build-image-pi:
-	@docker buildx build --platform=linux/arm/v7 -f ${PWD}/docker/dockerfile.pi -t isaebots_pi_env_full . --load
+	@docker buildx build --platform=linux/arm64/v8 -f ${PWD}/docker/dockerfile.pi -t isaebots_pi_env_full . --load
 
 
 .PHONY: create-container

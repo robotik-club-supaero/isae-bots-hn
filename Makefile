@@ -125,6 +125,7 @@ create-container:
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
 			-u dockeruser \
+			--group-add dialout \
 			${IMAGE_NAME_PI} \
 			"${CMD}"; \
 			echo "Created pi container successfully"; \
@@ -170,6 +171,7 @@ clear-container:
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
 			-u dockeruser \
+			--group-add dialout \
 			${IMAGE_NAME_PI} \
 			"${CMD}"; \
 			echo "Replaced pi container successfully"; \

@@ -24,11 +24,23 @@ DOCKER_VOLUMES = \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
-#	--volume="/var/run/dbus/system_bus_socket":"/var/run/dbus/system_bus_socket"
+# --volume="/var/run/dbus":"/var/run/dbus"
+
+# -v "/etc/localtime:/etc/localtime:ro" \
+# -v "/etc/asound.conf:/etc/asound.conf" \
+# --device /dev/snd:/dev/snd
+
+
+#TODO que si sur la pi
+docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $4}' | cut -d/ -f1)
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
-	--env="WDIR=dev"
+	--env="WDIR=dev" \
+	--env PULSE_SERVER=tcp:172.17.0.1:34567
+
+# --env PULSE_SERVER=tcp:172.17.0.1:34567 fait marcher pulseaudio dans le docker sur la pi pour avoir du son en TCP
+# ref du tuto : https://github.com/mviereck/x11docker/wiki/Container-sound:-ALSA-or-Pulseaudio
 
 # .PHONY means that the Makefile command doesn't use any file as a source
 .PHONY: help
@@ -77,11 +89,11 @@ create-container:
 #	Check if container has been created, if not create it
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
-		docker run -it --net=host \
+		docker run -it --privileged --net=host \
 		--name ${CONTAINER_NAME} \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
-		-u 0 \
+		-u dockeruser \
 		${IMAGE_NAME}_base \
 		"${CMD}"; \
 		echo "Created container successfully"; \
@@ -109,11 +121,11 @@ clear-container:
 	else \
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
-		docker run -it --net=host \
+		docker run -it --privileged --net=host \
 		--name ${CONTAINER_NAME} \
 		${DOCKER_VOLUMES} \
 		${DOCKER_ENV_VAR} \
-		-u 0 \
+		-u dockeruser \
 		${IMAGE_NAME}_base \
 		"${CMD}"; \
 	fi

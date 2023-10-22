@@ -15,7 +15,7 @@ architecture = $(shell uname -m)
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
-IMAGE_NAME_PI = isaebots_pi_env_full
+IMAGE_NAME_PI = isaebots_pi_env_full:1.1
 CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash
@@ -35,18 +35,21 @@ DOCKER_VOLUMES = \
 DOCKER_VOLUMES_PI = \
 	--volume="${PWD}/dev":"/app/dev" \
 	--volume="/dev":"/dev" \
-	--volume="${PWD}/scripts":"/app/scripts"
+	--volume="${PWD}/scripts":"/app/scripts" \
+	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev"
 
-docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $4}' | cut -d/ -f1)
+# commande pour obtenir l'adresse du conteneur docker, le double dollar permet d'escape un dollar
+docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $$4}' | cut -d/ -f1)
 
 DOCKER_ENV_VAR_PI = \
+	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev" \
-	--env PULSE_SERVER=tcp:${docker_ip}:34567
+	--env="PULSE_SERVER=tcp:${docker_ip}:34567"
 
 # --env PULSE_SERVER=tcp:172.17.0.1:34567 fait marcher pulseaudio dans le docker sur la pi pour avoir du son en TCP
 # ref du tuto : https://github.com/mviereck/x11docker/wiki/Container-sound:-ALSA-or-Pulseaudio

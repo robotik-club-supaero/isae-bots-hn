@@ -32,13 +32,13 @@ from enum import Enum, IntEnum
 #################################################################
 
 NODE_NAME = "[ACT] "
-SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
+# SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #-- GAME CONSTANTS --
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.ini"))
 except:
 	print("no file found...")
 

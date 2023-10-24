@@ -30,12 +30,12 @@ from enum import IntEnum, Enum
 #################################################################
 
 NODE_NAME = "[DEC] "
-SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
+# SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #################################################################
 # CONFIG 
 READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),'../../robot_config.ini'))
+READER.read(os.path.join(os.path.dirname(__file__),'../../robot_config.cfg'))
 
 #################################################################
 # WINDOW
@@ -49,31 +49,25 @@ class ROBOT_SIDES(IntEnum):
 
 #################################################################
 
-ACTIONS_LIST = [
-    #TODO
-    'park',
-    'preempted',
-    'end',
-    'waiting'
-    ]
-
-LIST_OF_ACTIONS = {
-    #TODO
-    'park':                      [5],
-    'end':                       [6],
-    'waiting':                   [7],
-}
+class ACTIONS(IntEnum):
+    simpleAction = 0 #TODO
+    
+    park = 7
+    preempted = 8
+    end = 9
+    waiting = 10
+    
 
 COLOR = {
       0: 'HOME',
       1: 'AWAY'
 }
 
-ACTIONS_SCORE = {
-	'init_score':               5,
- 
+class ACTIONS_SCORE(IntEnum):
+    init_score =               0
+    parking =                  10
     #TODO
-}
+
 
 #################################################################
 #                                                               #
@@ -82,17 +76,17 @@ ACTIONS_SCORE = {
 #################################################################
 
 class Color():
-	BLACK = '\033[30m'
-	RED = '\033[31m'
-	GREEN = '\033[32m'
-	YELLOW = '\033[33m'
-	BLUE = '\033[34m'
-	MAGENTA = '\033[35m'
-	CYAN = '\033[36m'
-	WHITE = '\033[37m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
-	RESET = '\033[0m'
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
         
 def log_info(log):
     """

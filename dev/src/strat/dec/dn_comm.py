@@ -18,11 +18,10 @@
 #                                                               #
 #################################################################
 
-import os
 import time
 import rospy
 import threading
-from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR, LIST_OF_ACTIONS
+from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 

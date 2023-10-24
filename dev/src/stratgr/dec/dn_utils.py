@@ -30,12 +30,12 @@ from enum import IntEnum, Enum
 #################################################################
 
 NODE_NAME = "[DEC] "
-SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
+# SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #################################################################
 # CONFIG 
 READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),'../../../gr_config.ini'))
+READER.read(os.path.join(os.path.dirname(__file__),'../../robot_config.cfg'))
 
 #################################################################
 # WINDOW

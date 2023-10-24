@@ -63,7 +63,7 @@ class DecisionsNode:
         self.delay_park = 13  # TODO: change it to named constant
         self.go_park = False
 
-        self.strat = int(READER.get("STRAT", "strat_choice"))
+        self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = [match_strat, homologation, test_strat]
 
         self.actions_ls = ACTIONS_LIST

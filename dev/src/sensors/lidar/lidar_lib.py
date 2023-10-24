@@ -42,7 +42,7 @@ TABLE_W = 2000          # largeur de table (selon x)
 LOCAL_LIM = 100         # distance lim de regroupement/localisation
 
 READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),"../../../gr_config.ini"))
+READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
 ROBOT_LARG = int(READER.get("ROBOT", "robot_larg"))

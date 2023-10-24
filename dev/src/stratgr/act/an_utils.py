@@ -20,7 +20,7 @@
 #################################################################
 
 import rospy
-from an_const import SIMULATION, NODE_NAME, COLOR, ONE_PI
+from an_const import NODE_NAME, COLOR, ONE_PI
 
 #################################################################
 #                                                               #

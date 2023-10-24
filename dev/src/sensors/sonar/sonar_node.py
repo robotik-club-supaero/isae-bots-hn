@@ -36,7 +36,7 @@ from geometry_msgs.msg import Pose2D, Point
 
 _NODENAME_ = "[SON]"
 # _BOT_NAME_ = rospy.get_param("robot_name")
-_CFG_FILE_ = "gr_config.ini"
+_CFG_FILE_ = "robot_config.cfg"
 
 def log_info(msg):
     """
@@ -60,7 +60,7 @@ class SonarNode:
         
         # Get sonars from config file of the robot
         reader = configparser.ConfigParser()
-        reader.read(os.path.join(os.path.dirname(__file__),f"../../../{_CFG_FILE_}"))
+        reader.read(os.path.join(os.path.dirname(__file__),f"../../{_CFG_FILE_}"))
         
         self.nb_sonars = 0
         self.sonars_lst = []     #on enregistre chaque sonar (sa position et son cap) dans cette liste

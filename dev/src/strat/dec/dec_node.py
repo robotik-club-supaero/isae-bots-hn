@@ -25,7 +25,7 @@ import rospy
 import signal
 import time
 
-from dn_utils    import READER, ACTIONS_LIST, log_errs, log_fatal, log_info, log_warn, ACTIONS_SCORE
+from dn_utils    import READER, ACTIONS, ACTIONS_SCORE, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm
 from dn_strats   import init_strats, test_strat, homologation, match_strat
 
@@ -56,24 +56,22 @@ class DecisionsNode:
 
         self.match_started = False
         self.color = 0
-        self.score = ACTIONS_SCORE['init_score']
+        self.score = ACTIONS_SCORE.init_score.value
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))
         self.delay_park = 13  # TODO: change it to named constant
         self.go_park = False
 
-        self.strat = int(READER.get("STRAT", "strat_choice"))
+        self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = [match_strat, homologation, test_strat]
 
-        self.actions_ls = ACTIONS_LIST
-        self.actions_nb = len(self.actions_ls)
         self.park_action = False
         self.kill_action = False
-        self.curr_action = []
+        self.curr_action = ACTIONS.waiting  # of "type" ACTION
         self.nb_actions_done = [0]
 
-        self.position = [0,0,0]
+        self.position = [0,0,0]  # TODO utilser un objet Pos2D
 
 #################################################################
 #                                                               #

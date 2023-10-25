@@ -128,7 +128,7 @@
       parent = subframe3
       type = HPaned
     [[[terminal9]]]
-      command = clear; make main CMD="source dev/devel/setup.bash; roslaunch scripts/gr_desktop.launch; $SHELL"
+      command = clear; make main CMD="source dev/devel/setup.bash; roslaunch scripts/##LAUNCH_FILE##; $SHELL"
       order = 0
       title = Roscore
       parent = topscreen3

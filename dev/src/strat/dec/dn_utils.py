@@ -56,7 +56,7 @@ class ACTIONS(IntEnum):
     preempted = 8
     end = 9
     waiting = 10
-    
+        
 
 COLOR = {
       0: 'HOME',

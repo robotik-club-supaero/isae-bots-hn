@@ -41,7 +41,7 @@ def init_strats(dn):
 #################################################################
 
 def publishAction():
-    next_action_pub.publish(data=p_dn.curr_action.value)
+    next_action_pub.publish( [p_dn.curr_action.value] )
     
     
 def publishScore():

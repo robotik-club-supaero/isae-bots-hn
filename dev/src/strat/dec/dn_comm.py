@@ -21,7 +21,7 @@
 import time
 import rospy
 import threading
-from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
+from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR, ACTIONS
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
@@ -146,7 +146,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish(data=LIST_OF_ACTIONS['end'])
+    next_action_pub.publish( [ACTIONS.end.value] )
 
 #################################################################
 #                                                               #

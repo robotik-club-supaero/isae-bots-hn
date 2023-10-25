@@ -20,13 +20,16 @@
 #################################################################
 
 import rospy
-from an_const import NODE_NAME, COLOR, ONE_PI
+import math
+from an_const import NODE_NAME, COLOR
 
 #################################################################
 #                                                               #
 #                          CONSTANTS                            #
 #                                                               #
 #################################################################
+
+pi = math.pi
 
 def log_info(log):
     """
@@ -46,11 +49,18 @@ def log_errs(log):
     Print errors logs.
     """
     rospy.logerr(NODE_NAME + log)
+    
+def log_fatal(log):
+    """
+    Print fatal errors (programs cannot continue to run)
+    """
+    rospy.logfatal(NODE_NAME + log)
+    
 
-def patch_frame_br(x, y, theta, color):
+def patch_frame_br(x, y, theta, color): # TODO pas ouf comme nom
     if color == 0:
         return x, y, theta
-    return 2000-x, y, theta+ONE_PI # Si la symétrie est selon l'axe y.
+    return 2000-x, y, theta + pi # Si la symétrie est selon l'axe y.
     # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
 
 #################################################################

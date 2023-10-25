@@ -25,6 +25,8 @@ from ast import literal_eval
 import configparser
 from enum import Enum, IntEnum
 
+from an_utils import log_fatal, pi
+
 #################################################################
 #                                                               #
 #                          CONSTANTS                            #
@@ -38,9 +40,9 @@ NODE_NAME = "[ACT] "
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.ini"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 except:
-	print("no file found...")
+	log_fatal("Config file not found")
 
 #################################################################
 #                                                               #
@@ -52,7 +54,7 @@ except:
 PARKING_POS = list(literal_eval(READER.get('ROBOT', 'park_pos')))
 
 ## Origin Position 
-ORIGIN = list(literal_eval(READER.get('ROBOT','init_pos')))
+ORIGIN_POS = list(literal_eval(READER.get('ROBOT','init_pos')))
 
 MAX_X = 2000
 MAX_Y = 3000
@@ -64,11 +66,6 @@ ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2)
 DOORS_SHIFT = ROBOT_DIAG//2 + 30
 ARM_SHIFT = ROBOT_DIAG//2 + 30
 
-ONE_PI = np.pi
-TWO_PI = np.pi * 2
-HLF_PI = np.pi / 2
-QRT_PI = np.pi / 4
-SQRT_2 = np.sqrt(2)
 
 #################################################################
 #                                                               #
@@ -175,35 +172,35 @@ ACTIONS_SCORE = {
 }
 
 CHERRIES_POS = {
-	0: [985, 2850, ONE_PI],
-	1: [985, 150, ONE_PI],
+	0: [985, 2850, pi],
+	1: [985, 150, pi],
 	2: [15, 1500, 0],
-	3: [1985, 1500, ONE_PI]
+	3: [1985, 1500, pi]
 }
 
-DEPOSIT_CHERRIES_POS = [225, 3000, -HLF_PI]
+DEPOSIT_CHERRIES_POS = [225, 3000, -pi/2]
 
 CAKES_POS = {
-	0: [225, 575, ONE_PI],  # Rose 
+	0: [225, 575, pi],  # Rose 
 	1: [1775, 575, 0],
-	2: [225, 2425, ONE_PI],
+	2: [225, 2425, pi],
 	3: [1775, 2425, 0],
-	4: [225, 775, ONE_PI],  # Jaune
+	4: [225, 775, pi],  # Jaune
 	5: [1775, 775, 0], 
-	6: [225, 2225, ONE_PI],
+	6: [225, 2225, pi],
 	7: [1775, 2225, 0], 
-	8: [725, 1125, ONE_PI], # Marron
+	8: [725, 1125, pi], # Marron
 	9: [1275, 1125, 0],
-	10:[725, 1875, ONE_PI],
+	10:[725, 1875, pi],
 	11:[1275, 1875, 0],
-	12:[725, 1875, HLF_PI] # Le même que le 10 mais pour le dernier match on le prend par le bas
+	12:[725, 1875, pi/2] # Le même que le 10 mais pour le dernier match on le prend par le bas
 }
 
 DEPOSIT_POS = {
-	0: [725, 225, -HLF_PI],
-	1: [1775, 225, -HLF_PI],
-	2: [225, 1125, -HLF_PI], # Normalement ONE_PI mais dernier match donc osef
+	0: [725, 225, -pi/2],
+	1: [1775, 225, -pi/2],
+	2: [225, 1125, -pi/2], # Normalement pi mais dernier match donc osef
 	3: [1775, 1875, 0],
-	4: [225, 2750, HLF_PI],
-	5: [350, 1200, ONE_PI]
+	4: [225, 2750, pi/2],
+	5: [350, 1200, pi]
 }

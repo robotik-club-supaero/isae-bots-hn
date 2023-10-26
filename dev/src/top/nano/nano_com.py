@@ -70,7 +70,7 @@ def main():
     # begin = time.perf_counter()
 
     # set value of timeout to None so that we wait until a value comes
-    arduino.ser.timeoutt = None
+    arduino.ser.timeout = None
 
     # wait forever for a button change
     # TODO use a thread for this

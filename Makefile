@@ -36,7 +36,6 @@ DOCKER_VOLUMES_PI = \
 	--volume="${PWD}/dev":"/app/dev" \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
-	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 
 
 DOCKER_ENV_VAR = \
@@ -44,6 +43,7 @@ DOCKER_ENV_VAR = \
 	--env="WDIR=dev"
 
 # commande pour obtenir l'adresse du conteneur docker, le double dollar permet d'escape un dollar
+# utilisée pour donner l'accès au son dans le docker
 docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $$4}' | cut -d/ -f1)
 
 DOCKER_ENV_VAR_PI = \

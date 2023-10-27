@@ -140,9 +140,9 @@
       parent = topscreen3
       type = Terminal
     [[[terminal11]]]
-      command = clear && sleep 3 && make term CMD="rostopic echo /game/score" 
+      command = clear && make term CMD="cd dev/; rosrun smach_viewer smach_viewer.py"
       order = 0
-      title = SCORE
+      title = Smach Viewer
       parent = botscreen3
       type = Terminal
     [[[terminal12]]]

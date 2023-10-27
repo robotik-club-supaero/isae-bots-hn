@@ -42,10 +42,10 @@ RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio docker
 #ENV LIBGL_ALWAYS_INDIRECT=1
 
 # Install PyQt
-RUN apt-get install -y python3-pyqt5
+# RUN apt-get install -y python3-pyqt5
 
 # Install pyqtgraph
-RUN pip install pyqtgraph==0.10.0
+# RUN pip install pyqtgraph==0.10.0
 
 #ENV QT_QUICK_BACKEND=software
 

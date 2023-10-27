@@ -38,7 +38,7 @@ NODE_NAME = "[ACT] "
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.ini"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 except:
 	print("no file found...")
 

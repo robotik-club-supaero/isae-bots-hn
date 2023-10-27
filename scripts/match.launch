@@ -56,9 +56,9 @@ roslaunch main.launch method:='sim'
 	<node name="ActionNode" pkg="stratgr"  type="act_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- isb -->
-	<node name="IsbNode" pkg="isb"  type="isb_node.py" output="screen" cwd="node" required="true"/>
+	<node name="IsbNode" pkg="top"  type="isb_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- points -->
-	<node name="PointsNode" pkg="lcd"  type="points_node.py" output="screen" cwd="node" required="true"/>
+	<node name="LCDNode" pkg="top"  type="lcd_node.py" output="screen" cwd="node" required="true"/>
 	
 </launch>

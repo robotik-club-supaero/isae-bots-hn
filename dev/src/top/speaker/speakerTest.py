@@ -48,9 +48,9 @@ def start_audio(media_player, source):
 
 def main():
 
-    dummy_media = vlc.MediaPlayer()
-    dummy_media.audio_set_volume(0)
-    start_audio(dummy_media, "Darude - Sandstorm.mp3")
+    #dummy_media = vlc.MediaPlayer()
+    #dummy_media.audio_set_volume(0)
+    #start_audio(dummy_media, "Darude - Sandstorm.mp3")
 
 
     # time.sleep(10)
@@ -58,19 +58,19 @@ def main():
     media_player = vlc.MediaPlayer()
 
     print(media_player.audio_get_volume())
-    media_player.audio_set_volume(40)
+    media_player.audio_set_volume(100)
     print(f"Media : {media_player.get_media()}")
     if media_player.get_media() is None:
         print("No media has been loaded yet")
     
     # NOTE : this way the plays are buffered
-    start_audio(media_player, "cmoi.mp3")
+    start_audio(media_player, "windowsXPStartup.mp3") #TODO catch cette erreur
     print(f"Media : {media_player.get_media()}")
-    time.sleep(2)
+    time.sleep(4000)
 
     print(media_player.audio_get_volume())
-    media_player.audio_set_volume(80)
-
+    #media_player.audio_set_volume(120)
+    time.sleep(0.5)
 
     start_audio(media_player, "Oh merde oh cest con ça.mp3")
     time.sleep(4)

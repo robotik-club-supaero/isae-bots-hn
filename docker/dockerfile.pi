@@ -105,17 +105,35 @@ RUN python3 -m pip install ./cwiid-3.0.0.tar.xz
 # install bluetooth
 RUN apt-get install -y bluez bluetooth
 
-# Install smbus for isb
+# Install pyserial to communicate with the nano board via USB (without ROS)
+RUN pip install pyserial
+
+# Install smbus for isb and lcd
 RUN pip3 install smbus
 
 # Install dependency of lidar driver node (hokuyo or sick)
 RUN apt-get install -y ros-noetic-diagnostics
+
+# Install lib Adafruit-SSD1306 for oled screen
+RUN pip3 install Adafruit-SSD1306==1.6.2
+
+# Install alsa-utils for sound, pciutils to have the debug command lspci
+RUN apt install alsa-utils pciutils -y
+
+# Install vlc and python lib vlc for speaker
+# NOTE besoin d'être dockeruser pour pouvoir lancer pulseaudio et vlc (ne peut pas se lancer en root)
+RUN apt install vlc -y
+RUN pip3 install python-vlc
+
 
 # Add udev file
 COPY ./install/10-usb-serial.rules /etc/udev/rules.d/10-usb-serial.rules
 
 # Add service file
 COPY ./service/match.service /etc/systemd/system/match.service
+
+# TOTEST besoin d'ajouter l'utilisateur pi à dialout ?
+# RUN adduser pi dialout
 
 
 # Setup the work directory and entrypoint

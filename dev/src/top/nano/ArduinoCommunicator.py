@@ -1,0 +1,201 @@
+# -*- coding: utf-8 -*-
+
+import serial
+import time
+
+from nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
+
+
+class ArduinoCommunicator:
+    
+    ledButtonState = -1  # not initialized
+    
+    def __init__(self, port='/dev/ttyUSB0', baudrate=9600):
+        self.ser = serial.Serial(port, baudrate)
+        
+        # read and write timeouts are None by default (but set for good measure)
+        self.ser.timeout = None
+        self.ser.write_timeout = None
+
+
+    def send_command(self, nanoCommand, color=None, verbose=False):
+        """
+        Takes a NanoCommand object
+        """
+        
+        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING]:
+            if color is None:
+                print("ERROR : give a color input")
+                return NanoCallback.CLB_KO
+            bytesToSend = bytearray([nanoCommand.value] + color + [TERMINAL_CHARACTER])
+            
+        else:
+            bytesToSend = bytearray([nanoCommand.value, TERMINAL_CHARACTER])
+            
+        self.ser.write(bytesToSend)
+        # print("Sent raw command ", bytesToSend.decode())
+        if verbose: print("Sent nano command " + nanoCommand.name)
+
+
+    def receive_response(self, verbose=False):
+        """
+        Returns a NanoCallback object or None for an event
+        """
+        byte_received = self.ser.read(size=1)
+        res = int.from_bytes(byte_received, byteorder='little', signed=False)
+        
+        # check if data is an event and not a callback
+        if res in [e.value for e in NanoEvent]:
+            nanoEvent = NanoEvent(res)
+            
+            # change button state (#NOTE for now the only event)
+            if nanoEvent == NanoEvent.EVENT_BUTTON_ON:
+                self.ledButtonState = 1
+            elif nanoEvent == NanoEvent.EVENT_BUTTON_OFF:
+                self.ledButtonState = 0
+            else:
+                print("ERROR : unknown event type")
+                
+            print("Received button press event to new state ", self.ledButtonState)
+                
+            return self.receive_response()  #NOTE recursive so that we read until we find a callback or nothing
+            #BUG possible de stack overflow si on a trop d'events
+            #TODO ne pas faire en récursif
+            
+        # else it is a callback, we return the callback
+        nanoCallback = NanoCallback(res)
+        
+        if verbose: print("Received nano callback " + nanoCallback.name)
+        return nanoCallback
+    
+    
+    def establish_communication(self):
+        
+        print("Waiting for communication to be established ...")
+            
+        # set read timeout to a value for non blocking reads
+        self.ser.timeout = 0.1
+
+        while True: # wait for communication to be established
+            
+            self.send_command(NanoCommand.CMD_INIT)
+            
+            nanoCallback = self.receive_response()  # times out after 1 second
+            
+            if nanoCallback is None: continue  # an event is not handled at this point
+            
+            if nanoCallback == NanoCallback.CLB_INIT_OK:
+                print("Connection established")
+                return
+            
+            time.sleep(0.01)
+            
+            
+    def read_button_state(self):
+        """
+        Returns the current button state or None if cannot read it
+        """
+        
+        self.send_command(NanoCommand.CMD_READ_BUTTON)
+        nanoCallback = self.receive_response()
+        
+        print("callback : ", nanoCallback)
+        
+        if nanoCallback is None:
+            return None
+        
+        if nanoCallback.value == NanoCallback.CLB_BUTTON_ON:
+            return 0
+        elif nanoCallback.value == NanoCallback.CLB_BUTTON_OFF:
+            return 1
+        else:
+            print("ERROR : wrong button event callback")
+            return None
+                
+        
+        
+    def inputSendCommand(self):
+        """
+        Test
+        """
+        intCommand = int( input('Enter int command : ') )
+        nanoCommand = NanoCommand(intCommand)
+        
+        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING]:
+            R = int( input('Red : ') )
+            G = int( input('Green : ') )
+            B = int( input('Blue : ') )
+            
+            self.send_command(nanoCommand, color=[R, G, B])
+        
+        else:
+            self.send_command(nanoCommand)
+            
+        nanoCallback = self.receive_response()
+        
+
+
+    def run(self):
+        
+        c = 0
+        
+        while True:
+            
+            # if c == 100:
+            #     button_state = self.read_button_state()
+            #     if button_state is not None:
+            #         print("Successfully read button state to ", button_state)
+            #     c = 0
+                
+            # c += 1
+            nanoCallback = self.receive_response()
+            print(nanoCallback)
+            time.sleep(.01)
+            
+
+            
+def main():
+
+    # Example Usage
+    arduino = ArduinoCommunicator()
+    arduino.establish_communication()
+
+    # read the button once at the start
+    # arduino.read_button_state()
+
+
+    # begin = time.perf_counter()
+
+    # set value of timeout to None so that we wait until a value comes
+    arduino.ser.timeout = None
+
+    # wait forever for a button change
+    # TODO use a thread for this
+    # while True:
+    #     # print("waiting for new response")
+    #     res = arduino.receive_response()
+    #     print(f'New LED button State: {res}')
+    #     arduino.ledButtonState = res
+        
+    #     if arduino.ledButtonState == 0:
+    #         c
+    #     else:
+    #         arduino.send_command("colbx")
+    #     res = arduino.receive_response()
+    #     print('res : ', res)
+    #     if res == 'o':
+    #         print("Changed color")
+            
+    #     time.sleep(1)
+    
+    arduino.run()
+    
+    # while True:
+    #     arduino.inputSendCommand()
+
+        
+        
+        
+        
+if __name__ == '__main__':
+    main()

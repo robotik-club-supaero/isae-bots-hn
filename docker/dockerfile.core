@@ -40,7 +40,11 @@ RUN apt-get install -y ros-noetic-rosserial
 # Installations HN
 RUN rosdep fix-permissions
 RUN rosdep update
-RUN apt-get install -y ros-noetic-smach ros-noetic-smach-viewer
+RUN apt-get install -y ros-noetic-smach-ros ros-noetic-smach-viewer
+
+# Fix pour faire fonctionner smach_viewer dans ros noetic
+# source : https://github.com/ros-visualization/executive_smach_visualization/issues/34 (en bas)
+RUN sed -i 's/python_qt_binding.QtWidgets/PyQt5.QtWidgets/g' /opt/ros/noetic/lib/python3/dist-packages/smach_viewer/xdot/xdot_qt.py
 
 # Setup ROS environment
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc

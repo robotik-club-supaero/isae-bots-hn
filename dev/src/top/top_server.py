@@ -18,39 +18,58 @@ import time
 from nano.ArduinoCommunicator import ArduinoCommunicator
 from speaker.Speaker import Speaker
 
+import socket
+
+TOPSERVER_PORT = 5678
 
 class TopServer():
     
-    nano = None  # nano board
+    nanoCom = None  # nano board
+    
+    server = None  # TCP server
     
     def __init__(self) -> None:
         
-        self.nano = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
+        self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
     
         self.speaker = Speaker()
     
-        self.thread1 = threading.Thread(target=self.watchButton, args=(1,))
+        self.watchButtonThread = threading.Thread(target=self.watchButton, args=(1,))
+        
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        # listen on port
+        self.server.bind( ("0.0.0.0", TOPSERVER_PORT) )
+        maxclients = 10
+        self.server.listen(maxclients)
     
     
     def watchButton(self, arg):
         
-        res = self.nano.receive_response()
+        res = self.nanoCom.receive_response()
         
         while True:
-            res = self.nano.receive_response()
+            res = self.nanoCom.receive_response()
             print("res from thread : ", res)
             
             self.speaker.play_sound("startup1.mp3")
-
+            
     
     
     def run(self):
         
-        self.thread1.start()
+        self.watchButtonThread.start()
         
         # while True:
-        #     self.nano.inputSendCommand()
+        #     self.nanoCom.inputSendCommand()
         
+        
+        
+    def closeServer(self):
+        
+        self.server.close()
+        
+        #TODO gros signal d'erreur (lumière rouge ou jsp) si le topServer n'est pas actif (pas d'ISB)
         
 
 def main():
@@ -58,6 +77,7 @@ def main():
     topserver = TopServer()
     
     topserver.run()
+
 
 if __name__ == '__main__':
     main()

@@ -15,7 +15,13 @@
 import time
 import vlc
 
+
+SOUNDS_PATH = 'speaker/sounds/'
+
 class Speaker():
+    
+    media_player = None
+    isMute = None
     
     def __init__(self) -> None:
         
@@ -23,8 +29,11 @@ class Speaker():
         
         self.media_player.audio_set_volume(100)
         
+        self.isMute = False  #NOTE by default
+        
     
-    def start_audio(self, source):
+    
+    def __startAudio(self, source):
         
         # media resource locator
         mrl = source
@@ -38,11 +47,25 @@ class Speaker():
         
         
         
-    def play_sound(self, sound):
+    def playSound(self, sound):
         
-        # TODO check the sound file exists
+        #TODO check if the sound file exists
+        
         
         print("Start sound")
-        self.start_audio('speaker/sounds/'+sound)
+        self.__startAudio(SOUNDS_PATH + sound)
         time.sleep(5)
         print("End sound")
+        
+        
+    def setMute(self, isMute):
+        
+        # if no change
+        if isMute == self.isMute:
+            return
+                
+        
+        self.isMute = isMute
+            
+        #TODO mute or unmute
+        

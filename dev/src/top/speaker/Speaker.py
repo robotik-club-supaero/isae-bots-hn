@@ -11,17 +11,20 @@
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
 
-
+import os
 import time
 import vlc
 
 
-SOUNDS_PATH = 'speaker/sounds/'
+SOUNDS_PATH = os.path.join(os.path.dirname(__file__),'sounds/')
 
 class Speaker():
     
     media_player = None
-    isMute = None
+    
+    volume = 100  # by default
+    isMute = False  #NOTE by default
+
     
     def __init__(self) -> None:
         
@@ -29,7 +32,6 @@ class Speaker():
         
         self.media_player.audio_set_volume(100)
         
-        self.isMute = False  #NOTE by default
         
     
     
@@ -41,6 +43,9 @@ class Speaker():
         # setting mrl to the media player
         self.media_player.set_mrl(mrl)
         
+        # set volume (in case it has been changed)
+        self.media_player.audio_set_volume(self.volume)
+        
         # start playing video
         self.media_player.play()
         
@@ -49,14 +54,27 @@ class Speaker():
         
     def playSound(self, sound):
         
-        #TODO check if the sound file exists
+        # check if the sound file exists
+        if not os.path.isfile(SOUNDS_PATH + sound):
+            print(f"ERROR : sound file {sound} does not exist")
+            return
+                
+        #BUG possible si deux sons sont joués quasi en même temps
+        # On peut temporiser plus haut dans le topServer
+        # -> mettre un sleep de 0.01 entre les sons pour éviter les erreurs vlc (sécurité)
+        # uniquement dans le thread des sons
         
-        
-        print("Start sound")
+        print(f"Playing sound {sound}")
         self.__startAudio(SOUNDS_PATH + sound)
-        time.sleep(5)
-        print("End sound")
         
+        time.sleep(0.01)  # safety
+        
+        
+    def setVolume(self, volume):
+        print(f"Sett sound volume to {volume}")
+        self.volume = volume
+        
+                
         
     def setMute(self, isMute):
         

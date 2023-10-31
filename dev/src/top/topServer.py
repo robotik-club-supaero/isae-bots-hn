@@ -14,13 +14,20 @@
 
 import threading
 import time
-
-from nano.ArduinoCommunicator import ArduinoCommunicator
-from speaker.Speaker import Speaker
-
 import socket
 
-TOPSERVER_PORT = 5678
+#### Nano ####
+# from nano.ArduinoCommunicator import ArduinoCommunicator
+
+#### Speaker ####
+from speaker.Speaker import Speaker
+
+#### ISB ####
+# from isb.isb_lib import initPin, readPin, writePin
+# from isb.isb_const import *
+
+from top_const import *
+
 
 class TopServer():
     
@@ -30,7 +37,7 @@ class TopServer():
     
     def __init__(self) -> None:
         
-        self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
+        # self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
     
         self.speaker = Speaker()
     
@@ -42,6 +49,9 @@ class TopServer():
         self.server.bind( ("0.0.0.0", TOPSERVER_PORT) )
         maxclients = 10
         self.server.listen(maxclients)
+        
+        #TODO vérifier les branchements des éléments top et des autres périphériques de la rpi
+        # signaler s'il y a un pb
     
     
     def watchButton(self, arg):
@@ -58,6 +68,8 @@ class TopServer():
     
     def run(self):
         
+        #TODO gros signal d'erreur si le topServer n'est pas actif (on n'aurait pas d'ISB)
+        
         self.watchButtonThread.start()
         
         # while True:
@@ -69,14 +81,23 @@ class TopServer():
         
         self.server.close()
         
-        #TODO gros signal d'erreur (lumière rouge ou jsp) si le topServer n'est pas actif (pas d'ISB)
         
 
 def main():
     
     topserver = TopServer()
     
-    topserver.run()
+    # topserver.speaker.setVolume(120)
+        
+    topserver.speaker.playSound('bip.mp3')
+    
+    # time.sleep(5)
+    
+    topserver.speaker.playSound('startup1.mp3')
+    
+    time.sleep(50)
+    
+    # topserver.run()
 
 
 if __name__ == '__main__':

@@ -24,8 +24,8 @@ import numpy as np
 from ast import literal_eval
 import configparser
 from enum import Enum, IntEnum
-
-from an_utils import log_fatal, pi
+from math import pi
+import rospy
 
 #################################################################
 #                                                               #
@@ -36,13 +36,13 @@ from an_utils import log_fatal, pi
 NODE_NAME = "[ACT] "
 # SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
-#-- GAME CONSTANTS --
+## Config reader
 
 READER = configparser.ConfigParser()
 try :
 	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 except:
-	log_fatal("Config file not found")
+	rospy.log_fatal(NODE_NAME + "Config file not found")
 
 #################################################################
 #                                                               #

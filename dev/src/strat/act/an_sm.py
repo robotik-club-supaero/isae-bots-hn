@@ -27,14 +27,14 @@ from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
 from an_sm_states.sm_park import Park
-from an_sm_states.sm_waiting import Waiting
-from an_sm_states.sm_cherries_take_perpendicular import TakeCherriesPerpendicular
-from an_sm_states.sm_cherries_take_wall import TakeCherriesWall
-from an_sm_states.sm_cherries_deposit import DepositCherries
-from an_sm_states.sm_cakes_take import TakeCakes
-from an_sm_states.sm_cakes_deposit import DepositCakes
-from an_sm_states.sm_cherries_deposit_near import DepositCherriesNear
-from an_sm_states.sm_push_cakes import PushCakes
+# from an_sm_states.sm_waiting import Waiting
+# from an_sm_states.sm_cherries_take_perpendicular import TakeCherriesPerpendicular
+# from an_sm_states.sm_cherries_take_wall import TakeCherriesWall
+# from an_sm_states.sm_cherries_deposit import DepositCherries
+# from an_sm_states.sm_cakes_take import TakeCakes
+# from an_sm_states.sm_cakes_deposit import DepositCakes
+# from an_sm_states.sm_cherries_deposit_near import DepositCherriesNear
+# from an_sm_states.sm_push_cakes import PushCakes
 
 from an_const import *
 from an_utils import *

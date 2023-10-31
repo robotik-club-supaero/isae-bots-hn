@@ -20,7 +20,7 @@
 #################################################################
 
 import rospy
-import math
+from math import pi
 from an_const import NODE_NAME, COLOR
 
 #################################################################
@@ -28,8 +28,6 @@ from an_const import NODE_NAME, COLOR
 #                          CONSTANTS                            #
 #                                                               #
 #################################################################
-
-pi = math.pi
 
 def log_info(log):
     """

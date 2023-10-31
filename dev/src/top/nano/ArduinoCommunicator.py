@@ -3,7 +3,7 @@
 import serial
 import time
 
-from nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
+from .nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
 
 
 class ArduinoCommunicator:

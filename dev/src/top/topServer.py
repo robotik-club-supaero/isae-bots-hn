@@ -64,6 +64,24 @@ class TopServer():
             
             self.speaker.play_sound("startup1.mp3")
             
+            
+    def receiveCommand(self):
+        
+        res = self.server.recv(1024)
+        
+        #TODO split command into different cases
+            
+            
+    def soundCommand(self, command):
+        '''Command received from the socket'''
+        
+        # play sound command
+        
+        # set volume command
+        
+        # set mute command
+        
+        return
     
     
     def run(self):
@@ -87,13 +105,23 @@ def main():
     
     topserver = TopServer()
     
+    time.sleep(0.5)
+    
     # topserver.speaker.setVolume(120)
         
-    topserver.speaker.playSound('bip.mp3')
+    topserver.speaker.playSound('windowsStartup')
     
-    # time.sleep(5)
+    time.sleep(1)
     
-    topserver.speaker.playSound('startup1.mp3')
+    topserver.speaker.setMute(True)
+    
+    time.sleep(1)
+    
+    topserver.speaker.setMute(False)
+    
+    time.sleep(3)
+    
+    topserver.speaker.playSound('startup')
     
     time.sleep(50)
     

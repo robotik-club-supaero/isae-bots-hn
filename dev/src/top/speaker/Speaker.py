@@ -15,6 +15,8 @@ import os
 import time
 import vlc
 
+from .speaker_const import soundDict
+
 
 SOUNDS_PATH = os.path.join(os.path.dirname(__file__),'sounds/')
 
@@ -54,9 +56,11 @@ class Speaker():
         
     def playSound(self, sound):
         
+        soundFile = soundDict[sound]
+        
         # check if the sound file exists
-        if not os.path.isfile(SOUNDS_PATH + sound):
-            print(f"ERROR : sound file {sound} does not exist")
+        if not os.path.isfile(SOUNDS_PATH + soundFile):
+            print(f"ERROR : sound file {soundFile} does not exist")
             return
                 
         #BUG possible si deux sons sont joués quasi en même temps
@@ -64,14 +68,14 @@ class Speaker():
         # -> mettre un sleep de 0.01 entre les sons pour éviter les erreurs vlc (sécurité)
         # uniquement dans le thread des sons
         
-        print(f"Playing sound {sound}")
-        self.__startAudio(SOUNDS_PATH + sound)
+        print(f"Playing sound {soundFile}")
+        self.__startAudio(SOUNDS_PATH + soundFile)
         
         time.sleep(0.01)  # safety
         
         
     def setVolume(self, volume):
-        print(f"Sett sound volume to {volume}")
+        print(f"Set sound volume to {volume}")
         self.volume = volume
         
                 
@@ -84,6 +88,16 @@ class Speaker():
                 
         
         self.isMute = isMute
+        
+        #TOTEST choisir le type de mute qui marche le mieux sur la pi
+        # sur le PC les deux font la même chose
+        if isMute:
+            # self.media_player.audio_set_volume(0)
+            self.media_player.audio_set_mute(True)
+        else:
+            # self.media_player.audio_set_volume(self.volume)
+            self.media_player.audio_set_mute(False)
             
         #TODO mute or unmute
         
+        # self.media_player.audio_set_mute()

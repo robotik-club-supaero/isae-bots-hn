@@ -23,60 +23,49 @@ def callback_stop(msg):
         sm.userdata.stop = True
 
 ########## ETATS ##########
-class flag(smach.State):
+
+class deplacement(smach.State):
+    
+    def __init__(self):
+        smach.State.__init__(  self,
+                            outcomes=['fail','success','preempted'],
+                            input_keys=[],
+                            output_keys=[])
+    
+    def execute(self, userdata):
+        
+        print("Entering deplacement")
+        time.sleep(2)
+        print("Exiting deplacement")
+        
+        return 'success'
+        
+
+class OpenDoors(smach.State):
+    
     def __init__(self):
         smach.State.__init__(	self,
-                                outcomes=['done', 'stop'],
-                                input_keys=['stop'],
-                                output_keys=['stop'])
-        
-    def execute(self, userdata):
-
-        #################  # Action : attendre et lever le flag, sortir si besoin
-        begin = time.time()
-        while time.time()-begin < WAIT_TIME:
-
-            if userdata.stop:
-                return 'stop'
-
-            time.sleep(0.01)
-        
-        #Lever le bras
-        flag_pub.publish(data=1)
-
-        #################
-        return 'done'	# sortie de la sm
-
-
-
-
-
-class OpenGrab(smach.State):
-    
-    def __init__(self, grab_width):
-        smach.State.__init__(	self,
-                                outcomes=['success', 'abort', 'preempted'],
-                                input_keys=['stop', grab_width],
-                                output_keys=['stop'])
-        self.grab_width = grab_width
+                                outcomes=['fail','success','preempted'],
+                                input_keys=[],
+                                output_keys=[])
                 
         
     def execute(self, userdata):
         
-        print("Entering OpenGrab with grab width ", self.grab_width)
+        print("Entering OpenGrab")
         time.sleep(2)
         print("Exiting OpenGrab")
         
-        return
+        return 'success'
     
     
-class CloseGrab(smach.State):
+class CloseDoors(smach.State):
     
     def __init__(self):
         smach.State.__init__(	self,
-                                outcomes=['success', 'abort', 'preempted'],
-                                input_keys=['stop'],
-                                output_keys=['stop'])
+                                outcomes=['fail','success','preempted'],
+                                input_keys=[],
+                                output_keys=[])
         
     def execute(self, userdata):
         
@@ -84,40 +73,7 @@ class CloseGrab(smach.State):
         time.sleep(2)
         print("Exiting CloseGrab")
                 
-        return
-    
-    
-    
-    
-class Foo(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['outcome1','outcome2'])
-        self.counter = 0
-
-    def execute(self, userdata):
-        rospy.loginfo('Executing state FOO')
-        
-        time.sleep(8)
-        
-        if self.counter < 3:
-            self.counter += 1
-            return 'outcome1'
-        else:
-            return 'outcome2'
-
-
-# define state Bar
-class Bar(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['outcome1'])
-
-    def execute(self, userdata):
-        rospy.loginfo('Executing state BAR')
-        
-        time.sleep(10)
-        
-        return 'outcome1'
-
+        return 'success'
 
 ########## MAIN ##########
 def main():
@@ -139,48 +95,44 @@ def main():
 
     # Remplissage de la MAE
 
+    pickupplant = smach.StateMachine(outcomes=['fail','success','preempted'])
     with sm:
-        smach.StateMachine.add('FLAG', flag(),
-                                transitions={'done':'FLAG','stop':'exit all'})
+        smach.StateMachine.add('PICKUPPLANT', pickupplant,
+                                transitions={'success':'exit all','fail':'exit all','preempted':'exit preempted'})
   
   
-    grab_sequence = smach.Sequence(  # sequence container
+    pick_up_plant_sequence = smach.Sequence(  # sequence container
         input_keys = [],
         output_keys = [],
-        outcomes = ['success', 'abort', 'preempted'],
+        outcomes = ['success', 'fail', 'preempted'],
         connector_outcome = 'success')
     
     grab_width = 2
     
-    with grab_sequence:  # add states to the sequence #TODO define elsewhere
-        smach.Sequence.add('OPEN_GRAB', OpenGrab(grab_width))
-        smach.Sequence.add('CLOSE_GRAB', CloseGrab())
+    with pick_up_plant_sequence:  # add states to the sequence #TODO define elsewhere
+        smach.Sequence.add('OPEN_DOORS', OpenDoors())
+        smach.Sequence.add('CLOSE_DOORS', CloseDoors())
 
-
-    # add the sequence container to the sm
-    with sm:
-        smach.StateMachine.add('GRAB_SEQ', grab_sequence, 
-                               transitions = {'success':'GRAB_SEQ', 'abort':'exit all', 'preempted':'exit preempted'}
-                               )
-        
-        
-    grab_concurrence = smach.Concurrence(outcomes=['success', 'abort', 'preempted'],
-                                default_outcome='abort',
-                                outcome_map={'success': { 'FOO':'outcome2','BAR':'outcome1'},
-                                             'abort': { 'FOO':'outcome2'},
-                                             'preempted' : {'BAR':'outcome1'}})
+    pick_up_plant_concurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
+                                default_outcome='fail',
+                                outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPLACEMENT':'success'},
+                                             'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},
+                                             'preempted' : {'DEPLACEMENT' : 'preempted'}})
     
     # Open the container
-    with grab_concurrence:
+    with pick_up_plant_concurrence:
         # Add states to the container
-        smach.Concurrence.add('FOO', Foo())
-        smach.Concurrence.add('BAR', Bar())
+        smach.Concurrence.add('PICKUP_PLANT_SEQ', pick_up_plant_sequence)
+        smach.Concurrence.add('DEPLACEMENT', deplacement())
     
     
-    with sm:
-        smach.StateMachine.add('GRAB_CONC', grab_concurrence, 
-                               transitions = {'success':'GRAB_SEQ', 'abort':'exit all', 'preempted':'exit preempted'}
+    with pickupplant:
+        smach.StateMachine.add('DEPLACEMENT_2', deplacement(),
+                               transitions = {'success':'PICKUP_PLANTS_CONC','fail':'fail','preempted':'preempted'})
+        smach.StateMachine.add('PICKUP_PLANTS_CONC', pick_up_plant_concurrence, 
+                               transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}
                                )
+   
 
     #################
 

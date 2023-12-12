@@ -18,9 +18,13 @@ WAIT_TIME = 5
 
 ########## FONCTIONS DES SUBSCRIBERS ##########
 
-def callback_stop(msg):
+# def callback_stop(msg):
+#     if msg.data == 1:
+#         sm.userdata.stop = True
+
+def callback_depl(msg):
     if msg.data == 1:
-        sm.userdata.stop = True
+        sm.userdata.depl_done[0] = True
 
 ########## ETATS ##########
 
@@ -29,13 +33,17 @@ class deplacement(smach.State):
     def __init__(self):
         smach.State.__init__(  self,
                             outcomes=['fail','success','preempted'],
-                            input_keys=[],
-                            output_keys=[])
+                            input_keys=['depl_done'],
+                            output_keys=['depl_done'])
     
     def execute(self, userdata):
         
         print("Entering deplacement")
-        time.sleep(2)
+
+        userdata.depl_done[0] = False
+        while not userdata.depl_done[0]:
+            time.sleep(0.01)
+
         print("Exiting deplacement")
         
         return 'success'
@@ -83,27 +91,33 @@ def main():
     global sm 	# la machine a etat (state machine)
     sm = smach.StateMachine(outcomes=['exit all', 'exit preempted'])  # exit all -> sortie de la mae
 
-    sm.userdata.stop = False
+    # sm.userdata.stop = False
+    sm.userdata.depl_done = [False]
 
     #################
     # Publishers & Subscribers
     global flag_pub
     flag_pub = rospy.Publisher('/flag_alert', Int16, queue_size = 10, latch= True)
 
-    global flag_sub
-    flag_sub = rospy.Subscriber('/flag_stop', Int16, callback_stop)
+    # global flag_sub
+    # flag_sub = rospy.Subscriber('/flag_stop', Int16, callback_stop)
+
+    depl_sub = rospy.Subscriber('/sm/depl', Int16, callback_depl)
+    
 
     # Remplissage de la MAE
 
-    pickupplant = smach.StateMachine(outcomes=['fail','success','preempted'])
+    pickupplant = smach.StateMachine(outcomes=['fail','success','preempted'],
+                                     input_keys=['depl_done'],
+                                     output_keys=['depl_done'])
     with sm:
         smach.StateMachine.add('PICKUPPLANT', pickupplant,
                                 transitions={'success':'exit all','fail':'exit all','preempted':'exit preempted'})
   
   
     pick_up_plant_sequence = smach.Sequence(  # sequence container
-        input_keys = [],
-        output_keys = [],
+        input_keys = ['depl_done'],
+        output_keys = ['depl_done'],
         outcomes = ['success', 'fail', 'preempted'],
         connector_outcome = 'success')
     
@@ -114,6 +128,8 @@ def main():
         smach.Sequence.add('CLOSE_DOORS', CloseDoors())
 
     pick_up_plant_concurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
+                                input_keys=['depl_done'],
+                                output_keys=['depl_done'],
                                 default_outcome='fail',
                                 outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPLACEMENT':'success'},
                                              'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},

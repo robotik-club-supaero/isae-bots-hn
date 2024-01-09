@@ -24,7 +24,10 @@ class DoorCallback(enum):
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2
-
+    
+class DoorOrder(enum):
+    OPEN = 0
+    CLOSE = 1
 
 class DspCallback(enum):
     UNKNOWN = -2
@@ -94,7 +97,7 @@ class OpenDoors(smach.State):
             time.sleep(0.01)
             
         # timeout
-        log_info("Timeout")
+        log_warn("Timeout")
         
         return 'fail'
     
@@ -110,7 +113,10 @@ class CloseDoors(smach.State):
     def execute(self, userdata):
         
         userdata.cb_doors[0] = DoorCallback.PENDING
-        
+
+        # publish close doors order
+        doors_pub.publish(DoorOrder.CLOSE)
+                
         begin = time.perf_counter()
         while time.perf_counter() - begin < WAIT_TIME:
             
@@ -143,9 +149,10 @@ def main():
 
     # global flag_sub
     # flag_sub = rospy.Subscriber('/flag_stop', Int16, callback_stop)
-
+    global doors_pub
+    doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
     doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
-    
+        
     depl_sub = rospy.Subscriber('/dsp/callback', Int16, callback_dsp)
 
     # Remplissage de la MAE

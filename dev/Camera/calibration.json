@@ -1,0 +1,6 @@
+{
+    "cols": 9,
+    "rows": 6,
+    "square_size": 27.86,
+    "images": "calibration_images/*.jpg"
+}

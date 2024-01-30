@@ -20,7 +20,8 @@ from geometry_msgs.msg import Quaternion, Pose2D
 WAIT_TIME = 500
 order = [0,1]
 pos_plant = [(1800,700),(500,2400)]
-r = 300
+r = 300.   #rayon du cercle d'approche des plantes
+v = 400.      #vitesse moyenne du robot en mm/s
 
 class DoorCallback(Enum):
     UNKNOWN = -2
@@ -45,6 +46,13 @@ class DspOrder(Enum):
     STOP = 0
     MOVE_STRAIGHT = 1
     
+class ElevatorCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    DOWN = 0
+    UP = 1
+    BLOCKED = 2
+    
 
 ########## FONCTIONS DES SUBSCRIBERS ##########
 
@@ -63,6 +71,9 @@ def cb_doors_fct(msg):
         
 def callback_dsp_fct(msg):
     sm.userdata.cb_depl[0] = DspCallback(msg.data)
+    
+def cb_elevator_fct(msg):
+    sm.userdata.cb_elevator[0] = ElevatorCallback(msg.data)
         
         
 
@@ -144,6 +155,8 @@ class CloseDoors(smach.State):
         
     def execute(self, userdata):
         
+        time.sleep(r/v)
+        
         userdata.cb_doors[0] = DoorCallback.PENDING
 
         # publish close doors order
@@ -198,6 +211,39 @@ class CalcTakePlants(smach.State):
         userdata.next_move = Quaternion(r*math.cos(theta) + pos_plant[order[1]][0], -r*math.sin(theta) + pos_plant[order[1]][1],theta, DspOrder.MOVE_STRAIGHT)
         
         return 'success'
+    
+class RisePlants(smach.State):
+    
+    def __init__(self):
+        smach.State.__init__(	self,
+                                outcomes=['fail','success','preempted'],
+                                input_keys=['cb_elevator'],
+                                output_keys=['cb_elevator'])
+        
+    def execute(self, userdata):
+        
+        userdata.cb_elevator[0] = ElevatorCallback.PENDING
+        
+        elevator_pub.publish(ElevatorCallback.UP)
+        
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < WAIT_TIME:
+            
+            if userdata.cb_doors[0] == ElevatorCallback.UP:
+                return 'success'
+            elif userdata.cb_doors[0] == ElevatorCallback.BLOCKED:
+                return 'fail'
+            time.sleep(0.01)
+            
+        # timeout
+        log_warn("Timeout")
+        
+        return 'fail'
+        
+        
+        
+    
+    
 
 ########## MAIN ##########
 def main():
@@ -228,6 +274,10 @@ def main():
     global depl_pub  
     depl_sub = rospy.Subscriber('/dsp/callback', Int16, callback_dsp_fct)
     depl_pub = rospy.Publisher('/dsp/order/',Quaternion, queue_size = 10, latch= True)
+    
+    global elevator_pub
+    elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
+    elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)
 
     # Remplissage de la MAE
 
@@ -240,8 +290,14 @@ def main():
   
   
     pick_up_plant_sequence = smach.Sequence(  # sequence container
-        input_keys = ['cb_doors'],
-        output_keys = ['cb_doors'],
+        input_keys = ['cb_doors','cb_elevator'],
+        output_keys = ['cb_doors','cb_elevator'],
+        outcomes = ['success', 'fail', 'preempted'],
+        connector_outcome = 'success')
+    
+    depl_sequence = smach.Sequence(  # sequence container
+        input_keys = ['next_move','cb_depl','robot_pos'],
+        output_keys = ['cb_depl','next_move'],
         outcomes = ['success', 'fail', 'preempted'],
         connector_outcome = 'success')
     
@@ -250,20 +306,28 @@ def main():
     with pick_up_plant_sequence:  # add states to the sequence #TODO define elsewhere
         smach.Sequence.add('OPEN_DOORS', OpenDoors())
         smach.Sequence.add('CLOSE_DOORS', CloseDoors())
+        smach.Sequence.add('RISE_PLANTS',RisePlants())
+        
+    with depl_sequence:
+        smach.Sequence.add('CALC_TAKE_PLANT', CalcTakePlants())
+        smach.Sequence.add('DEPL_TAKE_PLANTS', deplacement())
+        
+        
+    
 
     pick_up_plant_concurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
-                                input_keys=['cb_doors','next_move','robot_pos','cb_depl'],
-                                output_keys=['cb_doors','next_move','cb_depl'],
+                                input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator'],
+                                output_keys=['cb_doors','next_move','cb_depl','cb_elevator'],
                                 default_outcome='fail',
-                                outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPL_TAKE_PLANTS':'success'},
+                                outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPL_SEQ':'success'},
                                              'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},
-                                             'preempted' : {'DEPL_TAKE_PLANTS' : 'preempted'}})
+                                             'preempted' : {'DEPL_SEQ' : 'preempted'}})
     
     # Open the container
     with pick_up_plant_concurrence:
         # Add states to the container
         smach.Concurrence.add('PICKUP_PLANT_SEQ', pick_up_plant_sequence)
-        smach.Concurrence.add('DEPL_TAKE_PLANTS', deplacement())
+        smach.Concurrence.add('DEPL_SEQ', depl_sequence)
     
     
     with pickupplant:

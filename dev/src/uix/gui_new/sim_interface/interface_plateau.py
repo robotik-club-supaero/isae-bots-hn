@@ -31,6 +31,15 @@ def handler(signal_received, frame):
 ScreenUnits = float
 PhysicalUnits = float
 
+def circle_segment_collide(center, radius, segment):
+    OA = segment[0] - center
+    OB = segment[1] - center
+    if np.dot(OA, segment[0] - segment[1]) > 0 and np.dot(OB, segment[1] - segment[0]) > 0:
+        prod = np.abs(OA[0] * OB[1] - OA[1] * OB[0])
+        dist = prod / np.linalg.norm(segment[1] - segment[0])
+        return dist < radius
+    else:
+        return np.minimum(np.linalg.norm(OA), np.linalg.norm(OB)) < radius
 
 class ScaledCanvas:
 
@@ -312,6 +321,8 @@ class DoorState(Enum):
 
 class Robot(Drawable):
 
+    PLANT_CAPACITY = 6
+
     _width: PhysicalUnits
     _height: PhysicalUnits
 
@@ -321,7 +332,8 @@ class Robot(Drawable):
         self._height = height
         self._location = np.zeros(2)
         self._rotation = 0
-        self._doorState = DoorState.CLOSED
+        self._doorState = DoorState.OPEN
+        self._plants = []
 
     @staticmethod
     def load(file):
@@ -363,6 +375,52 @@ class Robot(Drawable):
         self._doorState = DoorState(new_state)
         self.invalidate()
 
+    @property
+    def doorsOpen(self):
+        return self._doorState == DoorState.OPEN
+
+    @property
+    def doorLine(self):
+        line = np.zeros((2,2))
+        line[0] = self.location + [self._width / 2, self._height / 2]
+        line[1] = self.location + [self._width / 2, -self._height / 2]
+        ScaledCanvas._rotate(self.location, line, self._rotation)
+        return line
+
+    @property
+    def plants(self):
+        return len(self._plants)
+
+    def carryPlant(self, plant):
+        if self.plants < Robot.PLANT_CAPACITY:
+            self._plants.append(plant)
+        else:
+            raise ValueError("Robot cannot carry more plants")
+        
+
+class Plant(Drawable):
+
+    RADIUS = 25. # mm
+
+    def __init__(self, id, location):
+        super().__init__()
+        self._id = id
+        self._location = np.zeros(2)
+        self.setLocation(location)
+
+    def _draw(self, canvas):
+        self.clear(canvas)
+        canvas.draw_oval(self._location, Plant.RADIUS, fill="green", tag=f"plant_{self._id}")
+
+    def clear(self, canvas):
+        canvas.delete(f"plant_{self._id}")
+
+    def setLocation(self, new_location):
+        self._location[:] = new_location
+
+    @property
+    def location(self):
+        return self._location
 
 class Order(Drawable):
     """Marker for the position where the robot was manually asked to go"""
@@ -567,6 +625,15 @@ class InterfaceNode:
         self._path = Path()
         self._grid = Grid()
 
+        CLUSTER_RADIUS = 125 #mm
+        self._plants = []
+        for cluster in [[698.5,1001.5], [1298.5,1001.5], [698.5,2001.5], [1298.5,2001.5], [498.5,1503], [1498.5,1503]]:            
+            x, y = cluster
+            for i in range(6):
+                dx = (CLUSTER_RADIUS - Plant.RADIUS) * cos(2*np.pi*i/6)
+                dy = (CLUSTER_RADIUS - Plant.RADIUS) * sin(2*np.pi*i/6)
+                self._plants.append(Plant(len(self._plants), [x+dx, y+dy]))
+
         self.lock = RLock()
 
         # initialisation des suscribers
@@ -612,11 +679,27 @@ class InterfaceNode:
             self._clickMarker.redraw(self._canvas, force=force)
             self._orderMarker.redraw(self._canvas, force=force)
 
+            for plant in self._plants:
+                plant.redraw(self._canvas, force=force)
+
             # TODO: Plot excavation squares
             # Corresponding section from old_gui/interface_plateau.py [lines 377-418] was commented out
             # and was not imported
 
             self._force_redraw = False
+
+            if self._robot.doorsOpen:
+                doorLine = self._robot.doorLine
+                i = 0
+                while i < len(self._plants):
+                    plant = self._plants[i]
+                    if circle_segment_collide(plant.location, plant.RADIUS, doorLine):
+                        if self._robot.plants < Robot.PLANT_CAPACITY:
+                            self._robot.carryPlant(plant)
+                            plant.clear(self._canvas)
+                            self._plants.pop(i)
+                            continue
+                    i += 1
 
         self._fenetre.after(self.refresh_interval, self.refresh)
 
@@ -647,9 +730,7 @@ class InterfaceNode:
 
     def updateRobotDoorState(self, msg):
         with self.lock:
-            print(self._robot._doorState)
             self._robot.setDoorState(msg.data)
-            print(self._robot._doorState)
 
     def updateObstacles(self, msg):
         with self.lock:

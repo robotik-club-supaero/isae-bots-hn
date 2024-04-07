@@ -1,7 +1,7 @@
 
 
-- Objet Pos2D pour la position (ou alors séparer le mode de depl et faire un objet adapté)
+- Objet Pose2D pour la position (ou alors séparer le mode de depl et faire un objet adapté)
 
 - Enums pour les variables comme next_action qui doivent avoir des noms explicites plutôt que des entiers   
     Au moins :
-        cb_disp
+        cb_depl

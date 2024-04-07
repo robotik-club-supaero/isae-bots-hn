@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -24,7 +23,7 @@ import sys
 import time
 import smach
 from an_const import *
-from an_comm import end_of_action_pub, add_score, deguis_pub, force_end_pub
+from an_comm import callback_action_pub, add_score
 from an_sm_states.sm_displacement import Displacement, set_next_destination
 
 #################################################################
@@ -39,9 +38,9 @@ class ObsPark(smach.State):
     """
     def __init__(self):
         smach.State.__init__(   self,  
-                                outcomes=['preempted','done','disp'],
-			                    input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','color','backward'],
-			                    output_keys=['nb_actions_done','cb_disp','next_pos','cb_pos','backward'])
+                                outcomes=['preempted','success','disp'],
+			                    input_keys=['nb_actions_done','cb_depl','robot_pos','next_pos','color'],
+			                    output_keys=['nb_actions_done','cb_depl','next_pos'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -58,13 +57,11 @@ class ObsPark(smach.State):
             return 'disp'
 
         if userdata.nb_actions_done[0] == 1:
-             force_end_pub.publish(data=0)
-             time.sleep(0.5)
-             deguis_pub.publish(data=1)
-             return 'done'
+             #TODO send a force stop order
+             return 'success'
 
-        end_of_action_pub.publish(exit=1, reason='success')
-        return 'done'
+        callback_action_pub.publish(exit=1, reason='success')
+        return 'success'
 
 
 #################################################################
@@ -73,15 +70,15 @@ class ObsPark(smach.State):
 #                                                               #
 #################################################################
 
-Park = smach.StateMachine(  outcomes=['preempted', 'end'],
-			                input_keys=['nb_actions_done','cb_disp','cb_pos','next_pos', 'color','backward'],
-			                output_keys=['nb_actions_done','cb_disp','cb_pos','next_pos','backward'])
+park = smach.StateMachine(  outcomes=['preempted', 'end'],
+			                input_keys=['nb_actions_done','cb_depl','robot_pos','next_pos', 'color'],
+			                output_keys=['nb_actions_done','cb_depl','next_pos'])
 							
-with Park:
+with park:
 	smach.StateMachine.add('OBS_PARK', 
                             ObsPark(), 
-		                    transitions={'preempted':'preempted','done':'end','disp':'DISPLACEMENT'})
+		                    transitions={'preempted':'preempted','success':'end','disp':'DISPLACEMENT'})
 	smach.StateMachine.add('DISPLACEMENT', 
                             Displacement(), 
-		                    transitions={'preempted':'preempted','done':'OBS_PARK','redo':'DISPLACEMENT','fail':'OBS_PARK'})
+		                    transitions={'preempted':'preempted','success':'OBS_PARK','fail':'OBS_PARK'})
 

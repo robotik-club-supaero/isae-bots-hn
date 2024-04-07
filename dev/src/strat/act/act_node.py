@@ -56,10 +56,10 @@ def main():
     signal.signal(signal.SIGINT, sig_handler)
     rospy.init_node('ACT')   
 
-    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
+    time.sleep(1)  # NOTE : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     log_info("Initializing Action Node ...")
-    sm = smach.StateMachine(outcomes=['EXIT_SM'])  # exit all -> exit sm
+    sm = smach.StateMachine(outcomes=['exit all', 'exit preempted'])  # exit all -> exit sm
 
     # Init SM in other files 
     ''' Les fonctions d'init sont là pour palier aux erreurs dûes aux topics.

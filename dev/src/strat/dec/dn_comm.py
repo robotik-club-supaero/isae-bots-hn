@@ -18,14 +18,21 @@
 #                                                               #
 #################################################################
 
+import os, sys, inspect
 import time
 import rospy
 import threading
-from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR, ACTIONS
+from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
+
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from strat_const import Action
 
 #################################################################
 #                                                               #
@@ -105,7 +112,7 @@ def recv_position(msg):
     p_dn.position = [msg.x, msg.y, msg.theta]
 
 
-def recv_action_done(msg):
+def recv_action_callback(msg):
     if msg.exit == 1:
         log_info("Last action succeeded.")
         p_dn.nb_actions_done[0] += 1
@@ -146,7 +153,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish( [ACTIONS.end.value] )
+    next_action_pub.publish( [Action.END.value] )
 
 #################################################################
 #                                                               #
@@ -160,10 +167,9 @@ color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
 strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
 position_sub = rospy.Subscriber("/current_position", Pose2D, recv_position)
 
-next_action_pub = rospy.Publisher("/strat/repartitor_dec", Int16MultiArray, queue_size=10, latch=True)
-
-next_action_sub = rospy.Subscriber("/strat/repartitor_act", Empty, send_action_next)
-done_action_sub = rospy.Subscriber("/strat/end_of_action", EndOfActionMsg, recv_action_done)
+next_action_pub = rospy.Publisher("/strat/action/order", Int16MultiArray, queue_size=10, latch=True)
+next_action_sub = rospy.Subscriber("/strat/action/request", Empty, send_action_next)
+done_action_sub = rospy.Subscriber("/strat/action/callback", EndOfActionMsg, recv_action_callback)
 
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
 end_pub = rospy.Publisher('/game/end', Int16, queue_size=10, latch=True)

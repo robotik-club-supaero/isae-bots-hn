@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -19,7 +18,7 @@
 #                                                               #
 #################################################################
 
-import os
+import os, sys, inspect
 import time
 import rospy
 
@@ -27,11 +26,15 @@ from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_const import *
-from an_utils import log_info, log_warn, log_errs, patch_frame_br
+from an_utils import log_info, log_warn, log_errs
 
-from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg	
+from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
-rospy.set_param("robot_name", "GR")
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from strat_const import ACTIONS_LIST
 
 #################################################################
 #                                                               #
@@ -101,91 +104,46 @@ def cb_next_action(msg):
     if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
         log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
-    p_smData.next_action = msg.data[0]
+    p_smData.next_action = NextAction(msg.data[0])
 
 
-def cb_disp(msg):
+def cb_depl_fct(msg):
     """
     Callback of displacement result from Disp Node.
     """
     if not ok_comm: return
-    p_smData.cb_disp[0] = msg.data
+    p_smData.cb_depl[0] = DspCallback(msg.data)
 
 
-def cb_position(msg):
+def cb_position_fct(msg):
     """
     Callback of current position of the robot.
     """
     if not ok_comm: return
-    p_smData.cb_pos[0] = [msg.x, msg.y, msg.theta]
+    p_smData.robot_pos = msg
 
-def cb_arm(msg):
-    """
-    Callback of the state of the arm (for the cherries)
-    """
-    if not ok_comm: return
-    p_smData.cb_arm[0] = msg.data
-    
-def cb_doors(msg):
-    """
-    Callback of the state of the doors (opened or closed) (for the cakes)
-    """
-    if not ok_comm: return
-    p_smData.cb_doors[0] = msg.data
 
-def cb_clamp(msg):
+def cb_doors_fct(msg):
     """
-    Callback of the state of the clamp (opened or closed) (for the cakes)
+    Callback of the state of the doors (opened or closed)
     """
-    if not ok_comm: return
-    p_smData.cb_clamp[0] = msg.data    
+    if msg.data == 1:
+        p_smData.cb_doors[0] = DoorCallback.OPEN
+    elif msg.data == 0:
+        p_smData.cb_doors[0] = DoorCallback.CLOSED
+    else:
+        p_smData.cb_doors[0] = DoorCallback.UNKNOWN
 
-def cb_elevator(msg):
+
+def cb_elevator_fct(msg):
     """
     Callback of the state of the elevator (for the cakes)
     """
     if not ok_comm: return
-    p_smData.cb_elevator[0] = msg.data
+    p_smData.cb_elevator[0] = ElevatorCallback(msg.data)
 
-def cb_take_cakes_area(msg):
-    """
-    Callback of the state of the elevator (for the cakes)
-    """
-    if not ok_comm: return
-    p_smData.take_cakes_area[0] = msg.data
 
-def cb_take_cherries_area(msg):
-    """
-    Callback of the state of the elevator (for the cakes)
-    """
-    if not ok_comm: return
-    p_smData.take_cherries_area[0] = msg.data
-
-def cb_deposit_area(msg):
-    """
-    Callback of the state of the elevator (for the cakes)
-    """
-    if not ok_comm: return
-    p_smData.deposit_area[0] = msg.data
-
-def cb_stage_to_deposit(msg):
-    """
-    Callback of the state of the elevator (for the cakes)
-    """
-    if not ok_comm: return
-    p_smData.stage_to_deposit[0] = msg.data
-
-def cb_score(msg):
-    """
-    Callback function to update sm variable XXXXX.
-
-    <copy> this template for your update / callback functions.
-    """
-    if not ok_comm: return
-    p_smData.score[0] += msg.data
-    score_pub.publish(p_smData.score[0])
-
-def cb_park(msg):
+def cb_park_fct(msg):
     """
     Callback function to update sm variable XXXXX.
 
@@ -193,6 +151,7 @@ def cb_park(msg):
     """
     if not ok_comm: return
     p_smData.park[0] = msg.data
+    
 
 #################################################################
 #                                                               #
@@ -254,47 +213,33 @@ def add_score(pts):
 #################################################################
 
 """
-Initialize all publishers of AN.
+Initialize all publishers of AN
 """
 # GENERAL PUBS
-global score_pub, repartitor_pub, end_of_action_pub, disp_pub, stop_teensy_pub
+global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
-repartitor_pub = rospy.Publisher('/strat/repartitor_act', Empty, queue_size=10, latch=True)
-end_of_action_pub = rospy.Publisher('/strat/end_of_action', EndOfActionMsg, queue_size=10, latch=True)
-disp_pub = rospy.Publisher('/disp/next_displacement', Quaternion, queue_size=10, latch=True)
+repartitor_pub = rospy.Publisher('/strat/action/request', Empty, queue_size=10, latch=True)
+callback_action_pub = rospy.Publisher('/strat/action/callback', EndOfActionMsg, queue_size=10, latch=True)
+disp_pub = rospy.Publisher('/dsp/order/next_pos', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
 # SPECIFIC TO CURRENT YEAR
-global cherries_pub, elevator_pub
-cherries_pub = rospy.Publisher('/strat/cherries', Int16, queue_size=10, latch=True)
-doors_pub    = rospy.Publisher('/strat/doors', Int16, queue_size=10, latch=True)
-clamp_pub    = rospy.Publisher('/strat/clamp', Int16, queue_size=10, latch=True)
-elevator_pub = rospy.Publisher('/strat/elevator', Int16, queue_size=10, latch=True)
-pub_delete_obst = rospy.Publisher('/deleteObs', Int16, queue_size=10, latch=True)
-deguis_pub = rospy.Publisher('/strat/deguisement', Int16, queue_size=10, latch=True)
-force_end_pub = rospy.Publisher('/br/idle', Int16, queue_size=10, latch=True)
+global doors_pub, depl_pub, elevator_pub
+doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
+elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
 
 """
-Initialize all subscribers of AN.
+Initialize all subscribers of AN
 """
 # GENERAL SUBS
 global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
 start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
-repartitor_sub = rospy.Subscriber('/strat/repartitor_dec', Int16MultiArray, cb_next_action)
-disp_sub = rospy.Subscriber('/disp/done_displacement', Int16, cb_disp)
-position_sub = rospy.Subscriber('/current_position', Pose2D, cb_position)
-park_sub = rospy.Subscriber('/park', Int16, cb_park)
+repartitor_sub = rospy.Subscriber('/strat/action/order', Int16MultiArray, cb_next_action)
+disp_sub = rospy.Subscriber('/dsp/callback/next_pos', Int16, cb_depl_fct)
+position_sub = rospy.Subscriber('/current_position', Pose2D, cb_position_fct)
+park_sub = rospy.Subscriber('/park', Int16, cb_park_fct)
 
 # SPECIFIC TO CURRENT YEAR
-global cherries_sub, elevator_sub, doors_sub, clamp_sub
-cherries_sub = rospy.Subscriber('/strat/cherries_feedback', Int16, cb_arm)
-doors_sub    = rospy.Subscriber('/strat/doors_feedback', Int16, cb_doors)
-clamp_sub    = rospy.Subscriber('/strat/clamp_feedback', Int16, cb_clamp)
-elevator_sub = rospy.Subscriber('/strat/elevator_feedback', Int16, cb_elevator)
-take_cakes_sub    = rospy.Subscriber('/strat/take_cakes', Int16, cb_take_cakes_area)
-take_cherries_sub    = rospy.Subscriber('/strat/take_cherries', Int16, cb_take_cherries_area)
-deposit_cakes_sub = rospy.Subscriber('/strat/deposit_cakes', Int16, cb_deposit_area)
-stage_sub    = rospy.Subscriber('/strat/stage', Int16, cb_stage_to_deposit)
-score_sub = rospy.Subscriber('/addScore', Int16, cb_score)
-
+doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
+elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)

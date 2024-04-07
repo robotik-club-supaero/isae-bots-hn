@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -24,7 +23,6 @@ import numpy as np
 from ast import literal_eval
 import configparser
 from enum import Enum, IntEnum
-from math import pi
 import rospy
 
 #################################################################
@@ -34,7 +32,6 @@ import rospy
 #################################################################
 
 NODE_NAME = "[ACT] "
-# SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 ## Config reader
 
@@ -67,6 +64,14 @@ DOORS_SHIFT = ROBOT_DIAG//2 + 30
 ARM_SHIFT = ROBOT_DIAG//2 + 30
 
 
+########## CONSTANTES 2024 ##########
+WAIT_TIME = 500
+order = [0,1]
+pos_plant = [(1800,700),(500,2400)]
+r = 300.   #rayon du cercle d'approche des plantes
+v = 400.      #vitesse moyenne du robot en mm/s
+
+
 #################################################################
 #                                                               #
 #                       SM CONSTANTS                            #
@@ -78,6 +83,18 @@ COLOR = {
       1: 'AWAY'
 }
 
+
+
+class NextAction(Enum): #TODO
+    PENDING = -2
+
+    ACTION0 = 0
+    ACTION1 = 1
+    ACTION2 = 2
+    
+    
+''' ORDERS '''
+
 DISPLACEMENT = {
       'standard'         : 0, 
       'noAvoidance'      : 1,
@@ -88,34 +105,77 @@ DISPLACEMENT = {
       'marcheArr'        : 8
 }
 
-CB_DISP = {
-	-3: 'None',
-	-2: 'Error Asserv',
-    -1: 'Path not found',
-     0: 'Disp Success',
-     1: 'Path Blocked',
-     2: 'Restart',
-     3: 'Destination blocked'
-}
+class DspOrder(Enum):
+    STOP = 0
+    MOVE_STRAIGHT = 1
+    
+    
+class DoorOrder(Enum):
+    OPEN = 0
+    CLOSE = 1
+    
+    
+    
+''' CALLBACKS '''
 
-#TODO : Compléter ces listes au fur et à mesure de l'avancement de l'AN
+class DspCallback(Enum):
+    # UNKNOWN = -2
+    # PENDING = -1
+    # ARRIVED = 0
+    # OBSTACLE = 1
+    # OBSTACLE_ON_TARGET = 2
+    # ERROR_ASSERV = 3
+    
+    PENDING = -3
+    ERROR_ASSERV = -2
+    PATH_NOT_FOUND = -1
+    SUCCESS = 0
+    PATH_BLOCKED = 1
+    RESTART = 2
+    DESTINATION_BLOCKED = 3
+    
+    
+    # -3: 'None',
+	# -2: 'Error Asserv',
+    # -1: 'Path not found',
+    #  0: 'Disp Success',
+    #  1: 'Path Blocked',
+    #  2: 'Restart',
+    #  3: 'Destination blocked'
+     
+    
+class DoorCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    CLOSED = 0
+    OPEN = 1
+    BLOCKED = 2
+    
+class ElevatorCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    DOWN = 0
+    UP = 1
+    BLOCKED = 2
+
 
 ## I/O keys for states of the sm
-ALL_KEY_LIST = [
+USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
     'score',
     'nb_actions_done',
-    'cb_disp',
+    'cb_depl',
     'cb_arm',
     'cb_elevator',
     'cb_clamp',
     'cb_doors',
-    'cb_pos',
+    'robot_pos',
     'arm_order',
     'depositArea',
     'next_action',
     'next_pos',
+    'next_move',
     'deposit_area',
     'take_cakes_area',
     'take_cherries_area',
@@ -125,82 +185,8 @@ ALL_KEY_LIST = [
     'nb_errors',
     'stage_to_go',
     'stage_to_deposit',
-    'backward',
     'park',
     'open_clamp',
     'open_doors',
     'elevator_zero'
     ]
-
-ACTIONS_LIST = [
-    'takeCherriesPerpendicular',
-    'takeCherriesWall',
-    'depositCherries',
-    'takeCakes',
-    'depositCakes',
-    'park',
-    'end',
-    'waiting',
-    'depositCherriesNear',
-    'pushCakes',
-    'preempted'
-    ]
-
-ACTIONS_STATES = {
-    'takeCherriesPerpendicular':'TAKE_CHERRIES_PERPENDICULAR',
-    'takeCherriesWall':'TAKE_CHERRIES_WALL',
-    'depositCherries':'DEPOSIT_CHERRIES',
-    'depositCherriesNear':'DEPOSIT_CHERRIES_NEAR',
-    'takeCakes':'TAKE_CAKES',
-    'depositCakes':'DEPOSIT_CAKES',
-    'park':'PARK',
-    'preempted':'END',
-    'end':'END',
-    'waiting':'WAITING',
-    'pushCakes':'PUSH_CAKES'
-    }
-
-ACTIONS_SCORE = {
-	'init_score':               5, #Bucket posé
-    'funnyCounter':            10, #funny action et compte des cerises corrects (5+5)
-    'parking':                 15,
-    'depositStage':             1,
-    'legendary':                4,
-    'cherryOnCake':             3,
-    'cherryBucket':             1,
-    'bonus':                   20
-}
-
-CHERRIES_POS = {
-	0: [985, 2850, pi],
-	1: [985, 150, pi],
-	2: [15, 1500, 0],
-	3: [1985, 1500, pi]
-}
-
-DEPOSIT_CHERRIES_POS = [225, 3000, -pi/2]
-
-CAKES_POS = {
-	0: [225, 575, pi],  # Rose 
-	1: [1775, 575, 0],
-	2: [225, 2425, pi],
-	3: [1775, 2425, 0],
-	4: [225, 775, pi],  # Jaune
-	5: [1775, 775, 0], 
-	6: [225, 2225, pi],
-	7: [1775, 2225, 0], 
-	8: [725, 1125, pi], # Marron
-	9: [1275, 1125, 0],
-	10:[725, 1875, pi],
-	11:[1275, 1875, 0],
-	12:[725, 1875, pi/2] # Le même que le 10 mais pour le dernier match on le prend par le bas
-}
-
-DEPOSIT_POS = {
-	0: [725, 225, -pi/2],
-	1: [1775, 225, -pi/2],
-	2: [225, 1125, -pi/2], # Normalement pi mais dernier match donc osef
-	3: [1775, 1875, 0],
-	4: [225, 2750, pi/2],
-	5: [350, 1200, pi]
-}

@@ -13,41 +13,17 @@
 # pyright: reportMissingImports=false
 
 from math import pi
+from enum import IntEnum
 
 
-#TODO : Compléter ces listes au fur et à mesure de l'avancement de l'AN
-
-## I/O keys for states of the sm
-ALL_KEY_LIST = [ #TODO update
-    'start',
-    'color',
-    'score',
-    'nb_actions_done',
-    'cb_disp',
-    'cb_arm',
-    'cb_elevator',
-    'cb_clamp',
-    'cb_doors',
-    'cb_pos',
-    'arm_order',
-    'depositArea',
-    'next_action',
-    'next_pos',
-    'deposit_area',
-    'take_cakes_area',
-    'take_cherries_area',
-    'pucks_taken',
-    'cherries_loaded',
-    'error_reaction',
-    'nb_errors',
-    'stage_to_go',
-    'stage_to_deposit',
-    'backward',
-    'park',
-    'open_clamp',
-    'open_doors',
-    'elevator_zero'
-    ]
+class Action(IntEnum):
+    NONE         = -1
+    PICKUP_PLANT = 0
+    PARK         = 1
+    WAIT         = 2
+    END          = 3
+    PREEMPT      = 4
+    
 
 ACTIONS_LIST = [
     'pickupPlant',
@@ -65,16 +41,23 @@ ACTION_TRANSITIONS = {
     'waiting':'WAITING',
     }
 
-ACTIONS_SCORE = { #TODO update
-	'init_score':               5,
-    'funnyCounter':            10,
-    'parking':                 15,
-    'depositStage':             1,
-    'legendary':                4,
-    'cherryOnCake':             3,
-    'cherryBucket':             1,
-    'bonus':                   20
-}
+
+class ActionScore(IntEnum): #TODO update
+    SCORE_INIT = 5
+    SCORE_PARK = 15
+    SCORE_DEPOSIT_PLANTS = 30
+    BONUS = 20
+
+# ACTIONS_SCORE = { 
+# 	'init_score':               5,
+#     'funnyCounter':            10,
+#     'parking':                 15,
+#     'depositStage':             1,
+#     'legendary':                4,
+#     'cherryOnCake':             3,
+#     'cherryBucket':             1,
+#     'bonus':                   20
+# }
 
 
 PLANTS_POS = [
@@ -96,12 +79,12 @@ POTS_POS = [
 ]
 
 
-DEPOSIT_POS = {
+DEPOSIT_POS = [
 	[ 225,  225, -pi/2],
     [1000,  225, -pi/2],
     [1775,  225, -pi/2],
 	[1775, 2775,  pi/2],
     [1000, 2775,  pi/2],
     [ 225, 2775,  pi/2],
-}
+]
 

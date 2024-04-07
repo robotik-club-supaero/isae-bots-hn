@@ -9,7 +9,7 @@
 #  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
-#
+
 # pyright: reportMissingImports=false
 
 #################################################################
@@ -19,82 +19,53 @@
 #################################################################
 
 import os
-import rospy
-import configparser
-from enum import IntEnum, Enum
+import sys
+import time
+import smach
+from an_const import *
 
 #################################################################
 #                                                               #
-#                          CONSTANTS                            #
+#                          SUBSTATES                            #
 #                                                               #
 #################################################################
 
-NODE_NAME = "[DEC] "
-# SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
+class ObsWaiting(smach.State):
+    """
+    SM WAITING : Observer state
+    """
+    def __init__(self):
+        smach.State.__init__(   self,  
+                                outcomes=['preempted','success','redo'],
+			                    input_keys=['nb_actions_done','next_pos','color'],
+			                    output_keys=['nb_actions_done','next_pos'])
 
-#################################################################
-# CONFIG 
-READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),'../../robot_config.cfg'))
+    def execute(self, userdata):
+        begin_time = time.time()
 
-#################################################################
-# WINDOW
-TERM_SIZE = 62
-
-#################################################################
-# ROBOTS PARAMS
-class ROBOT_SIDES(IntEnum):
-    HOME = 0
-    AWAY = 1
-
-#################################################################
-
-COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
-}
+        while time.time() - begin_time < 100:
+            time.sleep(0.01)
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'       
+        ## Return --> Repartitor
+        # endOfAction_pub.publish(exit=1, reason='success')
+        return 'redo'
+                  
 
 
 #################################################################
 #                                                               #
-#                            UTILS                              #
+#                        SM STATE : WAITING                     #
 #                                                               #
 #################################################################
 
-class Color():
-    BLACK = '\033[30m'
-    RED = '\033[31m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    MAGENTA = '\033[35m'
-    CYAN = '\033[36m'
-    WHITE = '\033[37m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    RESET = '\033[0m'
-        
-def log_info(log):
-    """
-    Print standard logs.
-    """
-    rospy.loginfo(NODE_NAME + log)
-
-
-def log_warn(log):
-    """
-    Print warning logs.
-    """
-    rospy.logwarn(NODE_NAME + log)
-
-def log_errs(log):
-    """
-    Print errors logs.
-    """
-    rospy.logerr(NODE_NAME + log)
-
-def log_fatal(log):
-    """
-    Print errors logs.
-    """
-    rospy.logfatal(NODE_NAME + log)
+waiting = smach.StateMachine(   outcomes=['preempted', 'end'],
+                                input_keys=['nb_actions_done','next_pos', 'color'],
+                                output_keys=['nb_actions_done','next_pos','color'])
+							
+with waiting:
+    smach.StateMachine.add('OBS_WAITING', 
+                            ObsWaiting(), 
+                            transitions={'preempted':'preempted','success':'end','redo':'OBS_WAITING'})
+   

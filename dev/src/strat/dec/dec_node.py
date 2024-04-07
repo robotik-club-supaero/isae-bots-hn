@@ -19,17 +19,22 @@
 #                                                               #
 #################################################################
 
-import os
-import sys
+import os, sys, inspect
 import rospy
 import signal
 import time
 
-from dn_utils    import READER, ACTIONS, ACTIONS_SCORE, log_errs, log_fatal, log_info, log_warn
+from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm
 from dn_strats   import init_strats, test_strat, homologation, match_strat
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
+
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from strat_const import Action, ActionScore
 
 def sig_handler(s_rcv, frame):
     """
@@ -56,7 +61,7 @@ class DecisionsNode:
 
         self.match_started = False
         self.color = 0
-        self.score = ACTIONS_SCORE.init_score.value
+        self.score = ActionScore.SCORE_INIT.value
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))
@@ -68,10 +73,10 @@ class DecisionsNode:
 
         self.park_action = False
         self.kill_action = False
-        self.curr_action = ACTIONS.waiting  # of "type" ACTION
+        self.curr_action = Action.WAIT  # of type Action
         self.nb_actions_done = [0]
 
-        self.position = [0,0,0]  # TODO utilser un objet Pos2D
+        self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
 #################################################################
 #                                                               #

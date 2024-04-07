@@ -18,9 +18,16 @@
 #                                                               #
 #################################################################
 
+import os, sys, inspect
 import time
 from dn_comm  import next_action_pub, stop_IT, score_pub, end_pub
-from dn_utils import ACTIONS, ACTIONS_SCORE, log_info, log_warn, log_errs, log_fatal
+from dn_utils import log_info, log_warn, log_errs, log_fatal
+
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from strat_const import Action, ActionScore
 
 #################################################################
 #                                                               #
@@ -41,7 +48,7 @@ def init_strats(dn):
 #################################################################
 
 def publishAction():
-    next_action_pub.publish( [p_dn.curr_action.value] )
+    next_action_pub.publish( data=[p_dn.curr_action.value] )
     
     
 def publishScore():
@@ -69,19 +76,19 @@ def test_strat():
 
 
     if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = ACTIONS.simpleAction
-        log_info("Next action : Take Cherries Perpendicular")
+        p_dn.curr_action = Action.PICKUP_PLANT
+        log_info("Next action order : Pickup Plants")
         publishAction()
         return
 
 
     if p_dn.nb_actions_done[0] == 1:
-        p_dn.curr_action = ACTIONS.park
-        log_info("Next action : Park")
+        p_dn.curr_action = Action.PARK
+        log_info("Next action order : Park")
         publishAction()
         
         # Add to score because we earned points
-        p_dn.score += ACTIONS_SCORE.parking.value
+        p_dn.score += ActionScore.SCORE_PARK.value
         publishScore()
         
         return

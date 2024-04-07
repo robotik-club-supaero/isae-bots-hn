@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -55,11 +54,13 @@ def log_fatal(log):
     rospy.logfatal(NODE_NAME + log)
     
 
-def patch_frame_br(x, y, theta, color): # TODO pas ouf comme nom
+def adapt_pos_to_side(x, y, theta, color):
     if color == 0:
         return x, y, theta
-    return 2000-x, y, theta + pi # Si la symétrie est selon l'axe y.
-    # return x, 3000-y, -theta # Si la symétrie est selon l'axe x.
+    else:
+    	return x, 3000-y, -theta        # si la symétrie est selon l'axe y
+    	# return 2000-x, y, theta + pi  # si la symétrie est selon l'axe x
+     
 
 #################################################################
 # Colors gestion												#

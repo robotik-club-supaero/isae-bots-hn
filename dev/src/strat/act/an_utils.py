@@ -28,38 +28,38 @@ from an_const import NODE_NAME, COLOR
 #                                                               #
 #################################################################
 
-def log_info(log):
+def log_info(msg):
     """
     Print standard logs.
     """
-    rospy.loginfo(NODE_NAME + log)
+    rospy.loginfo(f"{NODE_NAME} {msg}")
 
 
-def log_warn(log):
+def log_warn(msg):
     """
     Print warning logs.
     """
-    rospy.logwarn(NODE_NAME + log)
+    rospy.logwarn(f"{NODE_NAME} {msg}")
 
-def log_errs(log):
+def log_errs(msg):
     """
     Print errors logs.
     """
-    rospy.logerr(NODE_NAME + log)
+    rospy.logerr(f"{NODE_NAME} {msg}")
     
-def log_fatal(log):
+def log_fatal(msg):
     """
     Print fatal errors (programs cannot continue to run)
     """
-    rospy.logfatal(NODE_NAME + log)
+    rospy.logfatal(f"{NODE_NAME} {msg}")
     
 
 def adapt_pos_to_side(x, y, theta, color):
     if color == 0:
         return x, y, theta
     else:
-    	return x, 3000-y, -theta        # si la symétrie est selon l'axe y
-    	# return 2000-x, y, theta + pi  # si la symétrie est selon l'axe x
+        return x, 3000-y, -theta        # si la symétrie est selon l'axe y
+        # return 2000-x, y, theta + pi  # si la symétrie est selon l'axe x
      
 
 #################################################################
@@ -67,20 +67,20 @@ def adapt_pos_to_side(x, y, theta, color):
 #################################################################
 
 class Color():
-	BLACK = '\033[30m'
-	RED = '\033[31m'
-	GREEN = '\033[32m'
-	YELLOW = '\033[33m'
-	BLUE = '\033[34m'
-	MAGENTA = '\033[35m'
-	CYAN = '\033[36m'
-	WHITE = '\033[37m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
-	RESET = '\033[0m'
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
 
 color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
-			 'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
+             'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
 
 #################################################################
 # Debug functions												#
@@ -90,31 +90,36 @@ color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW,
 debug_prints = True  
 
 # Debug print function
-def debug_print(msg, format):
-	
-	# If debug prints are disabled, quit
-	if not debug_prints: return
+def debug_print(format, *msgs):
+    
+    # If debug prints are disabled, quit
+    if not debug_prints: return
 
-	# If no color was specified, error & quit
-	if len(format) == 0:
-		print(Color.RED + "Wrong debug_print color" + Color.RESET)
-		return
+    # If no color was specified, error & quit
+    if len(format) == 0:
+        print(Color.RED + "Wrong debug_print color" + Color.RESET)
+        return
 
-	print_string = ''
-	color = format[0]
+    print_string = ""
+    color = format[0]
 
-	if len(format[1:]) > 0:
-		shape = format[1:]
-		if shape == '*': 
-			print_string += Color.BOLD
-		elif shape == '-': 
-			print_string += Color.UNDERLINE
-		elif shape == '*-': 
-			print_string += Color.BOLD + Color.UNDERLINE
-	
-	try:
-		print_string += color_dict[color] + str(msg) + Color.RESET
-		print(print_string)
-	except KeyError:
-		print(Color.RED + "Wrong debugPrint color" + Color.RESET)
-		return
+    if len(format[1:]) > 0:
+        shape = format[1:]
+        if shape == '*': 
+            print_string += Color.BOLD
+        elif shape == '-': 
+            print_string += Color.UNDERLINE
+        elif shape == '*-': 
+            print_string += Color.BOLD + Color.UNDERLINE
+
+    total_msg = ""
+    for msg in msgs:
+        total_msg = total_msg + str(msg) + ", "
+    total_msg = total_msg[:-2]
+
+    try:
+        print_string += color_dict[color] + total_msg + Color.RESET
+        log_info(print_string)
+    except KeyError:
+        log_info(Color.RED + "Wrong debugPrint color" + Color.RESET)
+        return

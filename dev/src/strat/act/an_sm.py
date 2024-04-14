@@ -71,7 +71,6 @@ class Setup(smach.State):
         userdata.nb_actions_done = [0]
         userdata.park = [0] 
         
-        userdata.next_move = Quaternion(-1,-1,-1,-1)
         
         ## Data about the match
         # userdata.deposit_area = [-1] # Coordonnées de là où on dépose les gâteaux
@@ -91,8 +90,8 @@ class Setup(smach.State):
         userdata.cb_elevator = [-1] # state of the elevator
 
         ## Game infos variables
-        userdata.next_action = NextAction.PENDING  # Indicateur de l'action en cours
-        userdata.next_pos = Quaternion(x=-1, y=-1, z=-1, w=-1)
+        userdata.next_action = Action.PENDING  # Indicateur de l'action en cours
+        userdata.next_move = Quaternion(x=-1, y=-1, z=-1, w=-1)
         userdata.error_reaction = [-1]
         userdata.nb_errors = [0]
         userdata.open_clamp = False
@@ -106,7 +105,7 @@ class Setup(smach.State):
         ##############################
         ## WAITING FOR START SIGNAL ##
         ##############################
-        log_info('Waiting for START signal ...')
+        log_info('Waiting for match to start ...')
 
         while not userdata.start:
             if self.preempt_requested():
@@ -138,8 +137,8 @@ class Repartitor(smach.State):
         log_info('[Repartitor] Requesting next action ...')
         repartitor_pub.publish(Empty()) # demande nextAction au DN
 
-        userdata.next_action = NextAction.PENDING # reset variable prochaine action
-        while userdata.next_action == NextAction.PENDING: # en attente de reponse du DN
+        userdata.next_action = Action.PENDING # reset variable prochaine action
+        while userdata.next_action == Action.PENDING: # en attente de reponse du DN
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
@@ -204,10 +203,10 @@ def init_sm(sm):
 
         # Specific Action States
         smach.StateMachine.add('PICKUPPLANT', pickupPlant,
-                        transitions={'success':'exit all','fail':'exit all','preempted':'exit preempted'})
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
   
         # Other States
         smach.StateMachine.add('PARK', park,
-                                transitions={'preempted':'END','end':'END'})
+                                transitions={'preempted':'END','end':'REPARTITOR'})
         smach.StateMachine.add('WAITING', waiting,
                                 transitions={'preempted':'END','end':'REPARTITOR'})

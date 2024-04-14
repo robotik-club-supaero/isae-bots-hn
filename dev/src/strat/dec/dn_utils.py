@@ -29,7 +29,7 @@ from enum import IntEnum, Enum
 #                                                               #
 #################################################################
 
-NODE_NAME = "[DEC] "
+NODE_NAME = "[DEC]"
 # SIMULATION = False if os.environ['HOSTNAME'] in ['pr', 'gr'] else True
 
 #################################################################
@@ -74,27 +74,27 @@ class Color():
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
         
-def log_info(log):
+def log_info(msg):
     """
     Print standard logs.
     """
-    rospy.loginfo(NODE_NAME + log)
+    rospy.loginfo(f"{NODE_NAME} {msg}")
 
 
-def log_warn(log):
+def log_warn(msg):
     """
     Print warning logs.
     """
-    rospy.logwarn(NODE_NAME + log)
+    rospy.logwarn(f"{NODE_NAME} {msg}")
 
-def log_errs(log):
+def log_errs(msg):
     """
     Print errors logs.
     """
-    rospy.logerr(NODE_NAME + log)
+    rospy.logerr(f"{NODE_NAME} {msg}")
 
-def log_fatal(log):
+def log_fatal(msg):
     """
     Print errors logs.
     """
-    rospy.logfatal(NODE_NAME + log)
+    rospy.logfatal(f"{NODE_NAME} {msg}")

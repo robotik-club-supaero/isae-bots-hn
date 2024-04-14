@@ -31,7 +31,7 @@ import rospy
 #                                                               #
 #################################################################
 
-NODE_NAME = "[ACT] "
+NODE_NAME = "[ACT]"
 
 ## Config reader
 
@@ -39,7 +39,7 @@ READER = configparser.ConfigParser()
 try :
 	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 except:
-	rospy.log_fatal(NODE_NAME + "Config file not found")
+	rospy.log_fatal(f"{NODE_NAME} Config file not found")
 
 #################################################################
 #                                                               #
@@ -66,8 +66,6 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 500
-order = [0,1]
-pos_plant = [(1800,700),(500,2400)]
 r = 300.   #rayon du cercle d'approche des plantes
 v = 400.      #vitesse moyenne du robot en mm/s
 
@@ -84,13 +82,14 @@ COLOR = {
 }
 
 
-
-class NextAction(Enum): #TODO
-    PENDING = -2
-
-    ACTION0 = 0
-    ACTION1 = 1
-    ACTION2 = 2
+class Action(IntEnum):
+    PENDING      = -2
+    NONE         = -1
+    PICKUP_PLANT = 0
+    PARK         = 1
+    WAIT         = 2
+    END          = 3
+    PREEMPT      = 4
     
     
 ''' ORDERS '''
@@ -105,9 +104,10 @@ DISPLACEMENT = {
       'marcheArr'        : 8
 }
 
-class DspOrder(Enum):
-    STOP = 0
-    MOVE_STRAIGHT = 1
+class DspOrderMode(IntEnum):
+    AVOIDANCE = 0
+    STRAIGHT_NO_AVOIDANCE = 1
+    STOP = 4
     
     
 class DoorOrder(Enum):
@@ -151,6 +151,11 @@ class DoorCallback(Enum):
     OPEN = 1
     BLOCKED = 2
     
+    
+class ElevatorOrder(Enum):
+    MOVE_UP = 0
+    MOVE_DOWN = 1
+        
 class ElevatorCallback(Enum):
     UNKNOWN = -2
     PENDING = -1
@@ -174,7 +179,6 @@ USERDATA_VAR_LIST = [ #TODO update
     'arm_order',
     'depositArea',
     'next_action',
-    'next_pos',
     'next_move',
     'deposit_area',
     'take_cakes_area',

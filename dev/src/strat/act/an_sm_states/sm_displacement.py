@@ -42,7 +42,7 @@ STOP_DEST_TIMEOUT = 3   #[s]
 def set_next_destination(userdata, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
 	x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, userdata.color)
-	userdata.next_pos = Quaternion(x_d, y_d, t_d, w)
+	userdata.next_move = Quaternion(x_d, y_d, t_d, w.value)
 
 #################################################################
 #                                                               #
@@ -60,14 +60,14 @@ class Displacement(smach.State):
 	def __init__(self):
 		smach.State.__init__(	self, 	
 		       					outcomes=['success','fail','preempted'],
-								input_keys=['nb_actions_done','cb_depl','robot_pos','next_pos','color'],
-								output_keys=['nb_actions_done','cb_depl','next_pos'])
+								input_keys=['nb_actions_done','cb_depl','robot_pos','next_move','color'],
+								output_keys=['nb_actions_done','cb_depl'])
 		
 	def execute(self, userdata):
 		# Init the callback var of dsp result. CHECK an_const to see details on cb_depl
 		userdata.cb_depl[0] = DspCallback.PENDING
 
-		dest = userdata.next_pos
+		dest = userdata.next_move
 		log_info(f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
 		disp_pub.publish(dest)
 

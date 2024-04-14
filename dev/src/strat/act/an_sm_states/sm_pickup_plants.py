@@ -18,18 +18,22 @@
 #                                                               #
 #################################################################
 
-import os
-import sys
+import os, sys, inspect
 import time
 import smach
 import math
-from an_const import *
+from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, DspOrderMode, WAIT_TIME, r, v
 from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub
-from an_utils import log_info, log_warn, log_errs, log_fatal
-from an_sm_states.sm_displacement import Displacement, set_next_destination
+from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_sm_states.sm_displacement import Displacement, set_next_destination
+
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from strat_const import PLANTS_POS
 
 #################################################################
 #                                                               #
@@ -48,9 +52,11 @@ class OpenDoors(smach.State):
         
     def execute(self, userdata):
         
+        debug_print('b', "Request to open doors")
+        
         userdata.cb_doors[0] = DoorCallback.PENDING
         
-        doors_pub.publish(DoorOrder.OPEN)
+        doors_pub.publish(DoorOrder.OPEN.value)
         
         begin = time.perf_counter()
         while time.perf_counter() - begin < WAIT_TIME:
@@ -77,12 +83,14 @@ class CloseDoors(smach.State):
         
     def execute(self, userdata):
         
+        debug_print('b', "Request to close doors")
+        
         time.sleep(r/v)
         
         userdata.cb_doors[0] = DoorCallback.PENDING
 
         # publish close doors order
-        doors_pub.publish(DoorOrder.CLOSE)
+        doors_pub.publish(DoorOrder.CLOSE.value)
                 
         begin = time.perf_counter()
         while time.perf_counter() - begin < WAIT_TIME:
@@ -94,7 +102,7 @@ class CloseDoors(smach.State):
             time.sleep(0.01)
             
         # timeout
-        log_info("Timeout")
+        log_warn("Timeout")
         
         return 'fail'
     
@@ -103,17 +111,21 @@ class CalcPositionningPlants(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos'],
+                                input_keys=['robot_pos', 'next_move','color'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
         
-        delta_y= pos_plant[order[1]][1] - userdata.robot_pos.y
-        delta_x= pos_plant[order[1]][0] - userdata.robot_pos.x
+        delta_y= PLANTS_POS[1][1] - userdata.robot_pos.y
+        delta_x= PLANTS_POS[1][0] - userdata.robot_pos.x
         theta= math.atan2(delta_y,delta_x)
         
+        debug_print('r*', "##", delta_x, delta_y)
         
-        userdata.next_move = Quaternion(-r*math.cos(theta) + pos_plant[order[1]][0], r*math.sin(theta) + pos_plant[order[1]][1],theta, DspOrder.MOVE_STRAIGHT)
+        set_next_destination(userdata,
+                             -r*math.cos(theta) + PLANTS_POS[1][0], r*math.sin(theta) + PLANTS_POS[1][1],theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+        
+        debug_print('g', userdata.next_move)
         
         return 'success'
     
@@ -122,15 +134,16 @@ class CalcTakePlants(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos'],
+                                input_keys=['robot_pos','color'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
         
-        delta_y= pos_plant[order[1]][1] - userdata.robot_pos.y
-        delta_x= pos_plant[order[1]][0] - userdata.robot_pos.x
+        delta_y= PLANTS_POS[1][1] - userdata.robot_pos.y
+        delta_x= PLANTS_POS[1][0] - userdata.robot_pos.x
         theta= math.atan2(delta_y,delta_x)
-        userdata.next_move = Quaternion(r*math.cos(theta) + pos_plant[order[1]][0], -r*math.sin(theta) + pos_plant[order[1]][1],theta, DspOrder.MOVE_STRAIGHT)
+        set_next_destination(userdata,
+                             r*math.cos(theta) + PLANTS_POS[1][0], -r*math.sin(theta) + PLANTS_POS[1][1],theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
         
         return 'success'
     
@@ -144,16 +157,18 @@ class RisePlants(smach.State):
         
     def execute(self, userdata):
         
+        debug_print('b', "Request to move elevator up")
+        
         userdata.cb_elevator[0] = ElevatorCallback.PENDING
         
-        elevator_pub.publish(ElevatorCallback.UP)
+        elevator_pub.publish(ElevatorOrder.MOVE_UP.value)
         
         begin = time.perf_counter()
         while time.perf_counter() - begin < WAIT_TIME:
             
-            if userdata.cb_doors[0] == ElevatorCallback.UP:
+            if userdata.cb_elevator[0] == ElevatorCallback.UP:
                 return 'success'
-            elif userdata.cb_doors[0] == ElevatorCallback.BLOCKED:
+            elif userdata.cb_elevator[0] == ElevatorCallback.BLOCKED:
                 return 'fail'
             time.sleep(0.01)
             
@@ -161,6 +176,23 @@ class RisePlants(smach.State):
         log_warn("Timeout")
         
         return 'fail'
+    
+    
+class PickupPlantsEnd(smach.State):
+    
+    def __init__(self):
+        smach.State.__init__(	self,
+                                outcomes=['fail','success','preempted'],
+                                input_keys=[],
+                                output_keys=[])
+        
+    def execute(self, userdata):
+        
+        
+        #TODO check that the action was actually successful
+        callback_action_pub.publish(exit=1, reason='success')
+        
+        return 'success'
         
 
 #################################################################
@@ -170,8 +202,8 @@ class RisePlants(smach.State):
 #################################################################
 
 pickupPlant = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_pos'],
-                                     output_keys=['cb_doors','next_move','cb_depl'])
+                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_move','nb_actions_done','cb_elevator','color'],
+                                     output_keys=['cb_doors','next_move','cb_depl','nb_actions_done','cb_elevator'])
     
     
     
@@ -182,8 +214,8 @@ pickUpPlantSequence = smach.Sequence(  # sequence container
     connector_outcome = 'success')
 
 deplSequence = smach.Sequence(  # sequence container
-    input_keys = ['next_move','cb_depl','robot_pos'],
-    output_keys = ['cb_depl','next_move'],
+    input_keys = ['next_move','cb_depl','robot_pos','nb_actions_done','color'],
+    output_keys = ['cb_depl','next_move','nb_actions_done'],
     outcomes = ['success', 'fail', 'preempted'],
     connector_outcome = 'success')
 
@@ -199,8 +231,8 @@ with deplSequence:
     
     
 pickUpPlantConcurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
-                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator'],
-                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator'],
+                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator','nb_actions_done','color'],
+                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator','nb_actions_done'],
                             default_outcome='fail',
                             outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPL_SEQ':'success'},
                                             'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},
@@ -217,5 +249,8 @@ with pickupPlant:
     smach.StateMachine.add('DEPL_POSITIONING_PLANTS', Displacement(),
                             transitions = {'success':'PICKUP_PLANTS_CONC','fail':'fail','preempted':'preempted'})
     smach.StateMachine.add('PICKUP_PLANTS_CONC', pickUpPlantConcurrence, 
+                            transitions = {'success':'PICKUP_PLANT_END', 'fail':'PICKUP_PLANT_END', 'preempted':'preempted'}
+                            )
+    smach.StateMachine.add('PICKUP_PLANT_END', PickupPlantsEnd(), 
                             transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}
                             )

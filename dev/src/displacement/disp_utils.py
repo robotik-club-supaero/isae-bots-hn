@@ -43,7 +43,7 @@ from pathfinder.obstacle_circ import ObstacleCirc
 DEBUG_PRINT = True
 
 VERSION = 1
-NODE_NAME = "[DSP] "   
+NODE_NAME = "[DSP]"   
 
 
 
@@ -99,11 +99,11 @@ def printable_pos(pos):
     p_pos = [int(pos[0]), int(pos[1]), round(pos[2], 2)]
     return p_pos
 
-def patch_frame_br(x, y, theta, color):
-    """Easier patch"""
-    if COLOR[color] == "HOME":
-        return x, y, theta
-    return 2000-x, y, theta+ONE_PI
+# def patch_frame_br(x, y, theta, color):
+#     """Easier patch"""
+#     if COLOR[color] == "HOME":
+#         return x, y, theta
+#     return 2000-x, y, theta+ONE_PI
 
 #######################################################################
 # LOGS functions
@@ -111,15 +111,15 @@ def patch_frame_br(x, y, theta, color):
 
 def log_info(msg):
     """Fonction intermediaire affichant les logs pendant l'execution."""
-    rospy.loginfo(NODE_NAME+msg)
+    rospy.loginfo(f"{NODE_NAME} {msg}")
 
 def log_errs(msg):
     """Fonction intermediaire affichant les logs d'erreurs."""
-    rospy.logerr(NODE_NAME+msg)
+    rospy.logerr(f"{NODE_NAME} {msg}")
 
 def log_warn(msg):
     """Fonction intermediaire affichant les logs de warning."""
-    rospy.logwarn(NODE_NAME+msg)
+    rospy.logwarn(f"{NODE_NAME} {msg}")
 
 
 def dprint(msg):

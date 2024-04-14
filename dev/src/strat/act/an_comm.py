@@ -25,7 +25,7 @@ import rospy
 from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import *
+from an_const import Action, DoorCallback, ElevatorCallback, DspCallback, COLOR
 from an_utils import log_info, log_warn, log_errs
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
@@ -104,7 +104,7 @@ def cb_next_action(msg):
     if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
         log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
-    p_smData.next_action = NextAction(msg.data[0])
+    p_smData.next_action = Action(msg.data[0])
 
 
 def cb_depl_fct(msg):
@@ -220,7 +220,7 @@ global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
 repartitor_pub = rospy.Publisher('/strat/action/request', Empty, queue_size=10, latch=True)
 callback_action_pub = rospy.Publisher('/strat/action/callback', EndOfActionMsg, queue_size=10, latch=True)
-disp_pub = rospy.Publisher('/dsp/order/next_pos', Quaternion, queue_size=10, latch=True)
+disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
 # SPECIFIC TO CURRENT YEAR
@@ -236,7 +236,7 @@ global start_sub, color_sub, position_sub, repartitor_sub, disp_sub
 start_sub = rospy.Subscriber('/game/start', Int16, setup_start)
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
 repartitor_sub = rospy.Subscriber('/strat/action/order', Int16MultiArray, cb_next_action)
-disp_sub = rospy.Subscriber('/dsp/callback/next_pos', Int16, cb_depl_fct)
+disp_sub = rospy.Subscriber('/dsp/callback/next_move', Int16, cb_depl_fct)
 position_sub = rospy.Subscriber('/current_position', Pose2D, cb_position_fct)
 park_sub = rospy.Subscriber('/park', Int16, cb_park_fct)
 

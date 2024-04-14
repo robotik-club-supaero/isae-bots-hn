@@ -35,7 +35,7 @@ import sys
 import rospy
 import numpy as np
 from math import sqrt
-from time import time
+import time
 
 # import fonction du Pathfinder
 from pathfinder.pathfinder import Pathfinder
@@ -46,7 +46,7 @@ from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
 # import utils
-from disp_utils import *
+from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord
 
 # import comms
 from disp_comm import init_comm
@@ -70,7 +70,7 @@ class DisplacementNode:
     def __init__(self):
         """Initialise le DisplacementNode."""
 
-        log_info("Initializing Displacement Node.")
+        log_info("Initializing DSP Node ...")
 
         ## Variables liées au match
 
@@ -323,7 +323,7 @@ class DisplacementNode:
         """Gestion d'arret du robot."""
         # dprint("Enter handle_obstacle()")
         if obstacle_stop:
-            self.time_last_seen_obstacle = time()
+            self.time_last_seen_obstacle = time.time()
             if not self.paused:
                 log_info("New obstacle detected! - STOP")
                 self.paused = True
@@ -337,7 +337,7 @@ class DisplacementNode:
 
         if obstacle_seen:   # Il faut ralentir
             # dprint("Obstacle is seen")
-            # self.time_last_seen_obstacle = time()
+            # self.time_last_seen_obstacle = time.time()
 
             log_info("New obstacle detected! - SPEED DOWN")
             self.paused = False
@@ -361,11 +361,17 @@ class DisplacementNode:
 #################################################################
 
 def main():
+        
     # Init and create DecisionNode
-    rospy.init_node("DisplacementNode")
+    rospy.init_node("DSP")
+    
+    time.sleep(1)
+    
     node = DisplacementNode()
 
     init_comm(node)
+    
+    log_info("Waiting for match to start ...")
     
     # Wait for close key to quit
     rospy.spin()

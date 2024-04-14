@@ -118,7 +118,7 @@ def recv_action_callback(msg):
         p_dn.nb_actions_done[0] += 1
         return
 
-    if msg.exit ==-1:
+    if msg.exit == -1:
         log_errs(f"Last action failed, reason: {msg.reason}")
         return
     log_errs("Wrong value sent on /strat/done_action ...")
@@ -153,7 +153,7 @@ def stop_IT():
     """
     log_info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-    next_action_pub.publish( [Action.END.value] )
+    next_action_pub.publish(data = [Action.END.value])
 
 #################################################################
 #                                                               #

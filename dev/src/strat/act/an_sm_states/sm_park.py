@@ -39,8 +39,8 @@ class ObsPark(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','success','disp'],
-			                    input_keys=['nb_actions_done','cb_depl','robot_pos','next_pos','color'],
-			                    output_keys=['nb_actions_done','cb_depl','next_pos'])
+			                    input_keys=['nb_actions_done','cb_depl','robot_pos','next_move','color'],
+			                    output_keys=['nb_actions_done','cb_depl','next_move'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -53,12 +53,13 @@ class ObsPark(smach.State):
         if userdata.nb_actions_done[0] == 0:
             if userdata.color == 1:
                 z = -z
-            set_next_destination(userdata, x, y, z, DISPLACEMENT['standard'])
+            set_next_destination(userdata, x, y, z, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
             return 'disp'
 
         if userdata.nb_actions_done[0] == 1:
              #TODO send a force stop order
-             return 'success'
+            callback_action_pub.publish(exit=1, reason='success')
+            return 'success'
 
         callback_action_pub.publish(exit=1, reason='success')
         return 'success'
@@ -71,8 +72,8 @@ class ObsPark(smach.State):
 #################################################################
 
 park = smach.StateMachine(  outcomes=['preempted', 'end'],
-			                input_keys=['nb_actions_done','cb_depl','robot_pos','next_pos', 'color'],
-			                output_keys=['nb_actions_done','cb_depl','next_pos'])
+			                input_keys=['nb_actions_done','cb_depl','robot_pos','next_move', 'color'],
+			                output_keys=['nb_actions_done','cb_depl','next_move'])
 							
 with park:
 	smach.StateMachine.add('OBS_PARK', 

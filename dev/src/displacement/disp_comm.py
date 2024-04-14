@@ -52,16 +52,15 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################
 
 ## CONSTANTES
-BECAUSE_BIG_IS_BIG  = 0 # if ROBOT_NAME=="GR" else 0
 STOP_RANGE_STANDARD = 350
 STOP_RANGE_AVOIDING = 350
 DIST_MIN = 50
 RADIUS_ROBOT_OBSTACLE = 180
 RESET_RANGE = 560  
-STOP_RANGE_X_STAND = 650 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_X_AVOID = 500 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_Y_STAND = 250 + BECAUSE_BIG_IS_BIG
-STOP_RANGE_Y_AVOID = 175 + BECAUSE_BIG_IS_BIG
+STOP_RANGE_X_STAND = 650
+STOP_RANGE_X_AVOID = 500
+STOP_RANGE_Y_STAND = 250
+STOP_RANGE_Y_AVOID = 175
 
 COEFF_ANGLES = 0.57735026 # pi/6 | 30°
 
@@ -480,7 +479,7 @@ def callback_delete(msg):
     obst = CAKES_OBST[msg.data].copy()
     if obst.get_name() == "C":
         x, y = obst.get_x_center(), obst.get_y_center()
-        x, y, _ = patch_frame_br(x, y, 0, p_dn.color)
+        # x, y, _ = patch_frame_br(x, y, 0, p_dn.color) #TODO remove
         obst.set_x_center(x)
         obst.set_y_center(y)
 
@@ -523,9 +522,8 @@ sub_lidar = rospy.Subscriber("/obstaclesInfo", Int16MultiArray, callback_lidar)
 pub_speed = rospy.Publisher("/teensy/obstacle_seen", Int16, queue_size=10, latch=True)
 
 # Comm Strat
-pub_strat = rospy.Publisher("/disp/done_displacement", Int16, queue_size=10, latch=False)
-sub_strat = rospy.Subscriber("/disp/next_displacement", Quaternion, callback_strat)
-sub_initPos = rospy.Subscriber("/disp/initPos", Int16, callback_init_pos)
+pub_strat = rospy.Publisher("/dsp/callback/next_move", Int16, queue_size=10, latch=False)
+sub_strat = rospy.Subscriber("/dsp/order/next_move", Quaternion, callback_strat)
 
 # Comm Position
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)

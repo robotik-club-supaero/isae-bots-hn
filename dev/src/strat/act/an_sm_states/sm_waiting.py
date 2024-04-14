@@ -37,8 +37,8 @@ class ObsWaiting(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','success','redo'],
-			                    input_keys=['nb_actions_done','next_pos','color'],
-			                    output_keys=['nb_actions_done','next_pos'])
+			                    input_keys=['nb_actions_done','next_move','color'],
+			                    output_keys=['nb_actions_done','next_move'])
 
     def execute(self, userdata):
         begin_time = time.time()
@@ -61,8 +61,8 @@ class ObsWaiting(smach.State):
 #################################################################
 
 waiting = smach.StateMachine(   outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','next_pos', 'color'],
-                                output_keys=['nb_actions_done','next_pos','color'])
+                                input_keys=['nb_actions_done','next_move', 'color'],
+                                output_keys=['nb_actions_done','next_move','color'])
 							
 with waiting:
     smach.StateMachine.add('OBS_WAITING', 

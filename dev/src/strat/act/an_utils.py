@@ -123,3 +123,7 @@ def debug_print(format, *msgs):
     except KeyError:
         log_info(Color.RED + "Wrong debugPrint color" + Color.RESET)
         return
+    
+    
+def debug_print_move(quaternion):
+    debug_print('c*', f"({quaternion.x}, {quaternion.y}, {quaternion.z}, {quaternion.w})")

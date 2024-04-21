@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#     ____                                                  
+#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
+#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
+#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
+#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
+#   ____       _ |_|       _   _ _       ____ _       _     
+#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
+#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
+#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
+#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
+#
+# pyright: reportMissingImports=false
 
 import os
 import rospy
@@ -8,6 +20,7 @@ from geometry_msgs.msg import Pose2D, Quaternion
 from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray
 
 from threading import RLock
+import time
 
 from math import cos, sin, atan2
 import numpy as np
@@ -356,7 +369,7 @@ class Robot(Drawable):
 
         canvas.delete("robot")
         canvas.draw_rectangle(self._location, self._width, self._height,
-                              rotation=self._rotation, fill="red", tag="robot")
+                              rotation=self._rotation, fill="blue", tag="robot")
 
         canvas.delete("robot_direction")
         canvas.draw_line(self._location, (self._location + [self._width/2, 0]),
@@ -484,7 +497,7 @@ class Obstacles(Drawable):
             canvas.draw_oval(
                 location, InterfaceNode.OBSTACLE_PLOT_RADIUS, fill=self._color, tag=self._tag)
             canvas.draw_line(
-                location, locaton + InterfaceNode.RATIOV * delta, fill='green', tag=self._tag)
+                location, location + InterfaceNode.RATIOV * delta, fill='green', tag=self._tag)
 
 
 class Path(Drawable):
@@ -576,7 +589,7 @@ class Grid(Drawable):
 
         node = np.zeros(2)
         for i in range(len(self._grid) // 2):
-            node[:] = msg[2*i:2*i+2]
+            node[:] = self._grid[2*i:2*i+2] #BUG
             canvas.draw_oval(node, 5, fill='grey', tag='grid_circle')
 
 class InterfaceNode:
@@ -591,7 +604,7 @@ class InterfaceNode:
     TABLE_HEIGHT = 3000  # (mm)
     TABLE_WIDTH = 2000  # (mm)
 
-    OBSTACLE_PLOT_RADIUS = 180 / SCALE  # (mm) - 180 px
+    OBSTACLE_PLOT_RADIUS = 150  # (mm)
     RATIOV = 1
 
     def __init__(self, refresh_interval=10):
@@ -620,7 +633,7 @@ class InterfaceNode:
         self._robot = Robot.load("../pr_start.ini")
         self._clickMarker = Order(color="yellow", tag="clickPosition")
         self._orderMarker = Order(color="purple", tag="order")
-        self._sonarObstacles = Obstacles("blue", "sonars")
+        self._sonarObstacles = Obstacles("purple", "sonars")
         self._lidarObstacles = Obstacles("red", "lidar")
         self._path = Path()
         self._grid = Grid()
@@ -734,7 +747,7 @@ class InterfaceNode:
 
     def updateObstacles(self, msg):
         with self.lock:
-            if msg.data[0]:
+            if msg.data[0] == 1:
                 obstacles = self._sonarObstacles
             else:
                 obstacles = self._lidarObstacles
@@ -742,7 +755,7 @@ class InterfaceNode:
             obstacles.clear()
 
             for i in range((msg.layout.dim[0]).size):
-                obstacles.addObstacles([msg.data[5*i + j + 1]
+                obstacles.addObstacle([msg.data[5*i + j + 1]
                                        for j in range(5)])
 
     def updatePath(self, msg):

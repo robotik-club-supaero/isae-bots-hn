@@ -27,7 +27,7 @@ from geometry_msgs.msg import Quaternion
 
 from an_const import DspCallback
 from an_comm import disp_pub
-from an_utils import log_info, log_errs, log_warn, adapt_pos_to_side
+from an_utils import log_info, log_errs, log_warn, adapt_pos_to_side, debug_print
 
 #################################################################
 #                                                               #
@@ -68,7 +68,7 @@ class Displacement(smach.State):
 		userdata.cb_depl[0] = DspCallback.PENDING
 
 		dest = userdata.next_move
-		log_info(f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
+		debug_print('c*', f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
 		disp_pub.publish(dest)
 
 		init_time = time.time()

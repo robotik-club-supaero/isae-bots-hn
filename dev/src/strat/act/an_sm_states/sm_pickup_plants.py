@@ -22,9 +22,10 @@ import os, sys, inspect
 import time
 import smach
 import math
-from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, DspOrderMode, WAIT_TIME, r, v
+from numpy.linalg import norm
+from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, DspOrderMode, WAIT_TIME, R_APPROACH_PLANTS
 from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub
-from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print
+from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_sm_states.sm_displacement import Displacement, set_next_destination
@@ -52,7 +53,7 @@ class OpenDoors(smach.State):
         
     def execute(self, userdata):
         
-        debug_print('b', "Request to open doors")
+        debug_print('c', "Request to open doors")
         
         userdata.cb_doors[0] = DoorCallback.PENDING
         
@@ -83,10 +84,8 @@ class CloseDoors(smach.State):
         
     def execute(self, userdata):
         
-        debug_print('b', "Request to close doors")
-        
-        time.sleep(r/v)
-        
+        debug_print('c', "Request to close doors")
+                
         userdata.cb_doors[0] = DoorCallback.PENDING
 
         # publish close doors order
@@ -111,22 +110,29 @@ class CalcPositionningPlants(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos', 'next_move','color'],
+                                input_keys=['robot_pos','color'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
         
-        delta_y= PLANTS_POS[1][1] - userdata.robot_pos.y
-        delta_x= PLANTS_POS[1][0] - userdata.robot_pos.x
-        theta= math.atan2(delta_y,delta_x)
+        '''
+        xdest = xp - R/d(xp - x)
+        ydest = yp - R/D(yp - y)
+        '''
         
-        debug_print('r*', "##", delta_x, delta_y)
+        plants_id = 1
         
-        set_next_destination(userdata,
-                             -r*math.cos(theta) + PLANTS_POS[1][0], r*math.sin(theta) + PLANTS_POS[1][1],theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+        x, y = userdata.robot_pos.x, userdata.robot_pos.y
+        (xp, yp) = PLANTS_POS[plants_id]
         
-        debug_print('g', userdata.next_move)
+        d = norm([xp - x, yp - y])
         
+        x_dest = xp - R_APPROACH_PLANTS/d*(xp - x)
+        y_dest = yp - R_APPROACH_PLANTS/d*(yp - y)
+        theta_dest = math.atan2(yp - y,xp - x)
+        
+        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+                
         return 'success'
     
 class CalcTakePlants(smach.State):
@@ -138,13 +144,25 @@ class CalcTakePlants(smach.State):
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
+                
+        '''
+        xdest = xp + R/d(xp - x)
+        ydest = yp + R/D(yp - y)
+        '''
         
-        delta_y= PLANTS_POS[1][1] - userdata.robot_pos.y
-        delta_x= PLANTS_POS[1][0] - userdata.robot_pos.x
-        theta= math.atan2(delta_y,delta_x)
-        set_next_destination(userdata,
-                             r*math.cos(theta) + PLANTS_POS[1][0], -r*math.sin(theta) + PLANTS_POS[1][1],theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+        plants_id = 1
         
+        x, y = userdata.robot_pos.x, userdata.robot_pos.y
+        (xp, yp) = PLANTS_POS[plants_id]
+        
+        d = norm([xp - x, yp - y])
+        
+        x_dest = xp + R_APPROACH_PLANTS/d*(xp - x)
+        y_dest = yp + R_APPROACH_PLANTS/d*(yp - y)
+        theta_dest = math.atan2(yp - y,xp - x)
+        
+        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+                
         return 'success'
     
 class RisePlants(smach.State):
@@ -157,7 +175,7 @@ class RisePlants(smach.State):
         
     def execute(self, userdata):
         
-        debug_print('b', "Request to move elevator up")
+        debug_print('c', "Request to move elevator up")
         
         userdata.cb_elevator[0] = ElevatorCallback.PENDING
         

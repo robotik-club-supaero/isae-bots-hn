@@ -56,9 +56,9 @@ READ_FAIL_PROB = 0  # entre 0 et 1
 
 ## Constants GR
 CHERRIES_TAKING = 0
-DOORS_TIME = 2
+DOORS_TIME = 1
 CLAMP_TIME = 0
-ELEVATOR_TIME = 2
+ELEVATOR_TIME = 1
 
 #############################
 

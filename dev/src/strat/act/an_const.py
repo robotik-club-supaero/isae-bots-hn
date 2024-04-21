@@ -66,8 +66,7 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 500
-r = 300.   #rayon du cercle d'approche des plantes
-v = 400.      #vitesse moyenne du robot en mm/s
+R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
 
 
 #################################################################

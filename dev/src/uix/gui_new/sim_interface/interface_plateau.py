@@ -33,6 +33,8 @@ from sys import exit
 
 from enum import Enum
 
+from interface_const import *
+
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -334,8 +336,6 @@ class DoorState(Enum):
 
 class Robot(Drawable):
 
-    PLANT_CAPACITY = 6
-
     _width: PhysicalUnits
     _height: PhysicalUnits
 
@@ -405,15 +405,13 @@ class Robot(Drawable):
         return len(self._plants)
 
     def carryPlant(self, plant):
-        if self.plants < Robot.PLANT_CAPACITY:
+        if self.plants < PLANT_CAPACITY:
             self._plants.append(plant)
         else:
             raise ValueError("Robot cannot carry more plants")
         
 
 class Plant(Drawable):
-
-    RADIUS = 25. # mm
 
     def __init__(self, id, location):
         super().__init__()
@@ -423,7 +421,7 @@ class Plant(Drawable):
 
     def _draw(self, canvas):
         self.clear(canvas)
-        canvas.draw_oval(self._location, Plant.RADIUS, fill="green", tag=f"plant_{self._id}")
+        canvas.draw_oval(self._location, PLANT_RADIUS, fill="green", tag=f"plant_{self._id}")
 
     def clear(self, canvas):
         canvas.delete(f"plant_{self._id}")
@@ -448,7 +446,7 @@ class Order(Drawable):
     def _draw(self, canvas):
         canvas.delete(self._tag)
         if self._visible:
-            canvas.draw_oval(self._location, 10/InterfaceNode.SCALE,
+            canvas.draw_oval(self._location, 10/INTERFACE_SCALE,
                              fill=self._color, tag=self._tag)
 
     @property
@@ -495,19 +493,15 @@ class Obstacles(Drawable):
 
         for location, delta in self._obstacles:
             canvas.draw_oval(
-                location, InterfaceNode.OBSTACLE_PLOT_RADIUS, fill=self._color, tag=self._tag)
+                location, OBSTACLE_PLOT_RADIUS, fill=self._color, tag=self._tag)
             canvas.draw_line(
-                location, location + InterfaceNode.RATIOV * delta, fill='green', tag=self._tag)
+                location, location + RATIOV * delta, fill='green', tag=self._tag)
 
 
 class Path(Drawable):
 
-    PATHWIDTH = 8  # (px)
-    PATHARROWLENGTH = 150  # (mm)
-
     def __init__(self):
         super().__init__()
-        self.PATHCIRCLEWIDTH = 25 / InterfaceNode.SCALE  # (mm) - 25 px
         self._startPos = np.zeros(2)
         self._path = []
 
@@ -531,11 +525,10 @@ class Path(Drawable):
         l = len(path)//2
         if l == 0:
             return
-        print(f"Longueur du path : {2*l}")
-
+        
         # 1er deplacement
-        Path._create_path_circle(canvas, self._startPos)
-        Path._create_path_line(canvas, self._startPos,
+        self._create_path_circle(canvas, self._startPos)
+        self._create_path_line(canvas, self._startPos,
                                np.array([path[0], path[1]]))
 
         node1 = np.zeros(2)
@@ -553,22 +546,22 @@ class Path(Drawable):
         self._create_path_arrow(canvas, node1, self._finalCap, cache=node2)
 
     def _create_path_circle(self, canvas, node):
-        canvas.draw_oval(node, self.PATHCIRCLEWIDTH,
+        canvas.draw_oval(node, PATHCIRCLEWIDTH / INTERFACE_SCALE,
                          fill='yellow', tag='path_circle')
 
     def _create_path_line(self, canvas, node1, node2):
         canvas.draw_line(node1, node2, fill='yellow',
-                         width=self.PATHWIDTH, tag="path_line")
+                         width=PATHWIDTH, tag="path_line")
 
     def _create_path_arrow(self, canvas, lastNode, finalCap, cache=None):
         if cache is None:
             cache = np.zeros(2)
         cache[:] = [cos(finalCap), sin(finalCap)]
-        cache *= self.PATHARROWLENGTH
+        cache *= PATHARROWLENGTH / INTERFACE_SCALE
         cache += lastNode
 
         canvas.draw_line(lastNode, cache, fill='purple', arrow=tk.LAST, arrowshape=(
-            8, 10, 6), width=self.PATHWIDTH*2/3, tag="path_line")
+            8, 10, 6), width=PATHWIDTH*2/3, tag="path_line")
 
 
 class Grid(Drawable):
@@ -589,23 +582,10 @@ class Grid(Drawable):
 
         node = np.zeros(2)
         for i in range(len(self._grid) // 2):
-            node[:] = self._grid[2*i:2*i+2] #BUG
+            node[:] = self._grid[2*i:2*i+2]
             canvas.draw_oval(node, 5, fill='grey', tag='grid_circle')
 
 class InterfaceNode:
-
-    BORDER_LEFT = 32  # marge à gauche de l'interface (px)
-    BORDER_RIGHT = 32  # marge à droite de l'interface (px)
-    BORDER_TOP = 0  # marge en haut de l'interface (px)
-    BORDER_BOTTOM = 0  # marge en bas de l'interface (px)
-
-    # SCALE must match the size of 'Background_interface.gif'
-    SCALE = 975/3000  # conversion mm en pixels (3m <-> 975px)
-    TABLE_HEIGHT = 3000  # (mm)
-    TABLE_WIDTH = 2000  # (mm)
-
-    OBSTACLE_PLOT_RADIUS = 150  # (mm)
-    RATIOV = 1
 
     def __init__(self, refresh_interval=10):
         rospy.init_node('InterfaceNode')
@@ -617,9 +597,9 @@ class InterfaceNode:
         self._force_redraw = False
 
         self._canvas = ScaledCanvas(
-            self._fenetre, InterfaceNode.TABLE_WIDTH, InterfaceNode.TABLE_HEIGHT, InterfaceNode.SCALE,
-            border_left=InterfaceNode.BORDER_LEFT, border_right=InterfaceNode.BORDER_RIGHT,
-            border_top=InterfaceNode.BORDER_TOP, border_bottom=InterfaceNode.BORDER_BOTTOM)
+            self._fenetre, TABLE_WIDTH, TABLE_HEIGHT, INTERFACE_SCALE,
+            border_left = BORDER_LEFT, border_right = BORDER_RIGHT,
+            border_top = BORDER_TOP, border_bottom = BORDER_BOTTOM)
 
         self._canvas.bind('<Button-3>', self.noteClickPosition)
         self._canvas.bind('<ButtonRelease-3>', self.sendOrder)
@@ -638,13 +618,12 @@ class InterfaceNode:
         self._path = Path()
         self._grid = Grid()
 
-        CLUSTER_RADIUS = 125 #mm
         self._plants = []
         for cluster in [[698.5,1001.5], [1298.5,1001.5], [698.5,2001.5], [1298.5,2001.5], [498.5,1503], [1498.5,1503]]:            
             x, y = cluster
             for i in range(6):
-                dx = (CLUSTER_RADIUS - Plant.RADIUS) * cos(2*np.pi*i/6)
-                dy = (CLUSTER_RADIUS - Plant.RADIUS) * sin(2*np.pi*i/6)
+                dx = (CLUSTER_RADIUS - PLANT_RADIUS) * cos(2*np.pi*i/6)
+                dy = (CLUSTER_RADIUS - PLANT_RADIUS) * sin(2*np.pi*i/6)
                 self._plants.append(Plant(len(self._plants), [x+dx, y+dy]))
 
         self.lock = RLock()
@@ -706,8 +685,8 @@ class InterfaceNode:
                 i = 0
                 while i < len(self._plants):
                     plant = self._plants[i]
-                    if circle_segment_collide(plant.location, plant.RADIUS, doorLine):
-                        if self._robot.plants < Robot.PLANT_CAPACITY:
+                    if circle_segment_collide(plant.location, PLANT_RADIUS, doorLine):
+                        if self._robot.plants < PLANT_CAPACITY:
                             self._robot.carryPlant(plant)
                             plant.clear(self._canvas)
                             self._plants.pop(i)

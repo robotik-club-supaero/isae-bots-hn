@@ -53,7 +53,7 @@ class ObsPark(smach.State):
         if userdata.nb_actions_done[0] == 0:
             if userdata.color == 1:
                 z = -z
-            set_next_destination(userdata, x, y, z, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+            set_next_destination(userdata, x, y, z, DspOrderMode.AVOIDANCE)
             return 'disp'
 
         if userdata.nb_actions_done[0] == 1:

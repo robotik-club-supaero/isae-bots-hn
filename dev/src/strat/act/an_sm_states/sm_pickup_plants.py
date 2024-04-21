@@ -120,7 +120,7 @@ class CalcPositionningPlants(smach.State):
         ydest = yp - R/D(yp - y)
         '''
         
-        plants_id = 1
+        plants_id = 2
         
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         (xp, yp) = PLANTS_POS[plants_id]
@@ -150,7 +150,7 @@ class CalcTakePlants(smach.State):
         ydest = yp + R/D(yp - y)
         '''
         
-        plants_id = 1
+        plants_id = 2
         
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         (xp, yp) = PLANTS_POS[plants_id]
@@ -161,7 +161,7 @@ class CalcTakePlants(smach.State):
         y_dest = yp + R_APPROACH_PLANTS/d*(yp - y)
         theta_dest = math.atan2(yp - y,xp - x)
         
-        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.STRAIGHT_NO_AVOIDANCE)
+        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
                 
         return 'success'
     

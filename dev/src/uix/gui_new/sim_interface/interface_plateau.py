@@ -718,7 +718,6 @@ class InterfaceNode:
         '''Se fait appeler par un subscriber si c'est avec la simulation 1 robot'''
         with self.lock:
             self._robot.setLocation([msg.x, msg.y], msg.theta)
-            self._path.setStartPos(self._robot.location)
 
     def updateRobotDoorState(self, msg):
         with self.lock:
@@ -738,6 +737,9 @@ class InterfaceNode:
                                        for j in range(5)])
 
     def updatePath(self, msg):
+        
+        self._path.setStartPos(self._robot.location)
+
         with self.lock:
             if msg.data is None:
                 return

@@ -5,3 +5,5 @@
 - Enums pour les variables comme next_action qui doivent avoir des noms explicites plutôt que des entiers   
     Au moins :
         cb_depl
+
+- pb de transition lorsqu'un adversaire est sur la destination

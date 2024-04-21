@@ -104,7 +104,7 @@ def cb_next_action(msg):
     if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
         log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
         return
-    p_smData.next_action = Action(msg.data[0])
+    p_smData.next_action = [Action(msg.data[0])] + list(msg.data[1:])
 
 
 def cb_depl_fct(msg):

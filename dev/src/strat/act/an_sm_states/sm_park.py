@@ -22,9 +22,10 @@ import os
 import sys
 import time
 import smach
+import math
 from an_const import *
 from an_comm import callback_action_pub, add_score
-from an_sm_states.sm_displacement import Displacement, set_next_destination
+from an_sm_states.sm_displacement import Displacement, colored_destination
 
 #################################################################
 #                                                               #
@@ -32,15 +33,15 @@ from an_sm_states.sm_displacement import Displacement, set_next_destination
 #                                                               #
 #################################################################
 
-class ObsPark(smach.State):
+class CalcParkPos(smach.State):
     """
     SM PARK : Observer state
     """
     def __init__(self):
         smach.State.__init__(   self,  
-                                outcomes=['preempted','success','disp'],
-			                    input_keys=['nb_actions_done','cb_depl','robot_pos','next_move','color'],
-			                    output_keys=['nb_actions_done','cb_depl','next_move'])
+                                outcomes=['preempted','success','fail'],
+			                    input_keys=['cb_depl','robot_pos','next_move','color'],
+			                    output_keys=['cb_depl','next_move'])
 
     def execute(self, userdata):
         if self.preempt_requested():
@@ -48,20 +49,34 @@ class ObsPark(smach.State):
             return 'preempted'
 
         ## Move to parking position
-        x, y, z = PARKING_POS
+        x_dest, y_dest = PARKING_POS
+        theta_dest = math.atan2(y_dest - userdata.robot_pos.y, x_dest - userdata.robot_pos.x)
         # Modif pour la strat du dernier match 
-        if userdata.nb_actions_done[0] == 0:
-            if userdata.color == 1:
-                z = -z
-            set_next_destination(userdata, x, y, z, DspOrderMode.AVOIDANCE)
-            return 'disp'
 
-        if userdata.nb_actions_done[0] == 1:
-             #TODO send a force stop order
-            callback_action_pub.publish(exit=1, reason='success')
-            return 'success'
+        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+        return 'success'
+    
+    
+class ParkEnd(smach.State):
+    """
+    SM PARK : Observer state
+    """
+    def __init__(self):
+        smach.State.__init__(   self,  
+                                outcomes=['preempted','success','fail'],
+			                    input_keys=[],
+			                    output_keys=[])
 
+    def execute(self, userdata):
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
+        
+        #TODO actions before exiting the state machine
+
+        #TODO check that the action was actually successful
         callback_action_pub.publish(exit=1, reason='success')
+
         return 'success'
 
 
@@ -71,15 +86,18 @@ class ObsPark(smach.State):
 #                                                               #
 #################################################################
 
-park = smach.StateMachine(  outcomes=['preempted', 'end'],
-			                input_keys=['nb_actions_done','cb_depl','robot_pos','next_move', 'color'],
-			                output_keys=['nb_actions_done','cb_depl','next_move'])
+park = smach.StateMachine(  outcomes=['preempted', 'end', 'fail'],
+			                input_keys=['cb_depl','robot_pos','next_move', 'color'],
+			                output_keys=['cb_depl','next_move'])
 							
 with park:
-	smach.StateMachine.add('OBS_PARK', 
-                            ObsPark(), 
-		                    transitions={'preempted':'preempted','success':'end','disp':'DISPLACEMENT'})
-	smach.StateMachine.add('DISPLACEMENT', 
+	smach.StateMachine.add('CALC_PARK_POS', 
+                            CalcParkPos(), 
+		                    transitions={'preempted':'preempted','success':'DEPL_PARK','fail':'fail'})
+	smach.StateMachine.add('DEPL_PARK', 
                             Displacement(), 
-		                    transitions={'preempted':'preempted','success':'OBS_PARK','fail':'OBS_PARK'})
+		                    transitions={'preempted':'preempted','success':'PARK_END','fail':'fail'})
+	smach.StateMachine.add('PARK_END', 
+                            ParkEnd(), 
+		                    transitions={'preempted':'preempted','success':'end','fail':'fail'})
 

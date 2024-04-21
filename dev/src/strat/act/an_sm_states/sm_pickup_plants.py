@@ -28,7 +28,7 @@ from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_sm_states.sm_displacement import Displacement, set_next_destination
+from an_sm_states.sm_displacement import Displacement, colored_destination
 
 #NOTE to import from parent directory
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -110,18 +110,17 @@ class CalcPositionningPlants(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color'],
+                                input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
-        
-        '''
-        xdest = xp - R/d(xp - x)
-        ydest = yp - R/D(yp - y)
-        '''
-        
-        plants_id = 2
-        
+    
+        try:
+            plants_id = userdata.next_action[1]
+        except IndexError:
+            log_errs("No plant id in userdata.next_action, defaulting to plant id 0")
+            plants_id = 0
+            
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         (xp, yp) = PLANTS_POS[plants_id]
         
@@ -131,7 +130,7 @@ class CalcPositionningPlants(smach.State):
         y_dest = yp - R_APPROACH_PLANTS/d*(yp - y)
         theta_dest = math.atan2(yp - y,xp - x)
         
-        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
                 
         return 'success'
     
@@ -140,17 +139,16 @@ class CalcTakePlants(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color'],
+                                input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):
                 
-        '''
-        xdest = xp + R/d(xp - x)
-        ydest = yp + R/D(yp - y)
-        '''
-        
-        plants_id = 2
+        try:
+            plants_id = userdata.next_action[1]
+        except IndexError:
+            log_errs("No plant id in userdata.next_action, defaulting to plant id 0")
+            plants_id = 0
         
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         (xp, yp) = PLANTS_POS[plants_id]
@@ -161,7 +159,7 @@ class CalcTakePlants(smach.State):
         y_dest = yp + R_APPROACH_PLANTS/d*(yp - y)
         theta_dest = math.atan2(yp - y,xp - x)
         
-        set_next_destination(userdata, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
                 
         return 'success'
     
@@ -220,8 +218,8 @@ class PickupPlantsEnd(smach.State):
 #################################################################
 
 pickupPlant = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_move','nb_actions_done','cb_elevator','color'],
-                                     output_keys=['cb_doors','next_move','cb_depl','nb_actions_done','cb_elevator'])
+                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_action','cb_elevator','color'],
+                                     output_keys=['cb_doors','next_move','cb_depl','cb_elevator'])
     
     
     
@@ -232,8 +230,8 @@ pickUpPlantSequence = smach.Sequence(  # sequence container
     connector_outcome = 'success')
 
 deplSequence = smach.Sequence(  # sequence container
-    input_keys = ['next_move','cb_depl','robot_pos','nb_actions_done','color'],
-    output_keys = ['cb_depl','next_move','nb_actions_done'],
+    input_keys = ['next_move','cb_depl','robot_pos','next_action','color'],
+    output_keys = ['cb_depl','next_move'],
     outcomes = ['success', 'fail', 'preempted'],
     connector_outcome = 'success')
 
@@ -249,8 +247,8 @@ with deplSequence:
     
     
 pickUpPlantConcurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
-                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator','nb_actions_done','color'],
-                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator','nb_actions_done'],
+                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator','next_action','color'],
+                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator'],
                             default_outcome='fail',
                             outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPL_SEQ':'success'},
                                             'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},

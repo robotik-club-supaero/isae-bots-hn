@@ -39,10 +39,10 @@ DISP_TIMEOUT = 30       #[s]
 STOP_PATH_TIMEOUT = 3   #[s]
 STOP_DEST_TIMEOUT = 3   #[s]
 
-def set_next_destination(userdata, x_d, y_d, t_d, w):
+def colored_destination(color, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
-	x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, userdata.color)
-	userdata.next_move = Quaternion(x_d, y_d, t_d, w.value)
+	x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
+	return Quaternion(x_d, y_d, t_d, w.value)
 
 #################################################################
 #                                                               #
@@ -60,8 +60,8 @@ class Displacement(smach.State):
 	def __init__(self):
 		smach.State.__init__(	self, 	
 		       					outcomes=['success','fail','preempted'],
-								input_keys=['nb_actions_done','cb_depl','robot_pos','next_move','color'],
-								output_keys=['nb_actions_done','cb_depl'])
+								input_keys=['cb_depl','robot_pos','next_move','color'],
+								output_keys=['cb_depl'])
 		
 	def execute(self, userdata):
 		# Init the callback var of dsp result. CHECK an_const to see details on cb_depl
@@ -90,7 +90,6 @@ class Displacement(smach.State):
 
 			if userdata.cb_depl[0] == DspCallback.SUCCESS:
 				log_info('Displacement result: success displacement')
-				userdata.nb_actions_done[0] += 1
 				return 'success'
 
 			if userdata.cb_depl[0] == DspCallback.PATH_BLOCKED:

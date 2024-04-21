@@ -90,7 +90,7 @@ class Setup(smach.State):
         userdata.cb_elevator = [-1] # state of the elevator
 
         ## Game infos variables
-        userdata.next_action = Action.PENDING  # Indicateur de l'action en cours
+        userdata.next_action = [Action.PENDING]  # action en cours (avec arguments eventuels)
         userdata.next_move = Quaternion(x=-1, y=-1, z=-1, w=-1)
         userdata.error_reaction = [-1]
         userdata.nb_errors = [0]
@@ -137,15 +137,15 @@ class Repartitor(smach.State):
         log_info('[Repartitor] Requesting next action ...')
         repartitor_pub.publish(Empty()) # demande nextAction au DN
 
-        userdata.next_action = Action.PENDING # reset variable prochaine action
-        while userdata.next_action == Action.PENDING: # en attente de reponse du DN
+        userdata.next_action[0] = Action.PENDING # reset variable prochaine action
+        while userdata.next_action[0] == Action.PENDING: # en attente de reponse du DN
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
             time.sleep(0.01)
 
         userdata.nb_actions_done[0] = 0  		     	  # reinitialisation nb etapes
-        return ACTIONS_LIST[userdata.next_action.value]   # lancement prochaine action  
+        return ACTIONS_LIST[userdata.next_action[0].value]   # lancement prochaine action  
         
 #################################################################
 #                                                               #
@@ -207,6 +207,6 @@ def init_sm(sm):
   
         # Other States
         smach.StateMachine.add('PARK', park,
-                                transitions={'preempted':'END','end':'REPARTITOR'})
+                                transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
         smach.StateMachine.add('WAITING', waiting,
                                 transitions={'preempted':'END','end':'REPARTITOR'})

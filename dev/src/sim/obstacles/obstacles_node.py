@@ -104,7 +104,7 @@ class SIM_ObstaclesNode:
         #loginfo("Pos obst :" + str(obstacles_pos))
 
         # NOTE fixed obstacle
-        obstacle_data = self.generate_fix_obstacle_data(1300, 1000)
+        obstacle_data = self.generate_fix_obstacle_data(1300, 800)
 
         data = [0]
         for pos in obstacle_data:

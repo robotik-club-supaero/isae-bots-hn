@@ -48,7 +48,7 @@ def init_strats(dn):
 #################################################################
 
 def publishAction():
-    next_action_pub.publish( data=[p_dn.curr_action.value] )
+    next_action_pub.publish(data = [p_dn.curr_action[0].value] + p_dn.curr_action[1:])
     
     
 def publishScore():
@@ -76,21 +76,23 @@ def test_strat():
 
 
     if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = Action.PICKUP_PLANT
+        
+        plant_id = 1
+        
+        p_dn.curr_action = [Action.PICKUP_PLANT, plant_id]
         log_info("Next action order : Pickup Plants")
         publishAction()
         return
 
 
     if p_dn.nb_actions_done[0] == 1:
-        p_dn.curr_action = Action.PARK
+        p_dn.curr_action = [Action.PARK]
         log_info("Next action order : Park")
         publishAction()
         
         # Add to score because we earned points
         p_dn.score += ActionScore.SCORE_PARK.value
         publishScore()
-        
         return
     
     

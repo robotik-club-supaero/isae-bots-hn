@@ -73,7 +73,7 @@ class DecisionsNode:
 
         self.park_action = False
         self.kill_action = False
-        self.curr_action = Action.WAIT  # of type Action
+        self.curr_action = [Action.WAIT]  # of type Action
         self.nb_actions_done = [0]
 
         self.position = [0,0,0]  # TODO utilser un objet Pose2D

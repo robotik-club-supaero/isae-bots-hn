@@ -26,7 +26,6 @@ import random
 from std_msgs.msg      import Int16
 from geometry_msgs.msg import Pose2D
 
-
 #################################################################
 #                                                               #
 #                            UTILS                              #
@@ -49,37 +48,48 @@ def log_errs(msg):
 def log_fatal(msg):
     rospy.logfatal(f"{NODE_NAME} {msg}")
 
-## Constants PR
-
-READ_TIME = 0.5
-READ_FAIL_PROB = 0  # entre 0 et 1
-
 ## Constants GR
-CHERRIES_TAKING = 0
-DOORS_TIME = 1
-CLAMP_TIME = 0
-ELEVATOR_TIME = 1
+DOORS_TIME = 0
+ELEVATOR_TIME = 0
 
 #############################
 
-#######################################################################
-## DATA to put in .ini file in section [Simu]
-EXCAVATION_SQUARE_POS_X = 1850
-EXCAVATION_SQUARE_POS_Y = [667.5, 852.5, 1037.5, 1222.5, 1407.5, 1592.5, 1777.5, 1962.5, 2147.5, 2332.5]
-
-Y_ARM_OFFSET = 40
-
-x_threshold = 50
-y_threshold = 30
-c_threshold = 1.
-#######################################################################
 
 COLOR = {
       0: 'HOME',
       1: 'AWAY'
 }
 
+class DoorCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    CLOSED = 0
+    OPEN = 1
+    BLOCKED = 2
+    
+class DoorOrder(Enum):
+    OPEN = 0
+    CLOSE = 1
 
+class DspCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    ARRIVED = 0
+    OBSTACLE = 1
+    OBSTACLE_ON_TARGET = 2
+    ERROR_ASSERV = 3
+    
+class DspOrder(Enum):
+    STOP = 0
+    MOVE_STRAIGHT = 1
+    
+class ElevatorCallback(Enum):
+    UNKNOWN = -2
+    PENDING = -1
+    DOWN = 0
+    UP = 1
+    BLOCKED = 2
+    
 ## ACTUATOR Node ######################################################
 class ActuatorNode():
 
@@ -91,37 +101,17 @@ class ActuatorNode():
         # Sub a /color pour s'initialiser au set de la couleur
         self.sub_color = rospy.Subscriber("/game/color", Int16, self.update_color)
         self.sub_pos = rospy.Subscriber("/current_position", Pose2D, self.update_position)
-        
-        # Simule la reponse du BN sur le bras à cerises
-        self.cherries_sub = rospy.Subscriber('/strat/cherries', Int16, self.cherries_response)
-        self.cherries_pub = rospy.Publisher("/strat/cherries_feedback", Int16, queue_size=10, latch=True) 
+    
 
         # Simule la reponse du BN sur les portes
-        # self.doors_sub = rospy.Subscriber('/strat/doors', Int16, self.doors_response)
-        # self.doors_pub = rospy.Publisher("/strat/doors_feedback", Int16, queue_size=10, latch=True)  
-
-        # Simule la reponse du BN sur la pince
-        self.clamp_sub = rospy.Subscriber("/strat/clamp", Int16, self.clamp_response)
-        self.clamp_pub = rospy.Publisher("/strat/clamp_feedback", Int16, queue_size=10)
-
-        # Simule la réponse du BN sur l'ascenceur
-        # self.elevator_sub = rospy.Subscriber("/strat/elevator", Int16, self.elevator_response)
-        # self.elevator_pub = rospy.Publisher("/strat/elevator_feedback", Int16, queue_size=10)
+        self.doors_sub = rospy.Subscriber('/act/order/doors', Int16, self.doors_response)
+        self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)  
 
         # Comm avec l'interface de simulation
         self.square_layout_pub = rospy.Publisher("/simu/squareLayout", Int16, queue_size=10, latch=True)
         self.square_info_pub = rospy.Publisher("/simu/squareInfo", Int16, queue_size=10, latch=True)
-  
-  
-        #NOTE for 2024
-        self.doors_sub = rospy.Subscriber('/act/order/doors', Int16, self.doors_response)
-        self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)
         
-        self.elevator_sub = rospy.Subscriber('/act/order/elevator', Int16, self.elevator_response)
-        self.elevator_pub = rospy.Publisher('/act/callback/elevator', Int16, queue_size = 10, latch= True)
-
-        
-
+    
         #### Variables ####
 
         self.color = 0  							# par défaut
@@ -129,11 +119,6 @@ class ActuatorNode():
 
         self.info_square = [-1] * 7  				# init undefined
         self.curr_square = 0
-
-
-        # TODO : en constantes
-        self.excavationSquarePos_x = 1870  # TODO : a paramétrer
-        self.excavationSquarePos_y = [667.5, 852.5, 1037.5, 1222.5, 1407.5, 1592.5, 1777.5, 1962.5, 2147.5, 2332.5]
 
 
         # Publication continue s'il y a besoin
@@ -156,64 +141,24 @@ class ActuatorNode():
         """Callback de position."""
         self.curr_pos = msg
 
-    def cherries_response(self, msg):
-        sleep(CHERRIES_TAKING)
-        if msg.data == 0:
-            self.cherries_pub.publish(data=0)
-            log_info("Réponse simulée : cerises récupérées")
-        else:
-            self.cherries_pub.publish(data=0)
-            log_info("Réponse simulée : cerises déposées")
-
     def doors_response(self, msg):
-
-        if msg.data == 0:
-            response_data = 1
-            response_log = "Réponse simulée : Portes ouvertes"
-        elif msg.data == 1:
-            response_data = 0
-            response_log = "Réponse simulée : Portes fermées"
-        else:
-            self.doors_pub.publish(data=-2)
-            log_errs("Unknown door order")
-            return
-            
         sleep(DOORS_TIME)
-        
-        self.doors_pub.publish(data=response_data)
-        log_info(response_log)
-
-
-
-    def clamp_response(self, msg):
-        sleep(CLAMP_TIME)
-        if msg.data == 1:
-            self.clamp_pub.publish(data=0)
-            log_info("Réponse simulée : Pince ouverte")
+        if msg.data == DoorOrder.OPEN:
+            self.doors_pub.publish(data=DoorCallback.OPEN)
+            log_info("Réponse simulée : Portes ouvertes")
         else:
-            self.clamp_pub.publish(data=0)
-            log_info("Réponse simulée : Pince fermée")
-
+            self.doors_pub.publish(data=DoorCallback.CLOSED)
+            log_info("Réponse simulée : Portes fermées")
 
     def elevator_response(self, msg):
-            
-        if msg.data == 0: # up order
-            response_data = 1
-            response_log = "Réponse simulée : Elevator up"
-        elif msg.data == 1:
-            response_data = 0
-            response_log = "Réponse simulée : Elevator down"
-            # response_data = 2
-            # response_log = "Réponse simulée : Elevator blocked"
-        else:
-            self.doors_pub.publish(data=-2)
-            log_errs("Unknown elevator order")
-            return
-            
         sleep(ELEVATOR_TIME)
-        
-        self.elevator_pub.publish(data=response_data)
-        log_info(response_log)
+        if msg.data == ElevatorCallback.UP:
+            self.doors_pub.publish(data=ElevatorCallback.UP)
+            log_info("Réponse simulée : Ascenseur haut")
+        else:
+            self.doors_pub.publish(data=ElevatorCallback.DOWN)
+            log_info("Réponse simulée : Ascenseur bas")
+
 
 
 #################################################################

@@ -22,10 +22,13 @@ import os
 import sys
 import time
 import smach
+import math
+from enum import Enum
+from numpy.linalg import norm
 
 from geometry_msgs.msg import Quaternion
 
-from an_const import DspCallback
+from an_const import DspCallback, DspOrderMode
 from an_comm import disp_pub
 from an_utils import log_info, log_errs, log_warn, adapt_pos_to_side, debug_print
 
@@ -39,10 +42,24 @@ DISP_TIMEOUT = 30       #[s]
 STOP_PATH_TIMEOUT = 3   #[s]
 STOP_DEST_TIMEOUT = 3   #[s]
 
+class Approach(Enum):
+	INITIAL = -1
+	FINAL = 1
+
 def colored_destination(color, x_d, y_d, t_d, w):
 	"""Allows a quick conversion of destination given the side played."""
 	x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
 	return Quaternion(x_d, y_d, t_d, w.value)
+
+def colored_approach(color, x, y, xd, yd, margin, phase):	   
+        d = norm([xd - x, yd - y])
+        
+        x_dest = xd + phase.value * margin/d*(xd - x)
+        y_dest = yd + phase.value * margin/d*(yd - y)
+        theta_dest = math.atan2(yd - y,xd - x)
+        
+        return colored_destination(color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+                
 
 #################################################################
 #                                                               #

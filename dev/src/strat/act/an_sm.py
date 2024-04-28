@@ -28,6 +28,7 @@ from geometry_msgs.msg import Quaternion
 # import les states de la SM
 from an_sm_states.sm_park import park
 from an_sm_states.sm_pickup_plants import pickupPlant
+from an_sm_states.sm_pickup_pots import pickupPot
 from an_sm_states.sm_waiting import waiting
 
 from an_const import *
@@ -203,6 +204,8 @@ def init_sm(sm):
 
         # Specific Action States
         smach.StateMachine.add('PICKUPPLANT', pickupPlant,
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
+        smach.StateMachine.add('PICKUPPOT', pickupPot,
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
   
         # Other States

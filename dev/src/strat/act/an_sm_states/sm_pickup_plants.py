@@ -21,14 +21,13 @@
 import os, sys, inspect
 import time
 import smach
-import math
-from numpy.linalg import norm
-from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, DspOrderMode, WAIT_TIME, R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub
+
+from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
+from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, get_pickup_id
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_sm_states.sm_displacement import Displacement, colored_destination
+from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
 
 #NOTE to import from parent directory
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -113,24 +112,12 @@ class CalcPositionningPlants(smach.State):
                                 input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
         
-    def execute(self, userdata):
-    
-        try:
-            plants_id = userdata.next_action[1]
-        except IndexError:
-            log_errs("No plant id in userdata.next_action, defaulting to plant id 0")
-            plants_id = 0
-            
+    def execute(self, userdata):  
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
+        plants_id = get_pickup_id("plants", userdata)
         (xp, yp) = PLANTS_POS[plants_id]
-        
-        d = norm([xp - x, yp - y])
-        
-        x_dest = xp - R_APPROACH_PLANTS/d*(xp - x)
-        y_dest = yp - R_APPROACH_PLANTS/d*(yp - y)
-        theta_dest = math.atan2(yp - y,xp - x)
-        
-        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+
+        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_PLANTS, Approach.INITIAL)
                 
         return 'success'
     
@@ -142,24 +129,12 @@ class CalcTakePlants(smach.State):
                                 input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
         
-    def execute(self, userdata):
-                
-        try:
-            plants_id = userdata.next_action[1]
-        except IndexError:
-            log_errs("No plant id in userdata.next_action, defaulting to plant id 0")
-            plants_id = 0
-        
+    def execute(self, userdata):              
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
+        plants_id = get_pickup_id("plants", userdata)
         (xp, yp) = PLANTS_POS[plants_id]
         
-        d = norm([xp - x, yp - y])
-        
-        x_dest = xp + R_APPROACH_PLANTS/d*(xp - x)
-        y_dest = yp + R_APPROACH_PLANTS/d*(yp - y)
-        theta_dest = math.atan2(yp - y,xp - x)
-        
-        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
                 
         return 'success'
     

@@ -25,6 +25,7 @@ import rospy
 import random
 from std_msgs.msg      import Int16
 from geometry_msgs.msg import Pose2D
+from enum import Enum
 
 #################################################################
 #                                                               #

@@ -345,7 +345,7 @@ class Robot(Drawable):
         self._height = height
         self._location = np.zeros(2)
         self._rotation = 0
-        self._doorState = DoorState.OPEN
+        self._doorState = DoorState.CLOSED
         self._plants = []
 
     @staticmethod

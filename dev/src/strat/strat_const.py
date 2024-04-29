@@ -19,14 +19,16 @@ from enum import IntEnum
 class Action(IntEnum):
     NONE         = -1
     PICKUP_PLANT = 0
-    PARK         = 1
-    WAIT         = 2
-    END          = 3
-    PREEMPT      = 4
+    PICKUP_POT   = 1
+    PARK         = 2
+    WAIT         = 3
+    END          = 4
+    PREEMPT      = 5
     
 
 ACTIONS_LIST = [
     'pickupPlant',
+    'pickupPot',
     'park',
     'preempted',
     'end',
@@ -35,6 +37,7 @@ ACTIONS_LIST = [
 
 ACTION_TRANSITIONS = {
     'pickupPlant':'PICKUPPLANT',
+    'pickupPot': 'PICKUPPOT',
     'park':'PARK',
     'preempted':'END',
     'end':'END',

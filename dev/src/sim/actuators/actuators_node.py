@@ -92,6 +92,10 @@ class ElevatorCallback(IntEnum):
     DOWN = 0
     UP = 1
     BLOCKED = 2
+
+class ElevatorOrder(IntEnum):
+    MOVE_UP = 1
+    MOVE_DOWN = 0
     
 ## ACTUATOR Node ######################################################
 class ActuatorNode():
@@ -111,8 +115,8 @@ class ActuatorNode():
         self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)
         
         # Simule la reponse du BN sur l'ascenseur
-        self.doors_sub = rospy.Subscriber('/act/order/doors', Int16, self.doors_response)
-        self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)  
+        self.elevator_sub = rospy.Subscriber('/act/order/elevator', Int16, self.elevator_response)
+        self.elevator_pub = rospy.Publisher("/act/callback/elevator", Int16, queue_size=10, latch=True)  
 
         # Comm avec l'interface de simulation
         self.square_layout_pub = rospy.Publisher("/simu/squareLayout", Int16, queue_size=10, latch=True)
@@ -159,11 +163,11 @@ class ActuatorNode():
 
     def elevator_response(self, msg):
         sleep(ELEVATOR_TIME)
-        if msg.data == ElevatorCallback.UP:
-            self.doors_pub.publish(data=ElevatorCallback.UP)
+        if msg.data == ElevatorOrder.MOVE_UP:
+            self.elevator_pub.publish(data=ElevatorCallback.UP)
             log_info("Réponse simulée : Ascenseur haut")
         else:
-            self.doors_pub.publish(data=ElevatorCallback.DOWN)
+            self.elevator_pub.publish(data=ElevatorCallback.DOWN)
             log_info("Réponse simulée : Ascenseur bas")
 
 

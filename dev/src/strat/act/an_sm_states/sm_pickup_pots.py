@@ -19,12 +19,16 @@
 #################################################################
 
 import smach
+import math
+import time
+from geometry_msgs.msg import Quaternion
 
 from .sm_pickup_plants import CloseDoors, OpenDoors
-from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_POTS
+from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_POTS, DspOrderMode
+from an_utils import adapt_pos_to_side, debug_print
 from strat_const import POTS_POS
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
-from an_comm import get_pickup_id
+from an_comm import get_pickup_id, elevator_pub, callback_action_pub
 
 #################################################################
 #                                                               #
@@ -43,29 +47,13 @@ class CalcPositionningPots(smach.State):
     def execute(self, userdata):    
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         pots_id = get_pickup_id("pots", userdata)
-        (xp, yp) = POTS_POS[pots_id]
-
-        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_POTS, Approach.INITIAL)
-                
-        return 'success'
-
-class CalcTakePots(smach.State):
-    
-    def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color','next_action'],
-                                output_keys=['next_move'])
+        (xp, yp, thetap) = POTS_POS[pots_id]
         
-    def execute(self, userdata):
-        x, y = userdata.robot_pos.x, userdata.robot_pos.y
-        pots_id = get_pickup_id("pots", userdata)
-        (xp, yp) = POTS_POS[pots_id]
-
-        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_POTS, Approach.FINAL)
+        x_d, y_d, t_d = adapt_pos_to_side(xp, yp, thetap, userdata.color)
+        userdata.next_move = Quaternion(x_d - R_APPROACH_POTS * math.cos(thetap), y_d - R_APPROACH_POTS * math.sin(thetap), thetap, DspOrderMode.AVOIDANCE.value)
                 
         return 'success'
-    
+
 class PotPlants(smach.State):
     
     def __init__(self):
@@ -129,41 +117,18 @@ pickUpPotSequence = smach.Sequence(
     outcomes = ['success', 'fail', 'preempted'],
     connector_outcome = 'success')
 
-deplSequence = smach.Sequence(
-    input_keys = ['next_move','cb_depl','robot_pos','next_action','color'],
-    output_keys = ['cb_depl','next_move'],
-    outcomes = ['success', 'fail', 'preempted'],
-    connector_outcome = 'success')
-
 
 with pickUpPotSequence: 
     smach.Sequence.add('OPEN_DOORS', OpenDoors())    
     smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # gather pots
     smach.Sequence.add('POT_PLANTS', PotPlants()) # put grabbed plants into pots
-    
-with deplSequence:
-    smach.Sequence.add('CALC_TAKE_POTS', CalcTakePots())
-    smach.Sequence.add('DEPL_TAKE_POTS', Displacement())
-    
-    
-pickUpPotConcurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'], # TODO
-                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator','next_action','color'],
-                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator'],
-                            default_outcome='fail',
-                            outcome_map={'success': { 'PICKUP_POTS_SEQ':'success','DEPL_SEQ':'success'},
-                                            'preempted' : {'PICK_UP_POTS_SEQ':'preempted'},
-                                            'preempted' : {'DEPL_SEQ' : 'preempted'}})
 
-with pickUpPotConcurrence:
-    smach.Concurrence.add('PICKUP_POTS_SEQ', pickUpPotSequence)
-    smach.Concurrence.add('DEPL_SEQ', deplSequence)
-    
 with pickupPot:
     smach.StateMachine.add('CALC_POSITIONING_POTS', CalcPositionningPots(),
                             transitions = {'success':'DEPL_POSITIONING_POTS','fail':'fail','preempted':'preempted'})
     smach.StateMachine.add('DEPL_POSITIONING_POTS', Displacement(),
-                            transitions = {'success':'PICKUP_POTS_CONC','fail':'fail','preempted':'preempted'})
-    smach.StateMachine.add('PICKUP_POTS_CONC', pickUpPotConcurrence, 
+                            transitions = {'success':'PICKUP_POTS_SEQ','fail':'fail','preempted':'preempted'})
+    smach.StateMachine.add('PICKUP_POTS_SEQ', pickUpPotSequence, 
                             transitions = {'success':'PICKUP_POTS_END', 'fail':'PICKUP_POTS_END', 'preempted':'preempted'}
                             )
     smach.StateMachine.add('PICKUP_POTS_END', PickupPotsEnd(), 

@@ -65,9 +65,9 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 
 
 ########## CONSTANTES 2024 ##########
-WAIT_TIME = 500
+WAIT_TIME = 5
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
-R_APPROACH_POTS = 300 # TODO change value
+R_APPROACH_POTS = 130 # TODO change value
 
 #################################################################
 #                                                               #
@@ -81,14 +81,16 @@ COLOR = {
 }
 
 
+
 class Action(IntEnum):
     PENDING      = -2
     NONE         = -1
     PICKUP_PLANT = 0
-    PARK         = 1
-    WAIT         = 2
-    END          = 3
-    PREEMPT      = 4
+    PICKUP_POT   = 1
+    PARK         = 2
+    WAIT         = 3
+    END          = 4
+    PREEMPT      = 5
     
     
 ''' ORDERS '''
@@ -150,10 +152,9 @@ class DoorCallback(Enum):
     OPEN = 1
     BLOCKED = 2
     
-    
 class ElevatorOrder(Enum):
-    MOVE_UP = 0
-    MOVE_DOWN = 1
+    MOVE_UP = 1
+    MOVE_DOWN = 0
         
 class ElevatorCallback(Enum):
     UNKNOWN = -2

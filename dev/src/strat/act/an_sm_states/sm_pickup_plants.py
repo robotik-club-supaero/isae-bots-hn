@@ -62,6 +62,7 @@ class OpenDoors(smach.State):
         while time.perf_counter() - begin < WAIT_TIME:
             
             if userdata.cb_doors[0] == DoorCallback.OPEN:
+                time.sleep(2)
                 return 'success'
             elif userdata.cb_doors[0] == DoorCallback.BLOCKED:
                 return 'fail'
@@ -156,7 +157,6 @@ class RisePlants(smach.State):
         
         begin = time.perf_counter()
         while time.perf_counter() - begin < WAIT_TIME:
-            
             if userdata.cb_elevator[0] == ElevatorCallback.UP:
                 return 'success'
             elif userdata.cb_elevator[0] == ElevatorCallback.BLOCKED:

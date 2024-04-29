@@ -26,6 +26,8 @@ import random
 from std_msgs.msg      import Int16
 from geometry_msgs.msg import Pose2D
 
+from enum import IntEnum
+
 #################################################################
 #                                                               #
 #                            UTILS                              #
@@ -60,18 +62,18 @@ COLOR = {
       1: 'AWAY'
 }
 
-class DoorCallback(Enum):
+class DoorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2
     
-class DoorOrder(Enum):
+class DoorOrder(IntEnum):
     OPEN = 0
     CLOSE = 1
 
-class DspCallback(Enum):
+class DspCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     ARRIVED = 0
@@ -79,11 +81,11 @@ class DspCallback(Enum):
     OBSTACLE_ON_TARGET = 2
     ERROR_ASSERV = 3
     
-class DspOrder(Enum):
+class DspOrder(IntEnum):
     STOP = 0
     MOVE_STRAIGHT = 1
     
-class ElevatorCallback(Enum):
+class ElevatorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 0
@@ -104,6 +106,10 @@ class ActuatorNode():
     
 
         # Simule la reponse du BN sur les portes
+        self.doors_sub = rospy.Subscriber('/act/order/doors', Int16, self.doors_response)
+        self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)
+        
+        # Simule la reponse du BN sur l'ascenseur
         self.doors_sub = rospy.Subscriber('/act/order/doors', Int16, self.doors_response)
         self.doors_pub = rospy.Publisher("/act/callback/doors", Int16, queue_size=10, latch=True)  
 
@@ -135,7 +141,7 @@ class ActuatorNode():
         self.color = msg.data
 
         # Generation aleatoire des carres de fouille
-        log_info("Random generation of excavation squares.")
+        log_info("Random Stuff generated ????")
 
     def update_position(self, msg):
         """Callback de position."""

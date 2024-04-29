@@ -151,7 +151,13 @@ def cb_park_fct(msg):
     """
     if not ok_comm: return
     p_smData.park[0] = msg.data
-    
+
+def get_pickup_id(what, userdata):
+    try:
+        return userdata.next_action[1]
+    except IndexError:
+        log_errs(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
+        return 0
 
 #################################################################
 #                                                               #

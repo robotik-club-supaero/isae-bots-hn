@@ -67,7 +67,7 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 500
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
-
+R_APPROACH_POTS = 300 # TODO change value
 
 #################################################################
 #                                                               #

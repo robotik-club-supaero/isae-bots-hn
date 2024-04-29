@@ -409,7 +409,28 @@ class Robot(Drawable):
             self._plants.append(plant)
         else:
             raise ValueError("Robot cannot carry more plants")
-        
+
+class Pot(Drawable):
+
+    def __init__(self, id, location):
+        super().__init__()
+        self._id = id
+        self._location = np.zeros(2)
+        self.setLocation(location)
+
+    def _draw(self, canvas):
+        self.clear(canvas)
+        canvas.draw_oval(self._location, POT_RADIUS, fill="brown", tag=f"pot_{self._id}")
+
+    def clear(self, canvas):
+        canvas.delete(f"pot_{self._id}")
+
+    def setLocation(self, new_location):
+        self._location[:] = new_location
+
+    @property
+    def location(self):
+        return self._location
 
 class Plant(Drawable):
 
@@ -625,6 +646,10 @@ class InterfaceNode:
                 dx = (CLUSTER_RADIUS - PLANT_RADIUS) * cos(2*np.pi*i/6)
                 dy = (CLUSTER_RADIUS - PLANT_RADIUS) * sin(2*np.pi*i/6)
                 self._plants.append(Plant(len(self._plants), [x+dx, y+dy]))
+        
+        self._pots = []
+        for cluster in [[ 612.5, 35], [1387.5, 35], [1965, 1000], [612.5, 2965], [1387.5, 2965], [1965, 2000]]:
+            self._pots.append(Pot(len(self._pots), cluster))
 
         self.lock = RLock()
 
@@ -673,6 +698,8 @@ class InterfaceNode:
 
             for plant in self._plants:
                 plant.redraw(self._canvas, force=force)
+            for pot in self._pots:
+                pot.redraw(self._canvas, force=force)
 
             # TODO: Plot excavation squares
             # Corresponding section from old_gui/interface_plateau.py [lines 377-418] was commented out

@@ -28,6 +28,7 @@ from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
+from an_sm_states.sm_waiting import ObsWaitingOnce
 
 #NOTE to import from parent directory
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -62,7 +63,6 @@ class OpenDoors(smach.State):
         while time.perf_counter() - begin < WAIT_TIME:
             
             if userdata.cb_doors[0] == DoorCallback.OPEN:
-                time.sleep(2)
                 return 'success'
             elif userdata.cb_doors[0] == DoorCallback.BLOCKED:
                 return 'fail'
@@ -213,6 +213,7 @@ deplSequence = smach.Sequence(  # sequence container
 
 with pickUpPlantSequence:  # add states to the sequence #TODO define elsewhere
     smach.Sequence.add('OPEN_DOORS', OpenDoors())
+    smach.Sequence.add('KEEP_OPEN', ObsWaitingOnce(wait_time=2))
     smach.Sequence.add('CLOSE_DOORS', CloseDoors())
     smach.Sequence.add('RISE_PLANTS',RisePlants())
     

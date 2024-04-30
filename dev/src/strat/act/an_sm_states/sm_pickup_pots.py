@@ -119,8 +119,8 @@ pickUpPotSequence = smach.Sequence(
 
 
 with pickUpPotSequence: 
-    smach.Sequence.add('OPEN_DOORS', OpenDoors())    
-    smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # gather pots
+    smach.Sequence.add('OPEN_DOORS', OpenDoors())
+    smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # gather pots # TODO: add delay before closing ?
     smach.Sequence.add('POT_PLANTS', PotPlants()) # put grabbed plants into pots
 
 with pickupPot:

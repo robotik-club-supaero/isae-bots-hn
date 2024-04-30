@@ -30,29 +30,37 @@ from an_const import *
 #                                                               #
 #################################################################
 
-class ObsWaiting(smach.State):
+class ObsWaitingOnce(smach.State):
     """
     SM WAITING : Observer state
     """
-    def __init__(self):
-        smach.State.__init__(   self,  
-                                outcomes=['preempted','success','redo'],
-			                    input_keys=['nb_actions_done','next_move','color'],
-			                    output_keys=['nb_actions_done','next_move'])
+    def __init__(self, wait_time=100, outcomes=['preempted','success']):
+        smach.State.__init__(self,  outcomes=outcomes)
+        self._wait_time = wait_time
 
     def execute(self, userdata):
         begin_time = time.time()
 
-        while time.time() - begin_time < 100:
+        while time.time() - begin_time < self._wait_time:
             time.sleep(0.01)
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'       
-        ## Return --> Repartitor
-        # endOfAction_pub.publish(exit=1, reason='success')
-        return 'redo'
+
+        return 'success'
                   
 
+class ObsWaiting(ObsWaitingOnce):
+    def __init__(self, wait_time=100):
+        super().__init__(wait_time, outcomes=['preempted', 'success', 'redo'])
+
+    def execute(self, userdata):
+        result = super().execute(userdata)
+        if result == "success":
+            return "redo"
+        else:
+            return result
+                  
 
 #################################################################
 #                                                               #

@@ -41,7 +41,7 @@ from geometry_msgs.msg import Quaternion, Pose2D
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore
+from strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore, Action
 
 #################################################################
 #                                                               #

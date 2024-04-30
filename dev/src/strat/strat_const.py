@@ -17,6 +17,7 @@ from enum import IntEnum
 
 
 class Action(IntEnum):
+    PENDING = -2
     NONE         = -1
     PICKUP_PLANT = 0
     PICKUP_POT   = 1

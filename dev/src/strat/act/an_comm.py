@@ -25,7 +25,7 @@ import rospy
 from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import Action, DoorCallback, ElevatorCallback, DspCallback, COLOR
+from an_const import  DoorCallback, ElevatorCallback, DspCallback, COLOR
 from an_utils import log_info, log_warn, log_errs
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
@@ -34,7 +34,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import ACTIONS_LIST
+from strat_const import ACTIONS_LIST, Action
 
 #################################################################
 #                                                               #

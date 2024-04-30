@@ -134,9 +134,9 @@ class CalcTakePlants(smach.State):
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
         plants_id = get_pickup_id("plants", userdata)
         (xp, yp) = PLANTS_POS[plants_id]
-        
+
         userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
-                
+
         return 'success'
     
 class RisePlants(smach.State):

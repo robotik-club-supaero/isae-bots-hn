@@ -30,7 +30,8 @@ from geometry_msgs.msg import Quaternion
 
 from an_const import DspCallback, DspOrderMode
 from an_comm import disp_pub
-from an_utils import log_info, log_errs, log_warn, adapt_pos_to_side, debug_print
+from an_utils import log_info, log_errs, log_warn, debug_print
+from strat_utils import adapt_pos_to_side
 
 #################################################################
 #                                                               #
@@ -52,15 +53,20 @@ def colored_destination(color, x_d, y_d, t_d, w):
 	return Quaternion(x_d, y_d, t_d, w.value)
 
 def colored_approach(color, x, y, xd, yd, margin, phase):	   
-        d = norm([xd - x, yd - y])
-        
-        x_dest = xd + phase.value * margin/d*(xd - x)
-        y_dest = yd + phase.value * margin/d*(yd - y)
-        theta_dest = math.atan2(yd - y,xd - x)
-        
-        return colored_destination(color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
-                
+	x, y, _ = adapt_pos_to_side(x, y, 0, color)
+	d = norm([xd - x, yd - y])
+	
+	x_dest = xd + phase.value * margin/d*(xd - x)
+	y_dest = yd + phase.value * margin/d*(yd - y)
+	theta_dest = math.atan2(yd - y,xd - x)
+	
+	return colored_destination(color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
 
+def colored_approach_with_angle(color, xd, yd, td, margin):
+	xd, yd, td = adapt_pos_to_side(xd, yd, td, color)
+	return Quaternion(xd - margin * math.cos(td), yd - margin * math.sin(td), td, DspOrderMode.AVOIDANCE.value)
+                
+                
 #################################################################
 #                                                               #
 #                     SM_DISPLACEMENT STATE                     #

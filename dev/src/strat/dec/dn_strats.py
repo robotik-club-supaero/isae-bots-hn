@@ -29,6 +29,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 from strat_const import Action, ActionScore
+from strat_utils import adapt_pos_to_side
 
 #################################################################
 #                                                               #
@@ -68,7 +69,8 @@ def test_strat():
     """
 
     def find_closest(p_dn, positions, remaining):
-        dists = np.linalg.norm(np.array(p_dn.position)[:2] - positions, axis=1)
+        x,y,_ = adapt_pos_to_side(*p_dn.position, p_dn.color)
+        dists = np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
         for cluster in clusters:
             if remaining[cluster.item()] > PLANT_THRESHOLD:

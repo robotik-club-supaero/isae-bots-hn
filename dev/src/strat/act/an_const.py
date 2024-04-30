@@ -80,18 +80,6 @@ COLOR = {
       1: 'AWAY'
 }
 
-
-
-class Action(IntEnum):
-    PENDING      = -2
-    NONE         = -1
-    PICKUP_PLANT = 0
-    PICKUP_POT   = 1
-    PARK         = 2
-    WAIT         = 3
-    END          = 4
-    PREEMPT      = 5
-    
     
 ''' ORDERS '''
 
@@ -114,8 +102,6 @@ class DspOrderMode(IntEnum):
 class DoorOrder(Enum):
     OPEN = 0
     CLOSE = 1
-    
-    
     
 ''' CALLBACKS '''
 

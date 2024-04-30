@@ -78,6 +78,10 @@ class DecisionsNode:
 
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
+        self.remaining_plants = [6 for _ in range(6)]
+        self.remaining_pots = [6 for _ in range(6)]
+
+
 #################################################################
 #                                                               #
 #                             MAIN                              #

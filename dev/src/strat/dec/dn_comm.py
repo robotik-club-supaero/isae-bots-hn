@@ -22,6 +22,7 @@ import os, sys, inspect
 import time
 import rospy
 import threading
+import numpy as np
 from dn_utils import log_info, log_errs, log_warn, TERM_SIZE, COLOR
 from std_msgs.msg      import Empty, Int16, Int16MultiArray
 from geometry_msgs.msg import Quaternion, Pose2D
@@ -32,13 +33,18 @@ from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import Action
+from strat_const import Action,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW
 
 #################################################################
 #                                                               #
 #                            INIT                               #
 #                                                               #
 #################################################################
+
+PLANT_CAPACITY = 6
+
+PLANTS_POS = np.array(PLANTS_POS_RAW)
+POTS_POS = np.array(POTS_POS_RAW)[:, :2]
 
 p_dn = None
 
@@ -114,6 +120,12 @@ def recv_position(msg):
 
 def recv_action_callback(msg):
     if msg.exit == 1:
+        
+        if p_dn.curr_action[0] == Action.PICKUP_PLANT:
+            p_dn.remaining_plants[p_dn.curr_action[1]] -= PLANT_CAPACITY
+        if p_dn.curr_action[0] == Action.PICKUP_POT:
+            p_dn.remaining_pots[p_dn.curr_action[1]] -= PLANT_CAPACITY
+
         log_info("Last action succeeded.")
         p_dn.nb_actions_done[0] += 1
         return

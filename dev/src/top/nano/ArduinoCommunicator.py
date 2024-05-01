@@ -4,6 +4,7 @@ import serial
 import time
 
 from .nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
+from top_const import ButtonColorMode, ButtonPressState
 
 
 class ArduinoCommunicator:
@@ -104,13 +105,15 @@ class ArduinoCommunicator:
         if nanoCallback is None:
             return None
         
+        #TODO fix ON/OFF discrepancy
         if nanoCallback.value == NanoCallback.CLB_BUTTON_ON:
-            return 0
+            return ButtonPressState.BUTTON_PRESS_OFF
         elif nanoCallback.value == NanoCallback.CLB_BUTTON_OFF:
-            return 1
-        else:
-            print("ERROR : wrong button event callback")
-            return None
+            return ButtonPressState.BUTTON_PRESS_ON
+            
+        # else:
+        #     print("ERROR : wrong button event callback")
+        #     return None
                 
         
         
@@ -132,6 +135,27 @@ class ArduinoCommunicator:
             self.send_command(nanoCommand)
             
         nanoCallback = self.receive_response()
+        
+        
+    def changeButtonColor(self, buttonState, color=None):
+        
+        if buttonState in [ButtonColorMode.BUTTON_COLOR_STATIC, ButtonColorMode.BUTTON_COLOR_BLINKING]:
+            
+            if color is None:
+                print("ERROR : color is None for colored ButtonState")
+            
+            if buttonState == ButtonColorMode.BUTTON_COLOR_STATIC:
+                self.send_command(NanoCommand.CMD_COLOR_FIXED, color=color)
+            else:
+                self.send_command(NanoCommand.CMD_COLOR_BLINKING, color=color)
+            
+        elif buttonState == ButtonColorMode.BUTTON_COLOR_NYAN:
+            self.send_command(NanoCommand.CMD_NYAN)
+            
+        else:
+            print("ERROR : cannot process this button state")
+        
+        
         
 
 

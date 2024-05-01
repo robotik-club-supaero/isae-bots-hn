@@ -28,14 +28,14 @@ from speaker.Speaker import Speaker
 # from isb.isb_lib import initPin, readPin, writePin
 # from isb.isb_const import *
 
-from top_const import TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
+from top_const import ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
 class TopServer():
     
     nanoCom = None  # nano board
     
-    server = None  # TCP server
+    serverSocket = None  # TCP server socket
     
     def __init__(self) -> None:
         
@@ -48,12 +48,10 @@ class TopServer():
         self.buttonState, self.previousButtonState = None, None
         self.lastButtonChangeTime = time.perf_counter()
                         
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
         
-        # listen on port
-        self.server.bind( ("0.0.0.0", TOPSERVER_PORT) )
-        maxclients = 10
-        self.server.listen(maxclients)
+        print("TopServer Initialized")
         
         #TODO vérifier les branchements des éléments top et des autres périphériques de la rpi
         # signaler s'il y a un pb
@@ -74,6 +72,10 @@ class TopServer():
             
             self.buttonState = self.nanoCom.read_button_state()
             
+            # dont assume any result if the message is not ButtonPressState (but ButtonColorMode)
+            if not isinstance(self.buttonState, ButtonPressState):
+                continue
+            
             if self.previousButtonState != self.buttonState:
                 
                 # filter on button changes to avoid fast toggling
@@ -82,10 +84,10 @@ class TopServer():
                 
                 self.lastButtonChangeTime = time.perf_counter()
                 
-                if self.buttonState == 0 :
+                if self.buttonState == ButtonPressState.BUTTON_PRESS_OFF :
                     print("Button OFF")    
  
-                elif self.buttonState == 1 :
+                elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON :
                     print("Button ON")
                     
                 else:
@@ -96,12 +98,6 @@ class TopServer():
 
             time.sleep(0.01)
             
-            
-    def receiveCommand(self):
-        
-        res = self.server.recv(1024)
-        
-        #TODO split command into different cases
             
             
     def soundCommand(self, command):
@@ -116,21 +112,59 @@ class TopServer():
         return
     
     
+    def handle_client(self, client_socket):
+        # Receive data from the client
+        request = client_socket.recv(1024)
+
+        # Process the request (in this case, just print it)
+        print(f"Received request from {client_socket.getpeername()}: {request.decode()}")
+        
+        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_NYAN)
+
+        # Close the client socket
+        client_socket.close()
+    
+    
     def run(self):
         
         #TODO gros signal d'erreur si le topServer n'est pas actif (on n'aurait pas d'ISB)
-        
-        print('Running TopServer')
-        
+                
         self.watchButtonThread.start()
         
-        while True:
-            
-            print('ting')
-            time.sleep (0.25)
+        # listen on port
+        self.serverSocket.bind( ("0.0.0.0", TOPSERVER_PORT) )
+        maxclients = 10
+        self.serverSocket.listen(maxclients)
         
-        # while True:
-        #     self.nanoCom.inputSendCommand()
+        try:
+            while True:
+                # Accept incoming connection
+                client_socket, client_address = self.serverSocket.accept()
+                print(f"Accepted connection from {client_address}")
+
+                # Handle the client connection in a new thread
+                client_thread = threading.Thread(target=self.handle_client, args=(client_socket,))
+                client_thread.start()
+        finally:
+            # Close the server socket
+            self.serverSocket.close()
+        
+        return
+        self.conn, self.addr = self.serverSocket.accept()
+        
+        with self.conn:
+            print(f"Connected by {self.addr}")
+            while True:
+                data = self.conn.recv(1024)
+                if not data:
+                    print('Not data')
+                    break
+                
+                print(f"Data received : {data}")
+                
+                #TODO split command into different cases
+
+                # self.conn.sendall(data)
         
         
         
@@ -145,7 +179,7 @@ class TopServer():
     def closeServer(self, exitCode):
         
         # close TCp server
-        self.server.close()
+        self.serverSocket.close()
         
         # close threads
         self.stop_event.set()

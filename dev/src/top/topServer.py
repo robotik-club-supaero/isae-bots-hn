@@ -17,7 +17,7 @@ import time
 import socket
 
 #### Nano ####
-# from nano.ArduinoCommunicator import ArduinoCommunicator
+from nano.ArduinoCommunicator import ArduinoCommunicator
 
 #### Speaker ####
 from speaker.Speaker import Speaker
@@ -26,7 +26,7 @@ from speaker.Speaker import Speaker
 # from isb.isb_lib import initPin, readPin, writePin
 # from isb.isb_const import *
 
-from top_const import *
+from top_const import TOPSERVER_PORT
 
 
 class TopServer():
@@ -37,11 +37,12 @@ class TopServer():
     
     def __init__(self) -> None:
         
-        # self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
+        self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
     
         self.speaker = Speaker()
     
         self.watchButtonThread = threading.Thread(target=self.watchButton, args=(1,))
+        self.buttonState, self.previousButtonState = None, None
         
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -54,15 +55,35 @@ class TopServer():
         # signaler s'il y a un pb
     
     
-    def watchButton(self, arg):
+    
+    def initButton(self):
         
-        res = self.nanoCom.receive_response()
+        self.nanoCom.establish_communication()
+        
+        self.buttonState = self.nanoCom.read_button_state()
+        self.previousButtonState = self.buttonState
+
+    
+    def watchButton(self, arg):
+                
+        while True:
+            
+            self.buttonState = self.nanoCom.read_button_state()
+            if self.previousButtonState != self.buttonState:
+                if self.buttonState == 0 : print("Button OFF")     
+                elif self.buttonState == 1 : print("Button ON")
+                else : print(f"ERROR : unknown button callback {self.buttonState}")
+            
+            self.previousButtonState = self.buttonState
+
+            time.sleep(0.1)
         
         while True:
             res = self.nanoCom.receive_response()
             print("res from thread : ", res)
             
-            self.speaker.play_sound("startup1.mp3")
+            # self.speaker.play_sound("startup1.mp3")
+            time.sleep(0.01)
             
             
     def receiveCommand(self):
@@ -88,7 +109,12 @@ class TopServer():
         
         #TODO gros signal d'erreur si le topServer n'est pas actif (on n'aurait pas d'ISB)
         
+        print('Running TopServer')
+        
         self.watchButtonThread.start()
+        
+        while True:
+            time.sleep (0.01)
         
         # while True:
         #     self.nanoCom.inputSendCommand()
@@ -105,6 +131,13 @@ def main():
     
     topserver = TopServer()
     
+    topserver.initButton()
+    
+    topserver.run()
+
+    
+    
+    '''Test'''
     time.sleep(0.5)
     
     # topserver.speaker.setVolume(120)
@@ -125,7 +158,6 @@ def main():
     
     time.sleep(50)
     
-    # topserver.run()
 
 
 if __name__ == '__main__':

@@ -56,7 +56,7 @@ class ArduinoCommunicator:
             else:
                 print("ERROR : unknown event type")
                 
-            print("Received button press event to new state ", self.ledButtonState)
+            # print("Received button press event to new state ", self.ledButtonState)
                 
             return self.receive_response()  #NOTE recursive so that we read until we find a callback or nothing
             #BUG possible de stack overflow si on a trop d'events
@@ -99,7 +99,7 @@ class ArduinoCommunicator:
         self.send_command(NanoCommand.CMD_READ_BUTTON)
         nanoCallback = self.receive_response()
         
-        print("callback : ", nanoCallback)
+        # print("callback : ", nanoCallback)
         
         if nanoCallback is None:
             return None

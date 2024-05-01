@@ -26,7 +26,7 @@ from speaker.Speaker import Speaker
 # from isb.isb_lib import initPin, readPin, writePin
 # from isb.isb_const import *
 
-from top_const import TOPSERVER_PORT
+from top_const import TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
 class TopServer():
@@ -43,7 +43,8 @@ class TopServer():
     
         self.watchButtonThread = threading.Thread(target=self.watchButton, args=(1,))
         self.buttonState, self.previousButtonState = None, None
-        
+        self.lastButtonChangeTime = time.perf_counter()
+                        
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         # listen on port
@@ -69,14 +70,29 @@ class TopServer():
         while True:
             
             self.buttonState = self.nanoCom.read_button_state()
-            if self.previousButtonState != self.buttonState:
-                if self.buttonState == 0 : print("Button OFF")     
-                elif self.buttonState == 1 : print("Button ON")
-                else : print(f"ERROR : unknown button callback {self.buttonState}")
             
+            if self.previousButtonState != self.buttonState:
+                
+                # filter on button changes to avoid fast toggling
+                if time.perf_counter() - self.lastButtonChangeTime < MIN_TIME_FOR_BUTTON_CHANGE:
+                    continue
+                
+                self.lastButtonChangeTime = time.perf_counter()
+                
+                if self.buttonState == 0 :
+                    print("Button OFF")    
+ 
+                elif self.buttonState == 1 :
+                    print("Button ON")
+                    
+                else:
+                    print(f"ERROR : unknown button callback {self.buttonState}")
+                    continue
+                
             self.previousButtonState = self.buttonState
 
-            time.sleep(0.1)
+
+            time.sleep(0.01)
         
         while True:
             res = self.nanoCom.receive_response()

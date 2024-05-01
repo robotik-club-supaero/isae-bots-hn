@@ -17,7 +17,7 @@ import os
 import rospy
 
 from geometry_msgs.msg import Pose2D, Quaternion
-from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray
+from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
 
 from threading import RLock
 import time
@@ -410,6 +410,15 @@ class Robot(Drawable):
         else:
             raise ValueError("Robot cannot carry more plants")
 
+    def releasePlants(self):        
+        a, b = self.doorLine
+        pos = (a + b) / 2
+
+        while self.plants > 0:
+            plant = self._plants.pop()
+            plant.setLocation(pos)
+            yield plant
+
 class Pot(Drawable):
 
     def __init__(self, id, location):
@@ -439,13 +448,21 @@ class Plant(Drawable):
         self._id = id
         self._location = np.zeros(2)
         self.setLocation(location)
+        self._in_pot = False
 
     def _draw(self, canvas):
         self.clear(canvas)
-        canvas.draw_oval(self._location, PLANT_RADIUS, fill="green", tag=f"plant_{self._id}")
+        canvas.draw_oval(self._location, PLANT_RADIUS, fill="green" if not self._in_pot else "chartreuse", tag=f"plant_{self._id}")
 
     def clear(self, canvas):
         canvas.delete(f"plant_{self._id}")
+
+    @property
+    def inPot(self):
+        return self._in_pot
+
+    def markInPot(self):
+        self._in_pot = True
 
     def setLocation(self, new_location):
         self._location[:] = new_location
@@ -671,8 +688,11 @@ class InterfaceNode:
         self._subOrder = rospy.Subscriber(
             "/nextPositionTeensy", Quaternion, self.updateOrder)
 
+        self._deposit_sub = rospy.Subscriber('/simu/deposit_end', Empty, self.potsDepositEnd)
+
         self._pubOrder = rospy.Publisher(
             "/nextPositionTeensy", Quaternion, queue_size=10, latch=False)
+
 
         rospy.loginfo("Fin d'initialisation de l'interface")
         self._fenetre.after(refresh_interval, self.refresh)
@@ -710,14 +730,13 @@ class InterfaceNode:
             if self._robot.doorsOpen:
                 doorLine = self._robot.doorLine
                 i = 0
-                while i < len(self._plants):
+                while self._robot.plants < PLANT_CAPACITY and i < len(self._plants):
                     plant = self._plants[i]
-                    if circle_segment_collide(plant.location, PLANT_RADIUS, doorLine):
-                        if self._robot.plants < PLANT_CAPACITY:
-                            self._robot.carryPlant(plant)
-                            plant.clear(self._canvas)
-                            self._plants.pop(i)
-                            continue
+                    if not plant.inPot and circle_segment_collide(plant.location, PLANT_RADIUS, doorLine):
+                        self._robot.carryPlant(plant)
+                        plant.clear(self._canvas)
+                        self._plants.pop(i)
+                        continue
                     i += 1
 
         self._fenetre.after(self.refresh_interval, self.refresh)
@@ -781,6 +800,13 @@ class InterfaceNode:
     def updateGrid(self, msg):
         with self.lock:
             self._grid.setGrid(msg.data)
+
+    def potsDepositEnd(self, _msg):
+        with self.lock:
+            for plant in self._robot.releasePlants():
+                plant.markInPot()
+                plant.invalidate()
+                self._plants.append(plant)
 
     def mainloop(self, n=0):
         self._fenetre.mainloop(n)

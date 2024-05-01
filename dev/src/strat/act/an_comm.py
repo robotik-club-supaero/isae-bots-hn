@@ -230,9 +230,10 @@ disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, la
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
 # SPECIFIC TO CURRENT YEAR
-global doors_pub, depl_pub, elevator_pub
+global doors_pub, elevator_pub
 doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
 elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
+deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE
 
 """
 Initialize all subscribers of AN

@@ -21,15 +21,17 @@ class Action(IntEnum):
     NONE         = -1
     PICKUP_PLANT = 0
     PICKUP_POT   = 1
-    PARK         = 2
-    WAIT         = 3
-    END          = 4
-    PREEMPT      = 5
+    DEPOSIT_POT =  2
+    PARK         = 3
+    WAIT         = 4
+    END          = 5
+    PREEMPT      = 6
     
 
 ACTIONS_LIST = [
     'pickupPlant',
     'pickupPot',
+    'depositPot',
     'park',
     'preempted',
     'end',
@@ -39,6 +41,7 @@ ACTIONS_LIST = [
 ACTION_TRANSITIONS = {
     'pickupPlant':'PICKUPPLANT',
     'pickupPot': 'PICKUPPOT',
+    'depositPot': 'DEPOSITPOT',
     'park':'PARK',
     'preempted':'END',
     'end':'END',

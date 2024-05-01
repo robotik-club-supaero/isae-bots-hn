@@ -20,7 +20,7 @@
 
 import os, sys, inspect
 import time
-from dn_comm  import next_action_pub, stop_IT, score_pub, end_pub, PLANTS_POS, POTS_POS
+from dn_comm  import next_action_pub, stop_IT, score_pub, end_pub, PLANTS_POS, POTS_POS, DEPOSIT_POS
 from dn_utils import log_info, log_warn, log_errs, log_fatal
 import numpy as np
 
@@ -76,7 +76,7 @@ def test_strat():
             if remaining[cluster.item()] > PLANT_THRESHOLD:
                 return cluster
         return None
-
+    
     time.sleep(0.01)
 
     if p_dn is None: # safety if the function is called before DEC node init (not supposed to happen)
@@ -85,10 +85,11 @@ def test_strat():
 
 
     if p_dn.go_park :
-        p_dn.nb_actions_done[0] = 1  # jump to park action
+        # p_dn.nb_actions_done[0] = 3  # jump to park action
+        log_warn("Park requested [ignored for test]")
 
 
-    if p_dn.nb_actions_done[0] == 0 or p_dn.nb_actions_done[0] == 2:
+    if p_dn.nb_actions_done[0] == 0 or p_dn.nb_actions_done[0] == 3:
 
         plant_id = find_closest(p_dn, PLANTS_POS, p_dn.remaining_plants)
         if plant_id is not None:
@@ -112,9 +113,19 @@ def test_strat():
         else:
             log_info("No more pot to pick up")
 
-    # TODO: deposit pots in area
     
     if p_dn.nb_actions_done[0] == 2:
+
+        pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots)
+        if pot_id is not None:
+            p_dn.curr_action = [Action.DEPOSIT_POT, pot_id]
+            log_info("Next action order : Deposit Pots")
+            publishAction()        
+            return
+        else:
+            log_info("No more free slot to deposit")
+
+    if p_dn.nb_actions_done[0] == 3:
         p_dn.curr_action = [Action.PARK]
         log_info("Next action order : Park")
         publishAction()
@@ -126,7 +137,7 @@ def test_strat():
         return
     
     
-    if p_dn.nb_actions_done[0] == 3:
+    if p_dn.nb_actions_done[0] == 4:
         p_dn.nb_actions_done[0] = -1  # to prevent repeated end action #BUG bof
         log_info("End of strategy : TEST")
         stop_IT()

@@ -33,7 +33,7 @@ from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import Action,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW
+from strat_const import Action,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW
 
 #################################################################
 #                                                               #
@@ -45,6 +45,7 @@ PLANT_CAPACITY = 6
 
 PLANTS_POS = np.array(PLANTS_POS_RAW)
 POTS_POS = np.array(POTS_POS_RAW)[:, :2]
+DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)[:, :2]
 
 p_dn = None
 
@@ -125,6 +126,8 @@ def recv_action_callback(msg):
             p_dn.remaining_plants[p_dn.curr_action[1]] -= PLANT_CAPACITY
         if p_dn.curr_action[0] == Action.PICKUP_POT:
             p_dn.remaining_pots[p_dn.curr_action[1]] -= PLANT_CAPACITY
+        if p_dn.curr_action[0] == Action.DEPOSIT_POT:
+            p_dn.deposit_slots[p_dn.curr_action[1]] -= PLANT_CAPACITY
 
         log_info("Last action succeeded.")
         p_dn.nb_actions_done[0] += 1

@@ -25,7 +25,6 @@ import smach
 from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
 from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, get_pickup_id
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
-from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
 from an_sm_states.sm_waiting import ObsWaitingOnce

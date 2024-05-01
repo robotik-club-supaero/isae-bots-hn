@@ -21,13 +21,15 @@
 import smach
 import math
 import time
+from geometry_msgs.msg import Quaternion
+from std_msgs.msg      import Empty
 
 from .sm_pickup_plants import CloseDoors, OpenDoors
-from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_POTS, DspOrderMode
-from an_utils import debug_print
-from strat_const import POTS_POS
-from an_sm_states.sm_displacement import Displacement, Approach, colored_approach_with_angle
-from an_comm import get_pickup_id, elevator_pub, callback_action_pub
+from an_const import DoorCallback, DoorOrder, WAIT_TIME, R_APPROACH_POTS, DspOrderMode, DspCallback
+from an_utils import debug_print, log_errs, log_warn, log_info
+from strat_const import DEPOSIT_POS
+from an_sm_states.sm_displacement import Displacement, Approach, colored_approach_with_angle, DISP_TIMEOUT
+from an_comm import get_pickup_id, callback_action_pub, deposit_pub, disp_pub
 
 #################################################################
 #                                                               #
@@ -45,45 +47,60 @@ class CalcPositionningPots(smach.State):
         
     def execute(self, userdata):    
         x, y = userdata.robot_pos.x, userdata.robot_pos.y
-        pots_id = get_pickup_id("pots", userdata)
+        pots_id = get_pickup_id("deposit pots", userdata)
 
-        xp, yp, thetap = POTS_POS[pots_id]
+        xp, yp, thetap = DEPOSIT_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_APPROACH_POTS)
              
         return 'success'
 
-class PotPlants(smach.State):
+class MoveBackwardsStraight(smach.State):
     
-    def __init__(self):
+    def __init__(self, dist):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['cb_elevator'],
-                                output_keys=['cb_elevator'])
+                                input_keys=['cb_depl', 'next_action'],
+                                output_keys=['cb_depl'])
+        self._dist = dist
         
     def execute(self, userdata):
         
-        debug_print('c', "Request to move elevator down")
+        debug_print('c', "Request to move backwards")
         
-        userdata.cb_elevator[0] = ElevatorCallback.PENDING
-        
-        elevator_pub.publish(ElevatorOrder.MOVE_DOWN.value)
+        userdata.cb_depl[0] = DspCallback.PENDING
+
+        pots_id = get_pickup_id("deposit pots", userdata)
+        x, y, theta = DEPOSIT_POS[pots_id]
+    
+        xd = x - self._dist * math.cos(theta)
+        yd = y - self._dist * math.sin(theta)
+
+        deposit_pub.publish(Empty())
+        disp_pub.publish(Quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
         
         begin = time.perf_counter()
-        while time.perf_counter() - begin < WAIT_TIME:
-            
-            if userdata.cb_elevator[0] == ElevatorCallback.DOWN:
-                return 'success'
-            elif userdata.cb_elevator[0] == ElevatorCallback.BLOCKED:
-                return 'fail'
+        while time.perf_counter() - begin < DISP_TIMEOUT:           
             time.sleep(0.01)
-            
+
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+
+            if userdata.cb_depl[0] == DspCallback.ERROR_ASSERV:
+                log_errs("Displacement result: error asserv.")
+                return 'fail'
+
+            if userdata.cb_depl[0] == DspCallback.SUCCESS:
+                log_info('Displacement result: success displacement')
+                return 'success'
+
         # timeout
         log_warn("Timeout")
         
         return 'fail'
     
  
-class PickupPotsEnd(smach.State):
+class DepositPotsEnd(smach.State):
     
     def __init__(self):
         smach.State.__init__(	self,
@@ -94,41 +111,36 @@ class PickupPotsEnd(smach.State):
     def execute(self, userdata):
         
         
-        #TODO check that the action was actually successful
+        #TODO check that the action was actually successful      
         callback_action_pub.publish(exit=1, reason='success')
         
         return 'success'
     
 #################################################################
 #                                                               #
-#                        SM STATE : PICKUP_POTS                 #
+#                        SM STATE : DEPOSIT_POTS                 #
 #                                                               #
 #################################################################
 
-pickupPot = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_action','cb_elevator','color'],
-                                     output_keys=['cb_doors','next_move','cb_depl','cb_elevator'])
+depositPot = smach.StateMachine(outcomes=['fail','success','preempted'],
+                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_action','color'],
+                                     output_keys=['cb_doors','next_move','cb_depl'])
     
-pickUpPotSequence = smach.Sequence(
-    input_keys = ['cb_doors','cb_elevator'],
-    output_keys = ['cb_doors','cb_elevator'],
+depositPotSequence = smach.Sequence(
+    input_keys = ['cb_doors','next_move','robot_pos','cb_depl','next_action','color'],
+    output_keys = ['cb_doors','next_move','cb_depl'],
     outcomes = ['success', 'fail', 'preempted'],
     connector_outcome = 'success')
 
 
-with pickUpPotSequence: 
+with depositPotSequence: 
+    smach.Sequence.add('CALC_POSITIONING_POTS', CalcPositionningPots())
+    smach.Sequence.add('DEPL_POSITIONING_POTS', Displacement())
     smach.Sequence.add('OPEN_DOORS', OpenDoors())
-    smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # gather pots # TODO: add delay before closing ?
-    smach.Sequence.add('POT_PLANTS', PotPlants()) # put grabbed plants into pots
+    smach.Sequence.add('RELEASE_POTS', MoveBackwardsStraight(dist=R_APPROACH_POTS+50)) # TODO change dist
+    smach.Sequence.add('CLOSE_DOORS', CloseDoors())
+    smach.Sequence.add('DEPOSIT_POTS_END',  DepositPotsEnd())
 
-with pickupPot:
-    smach.StateMachine.add('CALC_POSITIONING_POTS', CalcPositionningPots(),
-                            transitions = {'success':'DEPL_POSITIONING_POTS','fail':'fail','preempted':'preempted'})
-    smach.StateMachine.add('DEPL_POSITIONING_POTS', Displacement(),
-                            transitions = {'success':'PICKUP_POTS_SEQ','fail':'fail','preempted':'preempted'})
-    smach.StateMachine.add('PICKUP_POTS_SEQ', pickUpPotSequence, 
-                            transitions = {'success':'PICKUP_POTS_END', 'fail':'PICKUP_POTS_END', 'preempted':'preempted'}
-                            )
-    smach.StateMachine.add('PICKUP_POTS_END', PickupPotsEnd(), 
-                            transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}
-                            )
+with depositPot:
+    smach.StateMachine.add('INNER_SEQ', depositPotSequence,
+                            transitions = {'success':'success','fail':'fail','preempted':'preempted'})

@@ -60,9 +60,11 @@ class Maps:
         self.is_second_attempt = False
 
     def get_obstacle_list(self):
+        
+        return self.obstacle_list+[self.obstacle_robot_pos]
         if self.avoid:
             if self.is_second_attempt:
-                return self.obstacle_list
+                return self.obstacle_list+[self.obstacle_robot_pos]
             return self.obstacle_list+[self.obstacle_robot_pos]
         else:
             return self.obstacle_list

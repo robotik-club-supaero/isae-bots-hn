@@ -42,8 +42,8 @@ D = (
     'commandeMotorR',
     'commandeMotorL',
     'rampSpeed',
-    'rampState',
-    'BrState'
+    'rampState'
+    # 'BrState'
 )
 
 def handler(signal_received, frame):
@@ -116,7 +116,7 @@ class GraphNode(pg.GraphicsWindow):
                 return
             for i in self.graphs:
                 if i == 0:  # States
-                    self.curves[0].setData(self.tab[D.index('current_time')], self.tab[D.index('BrState')])  #stateAsserv #assigne les données aux abscisses
+                    # self.curves[0].setData(self.tab[D.index('current_time')], self.tab[D.index('BrState')])  #stateAsserv #assigne les données aux abscisses
                     self.curves[1].setData(self.tab[D.index('current_time')], self.tab[D.index('rampState')])
 
                 if i == 1:  # Ramp Goal speed

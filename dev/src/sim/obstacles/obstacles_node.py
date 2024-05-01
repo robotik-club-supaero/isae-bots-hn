@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #     ____                                                  
 #    / ___| _   _ _ __   __ _  ___ _ __ ___                 
@@ -31,7 +31,7 @@ from geometry_msgs.msg import Pose2D
 #                                                               #
 #################################################################
 
-_NODENAME_ = "[SIM/OBS]"
+_NODENAME_ = "[OBS]"
 
 def oscillationY(ti, ymin, ymax, w, phi):
 	return (ymin + ymax)/2 + (ymax - ymin)/2 * np.sin(w * (time.time() - ti) + phi)
@@ -61,6 +61,8 @@ class SIM_ObstaclesNode:
         # self.obs_lidar_pub = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
 
         self.curr_time = time.time()
+        
+        loginfo("OBS node initialized")
 
     def seen_obstacle(self, nbr=0):
         """
@@ -70,6 +72,13 @@ class SIM_ObstaclesNode:
         # obs_positions = [(1468,oscillationY(self.ti, 1800, 2500, 1, 0)),(oscillationX(self.ti, 1000, 1500, 1, 0),1550)]
         obs_positions = [(1200, 600)]
         return obs_positions
+    
+    def generate_fix_obstacle_data(self, x, y):
+        
+        obstacles_pos = [(x, y, np.linalg.norm([self.x_robot-x, self.y_robot-y]), 0, 0)]
+        
+        return obstacles_pos
+    
 
     def recv_position(self, msg):
         """
@@ -86,25 +95,26 @@ class SIM_ObstaclesNode:
         ## Make the info msg to send
         ###############################################################
         # calculatedObstacles = 
-        if time.time() - self.curr_time <= 15:
-            obstacles_pos = []  #[(1200,600)]
-        else:
-            obstacles_pos = [(1000,800+30*(time.time()-self.curr_time-15), np.linalg.norm([self.x_robot-1000, self.y_robot-800+30*(time.time()-self.curr_time-15)]) ,0,0)]
-        """ else :
-            obstacles_pos = [(1000,1200, np.linalg.norm([self.x_robot-1000, self.y_robot-1200]) ,0,0)] """
+        # if time.time() - self.curr_time <= 15:
+        #     obstacles_pos = []  #[(1200,600)]
+        # else:
+        #     obstacles_pos = [(1000,800+30*(time.time()-self.curr_time-15), np.linalg.norm([self.x_robot-1000, self.y_robot-800+30*(time.time()-self.curr_time-15)]) ,0,0)]
+        # """ else :
+        #     obstacles_pos = [(1000,1200, np.linalg.norm([self.x_robot-1000, self.y_robot-1200]) ,0,0)] """
         #loginfo("Pos obst :" + str(obstacles_pos))
 
-        #obstacles_pos = []
+        # NOTE fixed obstacle
+        obstacle_data = self.generate_fix_obstacle_data(1300, 800)
 
         data = [0]
-        for pos in obstacles_pos:
+        for pos in obstacle_data:
             for coord in pos:
                 data.append((int)(coord))
 
         dim1 = MultiArrayDimension()
         dim1.label = "nbObstacles"
-        dim1.size = len(obstacles_pos)
-        dim1.stride = 5* len(obstacles_pos)
+        dim1.size = len(obstacle_data)
+        dim1.stride = 5* len(obstacle_data)
 
         dim2 = MultiArrayDimension()
         dim2.label = "coordinates"
@@ -133,7 +143,10 @@ class SIM_ObstaclesNode:
 #######################################################################	
 
 def main():
-    rospy.init_node("[SIM] OBS node")
+    rospy.init_node("OBS")
+    
+    time.sleep(1)  # NOTE : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
+
     node = SIM_ObstaclesNode()
     rospy.spin()
 

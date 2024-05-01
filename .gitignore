@@ -9,3 +9,6 @@ __pycache__
 *.tar
 
 dev/src/CMakeLists.txt
+
+# draw.io files
+.$*

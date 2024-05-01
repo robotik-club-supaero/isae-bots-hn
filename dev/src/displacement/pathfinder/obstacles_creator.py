@@ -119,4 +119,8 @@ def make_obstacle_list(color):
         #obstacleList.append(baseAway)
 
     log_info("Number of static obstacles : {}.".format(len(obstacleList)))
+    
+    #FORTEST
+    obstacleList = []
+    
     return obstacleList

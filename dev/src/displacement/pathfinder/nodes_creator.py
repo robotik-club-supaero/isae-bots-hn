@@ -61,7 +61,7 @@ def make_node_list(option):
     else:
         data0 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_home.xml"))
         data1 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_away.xml"))
-        data2 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_complete.xml"))
+        data2 = ET.parse(os.path.join(os.path.dirname(__file__),"../pathfinder_data/match_grid_avoiding.xml"))
 
     if option == 0:
         data = data0

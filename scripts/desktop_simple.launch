@@ -6,10 +6,10 @@ Launch script for GR (sim for now)
 <launch>  
 
 	<!-- strat nodes -->
-	<node name="DEC" pkg="strat" type="dec_node.py" output="screen" cwd="node" required="true"/>
-	<!-- <node name="ACT" pkg="strat" type="simple_move_an.py" output="screen" cwd="node" required="true"/> -->
+	<!-- <node name="DEC" pkg="strat" type="dec_node.py" output="screen" cwd="node" required="true"/> -->
+	<node name="ACT" pkg="strat" type="flag_an.py" output="screen" cwd="node" required="true"/>
 	<!-- <node name="ACN" pkg="sim" type="actuators_node.py" output="screen" cwd="node" required="true"/> -->
-	<node name="DSP" pkg="displacement" type="disp_node.py" output="screen" cwd="node" required="true"/>
+	<!-- <node name="DSP" pkg="displacement" type="disp_node.py" output="screen" cwd="node" required="true"/> -->
 
 	<!-- sensor nodes -->
 	<!-- <node name="LID" pkg="sensors" type="lidar_node.py" output="screen" cwd="node" required="true"/> -->

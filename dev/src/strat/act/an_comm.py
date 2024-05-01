@@ -21,11 +21,12 @@
 import os, sys, inspect
 import time
 import rospy
+import smach
 
 from std_msgs.msg      import Int16, Int16MultiArray, Empty
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import  DoorCallback, ElevatorCallback, DspCallback, COLOR
+from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, COLOR, WAIT_TIME
 from an_utils import log_info, log_warn, log_errs
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
@@ -67,6 +68,36 @@ def enable_comm():
 global ok_comm
 ok_comm = False
 
+class HardwareOrder(smach.State):
+
+    def __init__(self, publisher, cb_key, order, pending, expected, timeout=WAIT_TIME):
+        super().__init__(input_keys=[cb_key], output_keys=[cb_key], outcomes=['fail','success','preempted'])
+        self._publisher = publisher
+        self._cb_key = cb_key
+        self._order = order
+        self._pending = pending
+        self._expected = expected
+        self._timeout = timeout
+
+    def execute(self, userdata):
+        getattr(userdata, self._cb_key)[0] = self._pending
+
+        self._publisher.publish(self._order.value)
+   
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < self._timeout:
+            response = getattr(userdata, self._cb_key)[0]
+            if response == self._expected:
+                return 'success'
+            elif response != self._pending:
+                log_warn(f"Unexpected response from hardware: {userdata.cb_elevator[0]} for order {self._order}")
+                return 'fail'
+            time.sleep(0.01)
+        
+        # timeout
+        log_warn(f"Timeout while waiting for response from hardware for order {self._order}")        
+        return 'fail'
+         
 
 def setup_start(msg):
 	"""
@@ -142,6 +173,9 @@ def cb_elevator_fct(msg):
     if not ok_comm: return
     p_smData.cb_elevator[0] = ElevatorCallback(msg.data)
 
+def cb_arm_fct(msg):
+    if not ok_comm: return
+    p_smData.cb_arm[0] = ArmCallback(msg.data)
 
 def cb_park_fct(msg):
     """
@@ -230,9 +264,10 @@ disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, la
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
 
 # SPECIFIC TO CURRENT YEAR
-global doors_pub, elevator_pub
+global doors_pub, elevator_pub, arm_pub
 doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
 elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
+arm_pub = rospy.Publisher('/act/order/arm', Int16, queue_size = 10, latch=True)
 deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE
 
 """
@@ -250,3 +285,4 @@ park_sub = rospy.Subscriber('/park', Int16, cb_park_fct)
 # SPECIFIC TO CURRENT YEAR
 doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
 elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)
+arm_sub = rospy.Subscriber('/act/callback/arm', Int16, cb_arm_fct)

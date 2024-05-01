@@ -31,7 +31,7 @@ import configparser as ConfigParser
 from signal import signal, SIGINT
 from sys import exit
 
-from enum import Enum
+from enum import IntEnum
 
 from interface_const import *
 
@@ -329,7 +329,7 @@ class Drawable:
             self.needsRedraw = False
 
 
-class DoorState(Enum):
+class DoorState(IntEnum):
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2

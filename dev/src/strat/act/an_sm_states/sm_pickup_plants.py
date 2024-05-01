@@ -23,7 +23,7 @@ import time
 import smach
 
 from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, get_pickup_id
+from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, get_pickup_id, HardwareOrder
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
@@ -41,69 +41,24 @@ from strat_const import PLANTS_POS
 #                                                               #
 #################################################################
 
-class OpenDoors(smach.State):
+class OpenDoors(HardwareOrder):
     
     def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['cb_doors'],
-                                output_keys=['cb_doors'])
-                
-        
+        super().__init__(doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
+    
     def execute(self, userdata):
-        
         debug_print('c', "Request to open doors")
-        
-        userdata.cb_doors[0] = DoorCallback.PENDING
-        
-        doors_pub.publish(DoorOrder.OPEN.value)
-        
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < WAIT_TIME:
-            
-            if userdata.cb_doors[0] == DoorCallback.OPEN:
-                return 'success'
-            elif userdata.cb_doors[0] == DoorCallback.BLOCKED:
-                return 'fail'
-            time.sleep(0.01)
-            
-        # timeout
-        log_warn("Timeout")
-        
-        return 'fail'
+        return super().execute(userdata)
     
-    
-class CloseDoors(smach.State):
+class CloseDoors(HardwareOrder):
     
     def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['cb_doors'],
-                                output_keys=['cb_doors'])
-        
-    def execute(self, userdata):
-        
-        debug_print('c', "Request to close doors")
-                
-        userdata.cb_doors[0] = DoorCallback.PENDING
+        super().__init__(doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
 
-        # publish close doors order
-        doors_pub.publish(DoorOrder.CLOSE.value)
-                
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < WAIT_TIME:
-            
-            if userdata.cb_doors[0] == DoorCallback.CLOSED:
-                return 'success'
-            elif userdata.cb_doors[0] == DoorCallback.BLOCKED:
-                return 'fail'
-            time.sleep(0.01)
-            
-        # timeout
-        log_warn("Timeout")
-        
-        return 'fail'
-    
+    def execute(self, userdata):
+        debug_print('c', "Request to close doors")
+        return super().execute(userdata)
+
 class CalcPositionningPlants(smach.State):
     
     def __init__(self):
@@ -138,36 +93,15 @@ class CalcTakePlants(smach.State):
 
         return 'success'
     
-class RisePlants(smach.State):
+class RisePlants(HardwareOrder):
     
     def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['cb_elevator'],
-                                output_keys=['cb_elevator'])
+        super().__init__(elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
         
-    def execute(self, userdata):
-        
+    def execute(self, userdata):        
         debug_print('c', "Request to move elevator up")
-        
-        userdata.cb_elevator[0] = ElevatorCallback.PENDING
-        
-        elevator_pub.publish(ElevatorOrder.MOVE_UP.value)
-        
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < WAIT_TIME:
-            if userdata.cb_elevator[0] == ElevatorCallback.UP:
-                return 'success'
-            elif userdata.cb_elevator[0] == ElevatorCallback.BLOCKED:
-                return 'fail'
-            time.sleep(0.01)
-            
-        # timeout
-        log_warn("Timeout")
-        
-        return 'fail'
-    
-    
+        return super().execute(userdata)
+       
 class PickupPlantsEnd(smach.State):
     
     def __init__(self):

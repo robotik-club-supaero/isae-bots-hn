@@ -27,7 +27,7 @@ from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, W
 from an_utils import debug_print
 from strat_const import POTS_POS
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach_with_angle
-from an_comm import get_pickup_id, elevator_pub, callback_action_pub
+from an_comm import get_pickup_id, elevator_pub, callback_action_pub, HardwareOrder
 
 #################################################################
 #                                                               #
@@ -51,35 +51,15 @@ class CalcPositionningPots(smach.State):
              
         return 'success'
 
-class PotPlants(smach.State):
+class PotPlants(HardwareOrder):
     
     def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['cb_elevator'],
-                                output_keys=['cb_elevator'])
-        
-    def execute(self, userdata):
-        
+        super().__init__(elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
+
+    def execute(self, userdata):        
         debug_print('c', "Request to move elevator down")
-        
-        userdata.cb_elevator[0] = ElevatorCallback.PENDING
-        
-        elevator_pub.publish(ElevatorOrder.MOVE_DOWN.value)
-        
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < WAIT_TIME:
-            
-            if userdata.cb_elevator[0] == ElevatorCallback.DOWN:
-                return 'success'
-            elif userdata.cb_elevator[0] == ElevatorCallback.BLOCKED:
-                return 'fail'
-            time.sleep(0.01)
-            
-        # timeout
-        log_warn("Timeout")
-        
-        return 'fail'
+        super().execute(userdata)
+
     
  
 class PickupPotsEnd(smach.State):

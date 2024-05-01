@@ -22,7 +22,7 @@ import os
 import numpy as np
 from ast import literal_eval
 import configparser
-from enum import Enum, IntEnum
+from enum import IntEnum
 import rospy
 
 #################################################################
@@ -113,13 +113,13 @@ class DspOrderMode(IntEnum):
 
     
     
-class DoorOrder(Enum):
+class DoorOrder(IntEnum):
     OPEN = 0
     CLOSE = 1
     
 ''' CALLBACKS '''
 
-class DspCallback(Enum):
+class DspCallback(IntEnum):
     # UNKNOWN = -2
     # PENDING = -1
     # ARRIVED = 0
@@ -145,23 +145,34 @@ class DspCallback(Enum):
     #  3: 'Destination blocked'
      
     
-class DoorCallback(Enum):
+class DoorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2
     
-class ElevatorOrder(Enum):
+class ElevatorOrder(IntEnum):
     MOVE_UP = 1
     MOVE_DOWN = 0
         
-class ElevatorCallback(Enum):
+class ElevatorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 0
     UP = 1
     BLOCKED = 2
+
+class ArmOrder(IntEnum):
+    EXTEND = 1
+    RETRACT = 2
+
+class ArmCallback(IntEnum):
+    UNKNOWN = -2
+    PENDING = -1
+    EXTENDED = 1
+    RETRACTED = 2
+    BLOCKED = 3
 
 
 ## I/O keys for states of the sm

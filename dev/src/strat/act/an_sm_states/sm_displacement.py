@@ -23,7 +23,7 @@ import sys
 import time
 import smach
 import math
-from enum import Enum
+from enum import IntEnum
 from numpy.linalg import norm
 
 from geometry_msgs.msg import Quaternion
@@ -43,7 +43,7 @@ DISP_TIMEOUT = 30       #[s]
 STOP_PATH_TIMEOUT = 3   #[s]
 STOP_DEST_TIMEOUT = 3   #[s]
 
-class Approach(Enum):
+class Approach(IntEnum):
 	INITIAL = -1
 	FINAL = 1
 

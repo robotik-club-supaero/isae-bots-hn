@@ -19,16 +19,18 @@ from enum import IntEnum
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    PICKUP_PLANT = 0
-    PICKUP_POT   = 1
-    DEPOSIT_POT =  2
-    PARK         = 3
-    WAIT         = 4
-    END          = 5
-    PREEMPT      = 6
+    TURN_SOLAR_PANELS = 0
+    PICKUP_PLANT = 1
+    PICKUP_POT   = 2
+    DEPOSIT_POT =  3
+    PARK         = 4
+    WAIT         = 5
+    END          = 6
+    PREEMPT      = 7
     
 
 ACTIONS_LIST = [
+    'turnPanels',
     'pickupPlant',
     'pickupPot',
     'depositPot',
@@ -39,6 +41,7 @@ ACTIONS_LIST = [
     ]
 
 ACTION_TRANSITIONS = {
+    'turnPanels': 'TURNPANELS',
     'pickupPlant':'PICKUPPLANT',
     'pickupPot': 'PICKUPPOT',
     'depositPot': 'DEPOSITPOT',
@@ -87,11 +90,10 @@ POTS_POS = [
 
 
 DEPOSIT_POS = [
-	[ 225,  225, -pi/2],
+	#[ 225,  225, -pi/2],
     [1000,  225, -pi/2],
-    [1775,  225, -pi/2],
+  #  [1775,  225, -pi/2],
 	[1775, 2775,  pi/2],
-    [1000, 2775,  pi/2],
+  #  [1000, 2775,  pi/2],
     [ 225, 2775,  pi/2],
 ]
-

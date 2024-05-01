@@ -80,7 +80,7 @@ class DecisionsNode:
 
         self.remaining_plants = [6 for _ in range(6)]
         self.remaining_pots = [6 for _ in range(6)]
-        self.deposit_slots = [6 for _ in range(6)]
+        self.deposit_slots = [12 for _ in range(3)]
 
 
 #################################################################

@@ -240,7 +240,7 @@ with pickupPlant:
     smach.StateMachine.add('DEPL_POSITIONING_PLANTS', Displacement(),
                             transitions = {'success':'PICKUP_PLANTS_CONC','fail':'fail','preempted':'preempted'})
     smach.StateMachine.add('PICKUP_PLANTS_CONC', pickUpPlantConcurrence, 
-                            transitions = {'success':'PICKUP_PLANT_END', 'fail':'PICKUP_PLANT_END', 'preempted':'preempted'}
+                            transitions = {'success':'PICKUP_PLANT_END', 'fail':'fail', 'preempted':'preempted'}
                             )
     smach.StateMachine.add('PICKUP_PLANT_END', PickupPlantsEnd(), 
                             transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}

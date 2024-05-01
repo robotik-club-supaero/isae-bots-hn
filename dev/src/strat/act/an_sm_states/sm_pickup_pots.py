@@ -40,11 +40,10 @@ class CalcPositionningPots(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color','next_action'],
+                                input_keys=['color','next_action'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):    
-        x, y = userdata.robot_pos.x, userdata.robot_pos.y
         pots_id = get_pickup_id("pots", userdata)
 
         xp, yp, thetap = POTS_POS[pots_id]
@@ -127,7 +126,7 @@ with pickupPot:
     smach.StateMachine.add('DEPL_POSITIONING_POTS', Displacement(),
                             transitions = {'success':'PICKUP_POTS_SEQ','fail':'fail','preempted':'preempted'})
     smach.StateMachine.add('PICKUP_POTS_SEQ', pickUpPotSequence, 
-                            transitions = {'success':'PICKUP_POTS_END', 'fail':'PICKUP_POTS_END', 'preempted':'preempted'}
+                            transitions = {'success':'PICKUP_POTS_END', 'fail':'fail', 'preempted':'preempted'}
                             )
     smach.StateMachine.add('PICKUP_POTS_END', PickupPotsEnd(), 
                             transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}

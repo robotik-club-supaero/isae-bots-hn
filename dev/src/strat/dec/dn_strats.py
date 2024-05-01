@@ -69,7 +69,8 @@ def test_strat():
     """
 
     def find_closest(p_dn, positions, remaining):
-        x,y,_ = adapt_pos_to_side(*p_dn.position, p_dn.color)
+       # x,y,_ = adapt_pos_to_side(*p_dn.position, p_dn.color)
+        x, y, _ = p_dn.position
         dists = np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
         for cluster in clusters:
@@ -85,15 +86,20 @@ def test_strat():
 
 
     if p_dn.go_park :
-        # p_dn.nb_actions_done[0] = 3  # jump to park action
+        # p_dn.nb_actions_done[0] = 4  # jump to park action
         log_warn("Park requested [ignored for test]")
 
+    if p_dn.nb_actions_done[0] == 0:
+        p_dn.curr_action = [Action.TURN_SOLAR_PANELS]
+        publishAction()  
+        return
 
-    if p_dn.nb_actions_done[0] == 0 or p_dn.nb_actions_done[0] == 3:
+
+    if p_dn.nb_actions_done[0] == 1 or p_dn.nb_actions_done[0] == 4:
 
         plant_id = find_closest(p_dn, PLANTS_POS, p_dn.remaining_plants)
         if plant_id is not None:
-            p_dn.nb_actions_done[0] = 0
+            p_dn.nb_actions_done[0] = 1
             p_dn.curr_action = [Action.PICKUP_PLANT, plant_id]
             log_info("Next action order : Pickup Plants")
             publishAction()
@@ -102,7 +108,7 @@ def test_strat():
             log_info("No more plant to pick up")
 
 
-    if p_dn.nb_actions_done[0] == 1:
+    if p_dn.nb_actions_done[0] == 2:
 
         pot_id = find_closest(p_dn, POTS_POS, p_dn.remaining_pots)
         if pot_id is not None:
@@ -114,7 +120,7 @@ def test_strat():
             log_info("No more pot to pick up")
 
     
-    if p_dn.nb_actions_done[0] == 2:
+    if p_dn.nb_actions_done[0] == 3:
 
         pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots)
         if pot_id is not None:
@@ -125,7 +131,7 @@ def test_strat():
         else:
             log_info("No more free slot to deposit")
 
-    if p_dn.nb_actions_done[0] == 3:
+    if p_dn.nb_actions_done[0] == 4:
         p_dn.curr_action = [Action.PARK]
         log_info("Next action order : Park")
         publishAction()
@@ -137,7 +143,7 @@ def test_strat():
         return
     
     
-    if p_dn.nb_actions_done[0] == 4:
+    if p_dn.nb_actions_done[0] == 5:
         p_dn.nb_actions_done[0] = -1  # to prevent repeated end action #BUG bof
         log_info("End of strategy : TEST")
         stop_IT()

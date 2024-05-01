@@ -69,6 +69,18 @@ WAIT_TIME = 5
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
 R_APPROACH_POTS = 130 # TODO change value
 
+EDGE_DIST = 20 # when turning panel
+R_APPROACH_PANEL = 100 # TODO change value
+
+SOLAR_POS = [
+    2726,
+    2504,
+    2276,
+    1729,
+    1498,
+    1276,
+]
+
 #################################################################
 #                                                               #
 #                       SM CONSTANTS                            #

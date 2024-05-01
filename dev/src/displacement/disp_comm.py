@@ -55,7 +55,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 STOP_RANGE_STANDARD = 350
 STOP_RANGE_AVOIDING = 350
 DIST_MIN = 50
-RADIUS_ROBOT_OBSTACLE = 180
+RADIUS_ROBOT_OBSTACLE = 280
 RESET_RANGE = 560  
 STOP_RANGE_X_STAND = 650
 STOP_RANGE_X_AVOID = 500
@@ -272,7 +272,11 @@ def callback_strat(msg):
             p_disp.pathfinder.set_goal(dest_pos)
             p_disp.pathfinder.set_init(curr_pos)
 
+        begin_time = time.perf_counter()
+
         result = p_disp.build_path(p_disp.avoid_mode, p_disp.is_first_accurate, False)
+
+        debug_print('c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
 
         ## Si on a trouvé un chemin
         if result['success']:

@@ -122,7 +122,60 @@ def log_warn(msg):
     rospy.logwarn(f"{NODE_NAME} {msg}")
 
 
-def dprint(msg):
-    if DEBUG_PRINT:
-        print(" > {}".format(msg))
 
+#################################################################
+# Colors gestion												#
+#################################################################
+
+class Color():
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+
+color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
+             'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
+
+
+
+# Debug print function
+def debug_print(format, *msgs):
+    
+    # If debug prints are disabled, quit
+    if not DEBUG_PRINT: return
+
+    # If no color was specified, error & quit
+    if len(format) == 0:
+        print(Color.RED + "Wrong debug_print color" + Color.RESET)
+        return
+
+    print_string = ""
+    color = format[0]
+
+    if len(format[1:]) > 0:
+        shape = format[1:]
+        if shape == '*': 
+            print_string += Color.BOLD
+        elif shape == '-': 
+            print_string += Color.UNDERLINE
+        elif shape == '*-': 
+            print_string += Color.BOLD + Color.UNDERLINE
+
+    total_msg = ""
+    for msg in msgs:
+        total_msg = total_msg + str(msg) + ", "
+    total_msg = total_msg[:-2]
+
+    try:
+        print_string += color_dict[color] + total_msg + Color.RESET
+        log_info(print_string)
+    except KeyError:
+        log_info(Color.RED + "Wrong debugPrint color" + Color.RESET)
+        return

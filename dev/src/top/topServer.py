@@ -12,9 +12,11 @@
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
 
+import os, sys
 import threading
 import time
 import socket
+import signal
 
 #### Nano ####
 from nano.ArduinoCommunicator import ArduinoCommunicator
@@ -41,7 +43,8 @@ class TopServer():
     
         self.speaker = Speaker()
     
-        self.watchButtonThread = threading.Thread(target=self.watchButton, args=(1,))
+        self.stop_event = threading.Event()
+        self.watchButtonThread = threading.Thread(target=self.watchButton, args=(self.stop_event,))
         self.buttonState, self.previousButtonState = None, None
         self.lastButtonChangeTime = time.perf_counter()
                         
@@ -65,9 +68,9 @@ class TopServer():
         self.previousButtonState = self.buttonState
 
     
-    def watchButton(self, arg):
+    def watchButton(self, stop_event):
                 
-        while True:
+        while not stop_event.is_set():
             
             self.buttonState = self.nanoCom.read_button_state()
             
@@ -91,14 +94,6 @@ class TopServer():
                 
             self.previousButtonState = self.buttonState
 
-
-            time.sleep(0.01)
-        
-        while True:
-            res = self.nanoCom.receive_response()
-            print("res from thread : ", res)
-            
-            # self.speaker.play_sound("startup1.mp3")
             time.sleep(0.01)
             
             
@@ -130,22 +125,40 @@ class TopServer():
         self.watchButtonThread.start()
         
         while True:
-            time.sleep (0.01)
+            
+            print('ting')
+            time.sleep (0.25)
         
         # while True:
         #     self.nanoCom.inputSendCommand()
         
         
         
-    def closeServer(self):
+    def sig_handler(self, s_rcv, frame):
+        """
+        Force topServer to quit on SIGINT.
+        """
+        print("TopServer forced to terminate with Ctrl-C")
+        self.closeServer(exitCode=1)
         
+        
+    def closeServer(self, exitCode):
+        
+        # close TCp server
         self.server.close()
         
+        # close threads
+        self.stop_event.set()
+            
+        print(f"Exiting TopServer with exit code {exitCode}")
+        sys.exit(exitCode)
         
 
 def main():
     
     topserver = TopServer()
+    
+    signal.signal(signal.SIGINT, topserver.sig_handler)
     
     topserver.initButton()
     

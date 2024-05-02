@@ -17,6 +17,7 @@ import threading
 import time
 import socket
 import signal
+import subprocess
 
 #### Nano ####
 from nano.ArduinoCommunicator import ArduinoCommunicator
@@ -32,6 +33,118 @@ from isb.ISBManager import ISBManager
 from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
+class RoslaunchThread(threading.Thread):
+    def __init__(self, stop_event):
+        self.stdout = None
+        self.stderr = None
+        self.stop_event = stop_event
+        
+        threading.Thread.__init__(self)
+
+    def run(self):
+        
+        print('Entering run')
+        
+        ROSprocess = subprocess.Popen('/app/scripts/runMatch_test.sh', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        print('Passed')
+        
+        decoded_output = None
+        while decoded_output is None:
+            
+            try:
+                process_output = subprocess.check_output(['roslaunch-logs'], stderr=subprocess.PIPE)
+                
+                # with subprocess.Popen(['roslaunch-logs'],stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+                #     stdout, stderr = process.communicate()
+
+                decoded_output = process_output.decode('utf-8')#[:-1]
+                print(decoded_output)
+                
+                #NOTE no need to sleep because the command is long (~1s)
+                
+            except subprocess.CalledProcessError:
+                # try again, most likely the roscore is not up
+                print('Waiting for roscore to be ready')
+            
+            
+        print("Final : ", decoded_output)
+        
+        return
+        
+        while True:
+            # this command reads the last line of the matchLog file which is updated by the runMatch.sh script
+            with subprocess.Popen(['tail', '-n', '10', 'matchLog.log'],stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+                stdout, stderr = process.communicate()
+
+            output = stdout.decode('utf-8')#[:-1]
+            
+            print(output)
+            
+            time.sleep(0.2)
+  
+  
+        process.stdout.close()
+        
+        print("End of RoslaunchThread run")
+        
+        return
+        
+
+        
+        
+        
+        
+        while process.poll() is None:
+            print(process.stdout.readline())
+            sys.stdout.flush()
+        print(process.stdout.read())
+        process.stdout.close()
+        
+        print("End of RoslaunchThread run")
+
+        return
+        
+        while process.poll() is None:
+            line = process.stdout.readline()
+            lineError = process.stderr.readline()
+            if line is not None:
+                print("#", line.decode())
+            if lineError is not None:
+                print("!", lineError.decode())
+            else:
+                print("nul")
+                
+            time.sleep(0.2)
+                                   
+        print(process.stdout.read().decode())
+        process.stdout.close()
+
+        return
+
+        self.stdout, self.stderr = p.communicate()
+        
+        while not self.stop_event.is_set():
+            if self.stdout is not None:
+                print("Stdout : ", self.stdout.decode())
+            if self.stderr is not None:
+                print("Stderr : ", self.stderr.decode())
+                # print("smth", self.stdout.decode().split('\n')[-1])
+                # print(self.roslaunchThread.stderr.decode())
+                
+            time.sleep(0.2)
+            
+        #TODO things to do when roslaunch quits ?
+        print("Quit roslaunch")
+        if self.stdout is not None:
+            print("Stdout : ", self.stdout.decode())
+        if self.stderr is not None:
+            print("Stderr : ", self.stderr.decode())
+    
+    
+            
+        
+
 class TopServer():
     
     nanoCom = None  # nano board
@@ -45,9 +158,13 @@ class TopServer():
         self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
     
         self.speaker = Speaker()
-    
-        self.stop_event = threading.Event()
-        self.watchButtonThread = threading.Thread(target=self.watchButton, args=(self.stop_event,))
+        
+        self.isRosLaunchRunning = False
+        self.rosLaunchStopEvent = threading.Event()
+        self.roslaunchThread = RoslaunchThread(self.rosLaunchStopEvent)
+
+        self.watchButtonStopEvent = threading.Event()
+        self.watchButtonThread = threading.Thread(target=self.watchButton, args=(self.watchButtonStopEvent,))
         self.buttonState, self.previousButtonState = None, None
         self.lastButtonChangeTime = time.perf_counter()
                         
@@ -72,6 +189,10 @@ class TopServer():
 
     
     def watchButton(self, stop_event):
+        '''
+        The LED button plays an important role in the TopServer so it has its own thread
+        It is not sent back to clients so read all the time, and should affect the TopServer without delay
+        '''
                 
         while not stop_event.is_set():
             
@@ -90,10 +211,21 @@ class TopServer():
                 self.lastButtonChangeTime = time.perf_counter()
                 
                 if self.buttonState == ButtonPressState.BUTTON_PRESS_OFF :
-                    print("Button OFF")    
- 
+                    print("Button OFF")   
+                 
                 elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON :
                     print("Button ON")
+                    
+                    if not self.isRosLaunchRunning:
+                        self.isRosLaunchRunning = True
+                        self.roslaunchThread.start()
+                    # self.roslaunchThread.join()
+                    
+                    # subProc = subprocess.run(["/app/scripts/runMatch_test.sh"], capture_output=True)
+                    
+                    # print(f"Return code : {subProc.returncode}")
+                    # print(f"Stdout : {subProc.stdout.decode()}")
+                    # print(f"Stderr : {subProc.stderr.decode()}")
                     
                 else:
                     print(f"ERROR : unknown button callback {self.buttonState}")
@@ -144,7 +276,7 @@ class TopServer():
                     
                 elif request_type == TopServerRequest.REQUEST_READ_TRIGGER:
                     triggerState = self.isbManager.readTriggerState()
-                    client_socket.sendall(bytes[TopServerCallback.CALLBACK_OK, bytes(triggerState)])
+                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK, triggerState]))
 
                 elif request_type == TopServerRequest.REQUEST_WRITE_LED:
                     if len(request_list) != 3:
@@ -196,8 +328,10 @@ class TopServer():
         maxclients = 10
         self.serverSocket.listen(maxclients)
         
+        
         try:
             while True:
+                
                 # Accept incoming connection
                 client_socket, client_address = self.serverSocket.accept()
                 print(f"Accepted connection from {client_address}")
@@ -208,11 +342,14 @@ class TopServer():
                 # Handle the client connection in a new thread
                 client_thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
                 client_thread.start()
-                
                 time.sleep(0.001)
+
+                        
         finally:
             # Close the server socket
             self.serverSocket.close()
+                
+            
             
         return
         self.conn, self.addr = self.serverSocket.accept()
@@ -249,7 +386,8 @@ class TopServer():
         self.serverSocket.close()
         
         # close threads
-        self.stop_event.set()
+        self.watchButtonStopEvent.set()
+        self.rosLaunchStopEvent.set()
             
         print(f"Exiting TopServer with exit code {exitCode}")
         sys.exit(exitCode)

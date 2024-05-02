@@ -453,10 +453,12 @@ def callback_lidar(msg):
         
 def callback_init_pos(msg):
     """Update la position de départ du robot."""
-    if p_disp.color == 0:
+    if INIT_ZONE == 0:
         x, y, z = INIT_POS[0], INIT_POS[1], INIT_POS[2]
-    else:
+    elif INIT_ZONE == 1:
         x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
+    elif INIT_ZONE == 2:
+        x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS2[2]
     pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
     p_disp.current_pos = [x, y, z]
 

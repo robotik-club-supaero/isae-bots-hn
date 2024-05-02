@@ -20,7 +20,7 @@
 
 import os, sys, inspect
 import time
-from dn_comm  import next_action_pub, stop_IT, score_pub, end_pub, PLANTS_POS, POTS_POS, DEPOSIT_POS
+from dn_comm  import next_action_pub, stop_IT, score_pub, end_pub, PLANTS_POS, POTS_POS, DEPOSIT_POS, PARK_POS
 from dn_utils import log_info, log_warn, log_errs, log_fatal
 import numpy as np
 
@@ -68,13 +68,14 @@ def test_strat():
         -
     """
 
-    def find_closest(p_dn, positions, remaining):
+    def find_closest(p_dn, positions, remaining, cond=None):
+        if cond is None: cond = lambda cluster: remaining[cluster] > PLANT_THRESHOLD
        # x,y,_ = adapt_pos_to_side(*p_dn.position, p_dn.color)
         x, y, _ = p_dn.position
         dists = np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
         for cluster in clusters:
-            if remaining[cluster.item()] > PLANT_THRESHOLD:
+            if cond(cluster.item()):
                 return cluster
         return None
     
@@ -84,71 +85,59 @@ def test_strat():
         log_fatal("p_dn None in dn_strats, not supposed to happen")
         return
 
-
-    if p_dn.go_park :
-        # p_dn.nb_actions_done[0] = 4  # jump to park action
-        log_warn("Park requested [ignored for test]")
-
-    if p_dn.nb_actions_done[0] == 0:
-        p_dn.curr_action = [Action.TURN_SOLAR_PANELS]
-        publishAction()  
-        return
-
-
-    if p_dn.nb_actions_done[0] == 1 or p_dn.nb_actions_done[0] == 4:
-
-        plant_id = find_closest(p_dn, PLANTS_POS, p_dn.remaining_plants)
-        if plant_id is not None:
-            p_dn.nb_actions_done[0] = 1
-            p_dn.curr_action = [Action.PICKUP_PLANT, plant_id]
-            log_info("Next action order : Pickup Plants")
-            publishAction()
-            return
-        else:
-            log_info("No more plant to pick up")
-
-
-    if p_dn.nb_actions_done[0] == 2:
-
-        pot_id = find_closest(p_dn, POTS_POS, p_dn.remaining_pots)
-        if pot_id is not None:
-            p_dn.curr_action = [Action.PICKUP_POT, pot_id]
-            log_info("Next action order : Pickup Pots")
-            publishAction()        
-            return
-        else:
-            log_info("No more pot to pick up")
-
+    publishScore()
     
-    if p_dn.nb_actions_done[0] == 3:
-
-        pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots)
-        if pot_id is not None:
-            p_dn.curr_action = [Action.DEPOSIT_POT, pot_id]
-            log_info("Next action order : Deposit Pots")
-            publishAction()        
+    if not p_dn.go_park:
+        if p_dn.nb_actions_done[0] == 0:
+            p_dn.curr_action = [Action.TURN_SOLAR_PANELS]
+            publishAction()  
             return
-        else:
-            log_info("No more free slot to deposit")
 
-    if p_dn.nb_actions_done[0] == 4:
-        p_dn.curr_action = [Action.PARK]
-        log_info("Next action order : Park")
-        publishAction()
+        if p_dn.nb_actions_done[0] == 1 or (p_dn.nb_actions_done[0] == 4 and not p_dn.go_park):
+
+            plant_id = find_closest(p_dn, PLANTS_POS, p_dn.remaining_plants)
+            if plant_id is not None:
+                p_dn.nb_actions_done[0] = 1
+                p_dn.curr_action = [Action.PICKUP_PLANT, plant_id]
+                log_info("Next action order : Pickup Plants")
+                publishAction()
+                return
+            else:
+                log_info("No more plant to pick up")
+
+
+        if p_dn.nb_actions_done[0] == 2:
+
+            pot_id = find_closest(p_dn, POTS_POS, p_dn.remaining_pots)
+            if pot_id is not None:
+                p_dn.curr_action = [Action.PICKUP_POT, pot_id]
+                log_info("Next action order : Pickup Pots")
+                publishAction()        
+                return
+            else:
+                log_info("No more pot to pick up")
+
         
-        # Add to score because we earned points
-        # TODO: only add score if action was actually successful?
-        p_dn.score += ActionScore.SCORE_PARK.value
-        publishScore()
-        return
-    
-    
-    if p_dn.nb_actions_done[0] == 5:
-        p_dn.nb_actions_done[0] = -1  # to prevent repeated end action #BUG bof
+        if p_dn.nb_actions_done[0] == 3:
+
+            pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots)
+            if pot_id is not None:
+                p_dn.curr_action = [Action.DEPOSIT_POT, pot_id]
+                log_info("Next action order : Deposit Pots")
+                publishAction()        
+                return
+            else:
+                log_info("No more free slot to deposit")
+
+    if p_dn.parked:
         log_info("End of strategy : TEST")
         stop_IT()
         return
 
+    zone = find_closest(p_dn, PARK_POS, None, cond=lambda index: index != p_dn.init_zone)
+    p_dn.curr_action = [Action.PARK, zone]
+    log_info("Next action order : Park")
+    publishAction()
 
 def homologation():
     """

@@ -275,7 +275,7 @@ doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= T
 elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
 left_arm_pub = rospy.Publisher('/act/order/left_arm', Int16, queue_size = 10, latch=True)
 right_arm_pub = rospy.Publisher('/act/order/right_arm', Int16, queue_size = 10, latch=True)
-deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE
+deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
 
 """
 Initialize all subscribers of AN

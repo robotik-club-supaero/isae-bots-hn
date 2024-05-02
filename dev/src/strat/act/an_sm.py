@@ -71,7 +71,7 @@ class Setup(smach.State):
         userdata.start = False
         userdata.color = 0
         userdata.score = [ActionScore.SCORE_INIT.value]
-        userdata.nb_actions_done = [0]
+        userdata.nb_actions_done = [0] # TODO where is it used?
         userdata.park = [0] 
         
         

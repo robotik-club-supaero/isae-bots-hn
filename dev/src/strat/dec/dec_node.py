@@ -25,7 +25,7 @@ import signal
 import time
 
 from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
-from dn_comm     import init_comm
+from dn_comm     import init_comm, CULTURE_SLOTS
 from dn_strats   import init_strats, test_strat, homologation, match_strat
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
@@ -67,6 +67,7 @@ class DecisionsNode:
         self.match_time = int(READER.get("STRAT", "match_time"))
         self.delay_park = 13  # TODO: change it to named constant
         self.go_park = False
+        self.parked = False
 
         self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = [match_strat, homologation, test_strat]
@@ -76,11 +77,12 @@ class DecisionsNode:
         self.curr_action = [Action.WAIT]  # of type Action
         self.nb_actions_done = [0]
 
+        self.init_zone = int(READER.get("STRAT", "init_zone"))
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
         self.remaining_plants = [6 for _ in range(6)]
         self.remaining_pots = [6 for _ in range(6)]
-        self.deposit_slots = [12 for _ in range(3)]
+        self.deposit_slots = [CULTURE_SLOTS for _ in range(3)]
 
 
 #################################################################

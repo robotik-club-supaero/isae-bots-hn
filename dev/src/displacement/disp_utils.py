@@ -56,6 +56,8 @@ except:
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
 INIT_POS = list(literal_eval(READER.get("ROBOT", "init_pos")))
 INIT_POS2 = list(literal_eval(READER.get("ROBOT", "init_pos2")))
+INIT_POS2 = list(literal_eval(READER.get("ROBOT", "init_pos3")))
+INIT_ZONE = int(READER.get("STRAT", "init_zone"))
 
 MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
 

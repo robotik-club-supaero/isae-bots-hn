@@ -47,9 +47,6 @@ except:
 #                                                               #
 #################################################################
 
-## Park Position
-PARKING_POS = list(literal_eval(READER.get('ROBOT', 'park_pos')))
-
 ## Origin Position 
 ORIGIN_POS = list(literal_eval(READER.get('ROBOT','init_pos')))
 

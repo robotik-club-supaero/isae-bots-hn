@@ -14,7 +14,12 @@
 
 from math import pi
 from enum import IntEnum
+import configparser, os
+from ast import literal_eval
 
+
+READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),'../robot_config.cfg'))
 
 class Action(IntEnum):
     PENDING = -2
@@ -53,10 +58,11 @@ ACTION_TRANSITIONS = {
 
 
 class ActionScore(IntEnum): #TODO update
-    SCORE_INIT = 5
-    SCORE_PARK = 15
-    SCORE_DEPOSIT_PLANTS = 30
-    BONUS = 20
+    SCORE_INIT = 0
+    SCORE_PARK = 10
+    SCORE_DEPOSIT_PLANTS = 4
+    SCORE_SOLAR_PANEL = 5
+  #  BONUS = 20
 
 # ACTIONS_SCORE = { 
 # 	'init_score':               5,
@@ -96,4 +102,10 @@ DEPOSIT_POS = [
 	[1775, 2775,  pi/2],
   #  [1000, 2775,  pi/2],
     [ 225, 2775,  pi/2],
+]
+
+PARK_POS = [
+    list(literal_eval(READER.get("ROBOT", "init_pos"))),
+    list(literal_eval(READER.get("ROBOT", "init_pos2"))),
+    list(literal_eval(READER.get("ROBOT", "init_pos3")))
 ]

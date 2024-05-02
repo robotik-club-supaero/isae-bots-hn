@@ -33,7 +33,7 @@ from message.msg       import InfoMsg, ActionnersMsg, EndOfActionMsg
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import Action,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW
+from strat_const import Action, ActionScore,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW, PARK_POS as PARK_POS_RAW
 
 #################################################################
 #                                                               #
@@ -42,10 +42,12 @@ from strat_const import Action,  PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_
 #################################################################
 
 PLANT_CAPACITY = 6
+CULTURE_SLOTS = 12 # per area
 
 PLANTS_POS = np.array(PLANTS_POS_RAW)
 POTS_POS = np.array(POTS_POS_RAW)[:, :2]
 DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)[:, :2]
+PARK_POS = np.array(PARK_POS_RAW)[:, :2]
 
 p_dn = None
 
@@ -122,13 +124,21 @@ def recv_position(msg):
 def recv_action_callback(msg):
     if msg.exit == 1:
         
+        # FIXME: where should this code be?
+        # TODO: how to estimate score of "coccinelles"?
+        if p_dn.curr_action[0] == Action.TURN_SOLAR_PANELS:
+            p_dn.score += 6 * ActionScore.SCORE_SOLAR_PANEL.value
         if p_dn.curr_action[0] == Action.PICKUP_PLANT:
             p_dn.remaining_plants[p_dn.curr_action[1]] -= PLANT_CAPACITY
         if p_dn.curr_action[0] == Action.PICKUP_POT:
             p_dn.remaining_pots[p_dn.curr_action[1]] -= PLANT_CAPACITY
         if p_dn.curr_action[0] == Action.DEPOSIT_POT:
             p_dn.deposit_slots[p_dn.curr_action[1]] -= PLANT_CAPACITY
-
+            p_dn.score += PLANT_CAPACITY * ActionScore.SCORE_DEPOSIT_PLANTS.value
+        if p_dn.curr_action[0] == Action.PARK:
+            p_dn.score += ActionScore.SCORE_PARK.value
+            p_dn.parked = True
+        
         log_info("Last action succeeded.")
         p_dn.nb_actions_done[0] += 1
         return

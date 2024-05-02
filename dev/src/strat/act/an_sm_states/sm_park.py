@@ -24,8 +24,9 @@ import time
 import smach
 import math
 from an_const import *
-from an_comm import callback_action_pub, add_score
+from an_comm import callback_action_pub, add_score, get_pickup_id
 from an_sm_states.sm_displacement import Displacement, colored_destination
+from strat_const import PARK_POS
 
 #################################################################
 #                                                               #
@@ -40,7 +41,7 @@ class CalcParkPos(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','success','fail'],
-			                    input_keys=['cb_depl','robot_pos','next_move','color'],
+			                    input_keys=['cb_depl','robot_pos','next_move','color','next_action'],
 			                    output_keys=['cb_depl','next_move'])
 
     def execute(self, userdata):
@@ -49,7 +50,8 @@ class CalcParkPos(smach.State):
             return 'preempted'
 
         ## Move to parking position
-        x_dest, y_dest = PARKING_POS
+        park_id = get_pickup_id("parking zone", userdata)
+        x_dest, y_dest, _ = PARK_POS[park_id]
         theta_dest = math.atan2(y_dest - userdata.robot_pos.y, x_dest - userdata.robot_pos.x)
         # Modif pour la strat du dernier match 
 
@@ -87,7 +89,7 @@ class ParkEnd(smach.State):
 #################################################################
 
 park = smach.StateMachine(  outcomes=['preempted', 'end', 'fail'],
-			                input_keys=['cb_depl','robot_pos','next_move', 'color'],
+			                input_keys=['cb_depl','robot_pos','next_move', 'color', 'next_action'],
 			                output_keys=['cb_depl','next_move'])
 							
 with park:

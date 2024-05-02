@@ -18,3 +18,14 @@ class ButtonPressState(IntEnum):
     BUTTON_PRESS_UNKNOWN = -1
     BUTTON_PRESS_OFF = 0
     BUTTON_PRESS_ON = 1
+    
+    
+class TopServerRequest (IntEnum):
+    REQUEST_READ_BUTTONS = 1
+    REQUEST_READ_TRIGGER = 2
+    REQUEST_WRITE_LED = 3
+    
+class TopServerCallback (IntEnum):
+    CALLBACK_OK = 1
+    CALLBACK_WRONG_ARGUMENTS = 2
+    CALLBACK_TIMEOUT = 3

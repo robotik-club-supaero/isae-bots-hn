@@ -28,7 +28,7 @@ class ArduinoCommunicator:
             if color is None:
                 print("ERROR : give a color input")
                 return NanoCallback.CLB_KO
-            bytesToSend = bytearray([nanoCommand.value] + color + [TERMINAL_CHARACTER])
+            bytesToSend = bytearray([nanoCommand.value] + list(color) + [TERMINAL_CHARACTER])
             
         else:
             bytesToSend = bytearray([nanoCommand.value, TERMINAL_CHARACTER])

@@ -26,9 +26,10 @@ from speaker.Speaker import Speaker
 
 #### ISB ####
 # from isb.isb_lib import initPin, readPin, writePin
-# from isb.isb_const import *
+from isb.isb_const import NB_LEDS, NB_BUTTONS
+from isb.ISBManager import ISBManager
 
-from top_const import ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
+from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
 class TopServer():
@@ -38,6 +39,8 @@ class TopServer():
     serverSocket = None  # TCP server socket
     
     def __init__(self) -> None:
+        
+        self.isbManager = ISBManager()
         
         self.nanoCom = ArduinoCommunicator(port='/dev/ttyUSB0', baudrate=9600) #TODO give a linked name to the arduino Nano
     
@@ -49,6 +52,8 @@ class TopServer():
         self.lastButtonChangeTime = time.perf_counter()
                         
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        self.clients = {}
     
         
         print("TopServer Initialized")
@@ -112,19 +117,74 @@ class TopServer():
         return
     
     
-    def handle_client(self, client_socket):
-        # Receive data from the client
-        request = client_socket.recv(1024)
+    def handle_client(self, client_socket, client_address):
+        try:
+            while True:
+                # Receive data from the client
+                request = client_socket.recv(1024)
+                if not request:
+                    print(f"Connection with {client_address} closed.")
+                    break
+                # print(f"Received message from {client_address}: {request.decode()}")
+                
+                request_list = list(bytes(request))
+                
+                if len(request_list) == 0:
+                    print("ERROR : no request type")
+                    break
+                
+                request_type = TopServerRequest(request_list[0])
+                
+                print(f"Got request {request_type} with arguments {request_list[1:]}")
 
-        # Process the request (in this case, just print it)
-        print(f"Received request from {client_socket.getpeername()}: {request.decode()}")
+                # request cases
+                if request_type == TopServerRequest.REQUEST_READ_BUTTONS:
+                    buttonStates = self.isbManager.readButtonStates()
+                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK] + buttonStates))
+                    
+                elif request_type == TopServerRequest.REQUEST_READ_TRIGGER:
+                    triggerState = self.isbManager.readTriggerState()
+                    client_socket.sendall(bytes[TopServerCallback.CALLBACK_OK, bytes(triggerState)])
+
+                elif request_type == TopServerRequest.REQUEST_WRITE_LED:
+                    if len(request_list) != 3:
+                        print("ERROR : wrong arguments for REQUEST_WRITE_LED")
+                        client_socket.sendall(bytes([TopServerCallback.CALLBACK_WRONG_ARGUMENTS]))
+                        continue
+                    
+                    [ledId, ledState] = request_list[1:]
+                    
+                    if ledId >= NB_LEDS or ledState not in (0,1,2):
+                        print("ERROR : wrong arguments for REQUEST_WRITE_LED (not in range)")
+                        client_socket.sendall(bytes([TopServerCallback.CALLBACK_WRONG_ARGUMENTS]))
+                        continue
+                    
+                    self.isbManager.writeLed(led_id=ledId, ledState=ledState)
+                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK]))
+                    
+
+        except ConnectionResetError:
+            print(f"Connection with {client_address} reset.")
+            
+        except OSError:  # NOTE happens in case of Ctrl-C (bad file descriptor)
+            # Close the client socket and return
+            client_socket.close()
+            
+        finally:
+            # Remove the client from the dictionary
+            del self.clients[client_address]
+            # Close the client socket
+            client_socket.close()
+            
+            
+    def send_message_to_client(self, client_address, message):
+        if client_address in self.clients:
+            client_socket = self.clients[client_address]
+            client_socket.sendall(message.encode())
+        else:
+            print(f"Client {client_address} not found.")        
         
-        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_NYAN)
-
-        # Close the client socket
-        client_socket.close()
-    
-    
+        
     def run(self):
         
         #TODO gros signal d'erreur si le topServer n'est pas actif (on n'aurait pas d'ISB)
@@ -142,13 +202,18 @@ class TopServer():
                 client_socket, client_address = self.serverSocket.accept()
                 print(f"Accepted connection from {client_address}")
 
+                # Store the client connection in the dictionary
+                self.clients[client_address] = client_socket
+
                 # Handle the client connection in a new thread
-                client_thread = threading.Thread(target=self.handle_client, args=(client_socket,))
+                client_thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
                 client_thread.start()
+                
+                time.sleep(0.001)
         finally:
             # Close the server socket
             self.serverSocket.close()
-        
+            
         return
         self.conn, self.addr = self.serverSocket.accept()
         
@@ -162,8 +227,6 @@ class TopServer():
                 
                 print(f"Data received : {data}")
                 
-                #TODO split command into different cases
-
                 # self.conn.sendall(data)
         
         
@@ -178,7 +241,11 @@ class TopServer():
         
     def closeServer(self, exitCode):
         
-        # close TCp server
+        # close client connections
+        for client_socket in self.clients.values():
+            client_socket.close()
+        
+        # close TCP server
         self.serverSocket.close()
         
         # close threads

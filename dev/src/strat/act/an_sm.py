@@ -87,7 +87,8 @@ class Setup(smach.State):
         ## Callback of subscribers
         userdata.cb_depl = [DspCallback.PENDING]  # result of displacement action. CHECK an_const to see details on cb_depl
         userdata.robot_pos = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
-        userdata.cb_arm = [-1]    # state of the arm
+        userdata.cb_left_arm = [-1]    # state of the arm
+        userdata.cb_right_arm = [-1]    # state of the arm
         userdata.cb_doors = [-1]	# state of the doors
         userdata.cb_clamp = [-1] 	# state of the clamp
         userdata.cb_elevator = [-1] # state of the elevator

@@ -173,9 +173,15 @@ def cb_elevator_fct(msg):
     if not ok_comm: return
     p_smData.cb_elevator[0] = ElevatorCallback(msg.data)
 
-def cb_arm_fct(msg):
+def cb_left_arm_fct(msg):
     if not ok_comm: return
-    p_smData.cb_arm[0] = ArmCallback(msg.data)
+    p_smData.cb_left_arm[0] = ArmCallback(msg.data)
+
+
+def cb_right_arm_fct(msg):
+    if not ok_comm: return
+    p_smData.cb_right_arm[0] = ArmCallback(msg.data)
+
 
 def cb_park_fct(msg):
     """
@@ -267,7 +273,8 @@ stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, lat
 global doors_pub, elevator_pub, arm_pub
 doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
 elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
-arm_pub = rospy.Publisher('/act/order/arm', Int16, queue_size = 10, latch=True)
+left_arm_pub = rospy.Publisher('/act/order/left_arm', Int16, queue_size = 10, latch=True)
+right_arm_pub = rospy.Publisher('/act/order/right_arm', Int16, queue_size = 10, latch=True)
 deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE
 
 """
@@ -285,4 +292,5 @@ park_sub = rospy.Subscriber('/park', Int16, cb_park_fct)
 # SPECIFIC TO CURRENT YEAR
 doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
 elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)
-arm_sub = rospy.Subscriber('/act/callback/arm', Int16, cb_arm_fct)
+left_arm_sub = rospy.Subscriber('/act/callback/left_arm', Int16, cb_left_arm_fct)
+right_arm_sub = rospy.Subscriber('/act/callback/right_arm', Int16, cb_right_arm_fct)

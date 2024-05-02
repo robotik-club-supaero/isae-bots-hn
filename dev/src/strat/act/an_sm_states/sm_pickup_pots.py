@@ -58,7 +58,7 @@ class PotPlants(HardwareOrder):
 
     def execute(self, userdata):        
         debug_print('c', "Request to move elevator down")
-        super().execute(userdata)
+        return super().execute(userdata)
 
     
  

@@ -23,8 +23,10 @@ import math
 
 from an_utils import debug_print
 from an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST, ArmCallback, ArmOrder
-from an_comm import callback_action_pub, arm_pub, HardwareOrder
+from an_comm import callback_action_pub, right_arm_pub as arm_pub, HardwareOrder
 from an_sm_states.sm_displacement import colored_approach, colored_approach_with_angle, Displacement, Approach
+
+CB_ARM = 'cb_right_arm'
 
 #################################################################
 #                                                               #
@@ -44,7 +46,7 @@ class CalcPositionningPanel(smach.State):
     def execute(self, userdata):
         xp = MAX_X - ROBOT_LONG/2 - EDGE_DIST
         yp = SOLAR_POS[self._panel_id]
-        theta = -math.pi/2
+        theta = math.pi/2
 
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, theta, R_APPROACH_PANEL)
                 
@@ -52,7 +54,7 @@ class CalcPositionningPanel(smach.State):
 
 class ExtendArm(HardwareOrder):
     def __init__(self):
-        super().__init__(arm_pub, 'cb_arm', ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
+        super().__init__(arm_pub, CB_ARM, ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
 
     def execute(self, userdata):
         debug_print('c', "Request to extend arm")
@@ -60,7 +62,7 @@ class ExtendArm(HardwareOrder):
 
 class RetractArm(HardwareOrder):
     def __init__(self):
-        super().__init__(arm_pub, 'cb_arm', ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
+        super().__init__(arm_pub, CB_ARM, ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
 
     def execute(self, userdata):
         debug_print('c', "Request to retract arm")
@@ -70,8 +72,8 @@ class TurnOnePanel(smach.Sequence):
 
     def __init__(self, id):
         super().__init__( 
-            input_keys=['color','next_move','next_action','cb_depl','cb_arm'],
-            output_keys=['next_move', 'cb_depl','cb_arm'],
+            input_keys=['color','next_move','next_action','cb_depl', CB_ARM],
+            output_keys=['next_move', 'cb_depl',CB_ARM],
             outcomes =['success', 'fail', 'preempted'],
             connector_outcome = 'success'
         )
@@ -104,22 +106,22 @@ class TurnPanelsEnd(smach.State):
 #################################################################
 
 turnPanels = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['next_move','robot_pos','cb_depl','next_action','color','cb_arm'],
-                                     output_keys=['next_move','cb_depl','cb_arm'])
+                                     input_keys=['next_move','robot_pos','cb_depl','next_action','color',CB_ARM],
+                                     output_keys=['next_move','cb_depl',CB_ARM])
     
 turnPanelsSequence = smach.Sequence(  # sequence container
-    input_keys=['next_move','robot_pos','cb_depl','next_action','color','cb_arm'],
-    output_keys=['next_move','cb_depl','cb_arm'],
+    input_keys=['next_move','robot_pos','cb_depl','next_action','color',CB_ARM],
+    output_keys=['next_move','cb_depl',CB_ARM],
     outcomes = ['success', 'fail', 'preempted'],
     connector_outcome = 'success')
 
 with turnPanelsSequence:
-   smach.Sequence.add("PANEL_0", TurnOnePanel(0))
-   smach.Sequence.add("PANEL_1", TurnOnePanel(1))
-   smach.Sequence.add("PANEL_2", TurnOnePanel(2))
-   smach.Sequence.add("PANEL_3", TurnOnePanel(3))
-   smach.Sequence.add("PANEL_4", TurnOnePanel(4))
-   smach.Sequence.add("PANEL_5", TurnOnePanel(5))
+   smach.Sequence.add("PANEL_0", TurnOnePanel(5))
+   smach.Sequence.add("PANEL_1", TurnOnePanel(4))
+   smach.Sequence.add("PANEL_2", TurnOnePanel(3))
+   smach.Sequence.add("PANEL_3", TurnOnePanel(2))
+   smach.Sequence.add("PANEL_4", TurnOnePanel(1))
+   smach.Sequence.add("PANEL_5", TurnOnePanel(0))
 
 with turnPanels:
     smach.StateMachine.add("TURN_SEQ", turnPanelsSequence, transitions = {'success':'TURN_PANELS_END', 'fail':'fail', 'preempted':'preempted'})

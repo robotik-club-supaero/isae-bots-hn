@@ -61,9 +61,9 @@ def log_fatal(msg):
     rospy.logfatal(f"{NODE_NAME} {msg}")
 
 ## Constants GR
-DOORS_TIME = 0
-ELEVATOR_TIME = 0
-ARM_TIME = 0
+DOORS_TIME = 0.200
+ELEVATOR_TIME = 0.200
+ARM_TIME = 0.200
 
 #############################
 
@@ -99,8 +99,12 @@ class ActuatorNode():
         self.elevator_pub = rospy.Publisher("/act/callback/elevator", Int16, queue_size=10, latch=True)  
 
         # Simule la reponse du BN sur le bras
-        self.arm_sub = rospy.Subscriber('/act/order/arm', Int16, self.arm_response)
-        self.arm_pub = rospy.Publisher("/act/callback/arm", Int16, queue_size=10, latch=True)  
+        self.left_arm_sub = rospy.Subscriber('/act/order/left_arm', Int16, lambda msg: ActuatorNode.arm_response(self.left_arm_pub, msg))
+        self.left_arm_pub = rospy.Publisher("/act/callback/left_arm", Int16, queue_size=10, latch=True)  
+        
+        self.right_arm_sub = rospy.Subscriber('/act/order/right_arm', Int16, lambda msg: ActuatorNode.arm_response(self.right_arm_pub, msg))
+        self.right_arm_pub = rospy.Publisher("/act/callback/right_arm", Int16, queue_size=10, latch=True)  
+
 
         # Comm avec l'interface de simulation
         self.square_layout_pub = rospy.Publisher("/simu/squareLayout", Int16, queue_size=10, latch=True)
@@ -154,13 +158,14 @@ class ActuatorNode():
             self.elevator_pub.publish(data=ElevatorCallback.DOWN)
             log_info("Réponse simulée : Ascenseur bas")
 
-    def arm_response(self, msg):
+    @staticmethod
+    def arm_response(pub, msg):
         sleep(ARM_TIME)
         if msg.data == ArmOrder.EXTEND:
-            self.arm_pub.publish(data=ArmCallback.EXTENDED)
+            pub.publish(data=ArmCallback.EXTENDED)
             log_info("Réponse simulée : Bras tendu")
         else:
-            self.arm_pub.publish(data=ArmCallback.RETRACTED)
+            pub.publish(data=ArmCallback.RETRACTED)
             log_info("Réponse simulée : Bras rentré")
 
 #################################################################

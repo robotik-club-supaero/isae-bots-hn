@@ -334,6 +334,11 @@ class DoorState(IntEnum):
     OPEN = 1
     BLOCKED = 2
 
+class ArmState(IntEnum):
+    EXTENDED = 1
+    RETRACTED = 2
+    BLOCKED = 3
+
 class Robot(Drawable):
 
     _width: PhysicalUnits
@@ -346,6 +351,8 @@ class Robot(Drawable):
         self._location = np.zeros(2)
         self._rotation = 0
         self._doorState = DoorState.CLOSED
+        self._leftArmState = ArmState.RETRACTED
+        self._rightArmState = ArmState.RETRACTED
         self._plants = []
 
     @staticmethod
@@ -360,12 +367,18 @@ class Robot(Drawable):
 
     def _draw(self, canvas):
         canvas.delete("robot_doors")      
-        # TODO: test + implement DoorState.BLOCKED
+        # TODO: implement DoorState.BLOCKED
         if self._doorState == DoorState.OPEN:
             canvas.draw_line(self._location, (self._location + [
                              self._width, self._height / 2]), rotation=self._rotation, fill="black", width=7, tag="robot_doors")
             canvas.draw_line(self._location, (self._location + [
                              self._width, -self._height / 2]), rotation=self._rotation, fill="black", width=7, tag="robot_doors")
+
+        canvas.delete("robot_arm")      
+        if self._leftArmState == ArmState.EXTENDED:
+            canvas.draw_line(self._location, (self._location + [0, self._height]), rotation=self._rotation, fill="blue", width=5, tag="robot_arm")
+        if self._rightArmState == ArmState.EXTENDED:
+            canvas.draw_line(self._location, (self._location - [0, self._height]), rotation=self._rotation, fill="blue", width=5, tag="robot_arm")
 
         canvas.delete("robot")
         canvas.draw_rectangle(self._location, self._width, self._height,
@@ -391,6 +404,14 @@ class Robot(Drawable):
     @property
     def doorsOpen(self):
         return self._doorState == DoorState.OPEN
+
+    def setLeftArmState(self, new_state):
+        self._leftArmState = ArmState(new_state)
+        self.invalidate()
+
+    def setRightArmState(self, new_state):
+        self._rightArmState = ArmState(new_state)
+        self.invalidate()
 
     @property
     def doorLine(self):
@@ -680,6 +701,10 @@ class InterfaceNode:
             "/current_position", Pose2D, self.updateRobotPosition)
         self._subDoors = rospy.Subscriber(
             "/act/callback/doors", Int16, self.updateRobotDoorState)
+        self._subLeftArm = rospy.Subscriber(
+            "/act/callback/left_arm", Int16, self.updateRobotLeftArmState)
+        self._subRightArm = rospy.Subscriber(
+            "/act/callback/right_arm", Int16, self.updateRobotRightArmState)
         self._subObstacles = rospy.Subscriber(
             "/obstaclesInfo", Int16MultiArray, self.updateObstacles)
         self._subPath = rospy.Subscriber(
@@ -768,6 +793,14 @@ class InterfaceNode:
     def updateRobotDoorState(self, msg):
         with self.lock:
             self._robot.setDoorState(msg.data)
+    
+    def updateRobotLeftArmState(self, msg):
+        with self.lock:
+            self._robot.setLeftArmState(msg.data)
+    
+    def updateRobotRightArmState(self, msg):
+        with self.lock:
+            self._robot.setRightArmState(msg.data)
 
     def updateObstacles(self, msg):
         with self.lock:

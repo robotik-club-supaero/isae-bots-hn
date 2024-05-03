@@ -108,6 +108,8 @@ class RoslaunchThread(threading.Thread):
         NB_LINES = 3
         pattern = r'\[[A-Z]{3}\]'
         
+        # loop for match logs and monitoring
+        # exits when roslaunch is killed
         while True:
             
             self.ROSLogOled.oled_clear()
@@ -126,26 +128,15 @@ class RoslaunchThread(threading.Thread):
                     
                 for k in range (NB_LINES):
                     line = output_processed[k]
-                    output_line = re.split(pattern, line)[-1][1:]
-                    print(output_line[-44:])
+                    output_line = re.split(pattern, line)[-1]
+                    if len(output_line) > 0 and output_line[0] == ' ': output_line = output_line[1:]
                     
-                                    
-                    # self.ROSLogOled.oled_display_string(output_line[:21],0,2*k*64/6, clear=False) #TODO implement the display part in Oled_Pi
-                    # self.ROSLogOled.oled_display_string(output_line[21:],0,(2*k+1)*64/6, clear=False)
-
                     logList.append(output_line[:21])
                     logList.append(output_line[21:])
                     
                 self.ROSLogOled.oled_display_logs(logList)
-                                     
-                # for k in range(NB_LINES):  # NB_LINES should be pair
-                #     print(output_processed[k][-44:])
-                
-                # for line in output_processed:
-                #     print("out : ", line[-22:])
-                
                     
-            time.sleep(3)
+            time.sleep(1.0)
         
         return
         

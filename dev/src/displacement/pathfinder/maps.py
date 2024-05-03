@@ -48,7 +48,7 @@ class Maps:
         """Initialization of Maps."""
         self.robot_width = int(literal_eval(READER.get("ROBOT", "robot_larg")))
 
-        self.obstacle_list = obstacle_list            # Liste des obstacles
+        self.obstacle_list = obstacle_list            # Dict des obstacles
         self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        
         self.avoiding_node_list = avoiding_node_list    # Liste des noeud à utiliser lors de l'évitement
 
@@ -59,22 +59,21 @@ class Maps:
         # Deuxieme essai evitement
         self.is_second_attempt = False
 
-    def get_obstacle_list(self):
-        
-        return self.obstacle_list+[self.obstacle_robot_pos]
-        if self.avoid:
+    def get_obstacles(self):
+        # TODO if 'obstacle_robot_pos' is always added to the obstacles, add it directly to self.obstacle_list to
+        # avoid copy
+        obs = self.obstacle_list.copy()
+        obs["robot_pos"] = self.obstacle_robot_pos
+        return obs.values()
+    """    if self.avoid:
             if self.is_second_attempt:
                 return self.obstacle_list+[self.obstacle_robot_pos]
             return self.obstacle_list+[self.obstacle_robot_pos]
         else:
-            return self.obstacle_list
+            return self.obstacle_list"""
         
-    def remove_obstacle(self, obstacle):
-        for i in range(len(self.obstacle_list)):
-            if type(self.obstacle_list[i]) == type(obstacle):
-                if obstacle.is_equals(self.obstacle_list[i]):
-                    del self.obstacle_list[i]
-                    break
+    def remove_obstacle(self, obstacle_id):
+        self.obstacle_list.pop(obstacle_id, None)
     
     def get_node_list(self):
         if self.avoid:

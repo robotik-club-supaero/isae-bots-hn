@@ -68,10 +68,9 @@ def test_strat():
         -
     """
 
-    def find_closest(p_dn, positions, remaining, cond=None):
+    def find_closest(p_dn, positions, remaining, cond=None, relative=True):
         if cond is None: cond = lambda cluster: remaining[cluster] > PLANT_THRESHOLD
-       # x,y,_ = adapt_pos_to_side(*p_dn.position, p_dn.color)
-        x, y, _ = p_dn.position
+        x, y, _ = adapt_pos_to_side(*p_dn.position, p_dn.color) if relative else p_dn.position
         dists = np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
         for cluster in clusters:

@@ -23,7 +23,7 @@ import time
 import rospy
 import smach
 
-from std_msgs.msg      import Int16, Int16MultiArray, Empty
+from std_msgs.msg      import Int16, Int16MultiArray, Empty, String
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, COLOR, WAIT_TIME
@@ -86,11 +86,16 @@ class HardwareOrder(smach.State):
    
         begin = time.perf_counter()
         while time.perf_counter() - begin < self._timeout:
+            
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'       
+
             response = getattr(userdata, self._cb_key)[0]
             if response == self._expected:
                 return 'success'
             elif response != self._pending:
-                log_warn(f"Unexpected response from hardware: {userdata.cb_elevator[0]} for order {self._order}")
+                log_warn(f"Unexpected response from hardware: {response} for order {self._order}")
                 return 'fail'
             time.sleep(0.01)
         
@@ -262,12 +267,13 @@ def add_score(pts):
 Initialize all publishers of AN
 """
 # GENERAL PUBS
-global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub
+global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub, remove_obs
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
 repartitor_pub = rospy.Publisher('/strat/action/request', Empty, queue_size=10, latch=True)
 callback_action_pub = rospy.Publisher('/strat/action/callback', EndOfActionMsg, queue_size=10, latch=True)
 disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
+remove_obs = rospy.Publisher('/deleteObs', String, queue_size = 10, latch= True)
 
 # SPECIFIC TO CURRENT YEAR
 global doors_pub, elevator_pub, arm_pub

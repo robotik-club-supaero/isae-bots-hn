@@ -51,7 +51,7 @@ def is_node_out_obstacles(tableMap, node, isFirst):
         return True
     if not isFirst:
         return True
-    for obstacle in tableMap.get_obstacle_list():
+    for obstacle in tableMap.get_obstacles():
         if obstacle.is_node_in(node):
             """ print(obstacle.get_name())
             print(obstacle.get_x_center())

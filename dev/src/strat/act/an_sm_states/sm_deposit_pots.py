@@ -28,6 +28,7 @@ from .sm_pickup_plants import CloseDoors, OpenDoors
 from an_const import DoorCallback, DoorOrder, WAIT_TIME, R_APPROACH_POTS, DspOrderMode, DspCallback
 from an_utils import debug_print, log_errs, log_warn, log_info
 from strat_const import DEPOSIT_POS
+from strat_utils import adapt_pos_to_side
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach_with_angle, DISP_TIMEOUT
 from an_comm import get_pickup_id, callback_action_pub, deposit_pub, disp_pub
 
@@ -59,7 +60,7 @@ class MoveBackwardsStraight(smach.State):
     def __init__(self, dist):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['cb_depl', 'next_action'],
+                                input_keys=['cb_depl', 'next_action', 'color'],
                                 output_keys=['cb_depl'])
         self._dist = dist
         
@@ -70,7 +71,7 @@ class MoveBackwardsStraight(smach.State):
         userdata.cb_depl[0] = DspCallback.PENDING
 
         pots_id = get_pickup_id("deposit pots", userdata)
-        x, y, theta = DEPOSIT_POS[pots_id]
+        x, y, theta = adapt_pos_to_side(*DEPOSIT_POS[pots_id], userdata.color)
     
         xd = x - self._dist * math.cos(theta)
         yd = y - self._dist * math.sin(theta)

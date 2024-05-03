@@ -36,7 +36,7 @@ from ast import literal_eval
 # import pathfinder
 from pathfinder.pathfinder import Pathfinder
 # import msgs
-from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray
+from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray, String
 from geometry_msgs.msg import Quaternion, Pose2D
 # import logs
 from disp_utils import *
@@ -52,8 +52,8 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################
 
 ## CONSTANTES
-STOP_RANGE_STANDARD = 350
-STOP_RANGE_AVOIDING = 350
+STOP_RANGE_STANDARD = 650
+STOP_RANGE_AVOIDING = 650
 DIST_MIN = 50
 RADIUS_ROBOT_OBSTACLE = 280
 RESET_RANGE = 560  
@@ -459,6 +459,11 @@ def callback_init_pos(msg):
         x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
     elif INIT_ZONE == 2:
         x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS2[2]
+    
+    if p_disp.color == 1:
+        y = 3000 - y
+        z = -z
+
     pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
     p_disp.current_pos = [x, y, z]
 
@@ -484,14 +489,7 @@ def callback_end(msg):
 
 def callback_delete(msg):
     if not ok_comm: return
-    obst = CAKES_OBST[msg.data].copy()
-    if obst.get_name() == "C":
-        x, y = obst.get_x_center(), obst.get_y_center()
-        # x, y, _ = patch_frame_br(x, y, 0, p_disp.color) #TODO remove
-        obst.set_x_center(x)
-        obst.set_y_center(y)
-
-    p_disp.pathfinder.remove_obstacle(obst)
+    p_disp.pathfinder.remove_obstacle(msg.data)
 
 def publish_path(path):
     """Publish path to the interfaceNode."""    
@@ -537,7 +535,7 @@ sub_strat = rospy.Subscriber("/dsp/order/next_move", Quaternion, callback_strat)
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 
 # Obstacles
-sub_delete = rospy.Subscriber("/deleteObs", Int16, callback_delete)
+sub_delete = rospy.Subscriber("/deleteObs", String, callback_delete)
 
 
 """ # Publication parametres de jeu & gains

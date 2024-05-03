@@ -27,7 +27,7 @@ from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, W
 from an_utils import debug_print
 from strat_const import POTS_POS
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach_with_angle
-from an_comm import get_pickup_id, elevator_pub, callback_action_pub, HardwareOrder
+from an_comm import get_pickup_id, elevator_pub, callback_action_pub, remove_obs, HardwareOrder
 
 #################################################################
 #                                                               #
@@ -45,6 +45,7 @@ class CalcPositionningPots(smach.State):
         
     def execute(self, userdata):    
         pots_id = get_pickup_id("pots", userdata)
+        remove_obs.publish(f"pot{pots_id}")
 
         xp, yp, thetap = POTS_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_APPROACH_POTS)
@@ -98,6 +99,7 @@ pickUpPotSequence = smach.Sequence(
 with pickUpPotSequence: 
     smach.Sequence.add('OPEN_DOORS', OpenDoors())
     smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # gather pots # TODO: add delay before closing ?
+    # TODO check the robot has actually picked up pots
     smach.Sequence.add('POT_PLANTS', PotPlants()) # put grabbed plants into pots
 
 with pickupPot:

@@ -23,7 +23,7 @@ import time
 import smach
 
 from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, get_pickup_id, HardwareOrder
+from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, remove_obs, get_pickup_id, HardwareOrder
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
@@ -68,11 +68,10 @@ class CalcPositionningPlants(smach.State):
                                 output_keys=['next_move'])
         
     def execute(self, userdata):  
-        x, y = userdata.robot_pos.x, userdata.robot_pos.y
         plants_id = get_pickup_id("plants", userdata)
         (xp, yp) = PLANTS_POS[plants_id]
 
-        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_PLANTS, Approach.INITIAL)
+        userdata.next_move = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.INITIAL)
                 
         return 'success'
     
@@ -85,11 +84,12 @@ class CalcTakePlants(smach.State):
                                 output_keys=['next_move'])
         
     def execute(self, userdata):              
-        x, y = userdata.robot_pos.x, userdata.robot_pos.y
         plants_id = get_pickup_id("plants", userdata)
+        remove_obs.publish(f"plant{plants_id}")
+
         (xp, yp) = PLANTS_POS[plants_id]
 
-        userdata.next_move = colored_approach(userdata.color, x, y, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
+        userdata.next_move = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
 
         return 'success'
     
@@ -147,7 +147,7 @@ deplSequence = smach.Sequence(  # sequence container
 with pickUpPlantSequence:  # add states to the sequence #TODO define elsewhere
     smach.Sequence.add('OPEN_DOORS', OpenDoors())
     smach.Sequence.add('KEEP_OPEN', ObsWaitingOnce(wait_time=2))
-    smach.Sequence.add('CLOSE_DOORS', CloseDoors())
+    smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # TODO check the robot has actually picked up plants
     smach.Sequence.add('RISE_PLANTS',RisePlants())
     
 with deplSequence:

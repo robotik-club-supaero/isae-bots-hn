@@ -130,7 +130,7 @@ class Node:
         line_vect = np.array([node.get_x()-self.get_x(), node.get_y()-self.get_y()])
         line_vect = line_vect / np.linalg.norm(line_vect)
         
-        for obstacle in tableMap.get_obstacle_list():
+        for obstacle in tableMap.get_obstacles():
             if obstacle.get_name() == "C":
                 x = obstacle.get_x_center()
                 y = obstacle.get_y_center()

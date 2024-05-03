@@ -360,8 +360,8 @@ class Robot(Drawable):
         reader = ConfigParser.ConfigParser(inline_comment_prefixes=";")
         reader.read(os.path.join(os.path.dirname(__file__), file))
 
-        height = int(reader.get("Robot", "robot_larg"))
-        width = int(reader.get("Robot", "robot_long"))
+        height = int(reader.get("ROBOT", "robot_larg"))
+        width = int(reader.get("ROBOT", "robot_long"))
 
         return Robot(width, height)
 
@@ -669,7 +669,7 @@ class InterfaceNode:
             self.image, 0, 0, anchor="nw")
         self._canvas.pack()
 
-        self._robot = Robot.load("../pr_start.ini")
+        self._robot = Robot.load("../../../robot_config.cfg")
         self._clickMarker = Order(color="yellow", tag="clickPosition")
         self._orderMarker = Order(color="purple", tag="order")
         self._sonarObstacles = Obstacles("purple", "sonars")

@@ -65,7 +65,7 @@ class DecisionsNode:
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))
-        self.delay_park = 13  # TODO: change it to named constant
+        self.delay_park =  int(READER.get("STRAT", "delay_park"))
         self.go_park = False
         self.parked = False
 

@@ -56,7 +56,7 @@ except:
 ROBOT_NAME = READER.get("ROBOT", "robot_name")
 INIT_POS = list(literal_eval(READER.get("ROBOT", "init_pos")))
 INIT_POS2 = list(literal_eval(READER.get("ROBOT", "init_pos2")))
-INIT_POS2 = list(literal_eval(READER.get("ROBOT", "init_pos3")))
+INIT_POS3 = list(literal_eval(READER.get("ROBOT", "init_pos3")))
 INIT_ZONE = int(READER.get("STRAT", "init_zone"))
 
 MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
@@ -71,20 +71,6 @@ robotL = int(READER.get("ROBOT", "robot_long"))
 robotDiag = np.linalg.norm([robotW/2, robotL/2])
 MARGIN = robotDiag // 2 + 20
 
-CAKES_OBST = {
-    0 : ObstacleCirc(225, 575, 60+MARGIN),
-    1 : ObstacleCirc(1775, 575, 60+MARGIN),
-    2 : ObstacleCirc(225, 2425, 60+MARGIN),
-    3 : ObstacleCirc(1775, 2425, 60+MARGIN),
-    4 : ObstacleCirc(225, 775, 60+MARGIN),
-    5 : ObstacleCirc(1775, 775, 60+MARGIN),
-    6 : ObstacleCirc(225, 2225, 60+MARGIN),
-    7 : ObstacleCirc(1775, 2225, 60+MARGIN),
-    8 : ObstacleCirc(725, 1125, 60+MARGIN),
-    9 : ObstacleCirc(1275, 1125, 60+MARGIN),
-    10: ObstacleCirc(725, 1875, 60+MARGIN),
-    11: ObstacleCirc(1275, 1875, 60+MARGIN)
-}
 
 ONE_PI = np.pi
 HLF_PI = np.pi/2

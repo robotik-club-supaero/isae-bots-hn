@@ -18,6 +18,7 @@ import time
 import socket
 import signal
 import subprocess
+import re
 
 #### Nano ####
 from nano.ArduinoCommunicator import ArduinoCommunicator
@@ -30,14 +31,18 @@ from speaker.Speaker import Speaker
 from isb.isb_const import NB_LEDS, NB_BUTTONS
 from isb.ISBManager import ISBManager
 
+from oled.Oled_pi import Oled
+
 from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
 class RoslaunchThread(threading.Thread):
-    def __init__(self, stop_event):
+    def __init__(self, stop_event, logOled):
         self.stdout = None
         self.stderr = None
         self.stop_event = stop_event
+        
+        self.ROSLogOled = logOled
                 
         threading.Thread.__init__(self)
         
@@ -89,13 +94,78 @@ class RoslaunchThread(threading.Thread):
         
         print("Ros log file path : ", rosLogFilePath)
         
-        logFile = rosLogFilePath + '/master.log'
+        roslaunchFileName = [filename for filename in os.listdir(rosLogFilePath) if filename.startswith("roslaunch-")]
+        
+        print("roslaunchFileName : ", roslaunchFileName)
+        
+        if len(roslaunchFileName) == 0:
+            print("ERROR : no roslaunch log file found")
+            return
+        
+        logFile = rosLogFilePath + '/' + roslaunchFileName[0]
         print("Logfile : ", logFile)
         
+        NB_LINES = 3
+        pattern = r'\[[A-Z]{3}\]'
+        
+        while True:
+            
+            self.ROSLogOled.oled_clear()
+            logList = []
+            
+            try:
+                output = subprocess.check_output(['tail', '-n', str(NB_LINES), rosLogFilePath+"/rosout.log"]).decode('utf-8')[:-1]
+            except subprocess.CalledProcessError as e:
+                print( "No log file yet")
+            else:
+                output_processed = output.split('\n')
+                
+                if len(output_processed) != NB_LINES:
+                    print("ERROR : unexpected number of log lines")
+                    
+                    
+                for k in range (NB_LINES):
+                    line = output_processed[k]
+                    output_line = re.split(pattern, line)[-1][1:]
+                    print(output_line[-44:])
+                    
+                                    
+                    # self.ROSLogOled.oled_display_string(output_line[:21],0,2*k*64/6, clear=False) #TODO implement the display part in Oled_Pi
+                    # self.ROSLogOled.oled_display_string(output_line[21:],0,(2*k+1)*64/6, clear=False)
+
+                    logList.append(output_line[:21])
+                    logList.append(output_line[21:])
+                    
+                self.ROSLogOled.oled_display_logs(logList)
+                                     
+                # for k in range(NB_LINES):  # NB_LINES should be pair
+                #     print(output_processed[k][-44:])
+                
+                # for line in output_processed:
+                #     print("out : ", line[-22:])
+                
+                    
+            time.sleep(3)
+        
+        return
+        
         logfile = open(logFile, "r")
-        loglines = self.follow(logfile)    # iterate over the generator
-        for line in loglines:
+        loglines = self.follow(logfile) # iterates over the generator
+        
+        
+        for line in loglines:  # potentially sleeps to wait for the file
             print(line)
+            # print(processedLine)
+            # if len(processedLine) >= 1:
+            #     info = processedLine[1]
+            
+
+            # print("######################")
+            # print(line[-10:], end='')
+            
+            # time.sleep(1)
+            
+            #TODO break
         
         
         
@@ -155,9 +225,11 @@ class TopServer():
     
         self.speaker = Speaker()
         
+        self.logOled = Oled()
+        
         self.isRosLaunchRunning = False
         self.rosLaunchStopEvent = threading.Event()
-        self.roslaunchThread = RoslaunchThread(self.rosLaunchStopEvent)
+        self.roslaunchThread = RoslaunchThread(self.rosLaunchStopEvent, self.logOled)
 
         self.watchButtonStopEvent = threading.Event()
         self.watchButtonThread = threading.Thread(target=self.watchButton, args=(self.watchButtonStopEvent,))
@@ -184,7 +256,9 @@ class TopServer():
         self.previousButtonState = self.buttonState
         
         self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_BLINKING, color=(255,0,0))
-
+        
+        self.logOled.set_bgImage('SRC_OledLogo2.ppm')
+        
     
     def watchButton(self, stop_event):
         '''

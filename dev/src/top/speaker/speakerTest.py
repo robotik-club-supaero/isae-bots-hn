@@ -64,7 +64,7 @@ def main():
         print("No media has been loaded yet")
     
     # NOTE : this way the plays are buffered
-    start_audio(media_player, "windowsXPStartup.mp3") #TODO catch cette erreur
+    start_audio(media_player, "sounds/windows/startup.mp3") #TODO catch cette erreur
     print(f"Media : {media_player.get_media()}")
     time.sleep(4000)
 

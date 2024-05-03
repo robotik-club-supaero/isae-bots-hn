@@ -18,7 +18,8 @@ import vlc
 from .speaker_const import soundDict
 
 
-SOUNDS_PATH = os.path.join(os.path.dirname(__file__),'sounds/')
+# SOUNDS_PATH = os.path.join(os.path.dirname(__file__),'sounds/')
+SOUNDS_PATH = '/app/dev/src/top/speaker/sounds/'
 
 class Speaker():
     
@@ -46,7 +47,7 @@ class Speaker():
         self.media_player.set_mrl(mrl)
         
         # set volume (in case it has been changed)
-        self.media_player.audio_set_volume(self.volume)
+        # self.media_player.audio_set_volume(self.volume)
         
         # start playing video
         self.media_player.play()
@@ -57,10 +58,11 @@ class Speaker():
     def playSound(self, sound):
         
         soundFile = soundDict[sound]
+        soundPath = SOUNDS_PATH + soundFile
         
         # check if the sound file exists
-        if not os.path.isfile(SOUNDS_PATH + soundFile):
-            print(f"ERROR : sound file {soundFile} does not exist")
+        if not os.path.isfile(soundPath):
+            print(f"ERROR : sound file {soundPath} does not exist")
             return
                 
         #BUG possible si deux sons sont joués quasi en même temps
@@ -69,7 +71,7 @@ class Speaker():
         # uniquement dans le thread des sons
         
         print(f"Playing sound {soundFile}")
-        self.__startAudio(SOUNDS_PATH + soundFile)
+        self.__startAudio(soundPath)
         
         time.sleep(0.01)  # safety
         

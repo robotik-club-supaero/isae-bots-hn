@@ -38,8 +38,26 @@ class RoslaunchThread(threading.Thread):
         self.stdout = None
         self.stderr = None
         self.stop_event = stop_event
-        
+                
         threading.Thread.__init__(self)
+        
+        
+        
+    def follow(self, thefile):
+        '''generator function that yields new lines in a file
+        '''
+        # seek the end of the file
+        thefile.seek(0, os.SEEK_END)
+        
+        # start infinite loop
+        while True:
+            # read last line of file
+            line = thefile.readline()        # sleep if file hasn't been updated
+            if not line:
+                time.sleep(0.1)
+                continue
+
+            yield line
 
     def run(self):
         
@@ -67,82 +85,60 @@ class RoslaunchThread(threading.Thread):
                 # try again, most likely the roscore is not up
                 print('Waiting for roscore to be ready')
             
-            
-        print("Final : ", decoded_output)
+        rosLogFilePath = "/root" + decoded_output.split("/root",1)[1].split('\n')[0]
+        
+        print("Ros log file path : ", rosLogFilePath)
+        
+        logFile = rosLogFilePath + '/master.log'
+        print("Logfile : ", logFile)
+        
+        logfile = open(logFile, "r")
+        loglines = self.follow(logfile)    # iterate over the generator
+        for line in loglines:
+            print(line)
+        
+        
+        
+        
+        
+        
         
         return
+            
+        # this command reads the last line of the matchLog file which is updated by the runMatch.sh script
+        with subprocess.Popen(['tail', '-f', logFile],stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+            stdout, stderr = process.communicate()
+            
+        while process.poll() is None:
+            print(process.stdout.readline())
+        print(process.stdout.read())
+        process.stdout.close()
+
+        output = stdout.decode('utf-8')#[:-1]
+        output_err = stderr.decode('utf-8')
         
+        print(output)
+        # print("stderr : ", output_err)
+        
+        time.sleep(0.1)        
+        
+    
         while True:
+            
             # this command reads the last line of the matchLog file which is updated by the runMatch.sh script
-            with subprocess.Popen(['tail', '-n', '10', 'matchLog.log'],stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+            with subprocess.Popen(['tail', '-n', '1', logFile],stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
                 stdout, stderr = process.communicate()
 
             output = stdout.decode('utf-8')#[:-1]
+            output_err = stderr.decode('utf-8')
             
             print(output)
+            # print("stderr : ", output_err)
             
-            time.sleep(0.2)
-  
-  
-        process.stdout.close()
-        
-        print("End of RoslaunchThread run")
-        
-        return
-        
-
-        
-        
-        
-        
-        while process.poll() is None:
-            print(process.stdout.readline())
-            sys.stdout.flush()
-        print(process.stdout.read())
-        process.stdout.close()
-        
-        print("End of RoslaunchThread run")
-
-        return
-        
-        while process.poll() is None:
-            line = process.stdout.readline()
-            lineError = process.stderr.readline()
-            if line is not None:
-                print("#", line.decode())
-            if lineError is not None:
-                print("!", lineError.decode())
-            else:
-                print("nul")
-                
-            time.sleep(0.2)
-                                   
-        print(process.stdout.read().decode())
-        process.stdout.close()
-
+            time.sleep(0.1)
+            
         return
 
-        self.stdout, self.stderr = p.communicate()
-        
-        while not self.stop_event.is_set():
-            if self.stdout is not None:
-                print("Stdout : ", self.stdout.decode())
-            if self.stderr is not None:
-                print("Stderr : ", self.stderr.decode())
-                # print("smth", self.stdout.decode().split('\n')[-1])
-                # print(self.roslaunchThread.stderr.decode())
-                
-            time.sleep(0.2)
-            
-        #TODO things to do when roslaunch quits ?
-        print("Quit roslaunch")
-        if self.stdout is not None:
-            print("Stdout : ", self.stdout.decode())
-        if self.stderr is not None:
-            print("Stderr : ", self.stderr.decode())
-    
-    
-            
         
 
 class TopServer():
@@ -186,6 +182,8 @@ class TopServer():
         
         self.buttonState = self.nanoCom.read_button_state()
         self.previousButtonState = self.buttonState
+        
+        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_BLINKING, color=(255,0,0))
 
     
     def watchButton(self, stop_event):
@@ -218,7 +216,12 @@ class TopServer():
                     
                     if not self.isRosLaunchRunning:
                         self.isRosLaunchRunning = True
+                        
+                        self.speaker.playSound('startup')
+                        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(0,0,255))
+                        
                         self.roslaunchThread.start()
+                        
                     # self.roslaunchThread.join()
                     
                     # subProc = subprocess.run(["/app/scripts/runMatch_test.sh"], capture_output=True)
@@ -397,13 +400,18 @@ def main():
     
     topserver = TopServer()
     
+    topserver.speaker.setMute(False)
+    # topserver.speaker.setVolume(80)
+
+    topserver.speaker.playSound('windowsStartup')
+    
     signal.signal(signal.SIGINT, topserver.sig_handler)
     
     topserver.initButton()
     
     topserver.run()
 
-    
+    return
     
     '''Test'''
     time.sleep(0.5)

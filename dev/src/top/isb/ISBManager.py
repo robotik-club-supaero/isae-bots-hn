@@ -116,7 +116,7 @@ class ISBManager:
 
     def readTriggerState(self):
 
-        res = readPin(TRIGGER_PIN)
+        return readPin(TRIGGER_PIN)
 
         # # only change trigger state if previous state is not -1
         # if res == 1:
@@ -126,7 +126,6 @@ class ISBManager:
         # if self.triggerState == 1 and res == 0:
         #     self.triggerState = 0  # triggers match starts
             
-        return res
 
 
     # # --- Callback functions

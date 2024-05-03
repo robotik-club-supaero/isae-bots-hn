@@ -23,7 +23,7 @@ import time
 import smach
 
 from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, remove_obs, get_pickup_id, HardwareOrder
+from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, remove_obs, get_pickup_id, HardwareOrder, LoadDetectorCallback
 from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 
 from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
@@ -33,7 +33,7 @@ from an_sm_states.sm_waiting import ObsWaitingOnce
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from strat_const import PLANTS_POS
+from strat_const import PLANTS_POS, ActionResult
 
 #################################################################
 #                                                               #
@@ -85,7 +85,7 @@ class CalcTakePlants(smach.State):
         
     def execute(self, userdata):              
         plants_id = get_pickup_id("plants", userdata)
-        remove_obs.publish(f"plant{plants_id}")
+        remove_obs.publish(f"plant{plants_id}") # FIXME if action fails, obstacle is not restored
 
         (xp, yp) = PLANTS_POS[plants_id]
 
@@ -114,7 +114,8 @@ class PickupPlantsEnd(smach.State):
         
         
         #TODO check that the action was actually successful
-        callback_action_pub.publish(exit=1, reason='success')
+        # TODO check whether the robot actually carries plants
+        callback_action_pub.publish(exit=ActionResult.SUCCESS, reason='success')
         
         return 'success'
         

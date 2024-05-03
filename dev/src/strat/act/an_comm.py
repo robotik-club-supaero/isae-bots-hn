@@ -26,7 +26,7 @@ import smach
 from std_msgs.msg      import Int16, Int16MultiArray, Empty, String
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, COLOR, WAIT_TIME
+from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, COLOR, WAIT_TIME
 from an_utils import log_info, log_warn, log_errs
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
@@ -187,6 +187,10 @@ def cb_right_arm_fct(msg):
     if not ok_comm: return
     p_smData.cb_right_arm[0] = ArmCallback(msg.data)
 
+def cb_load_detector(msg):
+    if not ok_comm: return
+    p_smData.cb_load_detector = LoadDetectorCallback(msg.data)
+
 
 def cb_park_fct(msg):
     """
@@ -300,3 +304,4 @@ doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
 elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)
 left_arm_sub = rospy.Subscriber('/act/callback/left_arm', Int16, cb_left_arm_fct)
 right_arm_sub = rospy.Subscriber('/act/callback/right_arm', Int16, cb_right_arm_fct)
+load_detector = rospy.Subscriber('/act/callback/load_detector', Int16, cb_load_detector)

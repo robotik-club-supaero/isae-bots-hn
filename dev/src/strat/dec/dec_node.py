@@ -74,8 +74,11 @@ class DecisionsNode:
 
         self.park_action = False
         self.kill_action = False
-        self.curr_action = [Action.WAIT]  # of type Action
-        self.nb_actions_done = [0]
+        self.curr_action = [Action.PENDING]  # of type Action
+
+        self.last_action = self.curr_action
+        self.action_successful = False
+        self.retry_count = 0
 
         self.init_zone = int(READER.get("STRAT", "init_zone"))
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
@@ -83,6 +86,7 @@ class DecisionsNode:
         self.remaining_plants = [6 for _ in range(6)]
         self.remaining_pots = [6 for _ in range(6)]
         self.deposit_slots = [CULTURE_SLOTS for _ in range(3)]
+        self.solar_panels = [False for _ in range(6)]
 
 
 #################################################################

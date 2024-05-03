@@ -23,8 +23,9 @@ import math
 
 from an_utils import debug_print
 from an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST, ArmCallback, ArmOrder
-from an_comm import callback_action_pub, right_arm_pub, left_arm_pub, HardwareOrder
+from an_comm import callback_action_pub, right_arm_pub, left_arm_pub, HardwareOrder, get_pickup_id
 from an_sm_states.sm_displacement import colored_approach_with_angle, Displacement, Approach
+from strat_const import ActionResult
 
 #################################################################
 #                                                               #
@@ -34,16 +35,15 @@ from an_sm_states.sm_displacement import colored_approach_with_angle, Displaceme
 
 class CalcPositionningPanel(smach.State):
     
-    def __init__(self, id):
+    def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
                                 input_keys=['color','next_action'],
                                 output_keys=['next_move'])
-        self._panel_id = id
-        
+
     def execute(self, userdata):
         xp = MAX_X - ROBOT_LONG/2 - EDGE_DIST
-        yp = SOLAR_POS[self._panel_id]
+        yp = SOLAR_POS[get_pickup_id("solar panel", userdata)]
         theta = -math.pi/2
 
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, theta, R_APPROACH_PANEL)
@@ -77,7 +77,7 @@ class RetractArm(smach.State):
 
 class TurnOnePanel(smach.Sequence):
 
-    def __init__(self, id):
+    def __init__(self):
         super().__init__( 
             input_keys=['color','next_move','next_action','cb_depl', 'cb_left_arm','cb_right_arm'],
             output_keys=['next_move', 'cb_depl','cb_left_arm','cb_right_arm'],
@@ -85,12 +85,13 @@ class TurnOnePanel(smach.Sequence):
             connector_outcome = 'success'
         )
         with self:
-            smach.Sequence.add("CALC_GO_TO_PANEL", CalcPositionningPanel(id))
+            smach.Sequence.add("CALC_GO_TO_PANEL", CalcPositionningPanel())
             smach.Sequence.add("DEPL_GO_TO_PANEL", Displacement())
             smach.Sequence.add("EXTEND_ARM", ExtendArm())
             smach.Sequence.add("RETRACT_ARM", RetractArm())
+            smach.Sequence.add("TURN_PANEL_END", TurnPanelEnd())
     
-class TurnPanelsEnd(smach.State):
+class TurnPanelEnd(smach.State):
     
     def __init__(self):
         smach.State.__init__(	self,
@@ -102,34 +103,20 @@ class TurnPanelsEnd(smach.State):
         
         
         #TODO check that the action was actually successful
-        callback_action_pub.publish(exit=1, reason='success')
+        callback_action_pub.publish(exit=ActionResult.SUCCESS, reason='success')
         
         return 'success'
         
 #################################################################
 #                                                               #
-#                 SM STATE : TURN_SOLAR_PANELS                  #
+#                 SM STATE : TURN_SOLAR_PANEL                   #
 #                                                               #
 #################################################################
 
-turnPanels = smach.StateMachine(outcomes=['fail','success','preempted'],
+turnPanel = smach.StateMachine(outcomes=['fail','success','preempted'],
                                      input_keys=['next_move','robot_pos','cb_depl','next_action','color','cb_left_arm', 'cb_right_arm'],
                                      output_keys=['next_move','cb_depl','cb_left_arm','cb_right_arm'])
     
-turnPanelsSequence = smach.Sequence(  # sequence container
-    input_keys=['next_move','robot_pos','cb_depl','next_action','color','cb_left_arm','cb_right_arm'],
-    output_keys=['next_move','cb_depl','cb_left_arm','cb_right_arm'],
-    outcomes = ['success', 'fail', 'preempted'],
-    connector_outcome = 'success')
 
-with turnPanelsSequence:
-   smach.Sequence.add("PANEL_0", TurnOnePanel(0))
-   smach.Sequence.add("PANEL_1", TurnOnePanel(1))
-   smach.Sequence.add("PANEL_2", TurnOnePanel(2))
-   smach.Sequence.add("PANEL_3", TurnOnePanel(3))
-   smach.Sequence.add("PANEL_4", TurnOnePanel(4))
-   smach.Sequence.add("PANEL_5", TurnOnePanel(5))
-
-with turnPanels:
-    smach.StateMachine.add("TURN_SEQ", turnPanelsSequence, transitions = {'success':'TURN_PANELS_END', 'fail':'fail', 'preempted':'preempted'})
-    smach.StateMachine.add("TURN_PANELS_END", TurnPanelsEnd(), transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'})
+with turnPanel:
+    smach.StateMachine.add("TURN_SEQ", TurnOnePanel(), transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'})

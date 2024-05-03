@@ -27,7 +27,7 @@ from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
 from an_sm_states.sm_park import park
-from an_sm_states.sm_turn_solar import turnPanels
+from an_sm_states.sm_turn_solar import turnPanel
 from an_sm_states.sm_pickup_plants import pickupPlant
 from an_sm_states.sm_pickup_pots import pickupPot
 from an_sm_states.sm_deposit_pots import depositPot
@@ -71,7 +71,6 @@ class Setup(smach.State):
         userdata.start = False
         userdata.color = 0
         userdata.score = [ActionScore.SCORE_INIT.value]
-        userdata.nb_actions_done = [0] # TODO where is it used?
         userdata.park = [0] 
         
         
@@ -92,6 +91,7 @@ class Setup(smach.State):
         userdata.cb_doors = [-1]	# state of the doors
         userdata.cb_clamp = [-1] 	# state of the clamp
         userdata.cb_elevator = [-1] # state of the elevator
+        userdata.cb_load_detector = [LoadDetectorCallback.EMPTY] # whether the robot carries something # TODO no hardware to detect it
 
         ## Game infos variables
         userdata.next_action = [Action.PENDING]  # action en cours (avec arguments eventuels)
@@ -134,8 +134,8 @@ class Repartitor(smach.State):
     def __init__(self):
         smach.State.__init__(	self, 	
                                 outcomes=ACTIONS_LIST,
-                                input_keys=['nb_actions_done', 'next_action', 'pucks_taken'],
-                                output_keys=['nb_actions_done', 'next_action'])
+                                input_keys=['next_action', 'pucks_taken'],
+                                output_keys=['next_action'])
 
     def execute(self, userdata):
         log_info('[Repartitor] Requesting next action ...')
@@ -148,7 +148,6 @@ class Repartitor(smach.State):
                 return 'preempted'
             time.sleep(0.01)
 
-        userdata.nb_actions_done[0] = 0  		     	  # reinitialisation nb etapes
         return ACTIONS_LIST[userdata.next_action[0].value]   # lancement prochaine action  
         
 #################################################################
@@ -206,7 +205,7 @@ def init_sm(sm):
                                 transitions={'end':'exit all','preempted':'exit preempted'})
 
         # Specific Action States
-        smach.StateMachine.add('TURNPANELS', turnPanels,
+        smach.StateMachine.add('TURNPANEL', turnPanel,
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
 
         smach.StateMachine.add('PICKUPPLANT', pickupPlant,

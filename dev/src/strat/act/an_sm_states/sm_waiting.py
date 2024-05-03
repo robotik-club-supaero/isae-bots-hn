@@ -69,8 +69,8 @@ class ObsWaiting(ObsWaitingOnce):
 #################################################################
 
 waiting = smach.StateMachine(   outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','next_move', 'color'],
-                                output_keys=['nb_actions_done','next_move','color'])
+                                input_keys=['next_move', 'color'],
+                                output_keys=['next_move','color'])
 							
 with waiting:
     smach.StateMachine.add('OBS_WAITING', 

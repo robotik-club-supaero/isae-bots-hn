@@ -53,7 +53,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 
 ## CONSTANTES
 STOP_RANGE_STANDARD = 650
-STOP_RANGE_AVOIDING = 650
+STOP_RANGE_AVOIDING = 600
 DIST_MIN = 50
 RADIUS_ROBOT_OBSTACLE = 280
 RESET_RANGE = 560  

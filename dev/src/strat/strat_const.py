@@ -21,10 +21,15 @@ from ast import literal_eval
 READER = configparser.ConfigParser()
 READER.read(os.path.join(os.path.dirname(__file__),'../robot_config.cfg'))
 
+class ActionResult(IntEnum):
+    SUCCESS = 1
+    NOTHING_TO_PICK_UP = 5
+    FAILURE = -1
+
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    TURN_SOLAR_PANELS = 0
+    TURN_SOLAR_PANEL = 0
     PICKUP_PLANT = 1
     PICKUP_POT   = 2
     DEPOSIT_POT =  3
@@ -32,10 +37,10 @@ class Action(IntEnum):
     WAIT         = 5
     END          = 6
     PREEMPT      = 7
-    
+
 
 ACTIONS_LIST = [
-    'turnPanels',
+    'turnPanel',
     'pickupPlant',
     'pickupPot',
     'depositPot',
@@ -46,7 +51,7 @@ ACTIONS_LIST = [
     ]
 
 ACTION_TRANSITIONS = {
-    'turnPanels': 'TURNPANELS',
+    'turnPanel': 'TURNPANEL',
     'pickupPlant':'PICKUPPLANT',
     'pickupPot': 'PICKUPPOT',
     'depositPot': 'DEPOSITPOT',

@@ -65,6 +65,8 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 WAIT_TIME = 5
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
 R_APPROACH_POTS = 130 # TODO change value
+R_TAKE_POTS = 70 # TODO change value
+
 
 EDGE_DIST = 20 # when turning panel
 R_APPROACH_PANEL = 100 # TODO change value
@@ -171,19 +173,23 @@ class ArmCallback(IntEnum):
     RETRACTED = 2
     BLOCKED = 3
 
+class LoadDetectorCallback(IntEnum):
+    EMPTY = 0
+    LOADED = 1
+
 
 ## I/O keys for states of the sm
 USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
     'score',
-    'nb_actions_done',
     'cb_depl',
     'cb_left_arm',
     'cb_right_arm',
     'cb_elevator',
     'cb_clamp',
     'cb_doors',
+    'cb_load_detector',
     'robot_pos',
     'arm_order',
     'depositArea',

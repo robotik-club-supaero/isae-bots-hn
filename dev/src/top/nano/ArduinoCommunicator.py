@@ -24,7 +24,7 @@ class ArduinoCommunicator:
         Takes a NanoCommand object
         """
         
-        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING]:
+        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING, NanoCommand.CMD_COLOR_FADING]:
             if color is None:
                 print("ERROR : give a color input")
                 return NanoCallback.CLB_KO
@@ -137,19 +137,22 @@ class ArduinoCommunicator:
         nanoCallback = self.receive_response()
         
         
-    def changeButtonColor(self, buttonState, color=None):
+    def changeButtonColor(self, buttonColorMode, color=None):
         
-        if buttonState in [ButtonColorMode.BUTTON_COLOR_STATIC, ButtonColorMode.BUTTON_COLOR_BLINKING]:
+        if buttonColorMode in [ButtonColorMode.BUTTON_COLOR_STATIC, ButtonColorMode.BUTTON_COLOR_BLINKING, ButtonColorMode.BUTTON_COLOR_FADING]:
             
             if color is None:
                 print("ERROR : color is None for colored ButtonState")
             
-            if buttonState == ButtonColorMode.BUTTON_COLOR_STATIC:
+            if buttonColorMode == ButtonColorMode.BUTTON_COLOR_STATIC:
                 self.send_command(NanoCommand.CMD_COLOR_FIXED, color=color)
-            else:
+            elif buttonColorMode == ButtonColorMode.BUTTON_COLOR_BLINKING:
                 self.send_command(NanoCommand.CMD_COLOR_BLINKING, color=color)
+            else:
+                self.send_command(NanoCommand.CMD_COLOR_FADING, color=color)
+                
             
-        elif buttonState == ButtonColorMode.BUTTON_COLOR_NYAN:
+        elif buttonColorMode == ButtonColorMode.BUTTON_COLOR_NYAN:
             self.send_command(NanoCommand.CMD_NYAN)
             
         else:

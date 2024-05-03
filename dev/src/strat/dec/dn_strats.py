@@ -68,10 +68,10 @@ def test_strat():
         -
     """
 
-    def find_closest(p_dn, positions, remaining, cond=None, relative=True):
+    def find_closest(p_dn, positions, remaining, cond=None, relative=True, coeffs=1):
         if cond is None: cond = lambda cluster: remaining[cluster] > PLANT_THRESHOLD
         x, y, _ = adapt_pos_to_side(*p_dn.position, p_dn.color) if relative else p_dn.position
-        dists = np.linalg.norm(np.array([x,y]) - positions, axis=1)
+        dists = coeffs * np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
         for cluster in clusters:
             if cond(cluster.item()):
@@ -119,7 +119,7 @@ def test_strat():
         
         if p_dn.nb_actions_done[0] == 3:
 
-            pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots)
+            pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots, coeffs=[1,1,0]) # deposit in secure area first
             if pot_id is not None:
                 p_dn.curr_action = [Action.DEPOSIT_POT, pot_id]
                 log_info("Next action order : Deposit Pots")

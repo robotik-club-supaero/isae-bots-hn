@@ -36,7 +36,7 @@ startdir = os.path.dirname(os.path.dirname(currentdir))
 sys.path.insert(0,startdir)
 
 from strat.act.an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, \
-                                    ArmCallback, ArmOrder, DspCallback
+                                    ArmCallback, ArmOrder, DspCallback, ClampOrder, ClampCallback
 
 #################################################################
 #                                                               #
@@ -63,6 +63,7 @@ def log_fatal(msg):
 ## Constants GR
 DOORS_TIME = 0.200
 ELEVATOR_TIME = 0.200
+CLAMP_TIME = 0.100
 ARM_TIME = 0.200
 
 #############################
@@ -97,6 +98,9 @@ class ActuatorNode():
         # Simule la reponse du BN sur l'ascenseur
         self.elevator_sub = rospy.Subscriber('/act/order/elevator', Int16, self.elevator_response)
         self.elevator_pub = rospy.Publisher("/act/callback/elevator", Int16, queue_size=10, latch=True)  
+
+        self.clamp_sub = rospy.Subscriber('/act/order/clamp', Int16, self.clamp_response)
+        self.clamp_pub = rospy.Publisher("/act/callback/clamp", Int16, queue_size=10, latch=True)  
 
         # Simule la reponse du BN sur le bras
         self.left_arm_sub = rospy.Subscriber('/act/order/left_arm', Int16, lambda msg: ActuatorNode.arm_response(self.left_arm_pub, msg))
@@ -157,6 +161,16 @@ class ActuatorNode():
         else:
             self.elevator_pub.publish(data=ElevatorCallback.DOWN)
             log_info("Réponse simulée : Ascenseur bas")
+
+    def clamp_response(self, msg):
+        sleep(CLAMP_TIME)
+        if msg.data == ClampOrder.OPEN:
+            self.clamp_pub.publish(data=ClampCallback.OPEN)
+            log_info("Réponse simulée : Pince ouverte")
+        else:
+            self.clamp_pub.publish(data=ClampCallback.CLOSED)
+            log_info("Réponse simulée : Pince fermée")
+
 
     @staticmethod
     def arm_response(pub, msg):

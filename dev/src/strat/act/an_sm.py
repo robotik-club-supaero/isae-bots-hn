@@ -34,7 +34,7 @@ from an_sm_states.sm_deposit_pots import depositPot
 from an_sm_states.sm_waiting import waiting
 
 from an_const import *
-from an_utils import *
+from an_logging import *
 from an_comm import enable_comm, repartitor_pub, disp_pub, stop_teensy_pub
 
 from geometry_msgs.msg import Quaternion, Pose2D
@@ -85,7 +85,7 @@ class Setup(smach.State):
 
         ## Callback of subscribers
         userdata.cb_depl = [DspCallback.PENDING]  # result of displacement action. CHECK an_const to see details on cb_depl
-        userdata.robot_pos = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
+        userdata.robot_pos = [Pose2D(x=-1, y=-1, theta=-1)]  # current position of the robot
         userdata.cb_left_arm = [-1]    # state of the arm
         userdata.cb_right_arm = [-1]    # state of the arm
         userdata.cb_doors = [-1]	# state of the doors
@@ -219,4 +219,4 @@ def init_sm(sm):
         smach.StateMachine.add('PARK', park,
                                 transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
         smach.StateMachine.add('WAITING', waiting,
-                                transitions={'preempted':'END','end':'REPARTITOR'})
+                                transitions={'preempted':'END','success':'REPARTITOR'})

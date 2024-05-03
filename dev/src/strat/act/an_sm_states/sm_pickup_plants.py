@@ -22,11 +22,12 @@ import os, sys, inspect
 import time
 import smach
 
-from an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, WAIT_TIME, R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, doors_pub, elevator_pub, remove_obs, get_pickup_id, HardwareOrder, LoadDetectorCallback
-from an_utils import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
+from an_const import R_APPROACH_PLANTS
+from an_comm import callback_action_pub, add_score, remove_obs, get_pickup_id
+from an_logging import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
+from an_utils import AutoSequence, AutoConcurrence, OpenDoors, OpenClamp, CloseDoors, CloseClamp, RiseElevator, DescendElevator, HardwareOrder
 
-from an_sm_states.sm_displacement import Displacement, Approach, colored_approach
+from an_sm_states.sm_displacement import MoveTo, Approach, colored_approach
 from an_sm_states.sm_waiting import ObsWaitingOnce
 
 #NOTE to import from parent directory
@@ -40,24 +41,6 @@ from strat_const import PLANTS_POS, ActionResult
 #                          SUBSTATES                            #
 #                                                               #
 #################################################################
-
-class OpenDoors(HardwareOrder):
-    
-    def __init__(self):
-        super().__init__(doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
-    
-    def execute(self, userdata):
-        debug_print('c', "Request to open doors")
-        return super().execute(userdata)
-    
-class CloseDoors(HardwareOrder):
-    
-    def __init__(self):
-        super().__init__(doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
-
-    def execute(self, userdata):
-        debug_print('c', "Request to close doors")
-        return super().execute(userdata)
 
 class CalcPositionningPlants(smach.State):
     
@@ -92,15 +75,6 @@ class CalcTakePlants(smach.State):
         userdata.next_move = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
 
         return 'success'
-    
-class RisePlants(HardwareOrder):
-    
-    def __init__(self):
-        super().__init__(elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
-        
-    def execute(self, userdata):        
-        debug_print('c', "Request to move elevator up")
-        return super().execute(userdata)
        
 class PickupPlantsEnd(smach.State):
     
@@ -126,57 +100,28 @@ class PickupPlantsEnd(smach.State):
 #                                                               #
 #################################################################
 
-pickupPlant = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['cb_doors','next_move','robot_pos','cb_depl','next_action','cb_elevator','color'],
-                                     output_keys=['cb_doors','next_move','cb_depl','cb_elevator'])
-    
-    
-    
-pickUpPlantSequence = smach.Sequence(  # sequence container
-    input_keys = ['cb_doors','cb_elevator'],
-    output_keys = ['cb_doors','cb_elevator'],
-    outcomes = ['success', 'fail', 'preempted'],
-    connector_outcome = 'success')
+pickUpPlantSequence = AutoSequence(
+    ('PREPARE', AutoConcurrence(
+        PREPARE_ELEVATOR = RiseElevator(),
+        OPEN_DOORS = OpenDoors(),
+        OPEN_CLAMP = OpenClamp(),
+    )),
+    ('KEEP_OPEN', ObsWaitingOnce(wait_time=2)),
+    ('TAKE', AutoConcurrence(
+        CLOSE_DOORS = CloseDoors(),
+        PICKUP = AutoSequence(
+            ('DESC_ELEVATOR', DescendElevator()),
+            ('GRAB_PLANTS', CloseClamp()), # TODO check the robot has actually picked up plants
+            ('RISE_PLANTS', RiseElevator()),
+        ),
+    )),    
+)
 
-deplSequence = smach.Sequence(  # sequence container
-    input_keys = ['next_move','cb_depl','robot_pos','next_action','color'],
-    output_keys = ['cb_depl','next_move'],
-    outcomes = ['success', 'fail', 'preempted'],
-    connector_outcome = 'success')
-
-
-with pickUpPlantSequence:  # add states to the sequence #TODO define elsewhere
-    smach.Sequence.add('OPEN_DOORS', OpenDoors())
-    smach.Sequence.add('KEEP_OPEN', ObsWaitingOnce(wait_time=2))
-    smach.Sequence.add('CLOSE_DOORS', CloseDoors()) # TODO check the robot has actually picked up plants
-    smach.Sequence.add('RISE_PLANTS',RisePlants())
-    
-with deplSequence:
-    smach.Sequence.add('CALC_TAKE_PLANT', CalcTakePlants())
-    smach.Sequence.add('DEPL_TAKE_PLANTS', Displacement())
-    
-    
-pickUpPlantConcurrence = smach.Concurrence(outcomes=['success', 'fail', 'preempted'],
-                            input_keys=['cb_doors','next_move','robot_pos','cb_depl','cb_elevator','next_action','color'],
-                            output_keys=['cb_doors','next_move','cb_depl','cb_elevator'],
-                            default_outcome='fail',
-                            outcome_map={'success': { 'PICKUP_PLANT_SEQ':'success','DEPL_SEQ':'success'},
-                                            'preempted' : {'PICK_UP_PLANT_SEQ':'preempted'},
-                                            'preempted' : {'DEPL_SEQ' : 'preempted'}})
-
-with pickUpPlantConcurrence:
-    # Add states to the container
-    smach.Concurrence.add('PICKUP_PLANT_SEQ', pickUpPlantSequence)
-    smach.Concurrence.add('DEPL_SEQ', deplSequence)
-    
-with pickupPlant:
-    smach.StateMachine.add('CALC_POSITIONING_PLANTS', CalcPositionningPlants(),
-                            transitions = {'success':'DEPL_POSITIONING_PLANTS','fail':'fail','preempted':'preempted'})
-    smach.StateMachine.add('DEPL_POSITIONING_PLANTS', Displacement(),
-                            transitions = {'success':'PICKUP_PLANTS_CONC','fail':'fail','preempted':'preempted'})
-    smach.StateMachine.add('PICKUP_PLANTS_CONC', pickUpPlantConcurrence, 
-                            transitions = {'success':'PICKUP_PLANT_END', 'fail':'fail', 'preempted':'preempted'}
-                            )
-    smach.StateMachine.add('PICKUP_PLANT_END', PickupPlantsEnd(), 
-                            transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'}
-                            )
+pickupPlant = AutoSequence(
+    ('DEPL_POSITIONING_PLANTS', MoveTo(CalcPositionningPlants())),             
+    ('PICKUP_PLANTS_CONC', AutoConcurrence(
+        DEPL_SEQ = MoveTo(CalcTakePlants()),
+        PICKUP_PLANT_SEQ = pickUpPlantSequence,        
+    )),
+    ('PICKUP_PLANT_END', PickupPlantsEnd()),
+)

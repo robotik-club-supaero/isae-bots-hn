@@ -64,8 +64,8 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
-R_APPROACH_POTS = 130 # TODO change value
-R_TAKE_POTS = 70 # TODO change value
+R_APPROACH_POTS = 200 # TODO change value
+R_TAKE_POTS = 100 # TODO change value
 
 
 EDGE_DIST = 20 # when turning panel
@@ -161,6 +161,16 @@ class ElevatorCallback(IntEnum):
     DOWN = 0
     UP = 1
     BLOCKED = 2
+
+class ClampOrder(IntEnum):
+    OPEN = 0
+    CLOSE = 1
+
+class ClampCallback(IntEnum):
+    UNKNOWN = -2
+    PENDING = -1
+    OPEN = 0
+    CLOSED = 1
 
 class ArmOrder(IntEnum):
     EXTEND = 1

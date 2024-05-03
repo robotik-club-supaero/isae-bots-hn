@@ -21,10 +21,11 @@
 import smach
 import math
 
-from an_utils import debug_print
+from an_logging import debug_print
 from an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST, ArmCallback, ArmOrder
-from an_comm import callback_action_pub, right_arm_pub, left_arm_pub, HardwareOrder, get_pickup_id
-from an_sm_states.sm_displacement import colored_approach_with_angle, Displacement, Approach
+from an_comm import callback_action_pub, right_arm_pub, left_arm_pub, get_pickup_id
+from an_utils import AutoSequence, HardwareOrder
+from an_sm_states.sm_displacement import colored_approach_with_angle, MoveTo, Approach
 from strat_const import ActionResult
 
 #################################################################
@@ -75,21 +76,15 @@ class RetractArm(smach.State):
         return sm.execute(userdata)
 
 
-class TurnOnePanel(smach.Sequence):
+class TurnOnePanel(AutoSequence):
 
     def __init__(self):
         super().__init__( 
-            input_keys=['color','next_move','next_action','cb_depl', 'cb_left_arm','cb_right_arm'],
-            output_keys=['next_move', 'cb_depl','cb_left_arm','cb_right_arm'],
-            outcomes =['success', 'fail', 'preempted'],
-            connector_outcome = 'success'
+            ("DEPL_GO_TO_PANEL", MoveTo(CalcPositionningPanel())),
+            ("EXTEND_ARM", ExtendArm()),
+            ("RETRACT_ARM", RetractArm()),
+            ("TURN_PANEL_END", TurnPanelEnd()),
         )
-        with self:
-            smach.Sequence.add("CALC_GO_TO_PANEL", CalcPositionningPanel())
-            smach.Sequence.add("DEPL_GO_TO_PANEL", Displacement())
-            smach.Sequence.add("EXTEND_ARM", ExtendArm())
-            smach.Sequence.add("RETRACT_ARM", RetractArm())
-            smach.Sequence.add("TURN_PANEL_END", TurnPanelEnd())
     
 class TurnPanelEnd(smach.State):
     
@@ -113,10 +108,4 @@ class TurnPanelEnd(smach.State):
 #                                                               #
 #################################################################
 
-turnPanel = smach.StateMachine(outcomes=['fail','success','preempted'],
-                                     input_keys=['next_move','robot_pos','cb_depl','next_action','color','cb_left_arm', 'cb_right_arm'],
-                                     output_keys=['next_move','cb_depl','cb_left_arm','cb_right_arm'])
-    
-
-with turnPanel:
-    smach.StateMachine.add("TURN_SEQ", TurnOnePanel(), transitions = {'success':'success', 'fail':'fail', 'preempted':'preempted'})
+turnPanel = TurnOnePanel()

@@ -30,7 +30,8 @@ from geometry_msgs.msg import Quaternion
 
 from an_const import DspCallback, DspOrderMode
 from an_comm import disp_pub
-from an_utils import log_info, log_errs, log_warn, debug_print
+from an_logging import log_info, log_errs, log_warn, debug_print
+from an_utils import AutoSequence
 from strat_utils import adapt_pos_to_side
 
 #################################################################
@@ -53,7 +54,7 @@ def colored_destination(color, x_d, y_d, t_d, w):
 	return Quaternion(x_d, y_d, t_d, w.value)
 
 def colored_approach(userdata, xd, yd, margin, phase):	 
-	x, y, _ = adapt_pos_to_side(userdata.robot_pos.x, userdata.robot_pos.y, 0, userdata.color)  
+	x, y, _ = adapt_pos_to_side(userdata.robot_pos[0].x, userdata.robot_pos[0].y, 0, userdata.color)  
 	d = norm([xd - x, yd - y])
 	
 	x_dest = xd + phase.value * margin/d*(xd - x)
@@ -163,3 +164,51 @@ class Displacement(smach.State):
 			log_errs('Timeout reached - [displacement]')
 			return 'fail'
 			# return actionError('fail')
+
+class MoveTo(AutoSequence):
+    def __init__(self, destination):
+        super().__init__(('COMPUTE_DEST', destination), ('DEPL', Displacement()))    
+
+
+class MoveBackwardsStraight(smach.State):
+
+    def __init__(self, dist):
+        smach.State.__init__(	self,
+                                outcomes=['fail','success','preempted'],
+                                input_keys=['cb_depl', 'next_action', 'color', 'robot_pos'],
+                                output_keys=['cb_depl'])
+        self._dist = dist
+        
+    def execute(self, userdata):
+        
+        debug_print('c', "Request to move backwards")
+        
+        userdata.cb_depl[0] = DspCallback.PENDING
+
+        x,y,theta = userdata.robot_pos[0].x, userdata.robot_pos[0].y, userdata.robot_pos[0].theta
+        xd = x - self._dist * math.cos(theta)
+        yd = y - self._dist * math.sin(theta)
+
+        disp_pub.publish(Quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
+        
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < DISP_TIMEOUT:           
+            time.sleep(0.01)
+
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+
+            if userdata.cb_depl[0] == DspCallback.ERROR_ASSERV:
+                log_errs("Displacement result: error asserv.")
+                return 'fail'
+
+            if userdata.cb_depl[0] == DspCallback.SUCCESS:
+                log_info('Displacement result: success displacement')
+                return 'success'
+
+        # timeout
+        log_warn("Timeout")
+        
+        return 'fail'
+    

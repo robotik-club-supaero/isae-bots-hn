@@ -42,6 +42,7 @@ startdir = os.path.dirname(os.path.dirname(currentdir))
 sys.path.insert(0,startdir)
 
 from strat.strat_const import PLANTS_POS, POTS_POS
+from strat.strat_utils import adapt_pos_to_side
 
 HOME = 0
 AWAY = 1
@@ -76,11 +77,11 @@ def make_obstacle_list(color):
 
         # Plants
         for i, plant in enumerate(PLANTS_POS):
-            obstacles[f"plant{i}"] = ObstacleCirc(*plant, radius=75+MARGIN)
+            obstacles[f"plant{i}"] = ObstacleCirc(*adapt_pos_to_side(*plant, 0, color)[:2], radius=75+MARGIN)
 
         # Pots
         for i, pot in enumerate(POTS_POS):
-            obstacles[f"pot{i}"] = ObstacleCirc(*pot[:2], radius=75+MARGIN)
+            obstacles[f"pot{i}"] = ObstacleCirc(*adapt_pos_to_side(*pot, color)[:2], radius=75+MARGIN)
 
     log_info("Number of static obstacles : {}.".format(len(obstacles)))
    

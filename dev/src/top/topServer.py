@@ -42,9 +42,11 @@ class RoslaunchThread(threading.Thread):
         self.stdout = None
         self.stderr = None
         self.stop_event = stop_event
+        self.stopThreadOrder = False
         
         self.ROSLogOled = logOled
         
+        self.isStarted = False
         self.isStopped = False
         self.isRunning = False
         self.isReady = False  # means that the match is ready to be launched
@@ -69,19 +71,40 @@ class RoslaunchThread(threading.Thread):
 
             yield line
             
-    def stop(self):
-        self.isStopped = True
-        
-
     def run(self):
         
-        print('Running roslaunch thread')
+        print("####### Running")
+        
+        while not self.stopThreadOrder:
+            
+            if self.isStarted:
+                self.runMatch()  # NOTE blocking
+                self.isStarted = False
+            
+            time.sleep(0.01)
+            
+        print("Ended roslaunch thread")
+            
+            
+    def startMatch(self):
+        self.isStarted = True
+        
+    def stopMatch(self):
+        self.isStopped = True
+        
+    def stopThread(self):
+        self.stopThreadOrder = True
+        
+
+    def runMatch(self):
+        
+        print('Running match')
         
         self.isRunning = True
         ROSprocess = subprocess.Popen('/app/scripts/runMatch_test.sh', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 
         decoded_output = None
-        while decoded_output is None:
+        while decoded_output is None and not self.stopThreadOrder:
             
             try:
                 process_output = subprocess.check_output(['roslaunch-logs'], stderr=subprocess.PIPE)
@@ -129,7 +152,7 @@ class RoslaunchThread(threading.Thread):
         self.isStopped = False
         loop_timer_logs = time.perf_counter()
         loop_timer_roslaunch = time.perf_counter()
-        while not self.isStopped:
+        while not self.isStopped and not self.stopThreadOrder:
             
             # roslaunch read loop
             if time.perf_counter() - loop_timer_roslaunch > 0.5:
@@ -319,7 +342,7 @@ class TopServer():
                         self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPING
                         
                         #TODO stop roslaunch thread
-                        self.roslaunchThread.stop()
+                        self.roslaunchThread.stopMatch()
                         
                         self.speaker.playSound('endRos')
                         self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,0,255))
@@ -333,10 +356,10 @@ class TopServer():
                     if self.roslaunchState == RosLaunchState.ROSLAUNCH_STOPPED:
                         self.roslaunchState = RosLaunchState.ROSLAUNCH_STARTED
                         
-                        self.speaker.playSound('startup')
+                        self.speaker.playSound('startRos')
                         self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,255,0))
                         
-                        self.roslaunchThread.start()
+                        self.roslaunchThread.startMatch()
                         
                     # self.roslaunchThread.join()
                     
@@ -349,6 +372,26 @@ class TopServer():
                 else:
                     print(f"ERROR : unknown button callback {self.buttonState}")
                     continue
+                
+            
+                
+            # manage roslaunch state
+                
+            if self.roslaunchState == RosLaunchState.ROSLAUNCH_STARTED and self.roslaunchThread.isReady:
+
+                # roslaunch is now ready for action
+                self.roslaunchState = RosLaunchState.ROSLAUNCH_READY
+                self.speaker.playSound('RosReady')
+                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(0,255,0))
+                
+                
+            if self.roslaunchState == RosLaunchState.ROSLAUNCH_STOPPING and not self.roslaunchThread.isRunning:
+                
+                # roslaunch is now shut down
+                self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPED
+                self.speaker.playSound('RosEnded')
+                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
+                        
                 
             self.previousButtonState = self.buttonState
 
@@ -441,44 +484,26 @@ class TopServer():
         #TODO gros signal d'erreur si le topServer n'est pas actif (on n'aurait pas d'ISB)
                 
         self.watchButtonThread.start()
+        self.roslaunchThread.start()
         
         # listen on port
         try:
             self.serverSocket.bind( ("0.0.0.0", TOPSERVER_PORT) )
         except OSError:
             print("ERROR : Adress already in use, shutting down TopServer")
-            self.closeServer()
+            self.closeServer(exitCode=1)
             return
             
         maxclients = 10
         self.serverSocket.listen(maxclients)
-        
+                
         try:
             while True:
-                
-                # watch roslaunch process
-                    
-                if self.roslaunchState == RosLaunchState.ROSLAUNCH_STARTED and self.roslaunchThread.isReady:
-                    
-                    # roslaunch is now ready for action
-                    self.roslaunchState = RosLaunchState.ROSLAUNCH_READY
-                    self.speaker.playSound('ready')
-                    self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(0,255,0))
-                    
-                    
-                if self.roslaunchState == RosLaunchState.ROSLAUNCH_STOPPING and not self.roslaunchThread.isRunning:
-                    print("HERE ?")
-                    
-                    # roslaunch is now shut down
-                    self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPED
-                    self.speaker.playSound('endRos')
-                    self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
-                    
-                                    
+                        
                 #### SERVER PART ####
                 
                 # Accept incoming connection
-                client_socket, client_address = self.serverSocket.accept()
+                client_socket, client_address = self.serverSocket.accept()  # NOTE blocking
                 print(f"Accepted connection from {client_address}")
 
                 # Store the client connection in the dictionary
@@ -487,7 +512,7 @@ class TopServer():
                 # Handle the client connection in a new thread
                 client_thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
                 client_thread.start()
-                
+                                
                 time.sleep(0.001)
 
                         
@@ -533,7 +558,8 @@ class TopServer():
         
         # close threads
         self.watchButtonStopEvent.set()
-        self.rosLaunchStopEvent.set()
+        # self.rosLaunchStopEvent.set()
+        self.roslaunchThread.stopThread()
             
         print(f"Exiting TopServer with exit code {exitCode}")
         sys.exit(exitCode)

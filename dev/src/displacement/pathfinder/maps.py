@@ -52,25 +52,11 @@ class Maps:
         self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        
         self.avoiding_node_list = avoiding_node_list    # Liste des noeud à utiliser lors de l'évitement
 
-        self.obstacle_robot_pos = None                # Position robot à éviter
-
         # Choix map classique ou map d'évitement    #### ATRANSFORMER EN ENTIER POUR AVOIR PLUS QUE 2 MAPS ####
         self.avoid = False
-        # Deuxieme essai evitement
-        self.is_second_attempt = False
 
     def get_obstacles(self):
-        # TODO if 'obstacle_robot_pos' is always added to the obstacles, add it directly to self.obstacle_list to
-        # avoid copy
-        obs = self.obstacle_list.copy()
-        obs["robot_pos"] = self.obstacle_robot_pos
-        return obs.values()
-    """    if self.avoid:
-            if self.is_second_attempt:
-                return self.obstacle_list+[self.obstacle_robot_pos]
-            return self.obstacle_list+[self.obstacle_robot_pos]
-        else:
-            return self.obstacle_list"""
+        return self.obstacle_list.values()
         
     def remove_obstacle(self, obstacle_id):
         self.obstacle_list.pop(obstacle_id, None)
@@ -82,14 +68,13 @@ class Maps:
             return self.standard_node_list
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos):
-        self.obstacle_robot_pos = obstacle_robot_pos
+        self.obstacle_list["robot_pos"] = obstacle_robot_pos
     
     def get_obstacle_robot_pos(self):
-        return self.obstacle_robot_pos
+        return self.obstacle_list.get("robot_pos", None)
 
-    def set_avoid(self, avoid, is_second_attempt):
+    def set_avoid(self, avoid):
         self.avoid = avoid
-        self.is_second_attempt = is_second_attempt
 
     def get_avoid(self):
         return self.avoid

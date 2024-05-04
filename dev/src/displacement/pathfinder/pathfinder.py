@@ -87,14 +87,14 @@ class Pathfinder:
 #                            COMPUTE PATH 
 #######################################################################
         
-    def get_path(self, isAvoid, isFirstAccurate, isSecondAttempt):
+    def get_path(self, isAvoid, isFirstAccurate):
         if isAvoid:
             if self.robot_to_avoid_pos is None:
                 self.set_robot_to_avoid_pos([-1000, -1000], 0)
             self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
-            self.table_map.set_avoid(True, isSecondAttempt)
+            self.table_map.set_avoid(True)
         else:
-            self.table_map.set_avoid(False, False)
+            self.table_map.set_avoid(False)
             
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
         return a_star(self.init_pos, self.goal_pos, self.table_map, isFirstAccurate, self.max_astar_time)

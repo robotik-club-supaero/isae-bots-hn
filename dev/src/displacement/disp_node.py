@@ -115,7 +115,7 @@ class DisplacementNode:
 # Fonctions de construction de path
 #######################################################################
 
-    def build_path(self, isInAvoidMode, isFirstAccurate, isSecondAttempt):
+    def build_path(self, isInAvoidMode, isFirstAccurate):
         """Fonction appelee quand on cherche chemin et le pathfinder setup.
         
         Retourne un chemin de la forme:
@@ -152,7 +152,7 @@ class DisplacementNode:
 
         # On essaie d'obtenir un chemin
         try:
-            result['built path'] = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate, isSecondAttempt)
+            result['built path'] = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
             result['message'] = "Path found" 
             result['success'] = True
 
@@ -319,41 +319,6 @@ class DisplacementNode:
             vect_normal = np.array([a,b])/np.linalg.norm([a,b])
             self.reset_point = np.array(avoid_robot_pos) - d*vect_normal
             
-    def handle_obstacle(self, obstacle_seen, obstacle_stop, isDestBlocked):
-        """Gestion d'arret du robot."""
-        # dprint("Enter handle_obstacle()")
-        if obstacle_stop:
-            self.time_last_seen_obstacle = time.time()
-            if not self.paused:
-                log_info("New obstacle detected! - STOP")
-                self.paused = True
-                pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-                if isDestBlocked:
-                    log_errs("Destination is being blocked.")
-                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-                else:
-                    pub_strat.publish(Int16(COM_STRAT["stop"]))
-            return
-
-        if obstacle_seen:   # Il faut ralentir
-            # dprint("Obstacle is seen")
-            # self.time_last_seen_obstacle = time.time()
-
-            log_info("New obstacle detected! - SPEED DOWN")
-            self.paused = False
-            pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-            pub_strat.publish(Int16(COM_STRAT["go"]))
-            return
-
-        if self.paused and (time()-self.time_last_seen_obstacle > self.refresh_update_obstacle):
-            self.paused = False
-            self.resume = True
-            log_info("Resume displacement.")
-            pub_strat.publish(Int16(COM_STRAT["go"]))
-            self.next_point(False)
-
-
-
 #################################################################
 #																#
 # 							MAIN PROG 							#

@@ -107,7 +107,7 @@ DISPLACEMENT = {
 class DspOrderMode(IntEnum):
     AVOIDANCE = 0
     STRAIGHT_NO_AVOIDANCE = 1
-    STOP = 4 # FIXME why is it different from the value in DISPLACEMENT
+    STOP = 2
     BACKWARDS = 8
 
     

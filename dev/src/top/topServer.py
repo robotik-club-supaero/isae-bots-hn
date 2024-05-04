@@ -33,7 +33,8 @@ from isb.ISBManager import ISBManager
 
 from oled.Oled_pi import Oled
 
-from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
+from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, RosLaunchState, \
+    TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
 
 
 class RoslaunchThread(threading.Thread):
@@ -43,6 +44,10 @@ class RoslaunchThread(threading.Thread):
         self.stop_event = stop_event
         
         self.ROSLogOled = logOled
+        
+        self.isStopped = False
+        self.isRunning = False
+        self.isReady = False  # means that the match is ready to be launched
                 
         threading.Thread.__init__(self)
         
@@ -63,15 +68,18 @@ class RoslaunchThread(threading.Thread):
                 continue
 
             yield line
+            
+    def stop(self):
+        self.isStopped = True
+        
 
     def run(self):
         
-        print('Entering run')
+        print('Running roslaunch thread')
         
+        self.isRunning = True
         ROSprocess = subprocess.Popen('/app/scripts/runMatch_test.sh', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        print('Passed')
-        
+                
         decoded_output = None
         while decoded_output is None:
             
@@ -101,63 +109,92 @@ class RoslaunchThread(threading.Thread):
         if len(roslaunchFileName) == 0:
             print("ERROR : no roslaunch log file found")
             return
+        roslaunchFileName = roslaunchFileName[0]
         
-        logFile = rosLogFilePath + '/' + roslaunchFileName[0]
+        logFile = rosLogFilePath + '/' + roslaunchFileName
         print("Logfile : ", logFile)
         
+        PIDPattern = r'-robot-(\d+)\.log'
+        roslaunchPID = int( re.split(PIDPattern, roslaunchFileName)[1] )
+        
+        print("roslaunch PID : ", roslaunchPID)
+        
+        self.isReady = True #TODO have a real test for roslaunch ready
+
         NB_LINES = 3
-        pattern = r'\[[A-Z]{3}\]'
+        pattern = r'\[[A-Z]{3}\]|\/[A-Z]{3}' # matches the patterns [AAA] or /AAA with upper case letters A to Z
         
         # loop for match logs and monitoring
         # exits when roslaunch is killed
-        while True:
+        self.isStopped = False
+        loop_timer_logs = time.perf_counter()
+        loop_timer_roslaunch = time.perf_counter()
+        while not self.isStopped:
             
-            self.ROSLogOled.oled_clear()
-            logList = []
+            # roslaunch read loop
+            if time.perf_counter() - loop_timer_roslaunch > 0.5:
+                loop_timer_roslaunch = time.perf_counter()
+                try:
+                    output_roslaunch = subprocess.check_output(['tail', '-n', '1', logFile]).decode('utf-8')
+                except subprocess.CalledProcessError as e:
+                    print( "No log files yet")
+                    
+                print(output_roslaunch)
+                    
+                    
+            # log analysis loop
             
-            try:
-                output = subprocess.check_output(['tail', '-n', str(NB_LINES), rosLogFilePath+"/rosout.log"]).decode('utf-8')[:-1]
-            except subprocess.CalledProcessError as e:
-                print( "No log file yet")
-            else:
-                output_processed = output.split('\n')
+            if time.perf_counter() - loop_timer_logs > 1.0:
+                loop_timer_logs = time.perf_counter()
+            
+                self.ROSLogOled.oled_clear()
+                logList = []
                 
-                if len(output_processed) != NB_LINES:
-                    print("ERROR : unexpected number of log lines")
+                try:
+                    output_rosout = subprocess.check_output(['tail', '-n', str(NB_LINES), rosLogFilePath+"/rosout.log"]).decode('utf-8')[:-1]
+                except subprocess.CalledProcessError as e:
+                    print( "No log files yet")
+                else:
+                    output__rosout_processed = output_rosout.split('\n')
                     
+                    if len(output__rosout_processed) != NB_LINES:
+                        print("ERROR : unexpected number of log lines")
+                        
+                        
+                    for k in range (NB_LINES):
+                        line = output__rosout_processed[k]
+                        output_line = re.split(pattern, line)[-1]
+                        if len(output_line) > 0 and output_line[0] == ' ': output_line = output_line[1:]
+                        
+                        logList.append(output_line[:21])
+                        logList.append(output_line[21:])
+                        
+                    self.ROSLogOled.oled_display_logs(logList)
                     
-                for k in range (NB_LINES):
-                    line = output_processed[k]
-                    output_line = re.split(pattern, line)[-1]
-                    if len(output_line) > 0 and output_line[0] == ' ': output_line = output_line[1:]
-                    
-                    logList.append(output_line[:21])
-                    logList.append(output_line[21:])
-                    
-                self.ROSLogOled.oled_display_logs(logList)
-                    
-            time.sleep(1.0)
+                            
+        
+        # received stop event, sending SIGINT to roslaunch
+        self.isReady = False
+        os.kill(roslaunchPID, signal.SIGINT)
+        
+        print("Waiting for Roslaunch to shut down ...")
+        while ROSprocess.poll() is None:  # ROSprocess shuts down when roslaunch has finished shutting down
+            time.sleep(0.1)
+            
+        # roslaunch has shut down
+        self.isRunning = False
+        
+        print("Roslaunch process shut down")
         
         return
+        
         
         logfile = open(logFile, "r")
         loglines = self.follow(logfile) # iterates over the generator
         
-        
         for line in loglines:  # potentially sleeps to wait for the file
             print(line)
-            # print(processedLine)
-            # if len(processedLine) >= 1:
-            #     info = processedLine[1]
-            
 
-            # print("######################")
-            # print(line[-10:], end='')
-            
-            # time.sleep(1)
-            
-            #TODO break
-        
         
         
         
@@ -218,9 +255,9 @@ class TopServer():
         
         self.logOled = Oled()
         
-        self.isRosLaunchRunning = False
         self.rosLaunchStopEvent = threading.Event()
         self.roslaunchThread = RoslaunchThread(self.rosLaunchStopEvent, self.logOled)
+        self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPED  # also prevents toggling of start/stop of the roslaunch
 
         self.watchButtonStopEvent = threading.Event()
         self.watchButtonThread = threading.Thread(target=self.watchButton, args=(self.watchButtonStopEvent,))
@@ -255,6 +292,7 @@ class TopServer():
         '''
         The LED button plays an important role in the TopServer so it has its own thread
         It is not sent back to clients so read all the time, and should affect the TopServer without delay
+        This is the thread function that starts and stops the roslaunch process
         '''
                 
         while not stop_event.is_set():
@@ -275,15 +313,28 @@ class TopServer():
                 
                 if self.buttonState == ButtonPressState.BUTTON_PRESS_OFF :
                     print("Button OFF")   
-                 
+                    
+                    if self.roslaunchState in [RosLaunchState.ROSLAUNCH_STARTED, RosLaunchState.ROSLAUNCH_READY]:
+                            
+                        self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPING
+                        
+                        #TODO stop roslaunch thread
+                        self.roslaunchThread.stop()
+                        
+                        self.speaker.playSound('endRos')
+                        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,0,255))
+                        
+                        #TODO when roslaunch has exited change button color to idle
+                        
+                                         
                 elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON :
                     print("Button ON")
                     
-                    if not self.isRosLaunchRunning:
-                        self.isRosLaunchRunning = True
+                    if self.roslaunchState == RosLaunchState.ROSLAUNCH_STOPPED:
+                        self.roslaunchState = RosLaunchState.ROSLAUNCH_STARTED
                         
                         self.speaker.playSound('startup')
-                        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(0,0,255))
+                        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,255,0))
                         
                         self.roslaunchThread.start()
                         
@@ -335,7 +386,7 @@ class TopServer():
                 
                 request_type = TopServerRequest(request_list[0])
                 
-                print(f"Got request {request_type} with arguments {request_list[1:]}")
+                # print(f"Got request {request_type} with arguments {request_list[1:]}")
 
                 # request cases
                 if request_type == TopServerRequest.REQUEST_READ_BUTTONS:
@@ -392,13 +443,39 @@ class TopServer():
         self.watchButtonThread.start()
         
         # listen on port
-        self.serverSocket.bind( ("0.0.0.0", TOPSERVER_PORT) )
+        try:
+            self.serverSocket.bind( ("0.0.0.0", TOPSERVER_PORT) )
+        except OSError:
+            print("ERROR : Adress already in use, shutting down TopServer")
+            self.closeServer()
+            return
+            
         maxclients = 10
         self.serverSocket.listen(maxclients)
         
-        
         try:
             while True:
+                
+                # watch roslaunch process
+                    
+                if self.roslaunchState == RosLaunchState.ROSLAUNCH_STARTED and self.roslaunchThread.isReady:
+                    
+                    # roslaunch is now ready for action
+                    self.roslaunchState = RosLaunchState.ROSLAUNCH_READY
+                    self.speaker.playSound('ready')
+                    self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(0,255,0))
+                    
+                    
+                if self.roslaunchState == RosLaunchState.ROSLAUNCH_STOPPING and not self.roslaunchThread.isRunning:
+                    print("HERE ?")
+                    
+                    # roslaunch is now shut down
+                    self.roslaunchState = RosLaunchState.ROSLAUNCH_STOPPED
+                    self.speaker.playSound('endRos')
+                    self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
+                    
+                                    
+                #### SERVER PART ####
                 
                 # Accept incoming connection
                 client_socket, client_address = self.serverSocket.accept()
@@ -410,6 +487,7 @@ class TopServer():
                 # Handle the client connection in a new thread
                 client_thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
                 client_thread.start()
+                
                 time.sleep(0.001)
 
                         

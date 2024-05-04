@@ -135,7 +135,7 @@ def recv_action_callback(msg):
         # TODO: how to estimate score of "coccinelles"?
         if p_dn.curr_action[0] == Action.TURN_SOLAR_PANEL:
             p_dn.solar_panels[p_dn.curr_action[1]] = True
-            p_dn.score += 6 * ActionScore.SCORE_SOLAR_PANEL.value
+            p_dn.score += ActionScore.SCORE_SOLAR_PANEL.value
             publishScore()
         
         if p_dn.curr_action[0] == Action.PICKUP_PLANT:

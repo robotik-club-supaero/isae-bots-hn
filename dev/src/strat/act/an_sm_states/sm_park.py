@@ -25,7 +25,7 @@ import smach
 import math
 from an_const import *
 from an_comm import callback_action_pub, add_score, get_pickup_id
-from an_sm_states.sm_displacement import Displacement, colored_approach
+from an_sm_states.sm_displacement import Displacement, colored_approach, Approach
 from strat_const import PARK_POS
 
 #################################################################
@@ -51,10 +51,10 @@ class CalcParkPos(smach.State):
 
         ## Move to parking position
         park_id = get_pickup_id("parking zone", userdata)
-        x_dest, y_dest, _ = PARK_POS[park_id]
+        x_dest, y_dest, theta = PARK_POS[park_id]
         # Modif pour la strat du dernier match 
 
-        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, DspOrderMode.AVOIDANCE)
+        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL, theta_final=-theta)
         return 'success'
     
     

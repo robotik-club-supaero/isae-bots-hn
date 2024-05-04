@@ -46,18 +46,27 @@ from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
 # import utils
-from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord
+from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord, debug_print
 
 # import comms
-from disp_comm import init_comm
-from disp_comm import COM_STRAT, CMD_TEENSY
-from disp_comm import pub_strat, pub_teensy
+from disp_comm import init_comm, SIMULATION, COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_path
 
 #################################################################
 #																#
 # 						DISPLACEMENT NODE						#
 #																#
 #################################################################
+
+def publish_path(path):
+    """Publish path to the interfaceNode."""    
+    if SIMULATION:
+        path_coords = []
+        for k in range (len(path)):
+            path_coords.append(path[k][0])
+            path_coords.append(path[k][1])
+            if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
+        pub_path.publish(data = path_coords)  # liste des coordonnees successives
+        log_info("## Simulation ## Path published : {}".format(path_coords))
 
 class DisplacementNode:
 
@@ -94,7 +103,6 @@ class DisplacementNode:
         self.refresh_update_obstacle = 0.5
         self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
-        self.stop = False
         self.current_pos = [0,0,0]                # La position actuelle du robot
 
         # ## Variables de mode de DEPLACEMENT
@@ -109,7 +117,7 @@ class DisplacementNode:
         self.is_first_accurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
-        self.blocked = False                     # Le robot est arrete a cause d'un obstacle
+        self.bypassing = False
 
 #######################################################################
 # Fonctions de construction de path
@@ -181,6 +189,43 @@ class DisplacementNode:
         self.path = result['built path']
         return result
 
+    def move_forward(self):
+
+        if self.bypassing:
+            log_info("Obstacle found ahead. Computing new path to bypass it...")
+
+        begin_time = time.perf_counter()
+
+        result = self.build_path(self.avoid_mode, self.is_first_accurate)
+
+        debug_print('c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
+
+        ## Si on a trouvé un chemin
+        if result['success']:
+            log_info("Found path: \n"+str(self.path))
+            # Affichage du path
+            if len(self.path) > 0:
+                publish_path(self.path)
+            if self.avoid_mode:
+                #Calcul du point de reset des marges d'évitement
+                self.set_avoid_reset_point()
+
+            self.move = True 
+            self.next_point(False)
+
+        ## Sinon, erreur de la recherche de chemin
+        else:
+            if self.bypassing:
+                log_warn("ERROR - Reason: Cannot bypass obstacle")
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+            elif result['message'] == "Dest Blocked":
+                log_warn("ERROR - Reason: " + result['message'])
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+            else:
+                #NOTE no path found
+                log_warn("ERROR - Reason: " + result['message'])
+                # Retour de l'erreur a la strat
+                pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
     def next_point(self, just_arrived):
         """Envoie une commande du prochain point a la Teensy.
@@ -292,7 +337,11 @@ class DisplacementNode:
         Il s'agit du point à partir duquel on sera suffissament loin de
         l'obstacle jusqu'a la fin du trajet."""
 
-        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()[0]
+        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()
+        if avoid_robot_pos is None:
+            return # opponent position not known
+        avoid_robot_pos = avoid_robot_pos[0]
+        
         pos_list = [self.current_pos] + self.path
         i = len(pos_list) -1
         work = True

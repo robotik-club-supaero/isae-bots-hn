@@ -131,7 +131,7 @@ class DspCallback(IntEnum):
     PATH_NOT_FOUND = -1
     SUCCESS = 0
     PATH_BLOCKED = 1
-    RESTART = 2
+    RESTART = 2 # DEPRECATED - no longer published TODO cleanup
     DESTINATION_BLOCKED = 3
     
     

@@ -68,7 +68,10 @@ class Maps:
             return self.standard_node_list
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos):
-        self.obstacle_list["robot_pos"] = obstacle_robot_pos
+        if obstacle_robot_pos is not None:
+            self.obstacle_list["robot_pos"] = obstacle_robot_pos
+        else:
+            self.obstacle_list.pop("robot_pos", None)
     
     def get_obstacle_robot_pos(self):
         return self.obstacle_list.get("robot_pos", None)

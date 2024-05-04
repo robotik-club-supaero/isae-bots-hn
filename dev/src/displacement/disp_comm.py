@@ -55,11 +55,16 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 NOMINAL_SPEED = 80
 
 DIST_MIN = 50
-MAX_RANGE = 600  
 
 RADIUS_ROBOT_OBSTACLE = 280
 
-STOP_RANGE_X = 600
+SLOWDOWN_RANGE = 700
+
+BYPASS_RANGE_X = 500
+BYPASS_RANGE_Y = 200
+
+STOP_RANGE_X = 100
+STOP_RANGE_Y = 50
 
 COEFF_ANGLES = 0.57735026 # pi/6 | 30°
 
@@ -106,8 +111,8 @@ COM_STRAT = {
     "asserv error":         -2,     # Erreur de l'asserv (difficile à gérer)
     "path not found":       -1,     # La recherche de chemin n'a pas aboutie
     "ok pos":               0,      # Le robot est arrivé au point demandé
-    "stop":                 1,      # Le robot s'arrête
-    "go":                   2,      # Le robot redémarre
+    "stop":                 1,      # Le robot s'arrête # DEPRECATED, no longer published TODO cleanup
+    "go":                   2,      # Le robot redémarre # DEPRECATED, no longer published TODO cleanup
     "stop blocked":         3,       # On s'arrete car la destination est bloquee par l'adversaire
     "possible path":        4
 }
@@ -261,58 +266,7 @@ def callback_strat(msg):
             p_disp.pathfinder.set_goal(dest_pos)
             p_disp.pathfinder.set_init(curr_pos)
 
-        begin_time = time.perf_counter()
-
-        result = p_disp.build_path(p_disp.avoid_mode, p_disp.is_first_accurate)
-
-        debug_print('c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
-
-        ## Si on a trouvé un chemin
-        if result['success']:
-            if p_disp.stop:
-                log_info("New Possible Path")
-                p_disp.stop = False
-                pub_strat.publish(Int16(COM_STRAT["go"]))
-            else :
-                log_info("Found path: \n"+str(p_disp.path))
-                # Affichage du path
-                if len(p_disp.path) > 0:
-                    publish_path(p_disp.path)
-                if p_disp.avoid_mode:
-                    #Calcul du point de reset des marges d'évitement
-                    p_disp.set_avoid_reset_point()
-            ## Sinon, erreur de la recherche de chemin
-                p_disp.move = True 
-                p_disp.next_point(False)
-        else:       
-            if p_disp.stop:
-                log_warn("ERROR - Reason: Path Blocked")
-                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-            elif result['message'] == "Dest Blocked":
-                log_warn("ERROR - Reason: " + result['message'])
-                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-
-            else:
-                #NOTE no path found
-                log_warn("ERROR - Reason: " + result['message'])
-                # Retour de l'erreur a la strat
-                pub_strat.publish(Int16(COM_STRAT["path not found"]))
-
-                # Retry without opponents chaos
-                if p_disp.avoid_mode:
-                    result = p_disp.build_path(p_disp.avoid_mode, p_disp.is_first_accurate)
-                    if result['success']:
-                        log_info("Path found without chaos: [{}]".format(p_disp.path))
-                        p_disp.set_avoid_reset_point()
-                    else:
-                        #TODO remove chaos stuff
-                        log_info("Error without chaos: {}".format(result['message']))
-                else:
-                    log_info("Error: {}".format(result['message']))
-
-    ## On envoie le premier point a la Teensy
-    p_disp.move = True 
-    p_disp.next_point(False)
+        p_disp.move_forward()
 
 def callback_lidar(msg):    
     """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
@@ -322,71 +276,60 @@ def callback_lidar(msg):
     if (not p_disp.avoid_mode) or p_disp.matchEnded: 
         return
 
+    if msg.data[0] not in [0,1]:
+        log_errs("Wrong msg from callback_obstacle.")
+        return
+
     ## Initialise parametre d'obstacle
     obstacle_info = np.zeros(5)     # infos sur l'obstacle
-    obstacle_seen = False           # doit-on s'arreter ?
-    obstacle_stop = False
-    is_dest_blocked = False           # la destination est-elle accessible ?
+    closest_obs = None # dist, x_loc, y_loc
 
     ## TRAITEMENT DE CHAQUE OBSTACLE
     nb_obstacles = (msg.layout.dim[0]).size
-    if nb_obstacles == 0:
-        # On est pas dans l'état bloqué et la pos ennemie est quelconque. On publie la vitesse nominale.
-        p_disp.pathfinder.set_robot_to_avoid_pos([-1000, -1000], 0)    
-        p_disp.blocked = False
-        p_disp.stop = False
-        pub_speed.publish(data=NOMINAL_SPEED)
-    
+
     for i in range(nb_obstacles):
-        # Si on est déjà à l'arrêt on ne rentre pas dans la boucle.
-        if obstacle_stop: break
         for j in range(5):
             # Params de l'obstacle
             obstacle_info[j] = np.array(msg.data[5 * i + j + 1])
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
-
-        #log_info("DIST OBS :" + str(dist_obs))
+        if dist_obs <= DIST_MIN: continue # WHY???
         x_loc_obs, y_loc_obs = to_robot_coord(p_disp.current_pos[0], p_disp.current_pos[1], p_disp.current_pos[2], obstacle_info)
 
-####################################################################################################################################
-####################################################################################################################################
+        if x_loc_obs > 0 and (closest_obs is None or dist_obs < closest_obs[0]):
+            closest_obs = (dist_obs, x_loc_obs, y_loc_obs)
+            p_disp.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE) # TODO center
+
+    if p_disp.forward: 
+        #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
+        #-> NE PAS CHERCHER DE PATH INUTILEMENT SI LA DESTINATION EST DANS LA ZONE DE BLOCAGE DE L'OBSTACLE
         
-        if p_disp.forward: 
-            #-> FILTRER LES OBSTACLES AUX COORDONNEES EN DEHORS (SI CA MARCHE PAS DEJA)
-            #-> NE PAS CHERCHER DE PATH INUTILEMENT SI LA DESTINATION EST DANS LA ZONE DE BLOCAGE DE L'OBSTACLE
-            if msg.data[0] not in [0,1]:
-                log_errs("Wrong msg from callback_obstacle.")
-                continue
-            #-> Si lidar : on regarde les adversaires devant !
-            #-> On setup la vitesse suivant la pos locale du 
-            #   robot adverse
+        #-> Si lidar : on regarde les adversaires devant !
+        #-> On setup la vitesse suivant la pos locale du 
+        #   robot adverse
+        if closest_obs is not None:
+            dist_obs, x_loc_obs, y_loc_obs = closest_obs
+
             if msg.data[0] == 0:
-                if dist_obs <= DIST_MIN: continue
-                obstacle_seen = True
-                if dist_obs <= STOP_RANGE_X:
-                    if x_loc_obs >= abs(y_loc_obs) : 
-                       # log_info("Adversary Detected In Front")
-                        obstacle_stop = True
-                        p_disp.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
-                                                
-        # Update de la vitesse??
-        if not p_disp.blocked :
-            if obstacle_stop:
-                p_disp.blocked = True
-                p_disp.stop = True 
-                pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))         
-                log_warn("Object Detected : Need To Wait")
-                p_disp.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE)
-                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                # We trust the path finder to avoid the obstacle
+                # Bypassing may require going a little closer to the obstacle before moving away                i   
+                if dist_obs <= STOP_RANGE_X or (x_loc_obs < STOP_RANGE_X and abs(y_loc_obs) < STOP_RANGE_Y):
+                    log_warn("Object Detected Too Close : Interrupting move")
+                    pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                elif not p_disp.bypassing and (dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y)):
+                    log_warn("Object Detected : Initiating bypass")
+                    p_disp.bypassing = True
+                    pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    p_disp.move_forward() # Recompute path with updated opponent pos
 
-        if dist_obs > STOP_RANGE_X:
-            p_disp.blocked = False
+            speed = NOMINAL_SPEED
+            if dist_obs < SLOWDOWN_RANGE:
+                speed_coeff = 1 - (dist_obs-SLOWDOWN_RANGE)/(STOP_RANGE_X-SLOWDOWN_RANGE)
+                speed_coeff = max(0.5, min(1, speed_coeff))
+                speed *= speed_coeff
 
-        speed_coeff = (dist_obs-MAX_RANGE)/(STOP_RANGE_X-MAX_RANGE)
-        speed_coeff = min(0.5, max(0, speed_coeff))
-        speed = NOMINAL_SPEED - int(speed_coeff*NOMINAL_SPEED)
-        pub_speed.publish(data=speed) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
+            pub_speed.publish(data=int(speed)) ## On prévient le BN qu'on a vu un truc et qu'il faut ralentirmaxSpeedLin
 
 
 def callback_init_pos(msg):
@@ -396,7 +339,7 @@ def callback_init_pos(msg):
     elif INIT_ZONE == 1:
         x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
     elif INIT_ZONE == 2:
-        x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS2[2]
+        x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS3[2]
     
     if p_disp.color == 1:
         y = 3000 - y
@@ -428,17 +371,6 @@ def callback_end(msg):
 def callback_delete(msg):
     if not ok_comm: return
     p_disp.pathfinder.remove_obstacle(msg.data)
-
-def publish_path(path):
-    """Publish path to the interfaceNode."""    
-    if SIMULATION:
-        path_coords = []
-        for k in range (len(path)):
-            path_coords.append(path[k][0])
-            path_coords.append(path[k][1])
-            if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
-        pub_path.publish(data = path_coords)  # liste des coordonnees successives
-        log_info("## Simulation ## Path published : {}".format(path_coords))
 
 def publish_grid(grid):
     """Publish grid to the interfaceNode."""

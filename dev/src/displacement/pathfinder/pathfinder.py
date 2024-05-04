@@ -54,7 +54,6 @@ class Pathfinder:
         self.table_map = Maps(nc.make_node_list(color),nc.make_node_list(avoid),oc.make_obstacle_list(color))
         self.init_pos = None
         self.goal_pos = None
-        self.robot_to_avoid_pos = None        
         
         self.color = color   # Color : 0 Home | 1 Away | 
         self.max_astar_time = int(literal_eval(READER.get("PATHFINDER", "max_astar_time")))
@@ -66,13 +65,14 @@ class Pathfinder:
         self.goal_pos = pos
 
     def set_robot_to_avoid_pos(self, pos, radius):
-        self.robot_to_avoid_pos = [pos, radius]
-        self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
-
+        self.table_map.set_obstacle_robot_pos(ObstacleCirc(pos[0], pos[1], radius) if pos is not None else None)
 
     def get_robot_to_avoid_pos(self):
-        return self.robot_to_avoid_pos
-    
+        robot = self.table_map.get_obstacle_robot_pos()
+        if robot is None: return None
+        return [[robot.get_x_center(), robot.get_y_center()], robot.get_radius()]
+
+
     def get_table_map(self):
         return self.table_map
 
@@ -88,13 +88,7 @@ class Pathfinder:
 #######################################################################
         
     def get_path(self, isAvoid, isFirstAccurate):
-        if isAvoid:
-            if self.robot_to_avoid_pos is None:
-                self.set_robot_to_avoid_pos([-1000, -1000], 0)
-            self.table_map.set_obstacle_robot_pos(ObstacleCirc(self.robot_to_avoid_pos[0][0], self.robot_to_avoid_pos[0][1], self.robot_to_avoid_pos[1]))
-            self.table_map.set_avoid(True)
-        else:
-            self.table_map.set_avoid(False)
-            
+        self.table_map.set_avoid(isAvoid)
+
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
         return a_star(self.init_pos, self.goal_pos, self.table_map, isFirstAccurate, self.max_astar_time)

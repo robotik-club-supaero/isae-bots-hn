@@ -53,13 +53,16 @@ def colored_destination(color, x_d, y_d, t_d, w):
 	x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
 	return Quaternion(x_d, y_d, t_d, w.value)
 
-def colored_approach(userdata, xd, yd, margin, phase):	 
-	x, y, _ = adapt_pos_to_side(userdata.robot_pos[0].x, userdata.robot_pos[0].y, 0, userdata.color)  
+def colored_approach(userdata, xd, yd, margin, phase, theta_final=None):
+	x, y, _ = adapt_pos_to_side(userdata.robot_pos[0].x, userdata.robot_pos[0].y, 0, userdata.color)
 	d = norm([xd - x, yd - y])
 	
 	x_dest = xd + phase.value * margin/d*(xd - x)
 	y_dest = yd + phase.value * margin/d*(yd - y)
-	theta_dest = math.atan2(yd - y,xd - x)
+	if theta_final is None:
+		theta_dest = math.atan2(yd - y,xd - x)
+	else:
+		_, _, theta_dest = adapt_pos_to_side(0, 0, theta_final, userdata.color)
 	
 	return colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
 
@@ -116,54 +119,21 @@ class Displacement(smach.State):
 				log_errs("Displacement result: no path found with PF.")
 				return 'fail'
 
+			if userdata.cb_depl[0] == DspCallback.PATH_BLOCKED:
+				log_errs("Displacement result: path blocked.")
+				return 'fail'
+
+			if userdata.cb_depl[0] == DspCallback.DESTINATION_BLOCKED:
+				log_errs("Displacement result: destination blocked.")
+				return 'fail'
+
 			if userdata.cb_depl[0] == DspCallback.SUCCESS:
 				log_info('Displacement result: success displacement')
 				return 'success'
 
-			if userdata.cb_depl[0] == DspCallback.PATH_BLOCKED:
-				stop_time = time.time()
-				while userdata.cb_depl[0] != DspCallback.RESTART and time.time()-stop_time < STOP_PATH_TIMEOUT:
-					time.sleep(0.01)
-					if self.preempt_requested():
-						self.service_preempt()
-						return 'preempted'
-
-				# Once out of the waiting loop
-				if userdata.cb_depl[0] == DspCallback.RESTART:	# on est repartis et on attend
-					log_info('Displacement restart ...')
-					userdata.cb_depl[0] = DspCallback.PENDING
-					return 'fail' #NOTE redo
-				# Else, we are still blocked...
-				return 'fail'
-
-			if userdata.cb_depl[0] == DspCallback.DESTINATION_BLOCKED:
-				log_info("RECHERCHE DE CHEMIN")
-				userdata.cb_depl[0] = DspCallback.PENDING
-				disp_pub.publish(dest)
-				stop_time = time.time()
-				
-				while userdata.cb_depl[0] != DspCallback.RESTART and time.time()-stop_time < STOP_DEST_TIMEOUT:
-					time.sleep(0.01)
-
-					if self.preempt_requested():
-						self.service_preempt()
-						return 'preempted'
-					
-					if userdata.cb_depl[0] == DspCallback.DESTINATION_BLOCKED:
-						disp_pub.publish(dest)
-										
-				if userdata.cb_depl[0] == DspCallback.RESTART:
-					log_info('Displacement restart ...')
-					userdata.cb_depl[0] = DspCallback.PENDING
-					return 'fail' #NOTE redo
 			
-				log_warn('Displacement result: dest is blocked.')
-				return 'fail'
-
-		if time.time() - init_time >= DISP_TIMEOUT :
-			log_errs('Timeout reached - [displacement]')
-			return 'fail'
-			# return actionError('fail')
+		log_errs('Timeout reached - [displacement]')
+		return 'fail'
 
 class MoveTo(AutoSequence):
     def __init__(self, destination):

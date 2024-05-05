@@ -152,7 +152,7 @@ class ISBNode:
             # data = self.topServerSocket.recv(1024)
             callback = receiveCallback(self.topServerSocket)
                                     
-            print("callback", callback)
+            # print("callback", callback)
 
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             print("Connexion to server stopped")
@@ -168,7 +168,7 @@ class ISBNode:
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
                 
-        print("callback", callback_data)
+        # print("callback", callback_data)
         
         res = callback_data[1:]
             
@@ -193,7 +193,7 @@ class ISBNode:
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
                     
-        print("callback trigger", callback_data)
+        # print("callback trigger", callback_data)
         
         res = callback_data[1]
 
@@ -237,7 +237,6 @@ class ISBNode:
                     data = [TopServerRequest.REQUEST_PLAY_SOUND, "cestParti"]
                     sendRequest(self.topServerSocket, data)
                     callback = receiveCallback(self.topServerSocket)
-                    print("callback : ", callback)
 
                 # Send color message
                 if self.isButtonTriggered[COLOR_BUTTON_ID]:

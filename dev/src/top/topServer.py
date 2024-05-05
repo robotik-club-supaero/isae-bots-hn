@@ -442,7 +442,7 @@ class TopServer():
                 request_type = TopServerRequest(request_list[0])
                 request_params = request_list[1:]
                 
-                print(f"Got request {request_type} with arguments {request_list[1:]}")
+                # print(f"Got request {request_type} with arguments {request_list[1:]}")
 
                 # request cases
                 if request_type == TopServerRequest.REQUEST_READ_BUTTONS:

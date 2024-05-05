@@ -14,12 +14,10 @@
 import os
 import time
 import vlc
+import threading
 
-from .speaker_const import soundDict
+from .speaker_const import soundDict, SOUNDS_PATH, BLANK_SOUND_FILE
 
-
-# SOUNDS_PATH = os.path.join(os.path.dirname(__file__),'sounds/')
-SOUNDS_PATH = '/app/dev/src/top/speaker/sounds/'
 
 class Speaker():
     
@@ -33,8 +31,32 @@ class Speaker():
         
         self.media_player = vlc.MediaPlayer()
         
-        self.media_player.audio_set_volume(100)
+        # thread to play a counstant blank sound to prevent the speaker to do any poppins sounds
+        self.constantBlankSoundStopEvent = threading.Event()
+        self.constantBlankSoundThread = threading.Thread(target=self.constantBlankSound, args=(self.constantBlankSoundStopEvent,))
         
+        self.constantBlankSoundThread.start()
+        
+        self.media_player.audio_set_volume(100) # default volume
+        
+        
+    def constantBlankSound(self, stop_event):
+        
+        player = vlc.Instance()
+        
+        mediaList = player.media_list_new()
+        mediaList.add_media(SOUNDS_PATH + BLANK_SOUND_FILE)
+        listPlayer = player.media_list_player_new()
+        listPlayer.set_media_list(mediaList)
+        listPlayer.set_playback_mode(vlc.PlaybackMode(1))
+        
+        listPlayer.play()
+                
+        # Wait for stop event to end sound
+        while not stop_event.is_set():
+            time.sleep(0.1)
+
+        listPlayer.stop()        
         
     
     
@@ -54,10 +76,14 @@ class Speaker():
         
         
         
-        
     def playSound(self, sound):
         
-        soundFile = soundDict[sound]
+        try:
+            soundFile = soundDict[sound]
+        except KeyError:
+            print("ERROR : key is not in SoundDict")
+            return
+            
         soundPath = SOUNDS_PATH + soundFile
         
         # check if the sound file exists
@@ -103,3 +129,4 @@ class Speaker():
         #TODO mute or unmute
         
         # self.media_player.audio_set_mute()
+        

@@ -201,7 +201,7 @@ class RoslaunchThread(threading.Thread):
         os.kill(roslaunchPID, signal.SIGINT)
         
         print("Waiting for Roslaunch to shut down ...")
-        while ROSprocess.poll() is None:  # ROSprocess shuts down when roslaunch has finished shutting down
+        while ROSprocess.poll() is None and not self.stopThreadOrder:  # ROSprocess shuts down when roslaunch has finished shutting down
             time.sleep(0.1)
             
         # roslaunch has shut down
@@ -276,6 +276,9 @@ class TopServer():
     
         self.speaker = Speaker()
         
+        # self.watchButtonStopEvent = threading.Event()
+        # self.speakerConstantSoundThread = threading.Thread(target=self.watchButton, args=(self.watchButtonStopEvent,))
+        
         self.logOled = Oled()
         
         self.rosLaunchStopEvent = threading.Event()
@@ -317,7 +320,7 @@ class TopServer():
         
         self.logOled.set_bgImage('SRC_OledLogo2.ppm')
         
-    
+
     def watchButton(self, stop_event):
         '''
         The LED button plays an important role in the TopServer so it has its own thread
@@ -501,7 +504,7 @@ class TopServer():
             self.closeServer(exitCode=1)
             return
             
-        maxclients = 10
+        maxclients = 20  #TODO ensure
         self.serverSocket.listen(maxclients)
                 
         try:
@@ -575,6 +578,13 @@ class TopServer():
 def main():
     
     topserver = TopServer()
+        
+    # try:
+    #     allowSpeakerOutput = subprocess.check_output(['export', 'XDG_RUNTIME_DIR=/run/user/1000;', '/usr/bin/pactl', 'load-module', 'module-native-protocol-tcp' 'port=34567']).decode('utf-8')
+    #     # allowSpeakerOutput = subprocess.check_output(['pactl', 'load-module', 'module-native-protocol-tcp', 'port=34567']).decode('utf-8')
+    #     print("allowSpeakerOutput : ", allowSpeakerOutput)
+    # except subprocess.CalledProcessError:
+    #     print("ERROR in allowSpeakerOutput")
     
     topserver.speaker.setMute(False)
     # topserver.speaker.setVolume(80)

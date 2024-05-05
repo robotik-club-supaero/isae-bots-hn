@@ -300,8 +300,15 @@ class TopServer():
     
     
     def initButton(self):
-        
-        self.nanoCom.establish_communication()
+                
+        init_callback = self.nanoCom.establish_communication()
+        if init_callback == 1:
+            print("Couldn't connect to the nano right away, retying once")
+            init_callback = self.nanoCom.establish_communication()
+            if init_callback == 1:
+                print("ERROR : Couldn't connect to the nano after one retry")
+                #TODO be more robust
+            
         
         self.buttonState = self.nanoCom.read_button_state()
         self.previousButtonState = self.buttonState

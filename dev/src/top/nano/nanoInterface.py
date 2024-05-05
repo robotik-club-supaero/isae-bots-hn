@@ -16,6 +16,7 @@ class NanoCommand(IntEnum):
     
     
 class NanoCallback(IntEnum):
+    CLB_CONNEXION_FAILED = -1
     CLB_OK = 0
     CLB_KO = 1
     CLB_INIT_OK = 2

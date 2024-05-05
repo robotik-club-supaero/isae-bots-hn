@@ -42,7 +42,11 @@ class ArduinoCommunicator:
         """
         Returns a NanoCallback object or None for an event
         """
-        byte_received = self.ser.read(size=1)
+        try:
+            byte_received = self.ser.read(size=1)
+        except serial.serialutil.SerialException:
+            return NanoCallback.CLB_CONNEXION_FAILED
+        
         res = int.from_bytes(byte_received, byteorder='little', signed=False)
         
         # check if data is an event and not a callback
@@ -87,7 +91,9 @@ class ArduinoCommunicator:
             
             if nanoCallback == NanoCallback.CLB_INIT_OK:
                 print("Connection established")
-                return
+                return 0
+            elif nanoCallback == NanoCallback.CLB_CONNEXION_FAILED:
+                return 1
             
             time.sleep(0.01)
             

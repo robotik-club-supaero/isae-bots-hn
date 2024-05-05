@@ -118,7 +118,10 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime):
                     else:
                         j = h
 
-                return ([path[0]] if i == 0 else [path[0], path[i]]) + reduce_path(tableMap, path[i+1:])
+                if i == 0:
+                    return [path[0]] + reduce_path(tableMap, path[i+1:])
+                else:
+                    return [path[0]] + reduce_path(tableMap, path[i:])
 
         return path
 

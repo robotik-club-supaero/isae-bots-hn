@@ -47,10 +47,7 @@ class ObstacleTria:
     def get_name(self):
         return self.name
 
-    def is_node_in(self, node):
-        x = node.get_x()
-        y = node.get_y()
-
+    def is_node_in(self, x, y):
         ## Calcul des produits vectoriels 
         a = (self.p2[0]-x)*(self.p3[1]-y) - (self.p2[1]-y)*(self.p3[0]-x)
         b = (self.p3[0]-x)*(self.p1[1]-y) - (self.p3[1]-y)*(self.p1[0]-x)
@@ -61,4 +58,5 @@ class ObstacleTria:
             return True
         return False
 
-    
+    def crosses(self, line_vect):
+        raise NotImplementedError("Triangle obstacles not implemented yet")

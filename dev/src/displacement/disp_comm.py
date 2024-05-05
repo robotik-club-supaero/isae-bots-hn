@@ -398,8 +398,8 @@ def callback_init_pos(msg):
     p_disp.current_pos = [x, y, z]
 
     ## Init pathfinder with correct color
-    p_disp.pathfinder = Pathfinder(p_disp.color) #TODO paramètre à supprimer, une seule grid commune pour le pathfinder
-    publish_grid(p_disp.pathfinder.table_map.get_node_list())
+    p_disp.pathfinder = Pathfinder(p_disp.color) 
+    publish_grid(p_disp.pathfinder.table_map.get_grid().reshape(-1,2))
 
 
 def callback_position(msg):
@@ -426,8 +426,8 @@ def publish_grid(grid):
     if SIMULATION:
         node_coords = []
         for n in range(len(grid)):
-            node_coords.append(grid[n].get_x())
-            node_coords.append(grid[n].get_y())
+            node_coords.append(grid[n,0])
+            node_coords.append(grid[n,1])
         pub_grid.publish(data=node_coords)
         log_info("## Simulation ## Grid published to interface.")
 

@@ -45,8 +45,9 @@ class CalcPositionningPots(smach.State):
                                 output_keys=['next_move'])
         
     def execute(self, userdata):    
-        pots_id = get_pickup_id("pots", userdata)        
-
+        pots_id = get_pickup_id("pots", userdata)
+        remove_obs.publish(f"pot{pots_id}") # FIXME if action fails, obstacle is not restored
+        
         xp, yp, thetap = POTS_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_APPROACH_POTS)
              
@@ -63,7 +64,6 @@ class CalcTakePots(smach.State):
         
     def execute(self, userdata):    
         pots_id = get_pickup_id("pots", userdata)
-        remove_obs.publish(f"pot{pots_id}") # FIXME if action fails, obstacle is not restored
 
         xp, yp, thetap = POTS_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_TAKE_POTS)

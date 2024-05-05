@@ -23,11 +23,12 @@
 #
 #######################################################################
 
+import numpy as np
+
 from pathfinder.maps import Maps
 from pathfinder.astar import a_star
 from pathfinder.exceptions import PathNotFoundError
 
-import pathfinder.nodes_creator as nc
 import pathfinder.obstacles_creator as oc
 from pathfinder.obstacle_rect import ObstacleRect
 from pathfinder.obstacle_circ import ObstacleCirc
@@ -51,13 +52,15 @@ class Pathfinder:
         """Initialization of Pathfinder."""
         
         avoid = 2
-        self.table_map = Maps(nc.make_node_list(color),nc.make_node_list(avoid),oc.make_obstacle_list(color))
+        self.table_map = Maps(oc.make_obstacle_list(color))
         self.init_pos = None
         self.goal_pos = None
-        
+
         self.color = color   # Color : 0 Home | 1 Away | 
         self.max_astar_time = int(literal_eval(READER.get("PATHFINDER", "max_astar_time")))
-        
+
+        self.weights_buf = np.zeros(self.table_map.grid.shape[:2], dtype=np.float32)
+
     def set_init(self, pos):
         self.init_pos = pos
         
@@ -71,7 +74,6 @@ class Pathfinder:
         robot = self.table_map.get_obstacle_robot_pos()
         if robot is None: return None
         return [[robot.get_x_center(), robot.get_y_center()], robot.get_radius()]
-
 
     def get_table_map(self):
         return self.table_map
@@ -87,8 +89,8 @@ class Pathfinder:
 #                            COMPUTE PATH 
 #######################################################################
         
-    def get_path(self, isAvoid, isFirstAccurate):
+    def get_path(self, isAvoid, _isFirstAccurate):
         self.table_map.set_avoid(isAvoid)
 
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
-        return a_star(self.init_pos, self.goal_pos, self.table_map, isFirstAccurate, self.max_astar_time)
+        return a_star(self.init_pos[:2], self.goal_pos, self.table_map, self.weights_buf, self.max_astar_time)

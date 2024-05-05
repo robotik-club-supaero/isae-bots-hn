@@ -24,10 +24,10 @@
 #######################################################################
 
 import os
+import numpy as np
 from ast import literal_eval
 
-from disp_utils import READER
-
+from disp_utils import READER, GRID_INTERVAL
 #################################################################################################
 """ if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
@@ -44,28 +44,31 @@ class Maps:
 # Methods
 #######################################################################
 
-    def __init__(self, standard_node_list, avoiding_node_list, obstacle_list):
+    def __init__(self, obstacle_list):
         """Initialization of Maps."""
         self.robot_width = int(literal_eval(READER.get("ROBOT", "robot_larg")))
 
         self.obstacle_list = obstacle_list            # Dict des obstacles
-        self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        
-        self.avoiding_node_list = avoiding_node_list    # Liste des noeud à utiliser lors de l'évitement
+
+        x = np.linspace(0, 2000, 2000//GRID_INTERVAL)
+        y = np.linspace(0, 3000, 3000//GRID_INTERVAL)
+        self.grid = np.zeros((x.shape[0], y.shape[0], 2), dtype=np.float32)
+
+        x, y = np.meshgrid(x, y, copy=False, indexing='ij')
+        self.grid[...,0] = x
+        self.grid[...,1] = y
 
         # Choix map classique ou map d'évitement    #### ATRANSFORMER EN ENTIER POUR AVOIR PLUS QUE 2 MAPS ####
         self.avoid = False
+   
+    def get_grid(self):
+        return self.grid
 
     def get_obstacles(self):
         return self.obstacle_list.values()
         
     def remove_obstacle(self, obstacle_id):
         self.obstacle_list.pop(obstacle_id, None)
-    
-    def get_node_list(self):
-        if self.avoid:
-            return self.avoiding_node_list
-        else:
-            return self.standard_node_list
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos):
         if obstacle_robot_pos is not None:

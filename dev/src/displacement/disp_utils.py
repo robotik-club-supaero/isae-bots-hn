@@ -32,7 +32,6 @@ import numpy as np
 
 import configparser
 from ast import literal_eval
-from pathfinder.obstacle_circ import ObstacleCirc
 
 #################################################################
 #																#
@@ -71,6 +70,7 @@ robotL = int(READER.get("ROBOT", "robot_long"))
 robotDiag = np.linalg.norm([robotW/2, robotL/2])
 MARGIN = robotDiag // 2 + 20
 
+GRID_INTERVAL = literal_eval(READER.get("PATHFINDER", "grid_interval"))
 
 ONE_PI = np.pi
 HLF_PI = np.pi/2

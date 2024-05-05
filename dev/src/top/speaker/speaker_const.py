@@ -13,7 +13,8 @@ soundDict = {
     'startRos' : 'startup2.mp3',
     'endRos' : 'exit1.mp3',
     'RosReady' : 'windows/session_in.mp3',
-    'RosEnded' : 'windows/session_out.mp3'
+    'RosEnded' : 'windows/session_out.mp3',
+    
+    # match startup sounds
+    'cestParti' : 'matchStartup/cestParti.mp3'
 }
-
-

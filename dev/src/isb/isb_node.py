@@ -24,6 +24,7 @@ import time
 import rospy
 import signal
 import socket
+import json
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
 from geometry_msgs.msg import Quaternion
 
@@ -33,7 +34,7 @@ from isb_hal import initPin, readPin, writePin
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 startdir = os.path.dirname(currentdir) #NOTE apply the number of times to go to the src directory
 sys.path.insert(0,startdir)
-from top.top_const import TopServerRequest, TopServerCallback, TOPSERVER_PORT
+from top.top_const import sendRequest, receiveCallback, TopServerRequest, TopServerCallback, TOPSERVER_PORT
 
 #################################################################
 #                                                               #
@@ -133,6 +134,10 @@ class ISBNode:
   
         self.topServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.topServerSocket.connect(("127.0.0.1", TOPSERVER_PORT))
+        
+        # init all LEDs to blinking
+        for k in range(NB_LEDS):
+            self.writeLed(k, 2)
 
         log_info("ISB node is ready")
 
@@ -141,14 +146,13 @@ class ISBNode:
     def writeLed(self, led_id, state):
     
         try:
-            self.topServerSocket.sendall(bytes([TopServerRequest.REQUEST_WRITE_LED, led_id, state]))
-            data = self.topServerSocket.recv(1024)
-            
-            # print(f"Received {list(bytes(data))}")
-            
-            callback = TopServerCallback(data[0])
-            
-            # print("callback", callback)
+            data = [TopServerRequest.REQUEST_WRITE_LED, led_id, state]
+            sendRequest(self.topServerSocket, data)
+            # self.topServerSocket.sendall(pickle.dumps([TopServerRequest.REQUEST_WRITE_LED.value, led_id, state]))
+            # data = self.topServerSocket.recv(1024)
+            callback = receiveCallback(self.topServerSocket)
+                                    
+            print("callback", callback)
 
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             print("Connexion to server stopped")
@@ -157,46 +161,41 @@ class ISBNode:
     def readButtons(self):
         
         try:            
-            self.topServerSocket.sendall(bytes([TopServerRequest.REQUEST_READ_BUTTONS]))
-            data = self.topServerSocket.recv(1024)
-            
-            # log_info(f"Received {list(bytes(data))}")
+            data = [TopServerRequest.REQUEST_READ_BUTTONS]
+            sendRequest(self.topServerSocket, data)
+            callback_data = receiveCallback(self.topServerSocket)
         
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
+                
+        print("callback", callback_data)
         
-        callback = TopServerCallback(data[0])
-        
-        # print("callback", callback)
-        
-        res = data[1:]    
+        res = callback_data[1:]
             
         for k in range(NB_BUTTONS):
 
             # update button triggered list
             self.isButtonTriggered[k] = self.buttonStates[k] != res[k]
-            self.buttonStates[k] = res[k]
 
-            # # apply state to corresponding led
-            self.writeLed(BUTTON_LEDS_IDS[k], self.buttonStates[k])
+            # # apply state to corresponding led if it was triggered
+            if self.isButtonTriggered[k]:
+                self.buttonStates[k] = res[k]
+                self.writeLed(BUTTON_LEDS_IDS[k], self.buttonStates[k])
 
 
     def readTrigger(self):
         
         try:            
-            self.topServerSocket.sendall(bytes([TopServerRequest.REQUEST_READ_TRIGGER]))
-            data = self.topServerSocket.recv(1024)
-            
-            # log_info(f"Received {list(bytes(data))}")
-        
+            data = [TopServerRequest.REQUEST_READ_TRIGGER]
+            sendRequest(self.topServerSocket, data)
+            callback_data = receiveCallback(self.topServerSocket)
+                    
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
-            
-        callback = TopServerCallback(data[0])
+                    
+        print("callback trigger", callback_data)
         
-        # print("callback trigger", callback)
-        
-        res = data[1]
+        res = callback_data[1]
 
         # only change trigger state if previous state is not -1
         if res == 1:
@@ -234,7 +233,11 @@ class ISBNode:
                     self.match = True
                     self.pubStart.publish(data=1)
                     self.pubStart.publish(data=1)  # another one to be sure
-
+                    
+                    data = [TopServerRequest.REQUEST_PLAY_SOUND, "cestParti"]
+                    sendRequest(self.topServerSocket, data)
+                    callback = receiveCallback(self.topServerSocket)
+                    print("callback : ", callback)
 
                 # Send color message
                 if self.isButtonTriggered[COLOR_BUTTON_ID]:

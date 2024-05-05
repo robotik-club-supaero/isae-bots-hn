@@ -19,6 +19,7 @@ import socket
 import signal
 import subprocess
 import re
+import json
 
 #### Nano ####
 from nano.ArduinoCommunicator import ArduinoCommunicator
@@ -34,7 +35,8 @@ from isb.ISBManager import ISBManager
 from oled.Oled_pi import Oled
 
 from top_const import TopServerRequest, TopServerCallback, ButtonColorMode, ButtonPressState, RosLaunchState, \
-    TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE
+    TOPSERVER_PORT, MIN_TIME_FOR_BUTTON_CHANGE, \
+    sendRequest, receiveCallback
 
 
 class RoslaunchThread(threading.Thread):
@@ -162,7 +164,7 @@ class RoslaunchThread(threading.Thread):
                 except subprocess.CalledProcessError as e:
                     print( "No log files yet")
                     
-                print(output_roslaunch)
+                # print(output_roslaunch)
                     
                     
             # log analysis loop
@@ -431,41 +433,60 @@ class TopServer():
                     break
                 # print(f"Received message from {client_address}: {request.decode()}")
                 
-                request_list = list(bytes(request))
-                
+                request_list = json.loads(request.decode())
+                                
                 if len(request_list) == 0:
                     print("ERROR : no request type")
                     break
                 
                 request_type = TopServerRequest(request_list[0])
+                request_params = request_list[1:]
                 
-                # print(f"Got request {request_type} with arguments {request_list[1:]}")
+                print(f"Got request {request_type} with arguments {request_list[1:]}")
 
                 # request cases
                 if request_type == TopServerRequest.REQUEST_READ_BUTTONS:
                     buttonStates = self.isbManager.readButtonStates()
-                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK] + buttonStates))
+                    sendRequest(client_socket, [TopServerCallback.CALLBACK_OK] + buttonStates)
+                    # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_OK.value] + buttonStates))
                     
                 elif request_type == TopServerRequest.REQUEST_READ_TRIGGER:
                     triggerState = self.isbManager.readTriggerState()
-                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK, triggerState]))
+                    sendRequest(client_socket, [TopServerCallback.CALLBACK_OK, triggerState])
+                    # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_OK.value, triggerState]))
 
                 elif request_type == TopServerRequest.REQUEST_WRITE_LED:
-                    if len(request_list) != 3:
+                    if len(request_params) != 2:
                         print("ERROR : wrong arguments for REQUEST_WRITE_LED")
-                        client_socket.sendall(bytes([TopServerCallback.CALLBACK_WRONG_ARGUMENTS]))
+                        sendRequest(client_socket, [TopServerCallback.CALLBACK_WRONG_ARGUMENTS])
+                        # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_WRONG_ARGUMENTS.value]))
                         continue
                     
-                    [ledId, ledState] = request_list[1:]
+                    [ledId, ledState] = request_params
                     
                     if ledId >= NB_LEDS or ledState not in (0,1,2):
                         print("ERROR : wrong arguments for REQUEST_WRITE_LED (not in range)")
-                        client_socket.sendall(bytes([TopServerCallback.CALLBACK_WRONG_ARGUMENTS]))
+                        sendRequest(client_socket, [TopServerCallback.CALLBACK_WRONG_ARGUMENTS])
+                        # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_WRONG_ARGUMENTS.value]))
                         continue
                     
                     self.isbManager.writeLed(led_id=ledId, ledState=ledState)
-                    client_socket.sendall(bytes([TopServerCallback.CALLBACK_OK]))
+                    sendRequest(client_socket, [TopServerCallback.CALLBACK_OK])
+                    # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_OK.value]))
                     
+                elif request_type == TopServerRequest.REQUEST_PLAY_SOUND:
+                    if len(request_params) != 1:
+                        print("ERROR : wrong arguments for REQUEST_PLAY_SOUND")
+                        sendRequest(client_socket, [TopServerCallback.CALLBACK_WRONG_ARGUMENTS])
+                        # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_WRONG_ARGUMENTS.value]))
+
+                    soundName = request_params[0]
+                    print("soundName : ", soundName)
+                    
+                    self.speaker.playSound(soundName)
+                    sendRequest(client_socket, [TopServerCallback.CALLBACK_OK])
+                    # client_socket.sendall(pickle.dumps([TopServerCallback.CALLBACK_OK.value]))
+
 
         except ConnectionResetError:
             print(f"Connection with {client_address} reset.")

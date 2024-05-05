@@ -20,7 +20,7 @@ from geometry_msgs.msg import Pose2D, Quaternion
 from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
 
 from threading import RLock
-import time
+import time, random
 
 from math import cos, sin, atan2
 import numpy as np
@@ -431,9 +431,13 @@ class Robot(Drawable):
         else:
             raise ValueError("Robot cannot carry more plants")
 
+    def potPlants(self):
+        for plant in self._plants:
+            plant.markInPot()
+
     def releasePlants(self):        
         a, b = self.doorLine
-        pos = (a + b) / 2
+        pos = (a + b) / 2 + [2 * random.random() - 1, 2 * random.random() - 1]
 
         while self.plants > 0:
             plant = self._plants.pop()
@@ -528,10 +532,11 @@ class Order(Drawable):
 
 class Obstacles(Drawable):
 
-    def __init__(self, color, tag):
+    def __init__(self, color, tag, plot_radius=OBSTACLE_PLOT_RADIUS):
         super().__init__()
         self._color = color
         self._tag = tag
+        self._radius = plot_radius
         self._obstacles = []
 
     def clear(self):
@@ -547,12 +552,21 @@ class Obstacles(Drawable):
         self._obstacles.append((location, delta))
         self.invalidate()
 
+    @property
+    def plot_radius(self):
+        return self._radius
+
+    @plot_radius.setter
+    def plot_radius(self, radius):
+        self._radius = radius
+        self.invalidate()
+
     def _draw(self, canvas):
         canvas.delete(self._tag)
 
         for location, delta in self._obstacles:
             canvas.draw_oval(
-                location, OBSTACLE_PLOT_RADIUS, fill=self._color, tag=self._tag)
+                location, self._radius, fill=self._color, tag=self._tag)
             canvas.draw_line(
                 location, location + RATIOV * delta, fill='green', tag=self._tag)
 
@@ -674,6 +688,8 @@ class InterfaceNode:
         self._orderMarker = Order(color="purple", tag="order")
         self._sonarObstacles = Obstacles("purple", "sonars")
         self._lidarObstacles = Obstacles("red", "lidar")
+        self._robotObstacle = Obstacles("yellow", tag="opponent") # Dummy obstacle added by the disp node 
+
         self._path = Path()
         self._grid = Grid()
 
@@ -707,6 +723,8 @@ class InterfaceNode:
             "/act/callback/right_arm", Int16, self.updateRobotRightArmState)
         self._subObstacles = rospy.Subscriber(
             "/obstaclesInfo", Int16MultiArray, self.updateObstacles)
+        self._subRobotObstacle = rospy.Subscriber(
+            "/simu/robotObstacle", Int16MultiArray, self.updateRobotObstacle)
         self._subPath = rospy.Subscriber(
             "/simu/current_path", Float32MultiArray, self.updatePath)
 
@@ -736,6 +754,7 @@ class InterfaceNode:
 
             self._lidarObstacles.redraw(self._canvas, force=force)
             self._sonarObstacles.redraw(self._canvas, force=force)
+          #   self._robotObstacle.redraw(self._canvas, force=force)
 
             self._robot.redraw(self._canvas, force=force)
             self._clickMarker.redraw(self._canvas, force=force)
@@ -745,10 +764,6 @@ class InterfaceNode:
                 plant.redraw(self._canvas, force=force)
             for pot in self._pots:
                 pot.redraw(self._canvas, force=force)
-
-            # TODO: Plot excavation squares
-            # Corresponding section from old_gui/interface_plateau.py [lines 377-418] was commented out
-            # and was not imported
 
             self._force_redraw = False
 
@@ -763,6 +778,17 @@ class InterfaceNode:
                         self._plants.pop(i)
                         continue
                     i += 1
+
+                if self._robot.plants:
+                    i = 0
+                    while i < len(self._pots):
+                        pot = self._pots[i]
+                        if circle_segment_collide(pot.location, POT_RADIUS, doorLine):
+                            self._robot.potPlants()
+                            pot.clear(self._canvas)
+                            self._pots.pop(i)
+                            continue
+                        i += 1
 
         self._fenetre.after(self.refresh_interval, self.refresh)
 
@@ -815,6 +841,13 @@ class InterfaceNode:
                 obstacles.addObstacle([msg.data[5*i + j + 1]
                                        for j in range(5)])
 
+    def updateRobotObstacle(self, msg):
+        with self.lock:
+            x, y, r = msg.data
+            self._robotObstacle.clear()
+            self._robotObstacle.addObstacle([x, y, 0, 0, 0])
+            self._robotObstacle.plot_radius = r
+
     def updatePath(self, msg):
         
         self._path.setStartPos(self._robot.location)
@@ -837,7 +870,6 @@ class InterfaceNode:
     def potsDepositEnd(self, _msg):
         with self.lock:
             for plant in self._robot.releasePlants():
-                plant.markInPot()
                 plant.invalidate()
                 self._plants.append(plant)
 

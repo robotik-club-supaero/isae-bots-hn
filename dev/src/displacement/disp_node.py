@@ -99,9 +99,6 @@ class DisplacementNode:
         self.final_turn = False 
         self.resume = False 
         self.paused = False                     # Le robot est arrete a cause d'un obstacle
-        self.time_last_seen_obstacle = 0        # Temps auquel on a vu le dernier obstacle 
-        self.refresh_update_obstacle = 0.5
-        self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
         self.current_pos = [0,0,0]                # La position actuelle du robot
 
@@ -117,7 +114,9 @@ class DisplacementNode:
         self.is_first_accurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
+        self.marche_arr_dest = None
         self.bypassing = False
+        self.wait_start = None
 
 #######################################################################
 # Fonctions de construction de path
@@ -156,11 +155,18 @@ class DisplacementNode:
         self.pathfinder.set_max_astar_time(self.max_astar_time)
 
         # Instanciation de resultisInAvoidMode
-        result = {'message':"", 'success':False, 'built path':[]}
+        result = {'message':"", 'success':False}
 
         # On essaie d'obtenir un chemin
         try:
-            result['built path'] = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
+            path = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
+            if not len(path):
+                log_errs("Error - Empty path found")
+                result['message'] = "Empty path found" 
+                result['success'] = False
+                return result
+
+            self.path = path
             result['message'] = "Path found" 
             result['success'] = True
 
@@ -179,20 +185,15 @@ class DisplacementNode:
             result['success'] = False
             return result
 
-        # On recupere le chemin obtenu
-        if not len(result['built path']):
-            log_errs("Error - Empty path found")
-            result['message'] = "Empty path found" 
-            result['success'] = False
-            return result
-        
-        self.path = result['built path']
         return result
 
     def move_forward(self):
 
         if self.bypassing:
             log_info("Obstacle found ahead. Computing new path to bypass it...")
+
+        self.wait_start = None
+        self.final_move = False     
 
         begin_time = time.perf_counter()
 
@@ -206,9 +207,6 @@ class DisplacementNode:
             # Affichage du path
             if len(self.path) > 0:
                 publish_path(self.path)
-            if self.avoid_mode:
-                #Calcul du point de reset des marges d'évitement
-                self.set_avoid_reset_point()
 
             self.move = True 
             self.next_point(False)
@@ -326,6 +324,9 @@ class DisplacementNode:
             self.recalage = False
             self.accurate = False
             self.rotation = False 
+
+            self.bypassing = False
+            self.wait_start = None
 
             # Publication a la strat
             pub_strat.publish(Int16(COM_STRAT["ok pos"]))

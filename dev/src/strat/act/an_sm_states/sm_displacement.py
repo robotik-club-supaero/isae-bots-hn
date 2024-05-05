@@ -41,8 +41,7 @@ from strat_utils import adapt_pos_to_side
 #################################################################
 
 DISP_TIMEOUT = 30       #[s]
-STOP_PATH_TIMEOUT = 3   #[s]
-STOP_DEST_TIMEOUT = 3   #[s]
+ACCURACY_MARGIN = 10 # [mm]
 
 class Approach(IntEnum):
 	INITIAL = -1
@@ -98,6 +97,7 @@ class Displacement(smach.State):
 		# Init the callback var of dsp result. CHECK an_const to see details on cb_depl
 		userdata.cb_depl[0] = DspCallback.PENDING
 
+		retried = False
 		dest = userdata.next_move
 		debug_print('c*', f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
 		disp_pub.publish(dest)
@@ -128,6 +128,19 @@ class Displacement(smach.State):
 				return 'fail'
 
 			if userdata.cb_depl[0] == DspCallback.SUCCESS:
+
+				# FIXME: this fixes a bug (is it?) when the displacement node sometimes reports a success when the robot is blocked by an obstacle
+				if math.sqrt((dest.x - userdata.robot_pos[0].x) ** 2 + (dest.y - userdata.robot_pos[0].y) ** 2) > ACCURACY_MARGIN:
+					log_info('Displacement result: Too far away from target')
+					if retried:
+						return 'fail'
+					else:
+						retried = True
+						log_info('Retrying displacement')
+						userdata.cb_depl[0] = DspCallback.PENDING
+						disp_pub.publish(dest)
+						continue
+
 				log_info('Displacement result: success displacement')
 				return 'success'
 

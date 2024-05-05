@@ -67,19 +67,6 @@ class ActionScore(IntEnum): #TODO update
     SCORE_PARK = 10
     SCORE_DEPOSIT_PLANTS = 4
     SCORE_SOLAR_PANEL = 5
-  #  BONUS = 20
-
-# ACTIONS_SCORE = { 
-# 	'init_score':               5,
-#     'funnyCounter':            10,
-#     'parking':                 15,
-#     'depositStage':             1,
-#     'legendary':                4,
-#     'cherryOnCake':             3,
-#     'cherryBucket':             1,
-#     'bonus':                   20
-# }
-
 
 PLANTS_POS = [
     [ 700, 1000],

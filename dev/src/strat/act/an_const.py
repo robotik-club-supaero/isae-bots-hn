@@ -192,7 +192,6 @@ class LoadDetectorCallback(IntEnum):
 USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
-    'score',
     'cb_depl',
     'cb_left_arm',
     'cb_right_arm',
@@ -205,17 +204,6 @@ USERDATA_VAR_LIST = [ #TODO update
     'depositArea',
     'next_action',
     'next_move',
-    'deposit_area',
-    'take_cakes_area',
-    'take_cherries_area',
-    'pucks_taken',
-    'cherries_loaded',
     'error_reaction',
-    'nb_errors',
-    'stage_to_go',
-    'stage_to_deposit',
     'park',
-    'open_clamp',
-    'open_doors',
-    'elevator_zero'
     ]

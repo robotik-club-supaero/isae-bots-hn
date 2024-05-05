@@ -75,17 +75,6 @@ class RetractArm(smach.State):
         sm = self._left if userdata.color == 0 else self._right
         return sm.execute(userdata)
 
-
-class TurnOnePanel(AutoSequence):
-
-    def __init__(self):
-        super().__init__( 
-            ("DEPL_GO_TO_PANEL", MoveTo(CalcPositionningPanel())),
-            ("EXTEND_ARM", ExtendArm()),
-            ("RETRACT_ARM", RetractArm()),
-            ("TURN_PANEL_END", TurnPanelEnd()),
-        )
-    
 class TurnPanelEnd(smach.State):
     
     def __init__(self):
@@ -108,4 +97,9 @@ class TurnPanelEnd(smach.State):
 #                                                               #
 #################################################################
 
-turnPanel = TurnOnePanel()
+turnPanel = AutoSequence(
+    ("DEPL_GO_TO_PANEL", MoveTo(CalcPositionningPanel())),
+    ("EXTEND_ARM", ExtendArm()),
+    ("RETRACT_ARM", RetractArm()),
+    ("TURN_PANEL_END", TurnPanelEnd()),
+)

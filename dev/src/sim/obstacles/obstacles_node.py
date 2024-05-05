@@ -31,7 +31,7 @@ from geometry_msgs.msg import Pose2D
 #                                                               #
 #################################################################
 
-OBSTACLE_RADIUS = 150 # should match that defined in the interface for consistent display
+OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
 
 _NODENAME_ = "[OBS]"
 
@@ -76,7 +76,7 @@ class SIM_ObstaclesNode:
         return obs_positions
     
     def generate_fix_obstacle_data(self, x, y):
-        obstacles_pos = [(x, y, np.linalg.norm([self.x_robot-x, self.y_robot-y])-OBSTACLE_RADIUS, 0, 0)]
+        obstacles_pos = [(x, y, np.linalg.norm([self.x_robot-x, self.y_robot-y]), 0, 0)]
         
         return obstacles_pos
     

@@ -217,18 +217,6 @@ def update_error_reaction(msg):
 	p_smData.error_reaction[0] = msg.data
 	log_info('error_reaction mis a jour a {}'.format(p_smData.error_reaction[0]))
 
-#################################################################
-#                                                               #
-#                           REQUESTS                            #
-#                                                               #
-#################################################################
-
-def add_score(pts):
-    """
-    Request for setting a new score (prev + new pts added).
-    """
-    p_smData.score[0] += pts
-    score_pub.publish(p_smData.score[0])
 
 #################################################################
 #                                                               #

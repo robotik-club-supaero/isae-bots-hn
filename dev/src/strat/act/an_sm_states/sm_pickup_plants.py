@@ -23,7 +23,7 @@ import time
 import smach
 
 from an_const import R_APPROACH_PLANTS
-from an_comm import callback_action_pub, add_score, remove_obs, get_pickup_id
+from an_comm import callback_action_pub, remove_obs, get_pickup_id
 from an_logging import log_info, log_warn, log_errs, log_fatal, debug_print, debug_print_move
 from an_utils import AutoSequence, AutoConcurrence, OpenDoors, OpenClamp, CloseDoors, CloseClamp, RiseElevator, DescendElevator, HardwareOrder
 

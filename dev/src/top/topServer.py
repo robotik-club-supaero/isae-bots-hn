@@ -570,6 +570,9 @@ class TopServer():
         self.watchButtonStopEvent.set()
         # self.rosLaunchStopEvent.set()
         self.roslaunchThread.stopThread()
+        
+        # close speaker
+        self.speaker.stop()
             
         print(f"Exiting TopServer with exit code {exitCode}")
         sys.exit(exitCode)

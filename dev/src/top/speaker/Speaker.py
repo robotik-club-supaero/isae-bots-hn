@@ -55,8 +55,8 @@ class Speaker():
         # Wait for stop event to end sound
         while not stop_event.is_set():
             time.sleep(0.1)
-
-        listPlayer.stop()        
+            
+        listPlayer.stop()
         
     
     
@@ -130,3 +130,7 @@ class Speaker():
         
         # self.media_player.audio_set_mute()
         
+        
+    def stop(self):
+        
+        self.constantBlankSoundStopEvent.set()

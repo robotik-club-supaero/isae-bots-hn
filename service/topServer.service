@@ -1,9 +1,12 @@
 [Unit]
-Description=Start topServer
-After=network.target
+Description=TopServer Service
+After=docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
+Restart=always
+StandardInput=null
 
 User=pi
 Group=pi

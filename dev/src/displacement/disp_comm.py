@@ -348,8 +348,6 @@ def callback_lidar(msg):
                 elif time.perf_counter() - p_disp.wait_start >= STAND_BEFORE_BYPASS:                            
                     log_warn("Object Won't Move Out Of The Way  : Initiating bypass")                              
                     p_disp.move_forward() # Recompute path with updated opponent pos
-                else:
-                    log_warn(str(p_disp.wait_start) + "--" + str(time.perf_counter() - p_disp.wait_start))
             
             elif p_disp.wait_start is not None:
                 log_info("Object Has Cleared The Way : Resuming displacement")     

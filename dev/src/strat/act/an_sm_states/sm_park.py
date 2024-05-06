@@ -54,7 +54,7 @@ class CalcParkPos(smach.State):
         x_dest, y_dest, theta = PARK_POS[park_id]
         # Modif pour la strat du dernier match 
 
-        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL, theta_final=-theta)
+        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL)
         return 'success'
     
     

@@ -113,9 +113,8 @@ def cb_depl_fct(msg):
     Callback of displacement result from Disp Node.
     """
     if not ok_comm: return
-    p_smData.cb_depl[0] = DspCallback(msg.data)
-
-
+    p_smData.cb_depl[0] = DspCallback.parse(msg.data)
+    
 def cb_position_fct(msg):
     """
     Callback of current position of the robot.
@@ -128,37 +127,30 @@ def cb_doors_fct(msg):
     """
     Callback of the state of the doors (opened or closed)
     """
-    if msg.data == 1:
-        p_smData.cb_doors[0] = DoorCallback.OPEN
-    elif msg.data == 0:
-        p_smData.cb_doors[0] = DoorCallback.CLOSED
-    else:
-        p_smData.cb_doors[0] = DoorCallback.UNKNOWN
-
+    p_smData.cb_doors[0] = DoorCallback.parse(msg.data)
 
 def cb_elevator_fct(msg):
     """
     Callback of the state of the elevator (for the cakes)
     """
     if not ok_comm: return
-    p_smData.cb_elevator[0] = ElevatorCallback(msg.data)
+    p_smData.cb_elevator[0] = ElevatorCallback.parse(msg.data)
 
 def cb_left_arm_fct(msg):
     if not ok_comm: return
-    p_smData.cb_left_arm[0] = ArmCallback(msg.data)
-
+    p_smData.cb_left_arm[0] = ArmCallback.parse(msg.data)
 
 def cb_right_arm_fct(msg):
     if not ok_comm: return
-    p_smData.cb_right_arm[0] = ArmCallback(msg.data)
+    p_smData.cb_right_arm[0] = ArmCallback.parse(msg.data)
 
 def cb_clamp_fct(msg):
     if not ok_comm: return
-    p_smData.cb_clamp[0] = ClampCallback(msg.data)
+    p_smData.cb_clamp[0] = ClampCallback.parse(msg.data)
 
 def cb_load_detector(msg):
     if not ok_comm: return
-    p_smData.cb_load_detector = LoadDetectorCallback(msg.data)
+    p_smData.cb_load_detector = LoadDetectorCallback.parse(msg.data)
 
 
 def cb_park_fct(msg):

@@ -366,8 +366,7 @@ class Robot(Drawable):
         return Robot(width, height)
 
     def _draw(self, canvas):
-        canvas.delete("robot_doors")      
-        # TODO: implement DoorState.BLOCKED
+        canvas.delete("robot_doors")
         if self._doorState == DoorState.OPEN:
             canvas.draw_line(self._location, (self._location + [
                              self._width, self._height / 2]), rotation=self._rotation, fill="black", width=7, tag="robot_doors")

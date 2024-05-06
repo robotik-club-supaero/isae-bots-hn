@@ -104,28 +104,22 @@ DISPLACEMENT = {
       'marcheArr'        : 8
 }
 
+class Callback(IntEnum):
+    @classmethod
+    def parse(cls, value):
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.UNKNOWN
+
 class DspOrderMode(IntEnum):
     AVOIDANCE = 0
     STRAIGHT_NO_AVOIDANCE = 1
     STOP = 2
     BACKWARDS = 8
-
-    
-    
-class DoorOrder(IntEnum):
-    OPEN = 0
-    CLOSE = 1
-    
-''' CALLBACKS '''
-
-class DspCallback(IntEnum):
-    # UNKNOWN = -2
-    # PENDING = -1
-    # ARRIVED = 0
-    # OBSTACLE = 1
-    # OBSTACLE_ON_TARGET = 2
-    # ERROR_ASSERV = 3
-    
+ 
+class DspCallback(Callback):
+    UNKNOWN = -2
     PENDING = -3
     ERROR_ASSERV = -2
     PATH_NOT_FOUND = -1
@@ -133,40 +127,32 @@ class DspCallback(IntEnum):
     PATH_BLOCKED = 1
     RESTART = 2 # DEPRECATED - no longer published TODO cleanup
     DESTINATION_BLOCKED = 3
-    
-    
-    # -3: 'None',
-	# -2: 'Error Asserv',
-    # -1: 'Path not found',
-    #  0: 'Disp Success',
-    #  1: 'Path Blocked',
-    #  2: 'Restart',
-    #  3: 'Destination blocked'
      
+class DoorOrder(IntEnum):
+    OPEN = 0
+    CLOSE = 1
     
-class DoorCallback(IntEnum):
+class DoorCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
     CLOSED = 0
     OPEN = 1
-    BLOCKED = 2
     
 class ElevatorOrder(IntEnum):
     MOVE_UP = 1
     MOVE_DOWN = 0
         
-class ElevatorCallback(IntEnum):
+class ElevatorCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 0
     UP = 1
-    BLOCKED = 2
 
 class ClampOrder(IntEnum):
     OPEN = 0
     CLOSE = 1
 
-class ClampCallback(IntEnum):
+class ClampCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
     OPEN = 0
@@ -176,14 +162,14 @@ class ArmOrder(IntEnum):
     EXTEND = 1
     RETRACT = 2
 
-class ArmCallback(IntEnum):
+class ArmCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
     EXTENDED = 1
     RETRACTED = 2
-    BLOCKED = 3
 
-class LoadDetectorCallback(IntEnum):
+class LoadDetectorCallback(Callback):
+    UNKNOWN = -2
     EMPTY = 0
     LOADED = 1
 

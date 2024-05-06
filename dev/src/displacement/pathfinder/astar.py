@@ -73,7 +73,8 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime):
    
     weights[:] = 1 # avoids recreating the array every time
     if tableMap.get_avoid():
-        for obstacle in tableMap.get_obstacles():
+        obstacles = list(tableMap.get_obstacles()) # Avoid concurrent list change during iteration
+        for obstacle in obstacles:
             bb = obstacle.bounding_box() / GRID_INTERVAL
             for i in range(math.floor(bb[0,0]), min(math.floor(bb[1,0]+1), weights.shape[0])):
                 for j in range(math.floor(bb[0,1]), min(math.floor(bb[1,1]+1), weights.shape[1])):

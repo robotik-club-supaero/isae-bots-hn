@@ -277,6 +277,13 @@ def callback_strat(msg):
 def callback_lidar(msg):    
     """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
 
+    def set_opponent_pos(pos, radius):
+        p_disp.pathfinder.set_robot_to_avoid_pos([pos[0], pos[1]] if pos is not None else None, radius) # TODO center
+        if SIMULATION:
+            msg2 = Int16MultiArray()
+            msg2.data = [int(pos[0]) if pos is not None else -10000, int(pos[1]) if pos is not None else -10000, int(radius)]
+            pub_obstacle.publish(msg2)
+
     if not ok_comm: return
     
     if (not p_disp.avoid_mode) or p_disp.matchEnded: 
@@ -301,20 +308,17 @@ def callback_lidar(msg):
         # Info obstacles dans repere local du robot
         dist_obs = obstacle_info[2]
         dist_obs -= RADIUS_ROBOT_OBSTACLE # FIXME
-        if dist_obs <= DIST_MIN: continue # WHY???
+        if dist_obs <= DIST_MIN: continue
 
         x_loc_obs, y_loc_obs = to_robot_coord(p_disp.current_pos[0], p_disp.current_pos[1], p_disp.current_pos[2], obstacle_info)
 
         if msg.data[0] == 0 and x_loc_obs > 0 and (closest_obs_ahead is None or dist_obs < closest_obs_ahead[0]):
-            closest_obs_behind = (dist_obs, x_loc_obs, y_loc_obs)
-            p_disp.pathfinder.set_robot_to_avoid_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE+STOP_RANGE_X+MARGIN) # TODO center
-            if SIMULATION:
-                msg2 = Int16MultiArray()
-                msg2.data = [int(obstacle_info[0]), int(obstacle_info[1]), int(RADIUS_ROBOT_OBSTACLE+STOP_RANGE_X+MARGIN)]
-                pub_obstacle.publish(msg2)
-         
+            closest_obs_ahead = (dist_obs, x_loc_obs, y_loc_obs)
+            set_opponent_pos([obstacle_info[0], obstacle_info[1]], RADIUS_ROBOT_OBSTACLE+STOP_RANGE_X+MARGIN) # TODO center
+          
         if msg.data[0] == 1 and x_loc_obs < 0 and (closest_obs_behind is None or dist_obs < closest_obs_behind[0]):
             closest_obs_behind = (dist_obs, x_loc_obs, y_loc_obs)
+
     
     speed = NOMINAL_SPEED    
     if p_disp.forward: 
@@ -356,9 +360,11 @@ def callback_lidar(msg):
                 speed_coeff = max(0.5, min(1, speed_coeff))
                 speed *= speed_coeff
 
-        elif not p_disp.bypassing and p_disp.wait_start is not None:
-            log_info("Object Has Cleared The Way : Resuming displacement")     
-            p_disp.move_forward()
+        else:
+            set_opponent_pos(None, 0) 
+            if not p_disp.bypassing and p_disp.wait_start is not None:
+                log_info("Object Has Cleared The Way : Resuming displacement")     
+                p_disp.move_forward()
 
     else:
         # No avoiding strategy when reversing, because only straight, short-distance reverses are used
@@ -376,7 +382,7 @@ def callback_lidar(msg):
     if p_disp.bypassing and p_disp.is_reset_possible:
         p_disp.bypassing = False
         p_disp.wait_start = None
-        p_disp.pathfinder.set_robot_to_avoid_pos(None, 0)
+        set_opponent_pos(None, 0)
 
     pub_speed.publish(data=int(speed)) ## On prévient le cas échéant le BN qu'on a vu un truc et qu'il faut ralentir
 

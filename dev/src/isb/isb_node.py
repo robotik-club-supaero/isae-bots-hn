@@ -24,11 +24,11 @@ import time
 import rospy
 import signal
 import socket
-import json
+import configparser
+from ast import literal_eval
+
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
 from geometry_msgs.msg import Quaternion
-
-from isb_hal import initPin, readPin, writePin
 
 #NOTE to import from parent directory
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -43,6 +43,10 @@ from top.top_const import sendRequest, receiveCallback, TopServerRequest, TopSer
 #################################################################
 
 _NODENAME_ = "[ISB]"
+
+# CONFIG 
+READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),'../robot_config.cfg'))
 
 
 
@@ -96,6 +100,7 @@ BUTTON_LEDS_IDS = [9,8,7,6,5]
 TRIGGER_LED_ID = 0
 BR_IDLE_LED_ID = 1
 
+STRAT_BUTTON_ID = 0
 COLOR_BUTTON_ID = 1
 BR_IDLE_BUTTON_ID = 2
 RESET_STEPPER_BUTTON_ID = 3
@@ -114,6 +119,9 @@ class ISBNode:
 
         self.match = False
         self.color = 0
+        self.strat = int(READER.get("STRAT", "strat_default"))
+        self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
+        self.nbStrats = len(self.strategies)
 
         self.buttonStates = [-1]*NB_BUTTONS
         self.isButtonTriggered = [False]*NB_BUTTONS
@@ -126,6 +134,7 @@ class ISBNode:
         # --- Publishers & subscribers
         self.pubStart = rospy.Publisher("/game/start", Int16, queue_size=10, latch=True)
         self.pubColor = rospy.Publisher("/game/color", Int16, queue_size=10, latch=True)
+        self.pubStrat = rospy.Publisher("/game/strat", Int16, queue_size=10, latch=True)
 
         self.pubBRIdle = rospy.Publisher("/br/idle", Int16, queue_size=10, latch=True)
         self.pubResetStepper = rospy.Publisher("/strat/elevator", Int16, queue_size=10, latch=True)
@@ -251,6 +260,19 @@ class ISBNode:
                         log_info("Set color to HOME")
                         self.color = 0
                         self.pubColor.publish(data=0)
+                        
+                
+                # Send strat message
+                if self.isButtonTriggered[STRAT_BUTTON_ID]:
+                    
+                    self.strat += 1
+                    
+                    if self.strat >= self.nbStrats:
+                        self.strat = 0
+                        
+                    log_info(f"Set strat to {self.strat}")
+                    
+                    self.pubStrat.publish(data=self.strat)
 
 
                 # Send BR idle message
@@ -283,7 +305,7 @@ class ISBNode:
 #######################################################################
 
 def main():
-    rospy.init_node('isb_node')
+    rospy.init_node('ISB')
     signal.signal(signal.SIGINT, sig_handler)
 
     node = ISBNode()

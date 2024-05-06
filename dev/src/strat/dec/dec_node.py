@@ -23,6 +23,7 @@ import os, sys, inspect
 import rospy
 import signal
 import time
+from ast import literal_eval
 
 from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm
@@ -69,7 +70,7 @@ class DecisionsNode:
         self.go_park = False
 
         self.strat = int(READER.get("STRAT", "strat_default"))
-        self.strategies = [match_strat, homologation, test_strat]
+        self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
 
         self.park_action = False
         self.kill_action = False

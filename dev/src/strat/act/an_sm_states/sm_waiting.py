@@ -48,19 +48,6 @@ class ObsWaitingOnce(smach.State):
                 return 'preempted'       
 
         return 'success'
-                  
-
-class ObsWaiting(ObsWaitingOnce):
-    def __init__(self, wait_time=100):
-        super().__init__(wait_time, outcomes=['preempted', 'success', 'redo'])
-
-    def execute(self, userdata):
-        result = super().execute(userdata)
-        if result == "success":
-            return "redo"
-        else:
-            return result
-                  
 
 #################################################################
 #                                                               #
@@ -68,12 +55,4 @@ class ObsWaiting(ObsWaitingOnce):
 #                                                               #
 #################################################################
 
-waiting = smach.StateMachine(   outcomes=['preempted', 'end'],
-                                input_keys=['nb_actions_done','next_move', 'color'],
-                                output_keys=['nb_actions_done','next_move','color'])
-							
-with waiting:
-    smach.StateMachine.add('OBS_WAITING', 
-                            ObsWaiting(), 
-                            transitions={'preempted':'preempted','success':'end','redo':'OBS_WAITING'})
-   
+waiting = ObsWaitingOnce()

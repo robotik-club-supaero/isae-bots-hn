@@ -16,13 +16,9 @@ Package du Displacement Node.
 # PATHFINDER
 
 * Travail sur l'A* remis à plus tard
-* Node --> Structure de ce qu'est un noeud pour la grille
 * Maps --> Terrain de jeu avec nodes de passage, nodes d'évitement et obstacles (c'est la map koi)
-* Nodes Creators --> A partir de la grille dans pathfinder_data, génère les nodes de parcours
 * Les obstacles --> Cercle, Triangle, Rect 
 * Obs creator --> Obs connus rentrés à la main
-* Grid --> Génération de grilles format xml
-* Grid Creator --> Dans pathfinder_data : grâce aux données génère la grille
 
 # Disp Utils
 

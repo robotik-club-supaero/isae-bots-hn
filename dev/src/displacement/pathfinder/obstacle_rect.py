@@ -17,6 +17,8 @@
 @status: OK.
 """
 
+import numpy as np
+
 class ObstacleRect:
     
     """Implemente un obstacle rectangulaire sur la map."""
@@ -24,29 +26,63 @@ class ObstacleRect:
     def __init__(self,x_min,x_max,y_min,y_max):
         """Initialization of obstacle."""    
         self.name = "R"     # Type d'obstacle
-        self.x_min = x_min    # x_min du rectangle
-        self.x_max = x_max    # x_max du rectangle
-        self.y_min = y_min    # y_min du rectangle
-        self.y_max = y_max    # y_max du rectangle
-        
-    def get_x_min(self):
-        return self.x_min
+        self.coords = np.array([[x_min, y_min], [x_max, y_max]])
     
-    def get_x_max(self):
-        return self.x_max
+    def __str__(self):
+        return f"ObstacleRect(x_min={self.x_min}, x_max={self.x_max}, y_min={self.y_min}, y_max={self.y_max})"
+         
+    @property
+    def x_min(self):
+        return self.coords[0,0]
     
-    def get_y_min(self):
-        return self.y_min
+    @property
+    def x_max(self):
+        return self.coords[1,0]
     
-    def get_y_max(self):
-        return self.y_max
+    @property
+    def y_min(self):
+        return self.coords[0,1]
+    
+    @property
+    def y_max(self):
+        return self.coords[1,1]
     
     def get_name(self):
         return self.name
 
-    def is_node_in(self, node):
-        x = node.get_x()
-        y = node.get_y()
-        return self.x_min<x<self.x_max and self.y_min<y<self.y_max
+    def is_node_in(self, x, y):
+        return self.x_min<=x<=self.x_max and self.y_min<=y<=self.y_max
 
-    
+    def crosses(self, segment):  
+        x_min = self.x_min
+        x_max = self.x_max
+        y_min = self.y_min
+        y_max = self.y_max
+
+        origin_x = segment[0,0]
+        origin_y = segment[0,1]
+
+        line_vect = segment[1] - segment[0]
+        line_vect /= np.linalg.norm(line_vect)
+        node_dist = np.linalg.norm(line_vect)
+
+        if line_vect[0] != 0 :
+            t_min = (x_min-origin_x)/line_vect[0]
+            t_max = (x_max-origin_x)/line_vect[0]
+
+            if (y_min<origin_y+t_min*line_vect[1]<y_max and 0<t_min<node_dist) or (y_min<origin_y+t_max*line_vect[1]<y_max and 0<t_max<node_dist):
+
+                return True
+
+        if line_vect[1] != 0 :
+            t_min = (y_min-origin_y)/line_vect[1]
+            t_max = (y_max-origin_y)/line_vect[1]
+            
+            if (x_min<origin_x+t_min*line_vect[0]<x_max and 0<t_min<node_dist ) or (x_min<origin_x+t_max*line_vect[0]<x_max and 0<t_max<node_dist):
+
+                return True
+                
+        return False
+
+    def bounding_box(self):
+        return self.coords

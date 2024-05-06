@@ -17,10 +17,10 @@ import os
 import rospy
 
 from geometry_msgs.msg import Pose2D, Quaternion
-from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray
+from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
 
 from threading import RLock
-import time
+import time, random
 
 from math import cos, sin, atan2
 import numpy as np
@@ -31,7 +31,7 @@ import configparser as ConfigParser
 from signal import signal, SIGINT
 from sys import exit
 
-from enum import Enum
+from enum import IntEnum
 
 from interface_const import *
 
@@ -329,10 +329,15 @@ class Drawable:
             self.needsRedraw = False
 
 
-class DoorState(Enum):
+class DoorState(IntEnum):
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2
+
+class ArmState(IntEnum):
+    EXTENDED = 1
+    RETRACTED = 2
+    BLOCKED = 3
 
 class Robot(Drawable):
 
@@ -346,6 +351,8 @@ class Robot(Drawable):
         self._location = np.zeros(2)
         self._rotation = 0
         self._doorState = DoorState.CLOSED
+        self._leftArmState = ArmState.RETRACTED
+        self._rightArmState = ArmState.RETRACTED
         self._plants = []
 
     @staticmethod
@@ -353,19 +360,25 @@ class Robot(Drawable):
         reader = ConfigParser.ConfigParser(inline_comment_prefixes=";")
         reader.read(os.path.join(os.path.dirname(__file__), file))
 
-        height = int(reader.get("Robot", "robot_larg"))
-        width = int(reader.get("Robot", "robot_long"))
+        height = int(reader.get("ROBOT", "robot_larg"))
+        width = int(reader.get("ROBOT", "robot_long"))
 
         return Robot(width, height)
 
     def _draw(self, canvas):
         canvas.delete("robot_doors")      
-        # TODO: test + implement DoorState.BLOCKED
+        # TODO: implement DoorState.BLOCKED
         if self._doorState == DoorState.OPEN:
             canvas.draw_line(self._location, (self._location + [
                              self._width, self._height / 2]), rotation=self._rotation, fill="black", width=7, tag="robot_doors")
             canvas.draw_line(self._location, (self._location + [
                              self._width, -self._height / 2]), rotation=self._rotation, fill="black", width=7, tag="robot_doors")
+
+        canvas.delete("robot_arm")      
+        if self._leftArmState == ArmState.EXTENDED:
+            canvas.draw_line(self._location, (self._location + [0, self._height]), rotation=self._rotation, fill="blue", width=5, tag="robot_arm")
+        if self._rightArmState == ArmState.EXTENDED:
+            canvas.draw_line(self._location, (self._location - [0, self._height]), rotation=self._rotation, fill="blue", width=5, tag="robot_arm")
 
         canvas.delete("robot")
         canvas.draw_rectangle(self._location, self._width, self._height,
@@ -392,6 +405,14 @@ class Robot(Drawable):
     def doorsOpen(self):
         return self._doorState == DoorState.OPEN
 
+    def setLeftArmState(self, new_state):
+        self._leftArmState = ArmState(new_state)
+        self.invalidate()
+
+    def setRightArmState(self, new_state):
+        self._rightArmState = ArmState(new_state)
+        self.invalidate()
+
     @property
     def doorLine(self):
         line = np.zeros((2,2))
@@ -409,6 +430,19 @@ class Robot(Drawable):
             self._plants.append(plant)
         else:
             raise ValueError("Robot cannot carry more plants")
+
+    def potPlants(self):
+        for plant in self._plants:
+            plant.markInPot()
+
+    def releasePlants(self):        
+        a, b = self.doorLine
+        pos = (a + b) / 2 + [2 * random.random() - 1, 2 * random.random() - 1]
+
+        while self.plants > 0:
+            plant = self._plants.pop()
+            plant.setLocation(pos)
+            yield plant
 
 class Pot(Drawable):
 
@@ -439,13 +473,21 @@ class Plant(Drawable):
         self._id = id
         self._location = np.zeros(2)
         self.setLocation(location)
+        self._in_pot = False
 
     def _draw(self, canvas):
         self.clear(canvas)
-        canvas.draw_oval(self._location, PLANT_RADIUS, fill="green", tag=f"plant_{self._id}")
+        canvas.draw_oval(self._location, PLANT_RADIUS, fill="green" if not self._in_pot else "chartreuse", tag=f"plant_{self._id}")
 
     def clear(self, canvas):
         canvas.delete(f"plant_{self._id}")
+
+    @property
+    def inPot(self):
+        return self._in_pot
+
+    def markInPot(self):
+        self._in_pot = True
 
     def setLocation(self, new_location):
         self._location[:] = new_location
@@ -490,10 +532,11 @@ class Order(Drawable):
 
 class Obstacles(Drawable):
 
-    def __init__(self, color, tag):
+    def __init__(self, color, tag, plot_radius=OBSTACLE_PLOT_RADIUS):
         super().__init__()
         self._color = color
         self._tag = tag
+        self._radius = plot_radius
         self._obstacles = []
 
     def clear(self):
@@ -509,12 +552,21 @@ class Obstacles(Drawable):
         self._obstacles.append((location, delta))
         self.invalidate()
 
+    @property
+    def plot_radius(self):
+        return self._radius
+
+    @plot_radius.setter
+    def plot_radius(self, radius):
+        self._radius = radius
+        self.invalidate()
+
     def _draw(self, canvas):
         canvas.delete(self._tag)
 
         for location, delta in self._obstacles:
             canvas.draw_oval(
-                location, OBSTACLE_PLOT_RADIUS, fill=self._color, tag=self._tag)
+                location, self._radius, fill=self._color, tag=self._tag)
             canvas.draw_line(
                 location, location + RATIOV * delta, fill='green', tag=self._tag)
 
@@ -631,11 +683,13 @@ class InterfaceNode:
             self.image, 0, 0, anchor="nw")
         self._canvas.pack()
 
-        self._robot = Robot.load("../pr_start.ini")
+        self._robot = Robot.load("../../../robot_config.cfg")
         self._clickMarker = Order(color="yellow", tag="clickPosition")
         self._orderMarker = Order(color="purple", tag="order")
         self._sonarObstacles = Obstacles("purple", "sonars")
         self._lidarObstacles = Obstacles("red", "lidar")
+        self._robotObstacle = Obstacles("yellow", tag="opponent") # Dummy obstacle added by the disp node 
+
         self._path = Path()
         self._grid = Grid()
 
@@ -663,16 +717,25 @@ class InterfaceNode:
             "/current_position", Pose2D, self.updateRobotPosition)
         self._subDoors = rospy.Subscriber(
             "/act/callback/doors", Int16, self.updateRobotDoorState)
+        self._subLeftArm = rospy.Subscriber(
+            "/act/callback/left_arm", Int16, self.updateRobotLeftArmState)
+        self._subRightArm = rospy.Subscriber(
+            "/act/callback/right_arm", Int16, self.updateRobotRightArmState)
         self._subObstacles = rospy.Subscriber(
             "/obstaclesInfo", Int16MultiArray, self.updateObstacles)
+        self._subRobotObstacle = rospy.Subscriber(
+            "/simu/robotObstacle", Int16MultiArray, self.updateRobotObstacle)
         self._subPath = rospy.Subscriber(
             "/simu/current_path", Float32MultiArray, self.updatePath)
 
         self._subOrder = rospy.Subscriber(
             "/nextPositionTeensy", Quaternion, self.updateOrder)
 
+        self._deposit_sub = rospy.Subscriber('/simu/deposit_end', Empty, self.potsDepositEnd)
+
         self._pubOrder = rospy.Publisher(
             "/nextPositionTeensy", Quaternion, queue_size=10, latch=False)
+
 
         rospy.loginfo("Fin d'initialisation de l'interface")
         self._fenetre.after(refresh_interval, self.refresh)
@@ -691,6 +754,7 @@ class InterfaceNode:
 
             self._lidarObstacles.redraw(self._canvas, force=force)
             self._sonarObstacles.redraw(self._canvas, force=force)
+          #   self._robotObstacle.redraw(self._canvas, force=force)
 
             self._robot.redraw(self._canvas, force=force)
             self._clickMarker.redraw(self._canvas, force=force)
@@ -701,24 +765,30 @@ class InterfaceNode:
             for pot in self._pots:
                 pot.redraw(self._canvas, force=force)
 
-            # TODO: Plot excavation squares
-            # Corresponding section from old_gui/interface_plateau.py [lines 377-418] was commented out
-            # and was not imported
-
             self._force_redraw = False
 
             if self._robot.doorsOpen:
                 doorLine = self._robot.doorLine
                 i = 0
-                while i < len(self._plants):
+                while self._robot.plants < PLANT_CAPACITY and i < len(self._plants):
                     plant = self._plants[i]
-                    if circle_segment_collide(plant.location, PLANT_RADIUS, doorLine):
-                        if self._robot.plants < PLANT_CAPACITY:
-                            self._robot.carryPlant(plant)
-                            plant.clear(self._canvas)
-                            self._plants.pop(i)
-                            continue
+                    if not plant.inPot and circle_segment_collide(plant.location, PLANT_RADIUS, doorLine):
+                        self._robot.carryPlant(plant)
+                        plant.clear(self._canvas)
+                        self._plants.pop(i)
+                        continue
                     i += 1
+
+                if self._robot.plants:
+                    i = 0
+                    while i < len(self._pots):
+                        pot = self._pots[i]
+                        if circle_segment_collide(pot.location, POT_RADIUS, doorLine):
+                            self._robot.potPlants()
+                            pot.clear(self._canvas)
+                            self._pots.pop(i)
+                            continue
+                        i += 1
 
         self._fenetre.after(self.refresh_interval, self.refresh)
 
@@ -749,6 +819,14 @@ class InterfaceNode:
     def updateRobotDoorState(self, msg):
         with self.lock:
             self._robot.setDoorState(msg.data)
+    
+    def updateRobotLeftArmState(self, msg):
+        with self.lock:
+            self._robot.setLeftArmState(msg.data)
+    
+    def updateRobotRightArmState(self, msg):
+        with self.lock:
+            self._robot.setRightArmState(msg.data)
 
     def updateObstacles(self, msg):
         with self.lock:
@@ -762,6 +840,13 @@ class InterfaceNode:
             for i in range((msg.layout.dim[0]).size):
                 obstacles.addObstacle([msg.data[5*i + j + 1]
                                        for j in range(5)])
+
+    def updateRobotObstacle(self, msg):
+        with self.lock:
+            x, y, r = msg.data
+            self._robotObstacle.clear()
+            self._robotObstacle.addObstacle([x, y, 0, 0, 0])
+            self._robotObstacle.plot_radius = r
 
     def updatePath(self, msg):
         
@@ -781,6 +866,12 @@ class InterfaceNode:
     def updateGrid(self, msg):
         with self.lock:
             self._grid.setGrid(msg.data)
+
+    def potsDepositEnd(self, _msg):
+        with self.lock:
+            for plant in self._robot.releasePlants():
+                plant.invalidate()
+                self._plants.append(plant)
 
     def mainloop(self, n=0):
         self._fenetre.mainloop(n)

@@ -31,7 +31,7 @@ import time
 
 from an_sm import init_sm
 from an_comm import init_comm
-from an_utils import log_info, log_errs, log_warn
+from an_logging import log_info, log_errs, log_warn
 
 
 def sig_handler(s_rcv, frame):

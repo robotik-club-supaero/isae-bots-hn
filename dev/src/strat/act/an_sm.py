@@ -27,12 +27,14 @@ from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
 from an_sm_states.sm_park import park
+from an_sm_states.sm_turn_solar import turnPanel
 from an_sm_states.sm_pickup_plants import pickupPlant
 from an_sm_states.sm_pickup_pots import pickupPot
+from an_sm_states.sm_deposit_pots import depositPot
 from an_sm_states.sm_waiting import waiting
 
 from an_const import *
-from an_utils import *
+from an_logging import *
 from an_comm import enable_comm, repartitor_pub, disp_pub, stop_teensy_pub
 
 from geometry_msgs.msg import Quaternion, Pose2D
@@ -68,36 +70,22 @@ class Setup(smach.State):
         ## Game param variables
         userdata.start = False
         userdata.color = 0
-        userdata.score = [ActionScore.SCORE_INIT.value]
-        userdata.nb_actions_done = [0]
         userdata.park = [0] 
         
-        
-        ## Data about the match
-        # userdata.deposit_area = [-1] # Coordonnées de là où on dépose les gâteaux
-        # userdata.take_cakes_area = [-1] 	# Coordonnées de la pile de gâteaux qui nous intéressent.
-        # userdata.take_cherries_area = [-1] 	# Coordonnées du rack de cerises qui nous intéressent.
-        # userdata.pucks_taken = [0]	# Pemet de savoir combien on transporte de palets pour pouvoir savoir comment on récupère les autres
-        # userdata.cherries_loaded = [0] # Permet de savoir si le robot transporte des cerises ou non. 0: Non ; 1: Oui 
-        # userdata.stage_to_go = [0]
-        # userdata.stage_to_deposit = [0]
-
         ## Callback of subscribers
         userdata.cb_depl = [DspCallback.PENDING]  # result of displacement action. CHECK an_const to see details on cb_depl
-        userdata.robot_pos = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
-        userdata.cb_arm = [-1]    # state of the arm
+        userdata.robot_pos = [Pose2D(x=-1, y=-1, theta=-1)]  # current position of the robot
+        userdata.cb_left_arm = [-1]    # state of the arm
+        userdata.cb_right_arm = [-1]    # state of the arm
         userdata.cb_doors = [-1]	# state of the doors
         userdata.cb_clamp = [-1] 	# state of the clamp
         userdata.cb_elevator = [-1] # state of the elevator
+        userdata.cb_load_detector = [LoadDetectorCallback.EMPTY] # whether the robot carries something # TODO no hardware to detect it
 
         ## Game infos variables
         userdata.next_action = [Action.PENDING]  # action en cours (avec arguments eventuels)
         userdata.next_move = Quaternion(x=-1, y=-1, z=-1, w=-1)
         userdata.error_reaction = [-1]
-        userdata.nb_errors = [0]
-        userdata.open_clamp = False
-        userdata.open_doors = False
-        userdata.elevator_zero = True
 
         ## Enable pubs and subs in pr_an_comm.py
         time.sleep(0.01)
@@ -131,8 +119,8 @@ class Repartitor(smach.State):
     def __init__(self):
         smach.State.__init__(	self, 	
                                 outcomes=ACTIONS_LIST,
-                                input_keys=['nb_actions_done', 'next_action', 'pucks_taken'],
-                                output_keys=['nb_actions_done', 'next_action'])
+                                input_keys=['next_action'],
+                                output_keys=['next_action'])
 
     def execute(self, userdata):
         log_info('[Repartitor] Requesting next action ...')
@@ -145,7 +133,6 @@ class Repartitor(smach.State):
                 return 'preempted'
             time.sleep(0.01)
 
-        userdata.nb_actions_done[0] = 0  		     	  # reinitialisation nb etapes
         return ACTIONS_LIST[userdata.next_action[0].value]   # lancement prochaine action  
         
 #################################################################
@@ -203,13 +190,18 @@ def init_sm(sm):
                                 transitions={'end':'exit all','preempted':'exit preempted'})
 
         # Specific Action States
+        smach.StateMachine.add('TURNPANEL', turnPanel,
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
+
         smach.StateMachine.add('PICKUPPLANT', pickupPlant,
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
         smach.StateMachine.add('PICKUPPOT', pickupPot,
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
+        smach.StateMachine.add('DEPOSITPOT', depositPot,
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
   
         # Other States
         smach.StateMachine.add('PARK', park,
                                 transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
         smach.StateMachine.add('WAITING', waiting,
-                                transitions={'preempted':'END','end':'REPARTITOR'})
+                                transitions={'preempted':'END','success':'REPARTITOR'})

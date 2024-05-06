@@ -23,7 +23,7 @@ Launch script for GR (sim for now)
 	<node name="LCD" pkg="lcd" type="lcd_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- sim nodes -->
-	<!--<node name="OBS" pkg="sim" type="obstacles_node.py" output="screen" cwd="node" required="true"/>-->
+	<node name="OBS" pkg="sim" type="obstacles_node.py" output="screen" cwd="node" required="true"/>
 
 
 </launch>

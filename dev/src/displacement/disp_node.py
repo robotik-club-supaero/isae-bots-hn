@@ -46,18 +46,27 @@ from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
 # import utils
-from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord
+from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord, debug_print
 
 # import comms
-from disp_comm import init_comm
-from disp_comm import COM_STRAT, CMD_TEENSY
-from disp_comm import pub_strat, pub_teensy
+from disp_comm import init_comm, SIMULATION, COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_path
 
 #################################################################
 #																#
 # 						DISPLACEMENT NODE						#
 #																#
 #################################################################
+
+def publish_path(path):
+    """Publish path to the interfaceNode."""    
+    if SIMULATION:
+        path_coords = []
+        for k in range (len(path)):
+            path_coords.append(path[k][0])
+            path_coords.append(path[k][1])
+            if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
+        pub_path.publish(data = path_coords)  # liste des coordonnees successives
+        log_info("## Simulation ## Path published : {}".format(path_coords))
 
 class DisplacementNode:
 
@@ -90,11 +99,7 @@ class DisplacementNode:
         self.final_turn = False 
         self.resume = False 
         self.paused = False                     # Le robot est arrete a cause d'un obstacle
-        self.time_last_seen_obstacle = 0        # Temps auquel on a vu le dernier obstacle 
-        self.refresh_update_obstacle = 0.5
-        self.stop_detection_obstacle = False    # Desactivation de la surveillances des obstacles
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
-        self.stop = False
         self.current_pos = [0,0,0]                # La position actuelle du robot
 
         # ## Variables de mode de DEPLACEMENT
@@ -109,13 +114,15 @@ class DisplacementNode:
         self.is_first_accurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
-        self.blocked = False                     # Le robot est arrete a cause d'un obstacle
+        self.marche_arr_dest = None
+        self.bypassing = False
+        self.wait_start = None
 
 #######################################################################
 # Fonctions de construction de path
 #######################################################################
 
-    def build_path(self, isInAvoidMode, isFirstAccurate, isSecondAttempt):
+    def build_path(self, isInAvoidMode, isFirstAccurate):
         """Fonction appelee quand on cherche chemin et le pathfinder setup.
         
         Retourne un chemin de la forme:
@@ -148,11 +155,18 @@ class DisplacementNode:
         self.pathfinder.set_max_astar_time(self.max_astar_time)
 
         # Instanciation de resultisInAvoidMode
-        result = {'message':"", 'success':False, 'built path':[]}
+        result = {'message':"", 'success':False}
 
         # On essaie d'obtenir un chemin
         try:
-            result['built path'] = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate, isSecondAttempt)
+            path = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
+            if not len(path):
+                log_errs("Error - Empty path found")
+                result['message'] = "Empty path found" 
+                result['success'] = False
+                return result
+
+            self.path = path
             result['message'] = "Path found" 
             result['success'] = True
 
@@ -171,16 +185,45 @@ class DisplacementNode:
             result['success'] = False
             return result
 
-        # On recupere le chemin obtenu
-        if not len(result['built path']):
-            log_errs("Error - Empty path found")
-            result['message'] = "Empty path found" 
-            result['success'] = False
-            return result
-        
-        self.path = result['built path']
         return result
 
+    def move_forward(self):
+
+        if self.bypassing:
+            log_info("Obstacle found ahead. Computing new path to bypass it...")
+
+        self.wait_start = None
+        self.final_move = False     
+
+        begin_time = time.perf_counter()
+
+        result = self.build_path(self.avoid_mode, self.is_first_accurate)
+
+        debug_print('c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
+
+        ## Si on a trouvé un chemin
+        if result['success']:
+            log_info("Found path: \n"+str(self.path))
+            # Affichage du path
+            if len(self.path) > 0:
+                publish_path(self.path)
+
+            self.move = True 
+            self.next_point(False)
+
+        ## Sinon, erreur de la recherche de chemin
+        else:
+            if self.bypassing:
+                log_warn("ERROR - Reason: Cannot bypass obstacle")
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+            elif result['message'] == "Dest Blocked":
+                log_warn("ERROR - Reason: " + result['message'])
+                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+            else:
+                #NOTE no path found
+                log_warn("ERROR - Reason: " + result['message'])
+                # Retour de l'erreur a la strat
+                pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
     def next_point(self, just_arrived):
         """Envoie une commande du prochain point a la Teensy.
@@ -282,6 +325,9 @@ class DisplacementNode:
             self.accurate = False
             self.rotation = False 
 
+            self.bypassing = False
+            self.wait_start = None
+
             # Publication a la strat
             pub_strat.publish(Int16(COM_STRAT["ok pos"]))
 
@@ -292,7 +338,11 @@ class DisplacementNode:
         Il s'agit du point à partir duquel on sera suffissament loin de
         l'obstacle jusqu'a la fin du trajet."""
 
-        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()[0]
+        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()
+        if avoid_robot_pos is None:
+            return # opponent position not known
+        avoid_robot_pos = avoid_robot_pos[0]
+        
         pos_list = [self.current_pos] + self.path
         i = len(pos_list) -1
         work = True
@@ -319,41 +369,6 @@ class DisplacementNode:
             vect_normal = np.array([a,b])/np.linalg.norm([a,b])
             self.reset_point = np.array(avoid_robot_pos) - d*vect_normal
             
-    def handle_obstacle(self, obstacle_seen, obstacle_stop, isDestBlocked):
-        """Gestion d'arret du robot."""
-        # dprint("Enter handle_obstacle()")
-        if obstacle_stop:
-            self.time_last_seen_obstacle = time.time()
-            if not self.paused:
-                log_info("New obstacle detected! - STOP")
-                self.paused = True
-                pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-                if isDestBlocked:
-                    log_errs("Destination is being blocked.")
-                    pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
-                else:
-                    pub_strat.publish(Int16(COM_STRAT["stop"]))
-            return
-
-        if obstacle_seen:   # Il faut ralentir
-            # dprint("Obstacle is seen")
-            # self.time_last_seen_obstacle = time.time()
-
-            log_info("New obstacle detected! - SPEED DOWN")
-            self.paused = False
-            pub_teensy.publish(Quaternion(0,0,0,CMD_TEENSY["stop"]))
-            pub_strat.publish(Int16(COM_STRAT["go"]))
-            return
-
-        if self.paused and (time()-self.time_last_seen_obstacle > self.refresh_update_obstacle):
-            self.paused = False
-            self.resume = True
-            log_info("Resume displacement.")
-            pub_strat.publish(Int16(COM_STRAT["go"]))
-            self.next_point(False)
-
-
-
 #################################################################
 #																#
 # 							MAIN PROG 							#

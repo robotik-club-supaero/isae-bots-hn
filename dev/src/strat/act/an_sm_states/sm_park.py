@@ -24,8 +24,9 @@ import time
 import smach
 import math
 from an_const import *
-from an_comm import callback_action_pub, add_score
-from an_sm_states.sm_displacement import Displacement, colored_destination
+from an_comm import callback_action_pub, get_pickup_id
+from an_sm_states.sm_displacement import Displacement, colored_approach, Approach
+from strat_const import PARK_POS
 
 #################################################################
 #                                                               #
@@ -40,7 +41,7 @@ class CalcParkPos(smach.State):
     def __init__(self):
         smach.State.__init__(   self,  
                                 outcomes=['preempted','success','fail'],
-			                    input_keys=['cb_depl','robot_pos','next_move','color'],
+			                    input_keys=['cb_depl','robot_pos','next_move','color','next_action'],
 			                    output_keys=['cb_depl','next_move'])
 
     def execute(self, userdata):
@@ -49,11 +50,11 @@ class CalcParkPos(smach.State):
             return 'preempted'
 
         ## Move to parking position
-        x_dest, y_dest = PARKING_POS
-        theta_dest = math.atan2(y_dest - userdata.robot_pos.y, x_dest - userdata.robot_pos.x)
+        park_id = get_pickup_id("parking zone", userdata)
+        x_dest, y_dest, theta = PARK_POS[park_id]
         # Modif pour la strat du dernier match 
 
-        userdata.next_move = colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL, theta_final=-theta)
         return 'success'
     
     
@@ -87,7 +88,7 @@ class ParkEnd(smach.State):
 #################################################################
 
 park = smach.StateMachine(  outcomes=['preempted', 'end', 'fail'],
-			                input_keys=['cb_depl','robot_pos','next_move', 'color'],
+			                input_keys=['cb_depl','robot_pos','next_move', 'color', 'next_action'],
 			                output_keys=['cb_depl','next_move'])
 							
 with park:

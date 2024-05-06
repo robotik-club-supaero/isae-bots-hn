@@ -22,7 +22,7 @@ import os
 import numpy as np
 from ast import literal_eval
 import configparser
-from enum import Enum, IntEnum
+from enum import IntEnum
 import rospy
 
 #################################################################
@@ -47,9 +47,6 @@ except:
 #                                                               #
 #################################################################
 
-## Park Position
-PARKING_POS = list(literal_eval(READER.get('ROBOT', 'park_pos')))
-
 ## Origin Position 
 ORIGIN_POS = list(literal_eval(READER.get('ROBOT','init_pos')))
 
@@ -67,7 +64,21 @@ ARM_SHIFT = ROBOT_DIAG//2 + 30
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5
 R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
-R_APPROACH_POTS = 130 # TODO change value
+R_APPROACH_POTS = 200 # TODO change value
+R_TAKE_POTS = 100 # TODO change value
+
+
+EDGE_DIST = 20 # when turning panel
+R_APPROACH_PANEL = 100 # TODO change value
+
+SOLAR_POS = [
+    2726,
+    2504,
+    2276,
+    1729,
+    1498,
+    1276,
+]
 
 #################################################################
 #                                                               #
@@ -96,16 +107,18 @@ DISPLACEMENT = {
 class DspOrderMode(IntEnum):
     AVOIDANCE = 0
     STRAIGHT_NO_AVOIDANCE = 1
-    STOP = 4
+    STOP = 2
+    BACKWARDS = 8
+
     
     
-class DoorOrder(Enum):
+class DoorOrder(IntEnum):
     OPEN = 0
     CLOSE = 1
     
 ''' CALLBACKS '''
 
-class DspCallback(Enum):
+class DspCallback(IntEnum):
     # UNKNOWN = -2
     # PENDING = -1
     # ARRIVED = 0
@@ -118,7 +131,7 @@ class DspCallback(Enum):
     PATH_NOT_FOUND = -1
     SUCCESS = 0
     PATH_BLOCKED = 1
-    RESTART = 2
+    RESTART = 2 # DEPRECATED - no longer published TODO cleanup
     DESTINATION_BLOCKED = 3
     
     
@@ -131,52 +144,66 @@ class DspCallback(Enum):
     #  3: 'Destination blocked'
      
     
-class DoorCallback(Enum):
+class DoorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     CLOSED = 0
     OPEN = 1
     BLOCKED = 2
     
-class ElevatorOrder(Enum):
+class ElevatorOrder(IntEnum):
     MOVE_UP = 1
     MOVE_DOWN = 0
         
-class ElevatorCallback(Enum):
+class ElevatorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 0
     UP = 1
     BLOCKED = 2
 
+class ClampOrder(IntEnum):
+    OPEN = 0
+    CLOSE = 1
+
+class ClampCallback(IntEnum):
+    UNKNOWN = -2
+    PENDING = -1
+    OPEN = 0
+    CLOSED = 1
+
+class ArmOrder(IntEnum):
+    EXTEND = 1
+    RETRACT = 2
+
+class ArmCallback(IntEnum):
+    UNKNOWN = -2
+    PENDING = -1
+    EXTENDED = 1
+    RETRACTED = 2
+    BLOCKED = 3
+
+class LoadDetectorCallback(IntEnum):
+    EMPTY = 0
+    LOADED = 1
+
 
 ## I/O keys for states of the sm
 USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
-    'score',
-    'nb_actions_done',
     'cb_depl',
-    'cb_arm',
+    'cb_left_arm',
+    'cb_right_arm',
     'cb_elevator',
     'cb_clamp',
     'cb_doors',
+    'cb_load_detector',
     'robot_pos',
     'arm_order',
     'depositArea',
     'next_action',
     'next_move',
-    'deposit_area',
-    'take_cakes_area',
-    'take_cherries_area',
-    'pucks_taken',
-    'cherries_loaded',
     'error_reaction',
-    'nb_errors',
-    'stage_to_go',
-    'stage_to_deposit',
     'park',
-    'open_clamp',
-    'open_doors',
-    'elevator_zero'
     ]

@@ -19,6 +19,7 @@
 #                                                               #
 #################################################################
 
+import os, sys, inspect
 import math
 from time import sleep
 import rospy
@@ -28,6 +29,14 @@ from geometry_msgs.msg import Pose2D
 from enum import Enum
 
 from enum import IntEnum
+
+#NOTE to import from parent directory
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+startdir = os.path.dirname(os.path.dirname(currentdir))
+sys.path.insert(0,startdir)
+
+from strat.act.an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, \
+                                    ArmCallback, ArmOrder, DspCallback, ClampOrder, ClampCallback
 
 #################################################################
 #                                                               #
@@ -52,8 +61,10 @@ def log_fatal(msg):
     rospy.logfatal(f"{NODE_NAME} {msg}")
 
 ## Constants GR
-DOORS_TIME = 0
-ELEVATOR_TIME = 0
+DOORS_TIME = 0.200
+ELEVATOR_TIME = 0.200
+CLAMP_TIME = 0.100
+ARM_TIME = 0.200
 
 #############################
 
@@ -63,39 +74,9 @@ COLOR = {
       1: 'AWAY'
 }
 
-class DoorCallback(IntEnum):
-    UNKNOWN = -2
-    PENDING = -1
-    CLOSED = 0
-    OPEN = 1
-    BLOCKED = 2
-    
-class DoorOrder(IntEnum):
-    OPEN = 0
-    CLOSE = 1
-
-class DspCallback(IntEnum):
-    UNKNOWN = -2
-    PENDING = -1
-    ARRIVED = 0
-    OBSTACLE = 1
-    OBSTACLE_ON_TARGET = 2
-    ERROR_ASSERV = 3
-    
 class DspOrder(IntEnum):
     STOP = 0
     MOVE_STRAIGHT = 1
-    
-class ElevatorCallback(IntEnum):
-    UNKNOWN = -2
-    PENDING = -1
-    DOWN = 0
-    UP = 1
-    BLOCKED = 2
-
-class ElevatorOrder(IntEnum):
-    MOVE_UP = 1
-    MOVE_DOWN = 0
     
 ## ACTUATOR Node ######################################################
 class ActuatorNode():
@@ -117,6 +98,17 @@ class ActuatorNode():
         # Simule la reponse du BN sur l'ascenseur
         self.elevator_sub = rospy.Subscriber('/act/order/elevator', Int16, self.elevator_response)
         self.elevator_pub = rospy.Publisher("/act/callback/elevator", Int16, queue_size=10, latch=True)  
+
+        self.clamp_sub = rospy.Subscriber('/act/order/clamp', Int16, self.clamp_response)
+        self.clamp_pub = rospy.Publisher("/act/callback/clamp", Int16, queue_size=10, latch=True)  
+
+        # Simule la reponse du BN sur le bras
+        self.left_arm_sub = rospy.Subscriber('/act/order/left_arm', Int16, lambda msg: ActuatorNode.arm_response(self.left_arm_pub, msg))
+        self.left_arm_pub = rospy.Publisher("/act/callback/left_arm", Int16, queue_size=10, latch=True)  
+        
+        self.right_arm_sub = rospy.Subscriber('/act/order/right_arm', Int16, lambda msg: ActuatorNode.arm_response(self.right_arm_pub, msg))
+        self.right_arm_pub = rospy.Publisher("/act/callback/right_arm", Int16, queue_size=10, latch=True)  
+
 
         # Comm avec l'interface de simulation
         self.square_layout_pub = rospy.Publisher("/simu/squareLayout", Int16, queue_size=10, latch=True)
@@ -170,7 +162,25 @@ class ActuatorNode():
             self.elevator_pub.publish(data=ElevatorCallback.DOWN)
             log_info("Réponse simulée : Ascenseur bas")
 
+    def clamp_response(self, msg):
+        sleep(CLAMP_TIME)
+        if msg.data == ClampOrder.OPEN:
+            self.clamp_pub.publish(data=ClampCallback.OPEN)
+            log_info("Réponse simulée : Pince ouverte")
+        else:
+            self.clamp_pub.publish(data=ClampCallback.CLOSED)
+            log_info("Réponse simulée : Pince fermée")
 
+
+    @staticmethod
+    def arm_response(pub, msg):
+        sleep(ARM_TIME)
+        if msg.data == ArmOrder.EXTEND:
+            pub.publish(data=ArmCallback.EXTENDED)
+            log_info("Réponse simulée : Bras tendu")
+        else:
+            pub.publish(data=ArmCallback.RETRACTED)
+            log_info("Réponse simulée : Bras rentré")
 
 #################################################################
 #																#

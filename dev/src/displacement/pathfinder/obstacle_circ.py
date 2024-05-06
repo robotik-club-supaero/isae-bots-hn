@@ -18,6 +18,7 @@
 """
 
 import math
+import numpy as np
 
 class ObstacleCirc:
     
@@ -26,21 +27,23 @@ class ObstacleCirc:
     def __init__(self, x_center, y_center, radius):
         """Initialization of obstacle."""
         self.name = "C"         # Type d'obstacle
-        self.x_center = x_center  # Coordonnée selon l'axe X du centre du cercle
-        self.y_center = y_center  # Coordonnée selon l'axe Y du centre du cercle
+        self.center = np.array([x_center, y_center])
         self.radius = radius    # Rayon du cercle
+
+    def __str__(self):
+        return f"ObstacleCirc(x={self.get_x_center()}, y={self.get_y_center()}, radius={self.radius})"
         
     def get_x_center(self):
-        return self.x_center
+        return self.center[0]
     
     def get_y_center(self):
-        return self.y_center
+        return self.center[1]
     
     def set_x_center(self, x):
-        self.x_center = x
+        self.center[0] = x
 
     def set_y_center(self, y):
-        self.y_center = y
+        self.center[1] = y
 
     def get_radius(self):
         return self.radius
@@ -48,14 +51,22 @@ class ObstacleCirc:
     def get_name(self):
         return self.name
 
-    def is_node_in(self, node):
+    def is_node_in(self, x, y):
         """Verifie si le node passe en param est dans l'obstacle."""
-        x = node.get_x()
-        y = node.get_y()
-        return math.sqrt((x-self.x_center)**2+(y-self.y_center)**2)<self.radius
+        pos = np.array([x, y])
+        return np.linalg.norm(self.center-pos) <= self.radius
 
-    def is_equals(self, obstacle):
-        return (self.x_center == obstacle.x_center) and (self.y_center == obstacle.y_center) and (self.radius == obstacle.radius)
-    
-    def copy(self):
-        return ObstacleCirc(self.x_center, self.y_center, self.radius)
+    def crosses(self, segment):      
+        center = self.center
+
+        OA = segment[0] - center
+        OB = segment[1] - center
+        if np.dot(OA, segment[0] - segment[1]) > 0 and np.dot(OB, segment[1] - segment[0]) > 0:
+            prod = np.abs(OA[0] * OB[1] - OA[1] * OB[0])
+            dist = prod / np.linalg.norm(segment[1] - segment[0])
+            return dist < self.radius
+        else:
+            return np.minimum(np.linalg.norm(OA), np.linalg.norm(OB)) < self.radius
+
+    def bounding_box(self):
+        return np.array([self.center - self.radius, self.center + self.radius])

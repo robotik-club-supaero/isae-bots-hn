@@ -26,9 +26,8 @@ import time
 from ast import literal_eval
 
 from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
-from dn_comm     import init_comm
-import dn_strats
-# from dn_strats   import init_strats, test_strat, homologation, match_strat
+from dn_comm     import init_comm, CULTURE_SLOTS
+from dn_strats   import init_strats, test_strat, homologation, match_strat
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
@@ -67,8 +66,9 @@ class DecisionsNode:
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))
-        self.delay_park = 13  # TODO: change it to named constant
+        self.delay_park =  int(READER.get("STRAT", "delay_park"))
         self.go_park = False
+        self.parked = False
 
         self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
@@ -82,13 +82,19 @@ class DecisionsNode:
 
         self.park_action = False
         self.kill_action = False
-        self.curr_action = [Action.WAIT]  # of type Action
-        self.nb_actions_done = [0]
+        self.curr_action = [Action.PENDING]  # of type Action
 
+        self.last_action = self.curr_action
+        self.action_successful = False
+        self.retry_count = 0
+
+        self.init_zone = int(READER.get("STRAT", "init_zone"))
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
         self.remaining_plants = [6 for _ in range(6)]
         self.remaining_pots = [6 for _ in range(6)]
+        self.deposit_slots = [CULTURE_SLOTS for _ in range(3)]
+        self.solar_panels = [False for _ in range(6)]
 
 
 #################################################################

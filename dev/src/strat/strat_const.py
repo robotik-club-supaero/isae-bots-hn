@@ -14,22 +14,36 @@
 
 from math import pi
 from enum import IntEnum
+import configparser, os
+from ast import literal_eval
 
+
+READER = configparser.ConfigParser()
+READER.read(os.path.join(os.path.dirname(__file__),'../robot_config.cfg'))
+
+class ActionResult(IntEnum):
+    SUCCESS = 1
+    NOTHING_TO_PICK_UP = 5
+    FAILURE = -1
 
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    PICKUP_PLANT = 0
-    PICKUP_POT   = 1
-    PARK         = 2
-    WAIT         = 3
-    END          = 4
-    PREEMPT      = 5
-    
+    TURN_SOLAR_PANEL = 0
+    PICKUP_PLANT = 1
+    PICKUP_POT   = 2
+    DEPOSIT_POT =  3
+    PARK         = 4
+    WAIT         = 5
+    END          = 6
+    PREEMPT      = 7
+
 
 ACTIONS_LIST = [
+    'turnPanel',
     'pickupPlant',
     'pickupPot',
+    'depositPot',
     'park',
     'preempted',
     'end',
@@ -37,8 +51,10 @@ ACTIONS_LIST = [
     ]
 
 ACTION_TRANSITIONS = {
+    'turnPanel': 'TURNPANEL',
     'pickupPlant':'PICKUPPLANT',
     'pickupPot': 'PICKUPPOT',
+    'depositPot': 'DEPOSITPOT',
     'park':'PARK',
     'preempted':'END',
     'end':'END',
@@ -47,22 +63,10 @@ ACTION_TRANSITIONS = {
 
 
 class ActionScore(IntEnum): #TODO update
-    SCORE_INIT = 5
-    SCORE_PARK = 15
-    SCORE_DEPOSIT_PLANTS = 30
-    BONUS = 20
-
-# ACTIONS_SCORE = { 
-# 	'init_score':               5,
-#     'funnyCounter':            10,
-#     'parking':                 15,
-#     'depositStage':             1,
-#     'legendary':                4,
-#     'cherryOnCake':             3,
-#     'cherryBucket':             1,
-#     'bonus':                   20
-# }
-
+    SCORE_INIT = 0
+    SCORE_PARK = 10
+    SCORE_DEPOSIT_PLANTS = 4
+    SCORE_SOLAR_PANEL = 5
 
 PLANTS_POS = [
     [ 700, 1000],
@@ -84,11 +88,16 @@ POTS_POS = [
 
 
 DEPOSIT_POS = [
-	[ 225,  225, -pi/2],
-    [1000,  225, -pi/2],
-    [1775,  225, -pi/2],
-	[1775, 2775,  pi/2],
-    [1000, 2775,  pi/2],
-    [ 225, 2775,  pi/2],
+	#[ 225,  225, -pi/2],
+    [1000,  100, -pi/2],
+  #  [1775,  225, -pi/2],
+	[1775, 2900,  pi/2],
+  #  [1000, 2775,  pi/2],
+    [ 225, 2900,  pi/2],
 ]
 
+PARK_POS = [
+    list(literal_eval(READER.get("ROBOT", "init_pos"))),
+    list(literal_eval(READER.get("ROBOT", "init_pos2"))),
+    list(literal_eval(READER.get("ROBOT", "init_pos3")))
+]

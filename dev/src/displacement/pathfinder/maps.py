@@ -24,10 +24,10 @@
 #######################################################################
 
 import os
+import numpy as np
 from ast import literal_eval
 
-from disp_utils import READER
-
+from disp_utils import READER, GRID_INTERVAL
 #################################################################################################
 """ if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot
@@ -44,53 +44,43 @@ class Maps:
 # Methods
 #######################################################################
 
-    def __init__(self, standard_node_list, avoiding_node_list, obstacle_list):
+    def __init__(self, obstacle_list):
         """Initialization of Maps."""
         self.robot_width = int(literal_eval(READER.get("ROBOT", "robot_larg")))
 
-        self.obstacle_list = obstacle_list            # Liste des obstacles
-        self.standard_node_list = standard_node_list    # Liste des noeuds de passages présents sur la Map        
-        self.avoiding_node_list = avoiding_node_list    # Liste des noeud à utiliser lors de l'évitement
+        self.obstacle_list = obstacle_list            # Dict des obstacles
 
-        self.obstacle_robot_pos = None                # Position robot à éviter
+        x = np.linspace(0, 2000, 2000//GRID_INTERVAL)
+        y = np.linspace(0, 3000, 3000//GRID_INTERVAL)
+        self.grid = np.zeros((x.shape[0], y.shape[0], 2), dtype=np.float32)
+
+        x, y = np.meshgrid(x, y, copy=False, indexing='ij')
+        self.grid[...,0] = x
+        self.grid[...,1] = y
 
         # Choix map classique ou map d'évitement    #### ATRANSFORMER EN ENTIER POUR AVOIR PLUS QUE 2 MAPS ####
         self.avoid = False
-        # Deuxieme essai evitement
-        self.is_second_attempt = False
+   
+    def get_grid(self):
+        return self.grid
 
-    def get_obstacle_list(self):
+    def get_obstacles(self):
+        return self.obstacle_list.values()
         
-        return self.obstacle_list+[self.obstacle_robot_pos]
-        if self.avoid:
-            if self.is_second_attempt:
-                return self.obstacle_list+[self.obstacle_robot_pos]
-            return self.obstacle_list+[self.obstacle_robot_pos]
-        else:
-            return self.obstacle_list
-        
-    def remove_obstacle(self, obstacle):
-        for i in range(len(self.obstacle_list)):
-            if type(self.obstacle_list[i]) == type(obstacle):
-                if obstacle.is_equals(self.obstacle_list[i]):
-                    del self.obstacle_list[i]
-                    break
-    
-    def get_node_list(self):
-        if self.avoid:
-            return self.avoiding_node_list
-        else:
-            return self.standard_node_list
+    def remove_obstacle(self, obstacle_id):
+        self.obstacle_list.pop(obstacle_id, None)
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos):
-        self.obstacle_robot_pos = obstacle_robot_pos
+        if obstacle_robot_pos is not None:
+            self.obstacle_list["robot_pos"] = obstacle_robot_pos
+        else:
+            self.obstacle_list.pop("robot_pos", None)
     
     def get_obstacle_robot_pos(self):
-        return self.obstacle_robot_pos
+        return self.obstacle_list.get("robot_pos", None)
 
-    def set_avoid(self, avoid, is_second_attempt):
+    def set_avoid(self, avoid):
         self.avoid = avoid
-        self.is_second_attempt = is_second_attempt
 
     def get_avoid(self):
         return self.avoid

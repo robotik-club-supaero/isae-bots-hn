@@ -21,12 +21,14 @@
 import os, sys, inspect
 import time
 import rospy
+import smach
 
-from std_msgs.msg      import Int16, Int16MultiArray, Empty
+from std_msgs.msg      import Int16, Int16MultiArray, Empty, String
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import  DoorCallback, ElevatorCallback, DspCallback, COLOR
-from an_utils import log_info, log_warn, log_errs
+from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, \
+                    ClampCallback, COLOR
+from an_logging import log_info, log_warn, log_errs
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
@@ -66,7 +68,6 @@ def enable_comm():
 
 global ok_comm
 ok_comm = False
-
 
 def setup_start(msg):
 	"""
@@ -120,7 +121,7 @@ def cb_position_fct(msg):
     Callback of current position of the robot.
     """
     if not ok_comm: return
-    p_smData.robot_pos = msg
+    p_smData.robot_pos[0] = msg
 
 
 def cb_doors_fct(msg):
@@ -141,6 +142,23 @@ def cb_elevator_fct(msg):
     """
     if not ok_comm: return
     p_smData.cb_elevator[0] = ElevatorCallback(msg.data)
+
+def cb_left_arm_fct(msg):
+    if not ok_comm: return
+    p_smData.cb_left_arm[0] = ArmCallback(msg.data)
+
+
+def cb_right_arm_fct(msg):
+    if not ok_comm: return
+    p_smData.cb_right_arm[0] = ArmCallback(msg.data)
+
+def cb_clamp_fct(msg):
+    if not ok_comm: return
+    p_smData.cb_clamp[0] = ClampCallback(msg.data)
+
+def cb_load_detector(msg):
+    if not ok_comm: return
+    p_smData.cb_load_detector = LoadDetectorCallback(msg.data)
 
 
 def cb_park_fct(msg):
@@ -199,18 +217,6 @@ def update_error_reaction(msg):
 	p_smData.error_reaction[0] = msg.data
 	log_info('error_reaction mis a jour a {}'.format(p_smData.error_reaction[0]))
 
-#################################################################
-#                                                               #
-#                           REQUESTS                            #
-#                                                               #
-#################################################################
-
-def add_score(pts):
-    """
-    Request for setting a new score (prev + new pts added).
-    """
-    p_smData.score[0] += pts
-    score_pub.publish(p_smData.score[0])
 
 #################################################################
 #                                                               #
@@ -222,17 +228,22 @@ def add_score(pts):
 Initialize all publishers of AN
 """
 # GENERAL PUBS
-global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub
+global score_pub, repartitor_pub, callback_action_pub, disp_pub, stop_teensy_pub, remove_obs
 score_pub = rospy.Publisher('/game/score', Int16, queue_size=10, latch=True)
 repartitor_pub = rospy.Publisher('/strat/action/request', Empty, queue_size=10, latch=True)
 callback_action_pub = rospy.Publisher('/strat/action/callback', EndOfActionMsg, queue_size=10, latch=True)
 disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
+remove_obs = rospy.Publisher('/deleteObs', String, queue_size = 10, latch= True)
 
 # SPECIFIC TO CURRENT YEAR
-global doors_pub, depl_pub, elevator_pub
+global doors_pub, elevator_pub, left_arm_pub, right_arm_pub, clamp_pub
 doors_pub = rospy.Publisher('/act/order/doors', Int16, queue_size = 10, latch= True)
 elevator_pub = rospy.Publisher('/act/order/elevator', Int16, queue_size = 10, latch= True)
+left_arm_pub = rospy.Publisher('/act/order/left_arm', Int16, queue_size = 10, latch=True)
+right_arm_pub = rospy.Publisher('/act/order/right_arm', Int16, queue_size = 10, latch=True)
+clamp_pub = rospy.Publisher('/act/order/clamp', Int16, queue_size = 10, latch=True)
+deposit_pub = rospy.Publisher('/simu/deposit_end', Empty, queue_size = 10, latch= True) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
 
 """
 Initialize all subscribers of AN
@@ -249,3 +260,8 @@ park_sub = rospy.Subscriber('/park', Int16, cb_park_fct)
 # SPECIFIC TO CURRENT YEAR
 doors_sub = rospy.Subscriber('/act/callback/doors', Int16, cb_doors_fct)
 elevator_sub = rospy.Subscriber('/act/callback/elevator', Int16, cb_elevator_fct)
+left_arm_sub = rospy.Subscriber('/act/callback/left_arm', Int16, cb_left_arm_fct)
+right_arm_sub = rospy.Subscriber('/act/callback/right_arm', Int16, cb_right_arm_fct)
+clamp_sub = rospy.Subscriber('/act/callback/clamp', Int16, cb_clamp_fct)
+
+load_detector = rospy.Subscriber('/act/callback/load_detector', Int16, cb_load_detector) # TODO

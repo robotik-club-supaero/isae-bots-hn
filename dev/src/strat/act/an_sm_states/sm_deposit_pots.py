@@ -21,14 +21,17 @@
 import smach
 import math
 import time
+from geometry_msgs.msg import Quaternion
+from std_msgs.msg      import Empty
 
-from an_const import R_APPROACH_POTS, R_TAKE_POTS, DspOrderMode
-from an_logging import debug_print
-from an_utils import AutoSequence, AutoConcurrence, OpenDoors, CloseDoors, OpenClamp, RiseElevator, DescendElevator
-from strat_const import POTS_POS, ActionResult
-from an_sm_states.sm_displacement import MoveTo, Approach, colored_approach_with_angle
-from an_sm_states.sm_waiting import ObsWaitingOnce
-from an_comm import get_pickup_id, callback_action_pub, remove_obs
+from an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
+from an_logging import debug_print, log_errs, log_warn, log_info
+from an_utils import AutoSequence, OpenDoors, CloseDoors
+
+from strat_const import DEPOSIT_POS
+from strat_utils import adapt_pos_to_side
+from an_sm_states.sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
+from an_comm import get_pickup_id, callback_action_pub, deposit_pub, disp_pub
 
 #################################################################
 #                                                               #
@@ -41,36 +44,27 @@ class CalcPositionningPots(smach.State):
     def __init__(self):
         smach.State.__init__(	self,
                                 outcomes=['fail','success','preempted'],
-                                input_keys=['color','next_action'],
+                                input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
         
     def execute(self, userdata):    
-        pots_id = get_pickup_id("pots", userdata)
-        remove_obs.publish(f"pot{pots_id}") # FIXME if action fails, obstacle is not restored
-        
-        xp, yp, thetap = POTS_POS[pots_id]
+        x, y = userdata.robot_pos[0].x, userdata.robot_pos[0].y
+        pots_id = get_pickup_id("deposit pots", userdata)
+
+        xp, yp, thetap = DEPOSIT_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_APPROACH_POTS)
              
         return 'success'
 
-
-class CalcTakePots(smach.State):
-    
+# TODO find a better way
+class ReportDeposit(smach.State):
     def __init__(self):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['color','next_action'],
-                                output_keys=['next_move'])
-        
-    def execute(self, userdata):    
-        pots_id = get_pickup_id("pots", userdata)
-
-        xp, yp, thetap = POTS_POS[pots_id]
-        userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_TAKE_POTS)
-             
+        super().__init__(outcomes=['success'])
+    def execute(self, userdata):
+        deposit_pub.publish(Empty())
         return 'success'
  
-class PickupPotsEnd(smach.State):
+class DepositPotsEnd(smach.State):
     
     def __init__(self):
         smach.State.__init__(	self,
@@ -79,33 +73,24 @@ class PickupPotsEnd(smach.State):
                                 output_keys=[])
         
     def execute(self, userdata):
-        #TODO check that the action was actually successful
-        # TODO check whether the robot actually carries pots
-        callback_action_pub.publish(exit=ActionResult.SUCCESS, reason='success')        
+        
+        
+        #TODO check that the action was actually successful      
+        callback_action_pub.publish(exit=1, reason='success')
+        
         return 'success'
     
 #################################################################
 #                                                               #
-#                        SM STATE : PICKUP_POTS                 #
+#                        SM STATE : DEPOSIT_POTS                 #
 #                                                               #
 #################################################################
 
-pickUpPotSequence = AutoSequence(
-    ('OPEN_DOORS', OpenDoors()),
-    ('KEEP_OPEN', ObsWaitingOnce(wait_time=0.2)),
-    ('CLOSE_DOORS', CloseDoors()), # gather pots
-    # TODO check the robot has actually picked up pots
-    ('POT_PLANTS', DescendElevator()), # put grabbed plants into pots
-    ('RELEASE_PLANTS', OpenClamp()),
-    ('RISE_ELEVATOR', RiseElevator()),
-)
-
-pickupPot = AutoSequence(
+depositPot = AutoSequence(
     ('DEPL_POSITIONING_POTS', MoveTo(CalcPositionningPots())),
-    ('PICKUP_POTS_CONC', AutoConcurrence(
-        DEPL_SEQ = MoveTo(CalcTakePots()),
-        PICKUP_POT_SEQ = pickUpPotSequence,
-    )),
-    ('PICKUP_POTS_END', PickupPotsEnd()),
+    ('OPEN_DOORS', OpenDoors()),
+    ('REPORT_TO_INTERFACE', ReportDeposit()),
+    ('RELEASE_POTS', MoveBackwardsStraight(dist=R_APPROACH_POTS)), # TODO change dist
+    ('CLOSE_DOORS', CloseDoors()),
+    ('DEPOSIT_POTS_END',  DepositPotsEnd()),
 )
-

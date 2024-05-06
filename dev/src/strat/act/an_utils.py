@@ -1,120 +1,150 @@
-# -*- coding: utf-8 -*-
-#     ____                                                  
-#    / ___| _   _ _ __   __ _  ___ _ __ ___                 
-#    \___ \| | | | '_ \ / _` |/ _ \ '__/ _ \                
-#     ___) | |_| | |_) | (_| |  __/ | | (_) |               
-#    |____/ \__,_| .__/ \__,_|\___|_|  \___/                
-#   ____       _ |_|       _   _ _       ____ _       _     
-#  |  _ \ ___ | |__   ___ | |_(_) | __  / ___| |_   _| |__  
-#  | |_) / _ \| '_ \ / _ \| __| | |/ / | |   | | | | | '_ \ 
-#  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
-#  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-# pyright: reportMissingImports=false
+import smach
+import time
 
-#################################################################
-#                                                               #
-#                           IMPORTS                             #
-#                                                               #
-#################################################################
+from an_const import DoorOrder, DoorCallback, ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
+from an_logging import debug_print, log_warn
+from an_comm import doors_pub, elevator_pub, clamp_pub
 
-import rospy
-from math import pi
-from an_const import NODE_NAME, COLOR
+class HardwareOrder(smach.State):
 
-#################################################################
-#                                                               #
-#                          CONSTANTS                            #
-#                                                               #
-#################################################################
+    def __init__(self, publisher, cb_key, order, pending, expected, timeout=WAIT_TIME):
+        super().__init__(input_keys=[cb_key], output_keys=[cb_key], outcomes=['fail','success','preempted'])
+        self._publisher = publisher
+        self._cb_key = cb_key
+        self._order = order
+        self._pending = pending
+        self._expected = expected
+        self._timeout = timeout
 
-def log_info(msg):
-    """
-    Print standard logs.
-    """
-    rospy.loginfo(f"{NODE_NAME} {msg}")
+    def execute(self, userdata):
+        getattr(userdata, self._cb_key)[0] = self._pending
 
+        self._publisher.publish(self._order.value)
+   
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < self._timeout:
+            
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'       
 
-def log_warn(msg):
-    """
-    Print warning logs.
-    """
-    rospy.logwarn(f"{NODE_NAME} {msg}")
-
-def log_errs(msg):
-    """
-    Print errors logs.
-    """
-    rospy.logerr(f"{NODE_NAME} {msg}")
+            response = getattr(userdata, self._cb_key)[0]
+            if response == self._expected:
+                return 'success'
+            elif response != self._pending:
+                log_warn(f"Unexpected response from hardware: {response} for order {self._order}")
+                return 'fail'
+            time.sleep(0.01)
+        
+        # timeout
+        log_warn(f"Timeout while waiting for response from hardware for order {self._order}")        
+        return 'fail'
+     
+class OpenDoors(HardwareOrder):
     
-def log_fatal(msg):
-    """
-    Print fatal errors (programs cannot continue to run)
-    """
-    rospy.logfatal(f"{NODE_NAME} {msg}")
+    def __init__(self):
+        super().__init__(doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
     
-#################################################################
-# Colors gestion												#
-#################################################################
-
-class Color():
-    BLACK = '\033[30m'
-    RED = '\033[31m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    MAGENTA = '\033[35m'
-    CYAN = '\033[36m'
-    WHITE = '\033[37m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    RESET = '\033[0m'
-
-color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
-             'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
-
-#################################################################
-# Debug functions												#
-#################################################################
-
-# Enable or disable debug prints
-debug_prints = True  
-
-# Debug print function
-def debug_print(format, *msgs):
+    def execute(self, userdata):
+        debug_print('c', "Request to open doors")
+        return super().execute(userdata)
     
-    # If debug prints are disabled, quit
-    if not debug_prints: return
-
-    # If no color was specified, error & quit
-    if len(format) == 0:
-        print(Color.RED + "Wrong debug_print color" + Color.RESET)
-        return
-
-    print_string = ""
-    color = format[0]
-
-    if len(format[1:]) > 0:
-        shape = format[1:]
-        if shape == '*': 
-            print_string += Color.BOLD
-        elif shape == '-': 
-            print_string += Color.UNDERLINE
-        elif shape == '*-': 
-            print_string += Color.BOLD + Color.UNDERLINE
-
-    total_msg = ""
-    for msg in msgs:
-        total_msg = total_msg + str(msg) + ", "
-    total_msg = total_msg[:-2]
-
-    try:
-        print_string += color_dict[color] + total_msg + Color.RESET
-        log_info(print_string)
-    except KeyError:
-        log_info(Color.RED + "Wrong debugPrint color" + Color.RESET)
-        return
+class CloseDoors(HardwareOrder):
     
+    def __init__(self):
+        super().__init__(doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
+
+    def execute(self, userdata):
+        debug_print('c', "Request to close doors")
+        return super().execute(userdata)    
+   
+class RiseElevator(HardwareOrder):
     
-def debug_print_move(quaternion):
-    debug_print('c*', f"({quaternion.x}, {quaternion.y}, {quaternion.z}, {quaternion.w})")
+    def __init__(self):
+        super().__init__(elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
+        
+    def execute(self, userdata):        
+        debug_print('c', "Request to move elevator up")
+        return super().execute(userdata)
+ 
+class DescendElevator(HardwareOrder):
+    
+    def __init__(self):
+        super().__init__(elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
+        
+    def execute(self, userdata):        
+        debug_print('c', "Request to move elevator down")
+        return super().execute(userdata)
+
+class OpenClamp(HardwareOrder):
+    
+    def __init__(self):
+        super().__init__(clamp_pub, 'cb_clamp', ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
+        
+    def execute(self, userdata):        
+        debug_print('c', "Request to open clamp")
+        return super().execute(userdata)
+       
+class CloseClamp(HardwareOrder):
+    
+    def __init__(self):
+        super().__init__(clamp_pub, 'cb_clamp', ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
+        
+    def execute(self, userdata):        
+        debug_print('c', "Request to close clamp")
+        return super().execute(userdata)
+
+def _auto_keys(actions):
+    input_keys = set()
+    output_keys = set()
+    for _, sm in actions:
+        input_keys.update(sm.get_registered_input_keys())
+        output_keys.update(sm.get_registered_output_keys())
+    
+    return list(input_keys), list(output_keys)
+       
+class AutoSequence(smach.Sequence):
+
+    def __init__(self, *actions):
+        input_keys, output_keys = _auto_keys(actions)     
+        super().__init__( 
+            input_keys = input_keys,
+            output_keys = output_keys,
+            outcomes = ['success', 'fail', 'preempted'],
+            connector_outcome = 'success'
+        )
+
+        with self:
+            for id, sm in actions:
+                smach.Sequence.add(id, sm)
+
+class AutoConcurrence(smach.Concurrence):
+
+    def __init__(self, **actions):
+        input_keys, output_keys = _auto_keys(actions.items())
+        super().__init__( 
+            input_keys = input_keys,
+            output_keys = output_keys,
+            outcomes = ['success', 'fail', 'preempted'],
+            default_outcome = 'fail',
+            child_termination_cb = AutoConcurrence._child_termination_cb,
+            outcome_cb = AutoConcurrence._outcome_cb
+        )
+
+        with self:
+            for id, sm in actions.items():
+                smach.Concurrence.add(id, sm)
+
+    @staticmethod
+    def _child_termination_cb(outcomes):
+        return any(outcome == 'preempted' for outcome in outcomes)
+
+    @staticmethod
+    def _outcome_cb(outcomes):
+        if any(outcome == 'preempted' for outcome in outcomes.values()):
+            return 'preempted'
+        elif all(outcome == 'success' for outcome in outcomes.values()):
+            return 'success'
+        else:
+            return 'fail'

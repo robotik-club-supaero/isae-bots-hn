@@ -60,12 +60,12 @@ def make_obstacle_list(color):
     obstacles = {}
 
     if int(READER.get("PATHFINDER", "static_obstacles")) != 0:
-   
+
         # Walls 
-        obstacles["wallNorth"] = ObstacleRect(MARGIN, MARGIN, MARGIN, 3000-MARGIN)
-        obstacles["wallSouth"] = ObstacleRect(2000-MARGIN, 2000-MARGIN, MARGIN, 3000-MARGIN)
-        obstacles["wallEast"] = ObstacleRect(MARGIN, 2000-MARGIN, MARGIN, MARGIN)
-        obstacles["wallWest"] = ObstacleRect(MARGIN, 2000-MARGIN, 3000-MARGIN, 3000-MARGIN)
+        obstacles["wallNorth"] = ObstacleRect(0, MARGIN, 0, 3000)
+        obstacles["wallSouth"] = ObstacleRect(2000-MARGIN, 2000, 0, 3000)
+        obstacles["wallEast"] = ObstacleRect(0, 2000, 0, MARGIN)
+        obstacles["wallWest"] = ObstacleRect(0, 2000, 3000-MARGIN, 3000)
 
         # Bases
         baseHome = ObstacleRect(0, 450+MARGIN, 2550-MARGIN, 3000)
@@ -77,7 +77,7 @@ def make_obstacle_list(color):
 
         # Plants
         for i, plant in enumerate(PLANTS_POS):
-            obstacles[f"plant{i}"] = ObstacleCirc(*adapt_pos_to_side(*plant, 0, color)[:2], radius=125+MARGIN)
+            obstacles[f"plant{i}"] = ObstacleCirc(*adapt_pos_to_side(*plant, 0, color)[:2], radius=135+MARGIN)
 
         # Pots
         for i, pot in enumerate(POTS_POS):

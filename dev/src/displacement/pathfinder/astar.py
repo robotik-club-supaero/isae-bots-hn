@@ -29,6 +29,7 @@ d'obstacle définie dans la classe Map.
 import time
 import numpy as np
 import pyastar2d
+import math
 
 from disp_utils import GRID_INTERVAL, log_info
 from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
@@ -36,15 +37,6 @@ from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedEr
 ### CONSTANTES ########################################################
 
 #######################################################################
-
-def is_out_obstacles(tableMap, x, y):
-    #Teste si le noeud est en dehors des obstacles
-    if not tableMap.get_avoid():
-        return True
-    for obstacle in tableMap.get_obstacles():
-        if obstacle.is_node_in(x, y):
-            return False
-    return True
 
 def can_go_straight(tableMap, init, goal):
     # Can't use init == goal because this does not support np arrays
@@ -80,12 +72,14 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime):
     final_cap = goal[2]
    
     weights[:] = 1 # avoids recreating the array every time
-
-    for i in range(weights.shape[0]):
-        for j in range(weights.shape[1]):
-            if not is_out_obstacles(tableMap, i*GRID_INTERVAL, j*GRID_INTERVAL):
-                weights[i,j] = None
-
+    if tableMap.get_avoid():
+        for obstacle in tableMap.get_obstacles():
+            bb = obstacle.bounding_box() / GRID_INTERVAL
+            for i in range(math.floor(bb[0,0]), min(math.floor(bb[1,0]+1), weights.shape[0])):
+                for j in range(math.floor(bb[0,1]), min(math.floor(bb[1,1]+1), weights.shape[1])):
+                    if weights[i,j] == 1 and obstacle.is_node_in(i*GRID_INTERVAL, j*GRID_INTERVAL):
+                        weights[i,j] = None
+                        
     start = [min(int(round(init[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(init[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
     dest = [min(int(round(goal[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(goal[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
 

@@ -60,3 +60,6 @@ class ObstacleTria:
 
     def crosses(self, line_vect):
         raise NotImplementedError("Triangle obstacles not implemented yet")
+
+    def bounding_box(self):
+        raise NotImplementedError()

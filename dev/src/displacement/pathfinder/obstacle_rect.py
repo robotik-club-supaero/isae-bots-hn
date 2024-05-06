@@ -26,31 +26,32 @@ class ObstacleRect:
     def __init__(self,x_min,x_max,y_min,y_max):
         """Initialization of obstacle."""    
         self.name = "R"     # Type d'obstacle
-        self.x_min = x_min    # x_min du rectangle
-        self.x_max = x_max    # x_max du rectangle
-        self.y_min = y_min    # y_min du rectangle
-        self.y_max = y_max    # y_max du rectangle
+        self.coords = np.array([[x_min, y_min], [x_max, y_max]])
     
     def __str__(self):
         return f"ObstacleRect(x_min={self.x_min}, x_max={self.x_max}, y_min={self.y_min}, y_max={self.y_max})"
          
-    def get_x_min(self):
-        return self.x_min
+    @property
+    def x_min(self):
+        return self.coords[0,0]
     
-    def get_x_max(self):
-        return self.x_max
+    @property
+    def x_max(self):
+        return self.coords[1,0]
     
-    def get_y_min(self):
-        return self.y_min
+    @property
+    def y_min(self):
+        return self.coords[0,1]
     
-    def get_y_max(self):
-        return self.y_max
+    @property
+    def y_max(self):
+        return self.coords[1,1]
     
     def get_name(self):
         return self.name
 
     def is_node_in(self, x, y):
-        return self.x_min<x<self.x_max and self.y_min<y<self.y_max
+        return self.x_min<=x<=self.x_max and self.y_min<=y<=self.y_max
 
     def crosses(self, segment):  
         x_min = self.x_min
@@ -83,18 +84,5 @@ class ObstacleRect:
                 
         return False
 
-def _line_collide(lineA, lineB):    
-    bDotDPerp = np.cross(lineA, lineB)   
-    if bDotDPerp == 0:
-        return False
-
-    c = lineB[0] - lineA[0]
-    t = np.cross(c, d) / bDotDPerp
-    if t < 0 or t > 1:
-        return False
-
-    u = np.cross(c, b) / bDotDPerp
-    if u < 0 or u > 1:
-        return False
-
-    return True
+    def bounding_box(self):
+        return self.coords

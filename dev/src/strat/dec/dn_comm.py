@@ -141,7 +141,7 @@ def send_action_next(msg):
     Send back the next action when triggered.
     """
     log_info(f"Next action requested by AN")
-    p_dn.strategies[p_dn.strat]()
+    p_dn.strat_functions[p_dn.strat]()
     
 
 #################################################################

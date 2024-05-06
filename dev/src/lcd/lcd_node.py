@@ -123,7 +123,7 @@ class LcdNode:
             self.isMatchStarted = True
         
             self.lcd.lcd_clear()
-            self.lcd.lcd_display_string("SCORE : " + 0, line=1)
+            self.lcd.lcd_display_string("SCORE : " + "0", line=1)
 
 
 ### LAUNCH ###

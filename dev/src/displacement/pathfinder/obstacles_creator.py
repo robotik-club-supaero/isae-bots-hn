@@ -77,7 +77,7 @@ def make_obstacle_list(color):
 
         # Plants
         for i, plant in enumerate(PLANTS_POS):
-            obstacles[f"plant{i}"] = ObstacleCirc(*adapt_pos_to_side(*plant, 0, color)[:2], radius=135+MARGIN)
+            obstacles[f"plant{i}"] = ObstacleCirc(*adapt_pos_to_side(*plant, 0, color)[:2], radius=125+MARGIN)
 
         # Pots
         for i, pot in enumerate(POTS_POS):

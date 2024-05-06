@@ -32,6 +32,7 @@ from geometry_msgs.msg import Pose2D
 #################################################################
 
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
+SPEED = 200 # mm/s | can be 0 for fixed obstacle
 
 _NODENAME_ = "[OBS]"
 
@@ -62,7 +63,7 @@ class SIM_ObstaclesNode:
         self.obs_info_pub = rospy.Publisher("/obstaclesInfo", Int16MultiArray, queue_size=10, latch=False)
         # self.obs_lidar_pub = rospy.Publisher("/lidar/obstaclesLidar", Int16MultiArray, queue_size=10, latch=False)
 
-        self.curr_time = time.time()
+        self.create_time = time.time()
         
         loginfo("OBS node initialized")
 
@@ -95,17 +96,13 @@ class SIM_ObstaclesNode:
         ###############################################################
         ## Make the info msg to send
         ###############################################################
-        # calculatedObstacles = 
-        # if time.time() - self.curr_time <= 15:
-        #     obstacles_pos = []  #[(1200,600)]
-        # else:
-        #     obstacles_pos = [(1000,800+30*(time.time()-self.curr_time-15), np.linalg.norm([self.x_robot-1000, self.y_robot-800+30*(time.time()-self.curr_time-15)]) ,0,0)]
-        # """ else :
-        #     obstacles_pos = [(1000,1200, np.linalg.norm([self.x_robot-1000, self.y_robot-1200]) ,0,0)] """
-        #loginfo("Pos obst :" + str(obstacles_pos))
-
-        # NOTE fixed obstacle
-        obstacle_data = self.generate_fix_obstacle_data(1000, 2000)
+        
+        dist = (1000 + SPEED * (time.time() - self.create_time)) % 4000
+        if dist >= 2000:
+            x = 4000 - dist
+        else:
+            x = dist
+        obstacle_data = self.generate_fix_obstacle_data(x, 2000)
 
         data = [0]
         for pos in obstacle_data:

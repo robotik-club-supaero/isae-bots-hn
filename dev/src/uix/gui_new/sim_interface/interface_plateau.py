@@ -754,7 +754,7 @@ class InterfaceNode:
 
             self._lidarObstacles.redraw(self._canvas, force=force)
             self._sonarObstacles.redraw(self._canvas, force=force)
-          #   self._robotObstacle.redraw(self._canvas, force=force)
+            self._robotObstacle.redraw(self._canvas, force=force)
 
             self._robot.redraw(self._canvas, force=force)
             self._clickMarker.redraw(self._canvas, force=force)

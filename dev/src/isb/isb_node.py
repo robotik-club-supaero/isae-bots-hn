@@ -34,7 +34,7 @@ from geometry_msgs.msg import Quaternion
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 startdir = os.path.dirname(currentdir) #NOTE apply the number of times to go to the src directory
 sys.path.insert(0,startdir)
-from top.top_const import sendRequest, receiveCallback, TopServerRequest, TopServerCallback, TOPSERVER_PORT
+from top.top_const import connectToServer, sendRequest, receiveCallback, TopServerRequest, TopServerCallback
 
 #################################################################
 #                                                               #
@@ -141,8 +141,7 @@ class ISBNode:
 
         self.subIsbMatch = rospy.Subscriber("/okPosition", Int16, self.callBackBR)
   
-        self.topServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.topServerSocket.connect(("127.0.0.1", TOPSERVER_PORT))
+        self.topServerSocket = connectToServer()
         
         # init all LEDs to blinking
         for k in range(NB_LEDS):
@@ -157,12 +156,9 @@ class ISBNode:
         try:
             data = [TopServerRequest.REQUEST_WRITE_LED, led_id, state]
             sendRequest(self.topServerSocket, data)
-            # self.topServerSocket.sendall(pickle.dumps([TopServerRequest.REQUEST_WRITE_LED.value, led_id, state]))
-            # data = self.topServerSocket.recv(1024)
-            callback = receiveCallback(self.topServerSocket)
+            callback = receiveCallback(self.topServerSocket) 
+            #NOTE the callback has to be received to not interfere with other callbacks (even if not used)
                                     
-            # print("callback", callback)
-
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             print("Connexion to server stopped")
 
@@ -176,8 +172,10 @@ class ISBNode:
         
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
-                
-        # print("callback", callback_data)
+                        
+        if callback_data is None:
+            print("Couldn't read buttons")
+            return
         
         res = callback_data[1:]
             
@@ -201,8 +199,10 @@ class ISBNode:
                     
         except BrokenPipeError: #NOTE happens if the server shuts down by Ctrl-C
             log_warn("Connexion to server stopped")
-                    
-        # print("callback trigger", callback_data)
+                            
+        if callback_data is None:
+            print("Couldn't read trigger")
+            return
         
         res = callback_data[1]
 
@@ -215,7 +215,7 @@ class ISBNode:
             self.triggerState = 0  # triggers match starts
 
 
-    # --- Callback functions
+
 
     def callBackBR(self, msg):
 
@@ -246,6 +246,7 @@ class ISBNode:
                     data = [TopServerRequest.REQUEST_PLAY_SOUND, "cestParti"]
                     sendRequest(self.topServerSocket, data)
                     callback = receiveCallback(self.topServerSocket)
+                    #NOTE the callback has to be received to not interfere with other callbacks (even if not used)
 
                 # Send color message
                 if self.isButtonTriggered[COLOR_BUTTON_ID]:

@@ -27,7 +27,7 @@ from ast import literal_eval
 
 from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm, CULTURE_SLOTS
-import dn_strats 
+import dn_strats
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 

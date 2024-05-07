@@ -79,8 +79,10 @@ class LcdNode:
         # color and strat display
         self.stratDisplayed = '*' # display when not initialized
         self.colorDisplayed = '****' # display when not initialized
+        self.initZoneDisplayed = "*"
         self.subScore = rospy.Subscriber("/game/color", Int16, self.cbColor)
         self.subScore = rospy.Subscriber("/game/strat", Int16, self.cbStrat)
+        self.subInitZone = rospy.Subscriber("/game/init_pos", Int16, self.cbInitZone)
         
         # to know when match starts
         self.isMatchStarted = False
@@ -96,7 +98,6 @@ class LcdNode:
 
         rospy.loginfo("LCD Node Initialized")
 
-
     def cbScore(self, msg):
         if self.isNodeInit:
             self.lcd.lcd_clear()
@@ -106,6 +107,11 @@ class LcdNode:
         if self.isNodeInit:
             self.stratDisplayed = str(msg.data)
             self.lcd.lcd_display_string(f"STRAT:{self.stratDisplayed}     {self.colorDisplayed}", line=2)
+
+    def cbInitZone(self, msg):
+        if self.isNodeInit:
+            self.initZoneDisplayed = str(msg.data)
+            self.lcd.lcd_display_string(f"ZONE:{self.initZoneDisplayed}     {self.colorDisplayed}", line=2)
         
     def cbColor(self, msg):
         if self.isNodeInit:

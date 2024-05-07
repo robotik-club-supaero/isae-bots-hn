@@ -46,7 +46,7 @@ from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Int16, Float32MultiArray
 
 # import utils
-from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord, debug_print
+from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
 
 # import comms
 from disp_comm import init_comm, SIMULATION, COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_path
@@ -83,6 +83,7 @@ class DisplacementNode:
 
         ## Variables liées au match
 
+        self.init_pos = INIT_ZONE
         self.color = 0
         self.matchEnded = False
 

@@ -116,6 +116,21 @@ def setup_strat(msg):
         log_info(f"Received strat: {p_dn.strategies[p_dn.strat]}")
 
 
+def setup_init_pos(msg):
+    """
+    Feedback on strategy chosen /game/init_pos.*
+    """
+    if p_dn is None: return  # safety if the function is called before DEC node init
+
+    if msg.data not in [0,1,2]:
+        log_errs(f"Wrong value of init pos given ({msg.data})...")
+        return
+    else:
+        p_dn.init_pos = msg.data
+        log_info(f"Received init pos: {p_dn.init_pos}")
+
+
+
 def recv_position(msg):
     """
     Feedback on /disp/current_position topic.
@@ -214,6 +229,7 @@ def stop_IT():
 start_sub = rospy.Subscriber("/game/start", Int16, start_match)
 color_sub = rospy.Subscriber("/game/color", Int16, setup_color)
 strat_sub = rospy.Subscriber("/game/strat", Int16, setup_strat)
+strat_sub = rospy.Subscriber("/game/init_pos", Int16, setup_init_pos)
 position_sub = rospy.Subscriber("/current_position", Pose2D, recv_position)
 
 next_action_pub = rospy.Publisher("/strat/action/order", Int16MultiArray, queue_size=10, latch=True)

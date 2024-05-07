@@ -104,6 +104,7 @@ STRAT_BUTTON_ID = 0
 COLOR_BUTTON_ID = 1
 BR_IDLE_BUTTON_ID = 2
 RESET_STEPPER_BUTTON_ID = 3
+INIT_ZONE_BUTTON_ID = 4
 
 class ISBNode:
     """
@@ -119,6 +120,7 @@ class ISBNode:
 
         self.match = False
         self.color = 0
+        self.init_zone = int(READER.get("STRAT", "init_zone"))
         self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
         self.nbStrats = len(self.strategies)
@@ -135,6 +137,7 @@ class ISBNode:
         self.pubStart = rospy.Publisher("/game/start", Int16, queue_size=10, latch=True)
         self.pubColor = rospy.Publisher("/game/color", Int16, queue_size=10, latch=True)
         self.pubStrat = rospy.Publisher("/game/strat", Int16, queue_size=10, latch=True)
+        self.pubInitPos = rospy.Publisher("/game/init_pos", Int16, queue_size=10, latch=True)
 
         self.pubBRIdle = rospy.Publisher("/br/idle", Int16, queue_size=10, latch=True)
         self.pubResetStepper = rospy.Publisher("/strat/elevator", Int16, queue_size=10, latch=True)
@@ -275,6 +278,16 @@ class ISBNode:
                     
                     self.pubStrat.publish(data=self.strat)
 
+                # Send init zone message
+                if self.isButtonTriggered[INIT_ZONE_BUTTON_ID]:
+
+                    self.init_zone += 1
+                    if self.init_zone > 2:
+                        self.init_zone = 0
+                    
+                    log_info(f"Set init zone to {self.init_zone}")  
+
+                    self.pubInitPos.publish(data=self.init_zone)
 
                 # Send BR idle message
                 if self.isButtonTriggered[BR_IDLE_BUTTON_ID]:

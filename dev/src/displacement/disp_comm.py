@@ -137,7 +137,7 @@ ok_comm = False
 
 def setup_color(msg):
     """
-    Callback function from topic /sm/color.
+    Callback function from topic /game/color.
     """
     if msg.data not in [0,1]:
         log_errs(f"Wrong value of color given ({msg.data})...")
@@ -145,7 +145,19 @@ def setup_color(msg):
     else: 
         p_disp.color = msg.data
         log_info("Received color : {}".format(COLOR[p_disp.color]))
-        callback_init_pos(msg)
+        callback_init_pos()
+
+def setup_init_pos(msg):
+    """
+    Callback function from topic /game/init_pos
+    """
+    if msg.data not in [0,1,2]:
+        log_errs(f"Wrong value of init pos given ({msg.data})...")
+        return
+    else: 
+        p_disp.init_pos = msg.data
+        log_info("Received init pos : {}".format(msg.data))
+        callback_init_pos()
 
 def callback_teensy(msg):
     """Traitement des msg recues de la teensy."""
@@ -385,13 +397,13 @@ def callback_lidar(msg):
     pub_speed.publish(data=int(speed)) ## On prévient le cas échéant le BN qu'on a vu un truc et qu'il faut ralentir
 
 
-def callback_init_pos(msg):
+def callback_init_pos():
     """Update la position de départ du robot."""
-    if INIT_ZONE == 0:
+    if p_disp.init_pos == 0:
         x, y, z = INIT_POS[0], INIT_POS[1], INIT_POS[2]
-    elif INIT_ZONE == 1:
+    elif p_disp.init_pos == 1:
         x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
-    elif INIT_ZONE == 2:
+    elif p_disp.init_pos == 2:
         x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS3[2]
     
     if p_disp.color == 1:
@@ -440,6 +452,7 @@ def publish_grid(grid):
 #######################################################################
 
 color_sub = rospy.Subscriber('/game/color', Int16, setup_color)
+init_pos_sub = rospy.Subscriber('/game/init_pos', Int16, setup_init_pos)
 end_sub = rospy.Subscriber('/game/end', Int16, callback_end)
 
 # Comm Teensy

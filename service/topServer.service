@@ -1,0 +1,18 @@
+[Unit]
+Description=TopServer Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+StandardInput=null
+
+User=pi
+Group=pi
+UMask=007
+
+ExecStart=/home/pi/isae-bots-hn-2024/service/launchTopServer.sh
+
+[Install]
+WantedBy=multi-user.target

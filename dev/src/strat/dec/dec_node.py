@@ -23,6 +23,7 @@ import os, sys, inspect
 import rospy
 import signal
 import time
+from ast import literal_eval
 
 from dn_utils    import READER, log_errs, log_fatal, log_info, log_warn
 from dn_comm     import init_comm, CULTURE_SLOTS
@@ -70,7 +71,14 @@ class DecisionsNode:
         self.parked = False
 
         self.strat = int(READER.get("STRAT", "strat_default"))
-        self.strategies = [match_strat, homologation, test_strat]
+        self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
+        
+        self.strat_functions = []
+        for stratName in self.strategies:
+            try:
+                self.strat_functions.append(getattr(dn_strats, stratName))
+            except AttributeError:
+                log_fatal(f"Strategy function name {stratName} doesn't have a function")
 
         self.park_action = False
         self.kill_action = False
@@ -103,7 +111,7 @@ def main():
     node = DecisionsNode()
 
     init_comm(node)
-    init_strats(node)
+    dn_strats.init_strats(node)
 
     log_info("Waiting for match to start")
 

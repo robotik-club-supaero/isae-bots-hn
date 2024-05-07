@@ -9,13 +9,14 @@ class NanoCommand(IntEnum):
     CMD_COLOR_FIXED = 1
     CMD_COLOR_BLINKING = 2
 
-    CMD_RAINBOW = 3
+    CMD_COLOR_FADING = 3
     CMD_NYAN = 4
 
     CMD_READ_BUTTON = 5
     
     
 class NanoCallback(IntEnum):
+    CLB_CONNEXION_FAILED = -1
     CLB_OK = 0
     CLB_KO = 1
     CLB_INIT_OK = 2

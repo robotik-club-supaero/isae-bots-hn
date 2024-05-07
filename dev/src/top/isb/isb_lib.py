@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from PCA95XX.PCA95XX import PCA95XX
+from .PCA95XX.PCA95XX import PCA95XX
 
 from time import sleep, time_ns
 

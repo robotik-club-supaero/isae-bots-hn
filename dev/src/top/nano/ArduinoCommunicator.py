@@ -3,7 +3,8 @@
 import serial
 import time
 
-from nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
+from .nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
+from top_const import ButtonColorMode, ButtonPressState
 
 
 class ArduinoCommunicator:
@@ -23,11 +24,11 @@ class ArduinoCommunicator:
         Takes a NanoCommand object
         """
         
-        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING]:
+        if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING, NanoCommand.CMD_COLOR_FADING]:
             if color is None:
                 print("ERROR : give a color input")
                 return NanoCallback.CLB_KO
-            bytesToSend = bytearray([nanoCommand.value] + color + [TERMINAL_CHARACTER])
+            bytesToSend = bytearray([nanoCommand.value] + list(color) + [TERMINAL_CHARACTER])
             
         else:
             bytesToSend = bytearray([nanoCommand.value, TERMINAL_CHARACTER])
@@ -41,7 +42,11 @@ class ArduinoCommunicator:
         """
         Returns a NanoCallback object or None for an event
         """
-        byte_received = self.ser.read(size=1)
+        try:
+            byte_received = self.ser.read(size=1)
+        except serial.serialutil.SerialException:
+            return NanoCallback.CLB_CONNEXION_FAILED
+        
         res = int.from_bytes(byte_received, byteorder='little', signed=False)
         
         # check if data is an event and not a callback
@@ -56,7 +61,7 @@ class ArduinoCommunicator:
             else:
                 print("ERROR : unknown event type")
                 
-            print("Received button press event to new state ", self.ledButtonState)
+            # print("Received button press event to new state ", self.ledButtonState)
                 
             return self.receive_response()  #NOTE recursive so that we read until we find a callback or nothing
             #BUG possible de stack overflow si on a trop d'events
@@ -86,7 +91,9 @@ class ArduinoCommunicator:
             
             if nanoCallback == NanoCallback.CLB_INIT_OK:
                 print("Connection established")
-                return
+                return 0
+            elif nanoCallback == NanoCallback.CLB_CONNEXION_FAILED:
+                return 1
             
             time.sleep(0.01)
             
@@ -99,18 +106,20 @@ class ArduinoCommunicator:
         self.send_command(NanoCommand.CMD_READ_BUTTON)
         nanoCallback = self.receive_response()
         
-        print("callback : ", nanoCallback)
+        # print("callback : ", nanoCallback)
         
         if nanoCallback is None:
             return None
         
+        #TODO fix ON/OFF discrepancy
         if nanoCallback.value == NanoCallback.CLB_BUTTON_ON:
-            return 0
+            return ButtonPressState.BUTTON_PRESS_OFF
         elif nanoCallback.value == NanoCallback.CLB_BUTTON_OFF:
-            return 1
-        else:
-            print("ERROR : wrong button event callback")
-            return None
+            return ButtonPressState.BUTTON_PRESS_ON
+            
+        # else:
+        #     print("ERROR : wrong button event callback")
+        #     return None
                 
         
         
@@ -132,6 +141,30 @@ class ArduinoCommunicator:
             self.send_command(nanoCommand)
             
         nanoCallback = self.receive_response()
+        
+        
+    def changeButtonColor(self, buttonColorMode, color=None):
+        
+        if buttonColorMode in [ButtonColorMode.BUTTON_COLOR_STATIC, ButtonColorMode.BUTTON_COLOR_BLINKING, ButtonColorMode.BUTTON_COLOR_FADING]:
+            
+            if color is None:
+                print("ERROR : color is None for colored ButtonState")
+            
+            if buttonColorMode == ButtonColorMode.BUTTON_COLOR_STATIC:
+                self.send_command(NanoCommand.CMD_COLOR_FIXED, color=color)
+            elif buttonColorMode == ButtonColorMode.BUTTON_COLOR_BLINKING:
+                self.send_command(NanoCommand.CMD_COLOR_BLINKING, color=color)
+            else:
+                self.send_command(NanoCommand.CMD_COLOR_FADING, color=color)
+                
+            
+        elif buttonColorMode == ButtonColorMode.BUTTON_COLOR_NYAN:
+            self.send_command(NanoCommand.CMD_NYAN)
+            
+        else:
+            print("ERROR : cannot process this button state")
+        
+        
         
 
 

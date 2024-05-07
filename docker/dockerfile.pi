@@ -114,8 +114,9 @@ RUN pip3 install smbus
 # Install dependency of lidar driver node (hokuyo or sick)
 RUN apt-get install -y ros-noetic-diagnostics
 
-# Install lib Adafruit-SSD1306 for oled screen
+# Install lib Adafruit-SSD1306 and RPi.GPIO for oled screen
 RUN pip3 install Adafruit-SSD1306==1.6.2
+RUN pip3 install RPi.GPIO==0.7.1
 
 # Install alsa-utils for sound, pciutils to have the debug command lspci
 RUN apt install alsa-utils pciutils -y

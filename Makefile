@@ -19,6 +19,8 @@ IMAGE_NAME_PI = isaebots_pi_env_full:1.1
 CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash
+# To run not interactively (eg. for services) add INTERACTIVE="" to the makefile command
+INTERACTIVE = -it
 CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
 BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
 PI_DOCKERFILE = ${PWD}/docker/dockerfile.pi
@@ -111,7 +113,7 @@ create-container:
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
 		if [ "${architecture}" = "x86_64" ]; then \
-			docker run -it --privileged --net=host \
+			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES} \
 			${DOCKER_ENV_VAR} \
@@ -120,7 +122,7 @@ create-container:
 			"${CMD}"; \
 			echo "Created PC container successfully"; \
 		elif [ "${architecture}" = "aarch64" ]; then \
-			docker run -it --privileged --net=host \
+			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
@@ -157,7 +159,7 @@ clear-container:
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
 		if [ "${architecture}" = "x86_64" ]; then \
-			docker run -it --privileged --net=host \
+			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES} \
 			${DOCKER_ENV_VAR} \
@@ -166,7 +168,7 @@ clear-container:
 			"${CMD}"; \
 			echo "Replaced PC container successfully"; \
 		elif [ "${architecture}" = "aarch64" ]; then \
-			docker run -it --privileged --net=host \
+			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
@@ -192,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -it ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	@docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -206,14 +208,14 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec -it ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
+        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
     fi
 
 	
 # Terminal used for the simulation with special bindkeys
 .PHONY: sim_term
 sim_term:
-	@docker exec -it $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh
+	@docker exec ${INTERACTIVE} $(shell docker ps -aqf "name=${CONTAINER_NAME}") bash --rcfile ./dev/src/uix/log/simTerm_rc.sh
 
 
 # Running container called NAME :

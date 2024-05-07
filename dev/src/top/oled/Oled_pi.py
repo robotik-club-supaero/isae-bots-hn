@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 
 from time import sleep
 
@@ -13,7 +14,7 @@ import subprocess
 from numpy import linspace
 
 
-
+IMAGES_PATH = '/app/dev/src/top/oled/images/'
 
 
 # Load default font.
@@ -71,12 +72,21 @@ class Oled():
         self.bottom = self.height-padding
         # Move left to right keeping track of the current x position for drawing shapes.
         self.x = 0
+        
+        
+    def oled_clear(self):
+        self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
 
 
-    def oled_display_string(self, str, x, y):
+    def oled_display_string(self, str, x, y, clear=True):
+        '''
+        x is horizontal
+        y is vertical
+        '''
 
         # clear
-        self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
+        if clear:
+            self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
 
         self.draw.text((x, y), str, font=font, fill=255)
 
@@ -110,6 +120,17 @@ class Oled():
         self.disp.image(image)
         self.disp.display()
         time.sleep(.1)
+        
+    def oled_display_logs(self, logList, clear = True):
+        
+        if clear:
+            self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
+        
+        for k in range(len(logList)):  # length should be 6
+            self.draw.text((0, k*64/6), logList[k], font=font, fill=255)
+
+        self.disp.image(self.image)
+        self.disp.display()
 
 
     # def display_image(self, fileName, x, y, w, h):
@@ -118,8 +139,8 @@ class Oled():
 
 
     def set_bgImage(self, fileName):
-
-        self.bg = Image.open(fileName).convert('1')
+        filePath = IMAGES_PATH + fileName
+        self.bg = Image.open(filePath).convert('1')
         self.disp.image(self.bg)
         self.disp.display()
 
@@ -129,7 +150,7 @@ class Oled():
     def update_stats(self):
 
         '''
-        CPU usage for each CPU (bar diagram ?)
+        CPU usage for each CPU (bar diagram )
         Memory usage
         CPU temperature
         '''

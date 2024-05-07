@@ -15,7 +15,7 @@ architecture = $(shell uname -m)
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
-IMAGE_NAME_PI = isaebots_pi_env_full:1.1
+IMAGE_NAME_PI = isaebots_pi_env_full:1.2
 CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash

@@ -112,7 +112,7 @@ def test_strat():
             return
 
         if (p_dn.curr_action[0] == Action.PICKUP_POT and p_dn.action_successful) or (p_dn.curr_action[0] == Action.DEPOSIT_POT and not p_dn.action_successful):
-            pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots, coeffs=[1,1,0]*coeffs[:3]) # deposit in secure area first
+            pot_id = find_closest(p_dn, DEPOSIT_POS, p_dn.deposit_slots, coeffs=[1,1,0.3]*coeffs[:3]) # deposit in secure area first
             if pot_id is not None:
                 p_dn.curr_action = [Action.DEPOSIT_POT, pot_id]
                 log_info("Next action order : Deposit Pots")

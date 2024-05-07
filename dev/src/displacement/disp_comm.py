@@ -68,8 +68,6 @@ BYPASS_RANGE_Y = 150
 STOP_RANGE_X = 100
 STOP_RANGE_Y = 50
 
-COEFF_ANGLES = 0.57735026 # pi/6 | 30°
-
 SIMULATION = True
 
 def init_comm(displacementNode):

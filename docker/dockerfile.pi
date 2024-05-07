@@ -70,7 +70,7 @@ RUN apt-get update && apt-get install -y \
     usbutils
 
 # Install tools for python / pip
-RUN pip3 install numpy
+RUN pip3 install numpy==1.22.4
 # RUN pip3 install cwiid
 
 # Add user so that we don't log in as root
@@ -125,7 +125,7 @@ RUN apt install alsa-utils pciutils -y
 # NOTE besoin d'être dockeruser pour pouvoir lancer pulseaudio et vlc (ne peut pas se lancer en root)
 RUN apt install vlc -y
 RUN pip3 install python-vlc
-
+RUN pip install pyastar2d
 
 # Add udev file
 COPY ./install/10-usb-serial.rules /etc/udev/rules.d/10-usb-serial.rules

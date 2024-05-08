@@ -126,7 +126,7 @@ create-container:
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
-			-u dockeruser \
+			-u 0 \
 			--group-add dialout \
 			${IMAGE_NAME_PI} \
 			"${CMD}"; \
@@ -172,7 +172,7 @@ clear-container:
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
 			${DOCKER_ENV_VAR_PI} \
-			-u dockeruser \
+			-u 0 \
 			--group-add dialout \
 			${IMAGE_NAME_PI} \
 			"${CMD}"; \
@@ -194,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;

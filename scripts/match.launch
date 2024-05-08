@@ -30,12 +30,16 @@ roslaunch main.launch method:='sim'
 			<param name="port" value="$(eval arg('ACT'))"/>
 			<param name="baud" value="115200"/>
 		</node>
-		<node pkg="sensors" type="sonar_node.py" name="SonarNode" output="screen" />
+	<!--<node pkg="sensors" type="sonar_node.py" name="SonarNode" output="screen" /> -->
 	</group>
 	
 	<group if="$(eval arg('LIDAR') != 'None')"> <!-- Le LIDAR est present -->
-		<node pkg="hokuyo_node" type="hokuyo_node" name="Hokuyo" output="screen" >
+		<node pkg="rplidar_ros" type="rplidarNode" name="RPLidar" output="screen" >
 			<param name="port" type="string" value="$(eval arg('LIDAR'))"/>
+			<param name="serial_baudrate"     type="int"    value="460800"/>
+			<param name="frame_id"            type="string" value="laser"/>
+			<param name="inverted"            type="bool"   value="false"/>
+			<param name="angle_compensate"    type="bool"   value="true"/>
 		</node>
 		<node pkg="sensors" type="lidar_node.py" name="LidarNode" output="screen" />
 		<node pkg="sensors" type="sensors_node.py" name="SensorNode" output="screen" />

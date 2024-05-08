@@ -137,6 +137,7 @@ def setup_color(msg):
     """
     Callback function from topic /game/color.
     """
+    if not ok_comm: return
     if msg.data not in [0,1]:
         log_errs(f"Wrong value of color given ({msg.data})...")
         return
@@ -149,6 +150,7 @@ def setup_init_pos(msg):
     """
     Callback function from topic /game/init_pos
     """
+    if not ok_comm: return
     if msg.data not in [0,1,2]:
         log_errs(f"Wrong value of init pos given ({msg.data})...")
         return

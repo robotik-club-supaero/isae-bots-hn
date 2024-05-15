@@ -98,4 +98,7 @@ COPY ./docker/autosetup.sh /app/autosetup.sh
 RUN pip freeze > test.txt
 RUN cat test.txt
 
+# Setup ROS environment
+RUN echo "source dev/devel/setup.bash" >> ~/.bashrc
+
 ENTRYPOINT [ "/app/autosetup.sh" ]

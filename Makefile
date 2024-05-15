@@ -18,7 +18,7 @@ IMAGE_NAME = isaebots_desktop_env
 IMAGE_NAME_PI = isaebots_pi_env_full:1.2
 CONTAINER_NAME = isaebots
 PS_ID = null
-CMD = bash
+CMD = bash --login
 # To run not interactively (eg. for services) add INTERACTIVE="" to the makefile command
 INTERACTIVE = -it
 CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
@@ -117,7 +117,7 @@ create-container:
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES} \
 			${DOCKER_ENV_VAR} \
-			-u dockeruser \
+			-u 0 \
 			${IMAGE_NAME}_base \
 			"${CMD}"; \
 			echo "Created PC container successfully"; \
@@ -163,7 +163,7 @@ clear-container:
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES} \
 			${DOCKER_ENV_VAR} \
-			-u dockeruser \
+			-u 0 \
 			${IMAGE_NAME}_base \
 			"${CMD}"; \
 			echo "Replaced PC container successfully"; \
@@ -194,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} ${CMD}
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -208,7 +208,7 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
+        docker exec ${INTERACTIVE} ${CONTAINER_NAME} ${CMD}; \
     fi
 
 	

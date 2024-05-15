@@ -66,7 +66,50 @@ def test_strat():
         -
         -
     """
+    pass
 
+def homologation():
+    """
+    DN Strat: homologation
+    
+    Actions of this strategy :
+        - 
+        -
+        -
+    """
+    
+   # if p_dn.go_park or p_dn.solar_panels[2]:
+   #     p_dn.curr_action = [Action.PARK, 0]
+  #  if not p_dn.solar_panels[0]:
+   #     p_dn.curr_action = [Action.TURN_SOLAR_PANEL, 0]
+  #  elif not p_dn.solar_panels[1]:
+  #      p_dn.curr_action = [Action.TURN_SOLAR_PANEL, 1]
+   # elif not p_dn.solar_panels[2]:
+  #      p_dn.curr_action = [Action.TURN_SOLAR_PANEL, 2]
+
+ #   publishAction()
+ #   return
+
+   # p_dn.nb_actions += 1
+   # if p_dn.nb_actions == 1:
+   #     p_dn.curr_action = [Action.PICKUP_PLANT, 4]
+
+   # if p_dn.nb_actions == 2:
+    p_dn.curr_action = [Action.PARK, 2]
+
+    publishAction()
+
+
+def match_strat():
+    """
+    DN Strat: match (used for reach matches)
+    
+    Actions of this strategy :
+        - 
+        -
+        -
+    """
+    
     def find_closest(p_dn, positions, remaining, cond=None, relative=True, coeffs=1):
         if cond is None: cond = lambda cluster: remaining[cluster] > PLANT_THRESHOLD
         x, y, _ = adapt_pos_to_side(*p_dn.position, p_dn.color) if relative else p_dn.position
@@ -140,7 +183,7 @@ def test_strat():
             log_info("No more plant to pick up")
 
     if p_dn.parked:
-        log_info("End of strategy : TEST")
+        log_info("End of strategy : MATCH")
         stop_IT()
         return
     
@@ -150,31 +193,5 @@ def test_strat():
     p_dn.curr_action = [Action.PARK, zone]
     log_info("Next action order : Park")
     publishAction()
-
-def homologation():
-    """
-    DN Strat: homologation
-    
-    Actions of this strategy :
-        - 
-        -
-        -
-    """
-    
-    time.sleep(0.01)
-
-    pass
-
-
-def match_strat():
-    """
-    DN Strat: match (used for reach matches)
-    
-    Actions of this strategy :
-        - 
-        -
-        -
-    """
-    time.sleep(0.01)
 
     pass

@@ -166,6 +166,7 @@ def recv_action_callback(msg):
         
         if p_dn.curr_action[0] == Action.PARK:
             p_dn.score += ActionScore.SCORE_PARK.value
+            p_dn.score += ActionScore.SCORE_COCCINELLE.value
             publishScore()
             p_dn.parked = True
         

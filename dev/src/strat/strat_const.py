@@ -67,6 +67,7 @@ class ActionScore(IntEnum): #TODO update
     SCORE_PARK = 10
     SCORE_DEPOSIT_PLANTS = 4
     SCORE_SOLAR_PANEL = 5
+    SCORE_COCCINELLE = 5
 
 PLANTS_POS = [
     [ 700, 1000],

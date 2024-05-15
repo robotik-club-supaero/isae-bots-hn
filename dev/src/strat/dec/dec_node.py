@@ -95,6 +95,7 @@ class DecisionsNode:
         self.remaining_pots = [6 for _ in range(6)]
         self.deposit_slots = [CULTURE_SLOTS for _ in range(3)]
         self.solar_panels = [False for _ in range(6)]
+        self.nb_actions = 0
 
 
 #################################################################

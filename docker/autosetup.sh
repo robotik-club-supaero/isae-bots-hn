@@ -18,10 +18,8 @@ source /opt/ros/noetic/setup.bash
 
 
 # Make the node files executable
-chmod +x ./dev/src/stratgr/act/act_node.py \
-         ./dev/src/stratgr/dec/dec_node.py \
-         ./dev/src/stratpr/act/act_node.py \
-         ./dev/src/stratpr/dec/dec_node.py \
+chmod +x ./dev/src/strat/act/act_node.py \
+         ./dev/src/strat/dec/dec_node.py \
          ./dev/src/sensors/sensors_node.py \
          ./dev/src/sensors/lidar/lidar_node.py \
          ./dev/src/sensors/sonar/sonar_node.py \
@@ -34,15 +32,14 @@ chmod +x ./dev/src/stratgr/act/act_node.py \
 chmod +x ./dev/src/uix/log/echo_logs.sh
 chmod +x ./dev/src/uix/log/simTerm_rc.sh
 
-if [ -n "$WDIR" ]; then 
-    if [ ! -e "$WDIR/devel/setup.bash" ]; then
-        cdir=$(pwd)
-        cd $WDIR
-        catkin_make
-        cd cdir
-    fi
-    source "$WDIR/devel/setup.bash"
-fi
+cdir=$(pwd)
+cd $WDIR
+touch src/hokuyo_node/CATKIN_IGNORE
+catkin_make
+rm src/hokuyo_node/CATKIN_IGNORE
+catkin_make
+cd cdir
+source "$WDIR/devel/setup.bash"
 
 # Setup environment variables
 # export ROS_IP=192.168.43.12

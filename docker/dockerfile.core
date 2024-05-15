@@ -40,7 +40,7 @@ RUN apt-get install -y ros-noetic-rosserial
 # Installations HN
 RUN rosdep fix-permissions
 RUN rosdep update
-RUN apt-get install -y ros-noetic-smach-ros ros-noetic-smach-viewer
+RUN apt-get install -y ros-noetic-smach-ros ros-noetic-smach-viewer ros-noetic-rviz
 
 # Fix pour faire fonctionner smach_viewer dans ros noetic
 # source : https://github.com/ros-visualization/executive_smach_visualization/issues/34 (en bas)

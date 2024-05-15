@@ -6,7 +6,7 @@ class ArduinoCommunicator:
     
     led_button_state = -1  # unknown
     
-    def __init__(self, port='/dev/ttyUSB0', baudrate=9600):
+    def __init__(self, port='/dev/ttyNANO', baudrate=9600):
         self.ser = serial.Serial(port, baudrate)
         
         # read and write timeouts are None by default (but set for good measure)

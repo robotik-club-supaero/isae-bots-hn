@@ -11,7 +11,7 @@ class ArduinoCommunicator:
     
     ledButtonState = -1  # not initialized
     
-    def __init__(self, port='/dev/ttyUSB0', baudrate=9600):
+    def __init__(self, port='/dev/ttyNANO', baudrate=9600):
         self.ser = serial.Serial(port, baudrate)
         
         # read and write timeouts are None by default (but set for good measure)
@@ -68,10 +68,14 @@ class ArduinoCommunicator:
             #TODO ne pas faire en récursif
             
         # else it is a callback, we return the callback
-        nanoCallback = NanoCallback(res)
-        
-        if verbose: print("Received nano callback " + nanoCallback.name)
-        return nanoCallback
+        try:
+            nanoCallback = NanoCallback(res)
+            
+            if verbose: print("Received nano callback " + nanoCallback.name)
+            return nanoCallback
+        except:
+            print("Received unknown nano callback: " + str(res))
+            return NanoCallback.CLB_CONNEXION_FAILED
     
     
     def establish_communication(self):

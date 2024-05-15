@@ -194,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} ${CMD}
+	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -208,7 +208,7 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec ${INTERACTIVE} ${CONTAINER_NAME} ${CMD}; \
+        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
     fi
 
 	

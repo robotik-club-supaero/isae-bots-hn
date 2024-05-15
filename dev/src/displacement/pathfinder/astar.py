@@ -48,7 +48,8 @@ def can_go_straight(tableMap, init, goal):
     segment[0] = init
     segment[1] = goal
 
-    for obstacle in tableMap.get_obstacles():
+    obstacles = list(tableMap.get_obstacles())
+    for obstacle in obstacles:
         if obstacle.crosses(segment):
             return False
     return True

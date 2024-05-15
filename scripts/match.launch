@@ -34,33 +34,29 @@ roslaunch main.launch method:='sim'
 	</group>
 	
 	<group if="$(eval arg('LIDAR') != 'None')"> <!-- Le LIDAR est present -->
-		<node pkg="rplidar_ros" type="rplidarNode" name="RPLidar" output="screen" >
+		<node pkg="hokuyo_node" type="hokuyo_node" name="Hokuyo" output="screen" >
 			<param name="port" type="string" value="$(eval arg('LIDAR'))"/>
-			<param name="serial_baudrate"     type="int"    value="460800"/>
-			<param name="frame_id"            type="string" value="laser"/>
-			<param name="inverted"            type="bool"   value="false"/>
-			<param name="angle_compensate"    type="bool"   value="true"/>
 		</node>
 		<node pkg="sensors" type="lidar_node.py" name="LidarNode" output="screen" />
 		<node pkg="sensors" type="sensors_node.py" name="SensorNode" output="screen" />
 	</group>
-
+	
 	<group if="$(eval arg('NANONPX') != 'None')"> <!-- La Nano est presente -->
 		<!-- on est sur le vrai robot -->
-		<node pkg="rosserial_python" type="serial_node.py" name="NanoPxNode" output="screen">
+		<!-- <node pkg="rosserial_python" type="serial_node.py" name="NanoPxNode" output="screen">
 			<param name="port" value="$(eval arg('NANONPX'))"/>
-		</node>
+		</node> -->
 	</group>
 
 	<!-- deplacements -->
 	<node name="DisplacementNode" pkg="displacement"  type="disp_node.py" output="screen" cwd="node" required="true"/>
 
-	<!-- strategie -->
-	<node name="DecisionNode" pkg="stratgr"  type="dec_node.py" output="screen" cwd="node" required="true"/>
-	<node name="ActionNode" pkg="stratgr"  type="act_node.py" output="screen" cwd="node" required="true"/>
+	<!-- ./egie -->
+	<node name="DecisionNode" pkg="strat"  type="dec_node.py" output="screen" cwd="node" required="true"/>
+	<node name="ActionNode" pkg="strat"  type="act_node.py" output="screen" cwd="node" required="true"/>
 
 	<!-- isb -->
-	<node name="IsbNode" pkg="top"  type="isb_node.py" output="screen" cwd="node" required="true"/>
+	<!--<node name="IsbNode" pkg="top"  type="isb_node.py" output="screen" cwd="node" required="true"/>-->
 
 	<!-- points -->
 	<node name="LCDNode" pkg="top"  type="lcd_node.py" output="screen" cwd="node" required="true"/>

@@ -473,7 +473,7 @@ sub_strat = rospy.Subscriber("/dsp/order/next_move", Quaternion, callback_strat)
 sub_pos = rospy.Subscriber("/current_position", Pose2D, callback_position)
 
 # Obstacles
-sub_delete = rospy.Subscriber("/deleteObs", String, callback_delete)
+sub_delete = rospy.Subscriber("/removeObs", String, callback_delete)
 
 
 """ # Publication parametres de jeu & gains

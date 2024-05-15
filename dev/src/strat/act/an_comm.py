@@ -226,7 +226,7 @@ repartitor_pub = rospy.Publisher('/strat/action/request', Empty, queue_size=10, 
 callback_action_pub = rospy.Publisher('/strat/action/callback', EndOfActionMsg, queue_size=10, latch=True)
 disp_pub = rospy.Publisher('/dsp/order/next_move', Quaternion, queue_size=10, latch=True)
 stop_teensy_pub = rospy.Publisher('/stop_teensy', Quaternion, queue_size=10, latch=True)
-remove_obs = rospy.Publisher('/deleteObs', String, queue_size = 10, latch= True)
+remove_obs = rospy.Publisher('/removeObs', String, queue_size = 10, latch= True)
 
 # SPECIFIC TO CURRENT YEAR
 global doors_pub, elevator_pub, left_arm_pub, right_arm_pub, clamp_pub

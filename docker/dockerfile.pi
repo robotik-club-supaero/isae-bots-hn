@@ -1,7 +1,7 @@
 # DOCKERFILE for isaebots-dev-env-img :
 # - Ubuntu 24.04 focal fossa + packages
-# - ROS 1 noetic + deps
-# - Python 3.8 + deps
+# - ROS 2 jazzy + deps
+# - Python 3.12 + deps
 
 FROM ubuntu:24.04
 

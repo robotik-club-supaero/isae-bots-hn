@@ -1,6 +1,6 @@
 #!/bin/bash
 
 
-source /app/dev/install/setup.bash
+source /app/install/setup.bash
 
-roslaunch /app/scripts/remote_control.launch
+ros2 launch /app/scripts/remote_control.launch

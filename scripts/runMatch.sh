@@ -8,7 +8,7 @@ PERIPH=$(find /dev -name ttyACM* 2>/dev/null)
 echo "Périphériques connectés:"
 echo $PERIPH
 
-make main CMD="source /opt/ros/noetic/setup.bash; source dev/install/setup.bash; roslaunch scripts/match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR" NANONPX:="/dev/ttyNANO"; $SHELL"
+make main CMD="source /opt/ros/jazzy/setup.bash; source /app/install/setup.bash; ros2 launch scripts/match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR" NANONPX:="/dev/ttyNANO"; $SHELL"
 
 
 #export ROS_IP=192.168.222.11
@@ -17,5 +17,5 @@ make main CMD="source /opt/ros/noetic/setup.bash; source dev/install/setup.bash;
 
 
 
-#roslaunch match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR" | tee matchLog.log
+#ros2 launch match.launch BR:="/dev/ttyBR" ACT:="/dev/ttyACT" LIDAR:="/dev/ttyLIDAR" | tee matchLog.log
 # the tee command allows to save logs in the matchLog file while keeping the display in the terminal (stdout)

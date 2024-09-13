@@ -18,14 +18,11 @@ source /opt/ros/jazzy/setup.bash
 
 
 # Make the node files executable
-chmod +x ./dev/src/strat/act/act_node.py \
-         ./dev/src/strat/dec/dec_node.py \
-         ./dev/src/sensors/sensors_node.py \
-         ./dev/src/sensors/lidar/lidar_node.py \
-         ./dev/src/sensors/sonar/sonar_node.py \
-         ./dev/src/isb/isb_node.py \
-         ./dev/src/lcd/points_node.py
-
+chmod +x ./dev/src/strat/strat/act/act_node.py \
+         ./dev/src/strat/strat/dec/dec_node.py \
+         ./dev/src/sensors/sensors/sensors_node.py \
+         ./dev/src/sensors/sensors/lidar/lidar_node.py \
+         ./dev/src/sensors/sensors/sonar/sonar_node.py
 
 
 # Make the scripts to display logs executable
@@ -33,7 +30,7 @@ chmod +x ./dev/src/uix/log/echo_logs.sh
 chmod +x ./dev/src/uix/log/simTerm_rc.sh
 
 colcon build --symlink-install
-source "$WDIR/install/setup.bash"
+source "/app/install/setup.bash"
 
 # Setup environment variables
 # export ROS_IP=192.168.43.12

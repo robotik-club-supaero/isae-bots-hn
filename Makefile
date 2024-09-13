@@ -60,7 +60,7 @@ DOCKER_ENV_VAR_PI = \
 .PHONY: help
 help:
 	@echo "=== HELP message ===================================="
-	@echo "make build-core    for Ubuntu-20.04 + ROS-noetic img "
+	@echo "make build-core    for Ubuntu-20.04 + ROS-jazzy img "
 	@echo "make build-base    for Desktop ISAEBOTS dev env img  "
 	@echo ""
 	@echo "make kill          to kill any running env container "
@@ -89,12 +89,12 @@ print-architecture:
 .PHONY: build-core
 build-core:
 	@echo ${CORE_DOCKERFILE} ${IMAGE_NAME}
-	@docker build -f ${CORE_DOCKERFILE} -t ${IMAGE_NAME}_core .
+	@docker buildx build -f ${CORE_DOCKERFILE} -t ${IMAGE_NAME}_core .
 
 # Build the base image (depends on core image build)
 .PHONY: build-base
 build-base: build-core
-	@docker build -f ${BASE_DOCKERFILE} -t ${IMAGE_NAME}_base .
+	@docker buildx build -f ${BASE_DOCKERFILE} -t ${IMAGE_NAME}_base .
 
 # Build the image for the raspberry pi (64 bits so architecture linux/arm64/v8)
 # To be able to do that, docker buildx needs to be installed (cf tuto installs on new pi)
@@ -194,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"
+	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -208,7 +208,7 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/noetic/setup.bash; ${CMD}"; \
+        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; ${CMD}"; \
     fi
 
 	

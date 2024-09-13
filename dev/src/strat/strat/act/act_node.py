@@ -181,11 +181,11 @@ class ActionNode(Node):
         """
         if msg.data[0] == -2:
             # Tmp fix from last year (= sm did not quit normally on parking...)
-            p_sm.request_preempt()
+            self.sm.request_preempt()
             log_info("Received stop signal (initiate parking)")
             return
         if msg.data[0] == -1:
-            p_sm.request_preempt()
+            self.sm.request_preempt()
             log_info("Received park signal (end of match)")
             return
         if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const

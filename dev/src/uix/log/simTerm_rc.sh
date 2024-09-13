@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /opt/ros/noetic/setup.bash
+source /opt/ros/jazzy/setup.bash
 
 sleep 2
 if [ -z $(rosnode list) ]; then ROSLAUNCH_RUNNING=0; else ROSLAUNCH_RUNNING=1; fi
@@ -11,7 +11,7 @@ clear
 COMMANDK="[SIM COMMAND] :  Shutting down roslaunch..."
 COMMANDK1="[SIM COMMAND] -> stopped roslaunch"
 COMMANDK2="\033[31m[ERROR] No roslaunch is currently active\033[0m"
-COM="ps -ef | grep /bin/roslaunch | awk 'NR==1{print \$2}'"
+COM="ps -ef | grep /bin/ros2 launch | awk 'NR==1{print \$2}'"
 bind -x '"\C-K":"if [[ $ROSLAUNCH_RUNNING == 1 ]]; then echo $COMMANDK; ROSLAUNCH_RUNNING=0; kill -s SIGINT $(eval $COM); sleep 2; echo $COMMANDK1; else echo -e $COMMANDK2; fi"'
 # pour interrompre (mais pas exit) le roslaunch, on envoie un SIGINT (Ctrl-C) au roslaunch, pour avoir son PID on parse le résultat de la commande ps
 

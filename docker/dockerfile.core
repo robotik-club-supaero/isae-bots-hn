@@ -1,7 +1,7 @@
 # DOCKERFILE for isaebots-dev-env-img :
 # - Ubuntu 24.04 focal fossa + packages
-# - ROS 1 noetic + deps
-# - Python 3.8 + deps
+# - ROS 2 jazzy + deps
+# - Python 3.12 + deps
 
 FROM ubuntu:24.04
 
@@ -23,14 +23,15 @@ RUN dpkg-reconfigure locales
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository universe
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null'
+RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null'
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends ros-dev-tools
 RUN apt-get install -y --no-install-recommends ros-jazzy-desktop
-# TODO: replace with ros-jazzy-ros-base?
 RUN apt-get install -y --no-install-recommends python3-rosdep
 
+# Dependencies of hokuyo driver
+RUN apt-get install -y ros-jazzy-diagnostic-updater ros-jazzy-laser-proc
 
 RUN update-ca-certificates --fresh
 RUN export SSL_CERT_DIR=/etc/ssl/certs
@@ -38,17 +39,14 @@ RUN export SSL_CERT_DIR=/etc/ssl/certs
 # RUN rosdep init
 COPY ./docker/20-default.list /etc/ros/rosdep/sources.list.d/20-default.list
 
+RUN rosdep fix-permissions
+RUN rosdep update
+
 # Installations BN
 # !!!!!!!!!!TODO: replace rosserial!!!!!!!
 
 # Installations HN
-RUN rosdep fix-permissions
-RUN rosdep update
 RUN apt-get install -y ros-jazzy-smach-ros
-
-# Fix pour faire fonctionner smach_viewer dans ros noetic
-# source : https://github.com/ros-visualization/executive_smach_visualization/issues/34 (en bas)
-#RUN sed -i 's/python_qt_binding.QtWidgets/PyQt5.QtWidgets/g' /opt/ros/noetic/lib/python3/dist-packages/smach_viewer/xdot/xdot_qt.py
 
 # Setup ROS environment
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc

@@ -1,6 +1,6 @@
 <!--
 exemple de lancement: 
-roslaunch main.launch method:='sim'
+ros2 launch main.launch method:='sim'
 -->
 
 

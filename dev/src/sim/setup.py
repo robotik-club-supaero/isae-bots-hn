@@ -34,4 +34,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
+    entry_points={
+        'console_scripts': [
+            'actuator_node = sim.actuators.actuators_node:main',
+            'obstacle_node = sim.obstacles.obstacles_node:main',
+            'br_node = sim.br.br_node:main',
+        ],
+    },
 )

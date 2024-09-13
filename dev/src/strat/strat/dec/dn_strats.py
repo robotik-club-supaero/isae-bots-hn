@@ -19,11 +19,11 @@
 #################################################################
 
 import time
-from dn_const  import PLANTS_POS, POTS_POS, DEPOSIT_POS, PARK_POS
+from .dn_const import PLANTS_POS, POTS_POS, DEPOSIT_POS, PARK_POS
 import numpy as np
 
-from strat_const import Action, ActionScore
-from strat_utils import adapt_pos_to_side
+from ..strat_const import Action, ActionScore
+from ..strat_utils import adapt_pos_to_side
 
 #################################################################
 #                                                               #

@@ -28,9 +28,9 @@ from numpy.linalg import norm
 
 from geometry_msgs.msg import Quaternion
 
-from an_const import DspCallback, DspOrderMode
-from an_utils import AutoSequence
-from strat_utils import adapt_pos_to_side
+from ..an_const import DspCallback, DspOrderMode
+from ..an_utils import AutoSequence
+from strat.strat_utils import adapt_pos_to_side
 
 #################################################################
 #                                                               #

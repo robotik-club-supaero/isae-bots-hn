@@ -33,12 +33,12 @@ import time
 from ast import literal_eval
 
 # import pathfinder
-from pathfinder.pathfinder import Pathfinder
+from .pathfinder.pathfinder import Pathfinder
 # import msgs
 from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray, String
 from geometry_msgs.msg import Quaternion, Pose2D
 # import logs
-from disp_utils import *
+from .disp_utils import *
 
 #################################################################################################
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
@@ -185,9 +185,6 @@ class DispCallbacks:
             return
         
         if msg.data == CB_TEENSY["marcheArrOK"]:
-            """ if self._node.blocked:
-                self._node.blocked = False
-                self._node.pub_strat.publish(Int16(COM_STRAT["ok pos"])) """
             self._node.marche_arr_dest = None
             self._node.move = False
             self._node.get_logger().info("Reverse Gear done.")
@@ -339,18 +336,18 @@ class DispCallbacks:
                 # We trust the path finder to avoid the obstacle
                 # Bypassing may require going a little closer to the obstacle before moving away                i   
                 if dist_obs <= STOP_RANGE_X or (x_loc_obs < STOP_RANGE_X and abs(y_loc_obs) < STOP_RANGE_Y):
-                    log_warn("Object Detected Too Close : Interrupting move")
+                    self._node.get_logger().warning("Object Detected Too Close : Interrupting move")
                     self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     self._node.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
                 
                 elif not self._node.bypassing and (dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y)):
                     self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     if self._node.wait_start is None:
-                        log_warn("Object Detected : Need to wait")
+                        self._node.get_logger().warning("Object Detected : Need to wait")
                         self._node.wait_start = time.perf_counter()
                         self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     elif time.perf_counter() - self._node.wait_start >= STAND_BEFORE_BYPASS:                            
-                        log_warn("Object Won't Move Out Of The Way  : Initiating bypass")                              
+                        self._node.get_logger().warning("Object Won't Move Out Of The Way  : Initiating bypass")                              
                         self._node.move_forward() # Recompute path with updated opponent pos
                 
                 elif self._node.wait_start is not None:
@@ -373,7 +370,7 @@ class DispCallbacks:
             if closest_obs_behind is not None:
                 dist_obs, x_loc_obs, y_loc_obs = closest_obs_behind
                 if dist_obs < STOP_RANGE_X and self._node.move:
-                    log_warn("Object Detected In The Back : Need to wait")
+                    self._node.get_logger().warning("Object Detected In The Back : Need to wait")
                     self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
             
             if not self._node.move and self._node.marche_arr_dest is not None:
@@ -406,7 +403,7 @@ class DispCallbacks:
         self._node.current_pos = [x, y, z]
 
         ## Init pathfinder with correct color
-        self._node.pathfinder = Pathfinder(self._node.color) 
+        self._node.pathfinder = Pathfinder(self._node.color, self._node.get_logger()) 
         self._node.publish_grid(self._node.pathfinder.table_map.get_grid().reshape(-1,2))
 
 

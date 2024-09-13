@@ -23,9 +23,6 @@ DEBUG_PRINTS = True
 
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-import signal
 
 import rclpy
 from rclpy.node import Node
@@ -38,14 +35,14 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, \
+from .an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, \
                     ClampCallback, COLOR
-from an_sm import ActionStateMachine
-from an_utils import color_dict
+from .an_sm import ActionStateMachine
+from .an_utils import color_dict
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
-from strat_const import ACTIONS_LIST, Action
+from ..strat_const import ACTIONS_LIST, Action
 
 class ActionNode(Node):
     def __init__(self):
@@ -53,7 +50,7 @@ class ActionNode(Node):
         self.get_logger().info("Initializing Action Node ...")
         self.sm = None
       
-        latch_profile =  QoSProfile(
+        latch_profile = QoSProfile(
             depth=10,  # Keep last 10 messages
             durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
         )
@@ -81,21 +78,21 @@ class ActionNode(Node):
         Initialize all subscribers of AN
         """
         # GENERAL SUBS
-        self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, QoSProfile())
-        self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, QoSProfile())
-        self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, QoSProfile())
-        self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, QoSProfile())
-        self.position_sub = self.create_subscription(Pose2D, '/current_position', self.cb_position_fct, QoSProfile())
-        self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, QoSProfile())
+        self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, 10)
+        self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, 10)
+        self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, 10)
+        self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, 10)
+        self.position_sub = self.create_subscription(Pose2D, '/current_position', self.cb_position_fct, 10)
+        self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, 10)
 
         # SPECIFIC TO CURRENT YEAR [2024] [TODO obsolete]
-        self.doors_sub = self.create_subscription(Int16, '/act/callback/doors', self.cb_doors_fct, QoSProfile())
-        self.elevator_sub = self.create_subscription(Int16, '/act/callback/elevator', self.cb_elevator_fct, QoSProfile())
-        self.left_arm_sub = self.create_subscription(Int16, '/act/callback/left_arm', self.cb_left_arm_fct, QoSProfile())
-        self.right_arm_sub = self.create_subscription(Int16, '/act/callback/right_arm', self.cb_right_arm_fct, QoSProfile())
-        self.clamp_sub = self.create_subscription(Int16, '/act/callback/clamp', self.cb_clamp_fct, QoSProfile())
+        self.doors_sub = self.create_subscription(Int16, '/act/callback/doors', self.cb_doors_fct, 10)
+        self.elevator_sub = self.create_subscription(Int16, '/act/callback/elevator', self.cb_elevator_fct, 10)
+        self.left_arm_sub = self.create_subscription(Int16, '/act/callback/left_arm', self.cb_left_arm_fct, 10)
+        self.right_arm_sub = self.create_subscription(Int16, '/act/callback/right_arm', self.cb_right_arm_fct, 10)
+        self.clamp_sub = self.create_subscription(Int16, '/act/callback/clamp', self.cb_clamp_fct, 10)
 
-        self.load_detector = self.create_subscription(Int16, '/act/callback/load_detector', self.cb_load_detector, QoSProfile()) # TODO
+        self.load_detector = self.create_subscription(Int16, '/act/callback/load_detector', self.cb_load_detector, 10) # TODO
 
         self.sm = ActionStateMachine(self)
         self.sis = smach_ros.IntrospectionServer('pr_an', self.sm, '/SM_ROOT')
@@ -168,11 +165,11 @@ class ActionNode(Node):
         """
         if not ok_comm : return
         if msg.data not in [0,1]:
-            log_errs(f"Wrong value of color given ({msg.data})...")
+            self.get_logger().error(f"Wrong value of color given ({msg.data})...")
             return
         else: 
             self.smData.color = msg.data
-            log_info("Received color : {}".format(COLOR[self.smData.color]))
+            self.get_logger().info("Received color : {}".format(COLOR[self.smData.color]))
 
 
     def cb_next_action(self, msg):
@@ -182,14 +179,14 @@ class ActionNode(Node):
         if msg.data[0] == -2:
             # Tmp fix from last year (= sm did not quit normally on parking...)
             self.sm.request_preempt()
-            log_info("Received stop signal (initiate parking)")
+            self.get_logger().info("Received stop signal (initiate parking)")
             return
         if msg.data[0] == -1:
             self.sm.request_preempt()
-            log_info("Received park signal (end of match)")
+            self.get_logger().info("Received park signal (end of match)")
             return
         if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
-            log_errs(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
+            self.get_logger().error(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
             return
         self.smData.next_action = [Action(msg.data[0])] + list(msg.data[1:])
 
@@ -258,7 +255,6 @@ def main():
     #############################################################
 
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
     
     node = ActionNode()
 
@@ -266,7 +262,7 @@ def main():
 
     with node:
         try:
-            sm.execute()
+            node.sm.execute()
             node.get_logger().info('Exiting state machine.')
             rclpy.spin(node)
         except KeyboardInterrupt:

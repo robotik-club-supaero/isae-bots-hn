@@ -22,7 +22,7 @@ import os
 import sys
 import time
 import smach
-from an_const import *
+from ..an_const import *
 
 #################################################################
 #                                                               #
@@ -35,7 +35,7 @@ class ObsWaitingOnce(smach.State):
     SM WAITING : Observer state
     """
     def __init__(self, wait_time=100, outcomes=['preempted','success']):
-        super().__init__(outcomes=outcomes)
+        smach.State.__init__(self, outcomes=outcomes)
         self._wait_time = wait_time
 
     def execute(self, userdata):

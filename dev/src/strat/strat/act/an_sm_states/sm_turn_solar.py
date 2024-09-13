@@ -21,10 +21,10 @@
 import smach
 import math
 
-from an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST, ArmCallback, ArmOrder
-from an_utils import AutoSequence, HardwareOrder
-from an_sm_states.sm_displacement import colored_approach_with_angle, MoveTo, Approach
-from strat_const import ActionResult
+from ..an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST, ArmCallback, ArmOrder
+from ..an_utils import AutoSequence, HardwareOrder
+from .sm_displacement import colored_approach_with_angle, MoveTo, Approach
+from strat.strat_const import ActionResult
 
 #################################################################
 #                                                               #
@@ -52,9 +52,9 @@ class CalcPositionningPanel(smach.State):
 
 class ExtendArm(smach.State):
     def __init__(self, node):
-        super().__init__(input_keys=['color', 'cb_left_arm', 'cb_right_arm'], output_keys=['cb_left_arm', 'cb_right_arm'], outcomes=['fail','success','preempted'])
-        self._left = HardwareOrder(node.left_arm_pub, 'cb_left_arm', ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
-        self._right = HardwareOrder(node.right_arm_pub, 'cb_right_arm', ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
+        smach.State.__init__(self, input_keys=['color', 'cb_left_arm', 'cb_right_arm'], output_keys=['cb_left_arm', 'cb_right_arm'], outcomes=['fail','success','preempted'])
+        self._left = HardwareOrder(node.get_logger(), node.left_arm_pub, 'cb_left_arm', ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
+        self._right = HardwareOrder(node.get_logger(), node.right_arm_pub, 'cb_right_arm', ArmOrder.EXTEND, ArmCallback.PENDING, ArmCallback.EXTENDED)
         self._debug_print = node.debug_print
     
     def execute(self, userdata):
@@ -65,9 +65,9 @@ class ExtendArm(smach.State):
 
 class RetractArm(smach.State):
     def __init__(self, node):
-        super().__init__(input_keys=['color', 'cb_left_arm', 'cb_right_arm'], output_keys=['cb_left_arm', 'cb_right_arm'], outcomes=['fail','success','preempted'])
-        self._left = HardwareOrder(node.left_arm_pub, 'cb_left_arm', ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
-        self._right = HardwareOrder(node.right_arm_pub, 'cb_right_arm', ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
+        smach.State.__init__(self, input_keys=['color', 'cb_left_arm', 'cb_right_arm'], output_keys=['cb_left_arm', 'cb_right_arm'], outcomes=['fail','success','preempted'])
+        self._left = HardwareOrder(node.get_logger(), node.left_arm_pub, 'cb_left_arm', ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
+        self._right = HardwareOrder(node.get_logger(), node.right_arm_pub, 'cb_right_arm', ArmOrder.RETRACT, ArmCallback.PENDING, ArmCallback.RETRACTED)
         self._debug_print = node.debug_print
 
     def execute(self, userdata):

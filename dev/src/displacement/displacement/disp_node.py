@@ -32,6 +32,7 @@ NB: code [english], commentaires [french].
 #																#
 #################################################################
 import sys
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
@@ -41,18 +42,18 @@ from math import sqrt
 import time
 
 # import fonction du Pathfinder
-from pathfinder.pathfinder import Pathfinder
-from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
+from .pathfinder.pathfinder import Pathfinder
+from .pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
 
 # import msgs
-from geometry_msgs.msg import Quaternion
-from std_msgs.msg import Int16, Float32MultiArray
+from geometry_msgs.msg import Quaternion, Pose2D
+from std_msgs.msg import Int16, Float32MultiArray, Int16MultiArray, String
 
 # import utils
-from disp_utils import log_info, log_warn, log_errs, MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
+from .disp_utils import MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
 
 # import comms
-from disp_comm import DispCallbacks, SIMULATION, COM_STRAT, CMD_TEENSY, pub_strat, pub_teensy, pub_path
+from .disp_comm import DispCallbacks, SIMULATION, COM_STRAT, CMD_TEENSY
 
 #################################################################
 #																#
@@ -60,16 +61,6 @@ from disp_comm import DispCallbacks, SIMULATION, COM_STRAT, CMD_TEENSY, pub_stra
 #																#
 #################################################################
 
-def publish_path(path):
-    """Publish path to the interfaceNode."""    
-    if SIMULATION:
-        path_coords = []
-        for k in range (len(path)):
-            path_coords.append(path[k][0])
-            path_coords.append(path[k][1])
-            if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
-        pub_path.publish(data = path_coords)  # liste des coordonnees successives
-        log_info("## Simulation ## Path published : {}".format(path_coords))
 
 class DisplacementNode(Node):
 
@@ -89,38 +80,38 @@ class DisplacementNode(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
         )
         callbacks = DispCallbacks(self)
-        color_sub = self.create_subscription(Int16, '/game/color', callbacks.setup_color, QoSProfile())
-        init_pos_sub = self.create_subscription(Int16, '/game/init_pos', callbacks.setup_init_pos, QoSProfile())
-        end_sub = self.create_subscription(Int16, '/game/end', callbacks.callback_end, QoSProfile())
+        self.color_sub = self.create_subscription(Int16, '/game/color', callbacks.setup_color, 10)
+        self.init_pos_sub = self.create_subscription(Int16, '/game/init_pos', callbacks.setup_init_pos, 10)
+        self.end_sub = self.create_subscription(Int16, '/game/end', callbacks.callback_end, 10)
 
         # Comm Teensy
-        pub_teensy = self.create_publisher(Quaternion, '/nextPositionTeensy', latch_profile)
-        sub_teensy = self.create_subscription(Int16,  "/okPosition", callbacks.callback_teensy, QoSProfile()) 
+        self.pub_teensy = self.create_publisher(Quaternion, '/nextPositionTeensy', latch_profile)
+        self.sub_teensy = self.create_subscription(Int16,  "/okPosition", callbacks.callback_teensy, 10) 
 
         # Comm Lidar
-        sub_lidar = self.create_subscription(Int16MultiArray, "/obstaclesInfo", callbacks.callback_lidar, QoSProfile())
-        pub_speed = self.create_publisher(Int16, "/teensy/obstacle_seen", latch_profile)
+        self.sub_lidar = self.create_subscription(Int16MultiArray, "/obstaclesInfo", callbacks.callback_lidar, 10)
+        self.pub_speed = self.create_publisher(Int16, "/teensy/obstacle_seen", latch_profile)
         if SIMULATION:
-            pub_obstacle = self.create_publisher(Int16MultiArray, "/simu/robotObstacle", latch_profile)
+            self.pub_obstacle = self.create_publisher(Int16MultiArray, "/simu/robotObstacle", latch_profile)
 
         # Comm Strat
-        pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)
-        sub_strat = self.create_subscription(Quaternion, "/dsp/order/next_move", callbacks.callback_strat, QoSProfile())
+        self.pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)
+        self.sub_strat = self.create_subscription(Quaternion, "/dsp/order/next_move", callbacks.callback_strat, 10)
 
         # Comm Position
-        sub_pos = self.create_subscription(Pose2D, "/current_position", callbacks.callback_position, QoSProfile())
+        self.sub_pos = self.create_subscription(Pose2D, "/current_position", callbacks.callback_position, 10)
 
         # Obstacles
-        sub_delete = self.create_subscription(String, "/removeObs", callbacks.callback_delete, QoSProfile())
+        self.sub_delete = self.create_subscription(String, "/removeObs", callbacks.callback_delete, 10)
 
         ############################
         #### Pour la Simulation ####
         ############################
 
         # Comm Pathfinder
-        pub_path = self.create_publisher(Float32MultiArray, "/simu/current_path", latch_profile)
+        self.pub_path = self.create_publisher(Float32MultiArray, "/simu/current_path", latch_profile)
         # Comm Simulation
-        pub_grid = self.create_publisher(Float32MultiArray, "/simu/nodegrid", latch_profile)
+        self.pub_grid = self.create_publisher(Float32MultiArray, "/simu/nodegrid", latch_profile)
 
 
         ## Variables liées au match
@@ -132,7 +123,7 @@ class DisplacementNode(Node):
         ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
 
         self.path = []
-        self.pathfinder = Pathfinder(self.color)
+        self.pathfinder = Pathfinder(self.color, self.get_logger())
         self.max_astar_time = MAX_ASTAR_TIME
 
         ## Variable liées au déplacement du robot
@@ -160,6 +151,17 @@ class DisplacementNode(Node):
         self.marche_arr_dest = None
         self.bypassing = False
         self.wait_start = None
+
+    def publish_path(self, path):
+        """Publish path to the interfaceNode."""    
+        if SIMULATION:
+            path_coords = []
+            for k in range (len(path)):
+                path_coords.append(path[k][0])
+                path_coords.append(path[k][1])
+                if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
+            pub_path.publish(data = path_coords)  # liste des coordonnees successives
+            self.get_logger().info("## Simulation ## Path published : {}".format(path_coords))
 
 #######################################################################
 # Fonctions de construction de path
@@ -204,7 +206,7 @@ class DisplacementNode(Node):
         try:
             path = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
             if not len(path):
-                log_errs("Error - Empty path found")
+                self.get_logger().error("Error - Empty path found")
                 result['message'] = "Empty path found" 
                 result['success'] = False
                 return result
@@ -233,7 +235,7 @@ class DisplacementNode(Node):
     def move_forward(self):
 
         if self.bypassing:
-            log_info("Obstacle found ahead. Computing new path to bypass it...")
+            self.get_logger().info("Obstacle found ahead. Computing new path to bypass it...")
 
         self.wait_start = None
         self.final_move = False     
@@ -246,10 +248,10 @@ class DisplacementNode(Node):
 
         ## Si on a trouvé un chemin
         if result['success']:
-            log_info("Found path: \n"+str(self.path))
+            self.get_logger().info("Found path: \n"+str(self.path))
             # Affichage du path
             if len(self.path) > 0:
-                publish_path(self.path)
+                self.publish_path(self.path)
 
             self.move = True 
             self.next_point(False)
@@ -257,14 +259,14 @@ class DisplacementNode(Node):
         ## Sinon, erreur de la recherche de chemin
         else:
             if self.bypassing:
-                log_warn("ERROR - Reason: Cannot bypass obstacle")
+                self.get_logger().warning("ERROR - Reason: Cannot bypass obstacle")
                 pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
             elif result['message'] == "Dest Blocked":
-                log_warn("ERROR - Reason: " + result['message'])
+                self.get_logger().warning("ERROR - Reason: " + result['message'])
                 pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
             else:
                 #NOTE no path found
-                log_warn("ERROR - Reason: " + result['message'])
+                self.get_logger().warning("ERROR - Reason: " + result['message'])
                 # Retour de l'erreur a la strat
                 pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
@@ -289,7 +291,7 @@ class DisplacementNode(Node):
         if len(self.path) >= 2:
             x = self.path[0][0]
             y = self.path[0][1]
-            log_info("\nDisplacement Pass By ({}, {})".format(x,y))
+            self.get_logger().info("\nDisplacement Pass By ({}, {})".format(x,y))
 
             """ # TODO - remove patch
             x,y,_ = patch_frame_br(x,y,0,self.color) """
@@ -325,7 +327,7 @@ class DisplacementNode(Node):
             if self.accurate:
                 xRob, yRob, cRob = self.current_pos
 
-                log_info("\nDisplacement request ({}, {}, {}) accurate".format(x, y, c))
+                self.get_logger().info("\nDisplacement request ({}, {}, {}) accurate".format(x, y, c))
                 
                 xLoc, _ = to_robot_coord(xRob, yRob, cRob, [x,y,c])
                 if xLoc >= 0:
@@ -337,26 +339,26 @@ class DisplacementNode(Node):
                 return
 
             if self.rotation:
-                log_info("\nDisplacement request ({}, {}, {}) rotation.".format(x, y, c))
+                self.get_logger().info("\nDisplacement request ({}, {}, {}) rotation.".format(x, y, c))
                 #print("\n\n\n\nspeedRot = {}\n\n\n\n".format(self.speedRot))
                 pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["rotation"]))
                 return
 
             if self.recalage:
-                log_info("\nDisplacement request ({}, {}, {}) recalage.".format(x, y, c))
+                self.get_logger().info("\nDisplacement request ({}, {}, {}) recalage.".format(x, y, c))
                 self.final_move = False     #Pas d'orientation finale en fin de recalage 
                 pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["recalage"]))
                 return
         
             ## Point final
-            log_info("\nDisplacement request ({}, {}, {}) standard.".format(x, y, c))
+            self.get_logger().info("\nDisplacement request ({}, {}, {}) standard.".format(x, y, c))
             self.forward = True
             pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["dispFinal"]))
             
         # Sinon, on on a fini (ou bien a nulle part ou aller, pcq obstacle
         # detecte sans qu'on bouge...)
         if len(self.path) == 0 and just_arrived:
-            log_info("Arrived at destination!")
+            self.get_logger().info("Arrived at destination!")
             # Reset des params
             self.move = False
             self.turn = False
@@ -420,7 +422,6 @@ class DisplacementNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
     
     time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 

@@ -21,11 +21,9 @@
 
 import os
 import sys
-import signal
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 import numpy as np
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 from geometry_msgs.msg import Pose2D
@@ -61,8 +59,8 @@ class ObstaclesNode(Node):
         self.nb_sonar = 1
 
         self.obs_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
-        self.lidar_sub = self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, QoSProfile())
-        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, QoSProfile())
+        self.lidar_sub = self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, 10)
+        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
 
     def recv_position(self, msg):
         """
@@ -166,7 +164,6 @@ class ObstaclesNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = ObstaclesNode()
     try:

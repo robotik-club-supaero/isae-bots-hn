@@ -25,17 +25,17 @@
 
 import numpy as np
 
-from pathfinder.maps import Maps
-from pathfinder.astar import a_star
-from pathfinder.exceptions import PathNotFoundError
+from .maps import Maps
+from .astar import a_star
+from .exceptions import PathNotFoundError
 
-import pathfinder.obstacles_creator as oc
-from pathfinder.obstacle_rect import ObstacleRect
-from pathfinder.obstacle_circ import ObstacleCirc
+import displacement.pathfinder.obstacles_creator as oc
+from .obstacle_rect import ObstacleRect
+from .obstacle_circ import ObstacleCirc
 
 
 # from .disp_utils import *
-from disp_utils import READER, log_info
+from ..disp_utils import READER
 from ast import literal_eval
 
 #######################################################################
@@ -48,11 +48,11 @@ class Pathfinder:
     
     """Pathfinder class."""
 
-    def __init__(self, color):
+    def __init__(self, color, logger):
         """Initialization of Pathfinder."""
         
         avoid = 2
-        self.table_map = Maps(oc.make_obstacle_list(color))
+        self.table_map = Maps(oc.make_obstacle_list(color, logger))
         self.init_pos = None
         self.goal_pos = None
 
@@ -60,6 +60,7 @@ class Pathfinder:
         self.max_astar_time = int(literal_eval(READER.get("PATHFINDER", "max_astar_time")))
 
         self.weights_buf = np.zeros(self.table_map.grid.shape[:2], dtype=np.float32)
+        self._logger = logger
 
     def set_init(self, pos):
         self.init_pos = pos
@@ -79,7 +80,6 @@ class Pathfinder:
         return self.table_map
 
     def remove_obstacle(self, obstacle):
-        #log_info("DELETE LES OBST")
         self.table_map.remove_obstacle(obstacle)
 
     def set_max_astar_time(self, time):
@@ -93,4 +93,4 @@ class Pathfinder:
         self.table_map.set_avoid(isAvoid)
 
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
-        return a_star(self.init_pos[:2], self.goal_pos, self.table_map, self.weights_buf, self.max_astar_time)
+        return a_star(self.init_pos[:2], self.goal_pos, self.table_map, self.weights_buf, self.max_astar_time, self._logger)

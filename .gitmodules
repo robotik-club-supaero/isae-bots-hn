@@ -1,3 +1,6 @@
 [submodule "dev/src/urg_node2"]
 	path = dev/src/urg_node2
 	url = https://github.com/Hokuyo-aut/urg_node2.git
+[submodule "dev/src/executive_smach_visualization"]
+	path = dev/src/executive_smach_visualization
+	url = https://github.com/nobleo/executive_smach_visualization/

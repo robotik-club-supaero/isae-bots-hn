@@ -26,7 +26,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
-import signal
 import socket
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
 from geometry_msgs.msg import Quaternion
@@ -59,7 +58,7 @@ class TopNode(Node):
         self.pubColor = self.create_publisher(Int16, "/game/color", latch_profile)
         self.pubBRIdle = self.create_publisher(Int16, "/br/idle", latch_profile)
         
-        self.subIsbMatch = self.create_subscription(Int16, "/okPosition", self.callBackBR, QoSProfile())
+        self.subIsbMatch = self.create_subscription(Int16, "/okPosition", self.callBackBR, 10)
         
         # client socket
         self.topServerSocket = socket.socket()
@@ -95,7 +94,6 @@ class TopNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
     
     node = TopNode()
 

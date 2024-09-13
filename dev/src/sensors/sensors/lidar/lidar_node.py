@@ -19,15 +19,12 @@
 Fichier de gestion des obstacles LIDAR
 """
 
-import signal
 import sys
 from math import atan2, sin, cos
 from lidar_lib import *
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
-
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg   import LaserScan
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
@@ -62,8 +59,8 @@ class LidarNode(Node):
         # initialisation des publishers
         self.pub_obstacles = self.create_publisher(Int16MultiArray, "/sensors/obstaclesLidar", 10)
         # initialisation des suscribers
-        self.sub_pos = self.create_subscription(Pose2D, "/current_position", self.update_position, QoSProfile())
-        self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, QoSProfile())
+        self.sub_pos = self.create_subscription(Pose2D, "/current_position", self.update_position, 10)
+        self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, 10)
 
 
     def update_position(self,msg):
@@ -168,9 +165,8 @@ class LidarNode(Node):
 # MAIN
 #######################################################################
 
-if __name__ == '__main__':
+def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = LidarNode()
     try:
@@ -181,3 +177,5 @@ if __name__ == '__main__':
         node.destroy_node()
         rclpy.shutdown()
 
+if __name__ == '__main__':
+    main()

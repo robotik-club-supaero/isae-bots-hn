@@ -28,11 +28,11 @@ TODO: add samples as obstacles
 import numpy as np
 
 from ast import literal_eval
-from pathfinder.obstacle_rect import ObstacleRect
-from pathfinder.obstacle_circ import ObstacleCirc
-from pathfinder.obstacle_tria import ObstacleTria
+from .obstacle_rect import ObstacleRect
+from .obstacle_circ import ObstacleCirc
+from .obstacle_tria import ObstacleTria
 
-from disp_utils import *
+from ..disp_utils import *
 
 from strat.strat_const import PLANTS_POS, POTS_POS
 from strat.strat_utils import adapt_pos_to_side
@@ -46,7 +46,7 @@ AWAY = 1
 #
 #######################################################################
 
-def make_obstacle_list(color):
+def make_obstacle_list(color, logger):
     """Fonction retournant une liste d'obstacles statiques."""
 
     ## STATIC OBSTACLES ###############################################
@@ -76,6 +76,6 @@ def make_obstacle_list(color):
         for i, pot in enumerate(POTS_POS):
             obstacles[f"pot{i}"] = ObstacleCirc(*adapt_pos_to_side(*pot, color)[:2], radius=75+MARGIN)
 
-    log_info("Number of static obstacles : {}.".format(len(obstacles)))
+    logger.info("Number of static obstacles : {}.".format(len(obstacles)))
    
     return obstacles

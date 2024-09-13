@@ -34,4 +34,9 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
+    entry_points={
+        'console_scripts': [
+            'interface_node = uix.sim_interface.interface_plateau:main',
+        ],
+    },
 )

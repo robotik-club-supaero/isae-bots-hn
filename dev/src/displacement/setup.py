@@ -34,4 +34,9 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
+    entry_points={
+        'console_scripts': [
+            'disp_node = displacement.disp_node:main',
+        ],
+    },
 )

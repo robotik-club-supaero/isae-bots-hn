@@ -5,11 +5,9 @@
 import os
 import sys
 import time
-import signal
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 
 import lcd_lib
 from subprocess   import Popen, PIPE
@@ -30,7 +28,7 @@ class PointsNode(Node):
 
 
 	def __init__(self):    
-		self.subScore = self.create_subscription(Int16, "/game/score", self.cbScore, QoSProfile())
+		self.subScore = self.create_subscription(Int16, "/game/score", self.cbScore, 10)
 		self.lcd = lcd_lib.lcd()
 		self.lcd.lcd_clear()
 		self.lcd.lcd_display_string("SCORE : 0", line=1)
@@ -49,7 +47,6 @@ class PointsNode(Node):
 
 if __name__ == '__main__':
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
     
     node = PointsNode()
 

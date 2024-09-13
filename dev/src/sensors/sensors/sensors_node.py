@@ -14,10 +14,8 @@
 
 import sys
 import os
-import signal
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 
 import numpy as np
 from geometry_msgs.msg import Pose2D
@@ -150,15 +148,14 @@ class SensorsNode(Node):
         self.pub_obstaclesInfo=self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
 
         # initialisation des suscribers
-        qos_profile = QoSProfile()
+        qos_profile = 10
         self.subLidar=self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, qos_profile)
         self.subSonars = self.create_subscription(Int16MultiArray, "/sensors/obstaclesSonar", self.update_obstacles, qos_profile)
         self.sub_rospy=self.create_subscription(Pose2D, "/current_position", self.update_position, qos_profile)
 
     
-if __name__ == '__main__':
+def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = SensorsNode()
     try:
@@ -168,3 +165,6 @@ if __name__ == '__main__':
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

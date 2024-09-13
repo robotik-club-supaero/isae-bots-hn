@@ -56,19 +56,19 @@
       ratio = 0.5
       type = HPaned
     [[[terminal1]]]
-      command = clear; make term CMD="./dev/src/uix/log/echo_logs.sh '/ACT'"
+      command = clear; make term CMD="python ./dev/src/uix/log/echo_logs.py ACT"
       order = 0
       title = [ACT] Action Node
       parent = topscreen1
       type = Terminal
     [[[terminal2]]]
-      command = clear; make term CMD="./dev/src/uix/log/echo_logs.sh '/DEC'"
+      command = clear; make term CMD="python ./dev/src/uix/log/echo_logs.py DEC"
       order = 1
       title = [DEC] Decision Node
       parent = topscreen1
       type = Terminal
     [[[terminal3]]]
-      command = clear; make term CMD="./dev/src/uix/log/echo_logs.sh '/DSP'"
+      command = clear; make term CMD="python ./dev/src/uix/log/echo_logs.py DSP"
       order = 0
       title = [DSP] Displacement Node
       parent = botscreen1
@@ -92,25 +92,25 @@
       parent = subframe2
       type = HPaned
     [[[terminal5]]]
-      command = clear; make term CMD="./dev/src/uix/log/echo_logs.sh '/ACN'"
+      command = clear; make term CMD="python ./dev/src/uix/log/echo_logs.py ACN"
       order = 0
       title = [ACN] Actuator Node | SIM
       parent = topscreen2
       type = Terminal
     [[[terminal6]]]
-      command = clear && make term CMD="./dev/src/uix/log/echo_logs.sh '/SEN'"
+      command = clear && make term CMD="python ./dev/src/uix/log/echo_logs.py SEN"
       order = 1
       title = [SSR] Sensors Nodes
       parent = topscreen2
       type = Terminal
     [[[terminal7]]]
-      command = clear && make term CMD="cd dev/src/sim/br; ./SimulationBaseRoulante"
+      command = clear && make term CMD="python ./dev/src/uix/log/echo_logs.py BRN"
       order = 0
       title = [BRN] Base Roulante | SIM
       parent = botscreen2
       type = Terminal
     [[[terminal8]]]
-      command = clear && make term CMD="./dev/src/uix/log/echo_logs.sh '/OBS'"
+      command = clear && make term CMD="python ./dev/src/uix/log/echo_logs.py OBS"
       order = 1
       title = [OBS] Obstacle Node | SIM
       parent = botscreen2
@@ -134,19 +134,19 @@
       parent = topscreen3
       type = Terminal
     [[[terminal10]]]
-      command = clear && make term CMD="cd dev/; source /app/install/setup.bash; ros2 run uix interface_plateau.py"
+      command = clear && make term CMD="cd dev/; source /app/install/setup.bash; ros2 run uix interface_node"
       order = 1
       title = Interface
       parent = topscreen3
       type = Terminal
     [[[terminal11]]]
-      command = clear && make term CMD="cd dev/; source /app/install/setup.bash; ros2 run smach_viewer smach_viewer.py"
+      command = clear && make term CMD="cd dev/; source /app/install/setup.bash; ros2 run smach_viewer smach_viewer_gui.py"
       order = 0
       title = Smach Viewer
       parent = botscreen3
       type = Terminal
     [[[terminal12]]]
-      command = clear && sleep 3 && make term CMD="rostopic echo /teensy/obstacle_seen"
+      command = clear && sleep 3 && make term CMD="ros2 topic echo /teensy/obstacle_seen"
       order = 1
       title = SPEED
       parent = botscreen3

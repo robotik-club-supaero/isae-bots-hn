@@ -20,7 +20,6 @@
 
 import sys
 import time
-import signal
 
 import lcd_lib
 

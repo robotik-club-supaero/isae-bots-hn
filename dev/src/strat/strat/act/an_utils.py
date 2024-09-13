@@ -2,7 +2,7 @@
 import smach
 import time
 
-from an_const import DoorOrder, DoorCallback, ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
+from .an_const import DoorOrder, DoorCallback, ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
 
 #################################################################
 # Colors gestion												#
@@ -27,7 +27,7 @@ color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW,
 class HardwareOrder(smach.State):
 
     def __init__(self, logger, publisher, cb_key, order, pending, expected, timeout=WAIT_TIME):
-        super().__init__(input_keys=[cb_key], output_keys=[cb_key], outcomes=['fail','success','preempted'])
+        smach.State.__init__(self, input_keys=[cb_key], output_keys=[cb_key], outcomes=['fail','success','preempted'])
         self._logger = logger
         self._publisher = publisher
         self._cb_key = cb_key
@@ -63,7 +63,7 @@ class HardwareOrder(smach.State):
 class OpenDoors(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
+        super().__init__(node.get_logger(), node.doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
         self._debug_print = node.debug_print
     
     def execute(self, userdata):
@@ -73,7 +73,7 @@ class OpenDoors(HardwareOrder):
 class CloseDoors(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
+        super().__init__(node.get_logger(), node.doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
         self._debug_print = node.debug_print
 
     def execute(self, userdata):
@@ -83,7 +83,7 @@ class CloseDoors(HardwareOrder):
 class RiseElevator(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
+        super().__init__(node.get_logger(), node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -93,7 +93,7 @@ class RiseElevator(HardwareOrder):
 class DescendElevator(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
+        super().__init__(node.get_logger(), node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -103,7 +103,7 @@ class DescendElevator(HardwareOrder):
 class OpenClamp(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.clamp_pub, 'cb_clamp', ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
+        super().__init__(node.get_logger(), node.clamp_pub, 'cb_clamp', ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -113,7 +113,7 @@ class OpenClamp(HardwareOrder):
 class CloseClamp(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.clamp_pub, 'cb_clamp', ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
+        super().__init__(node.get_logger(), node.clamp_pub, 'cb_clamp', ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -133,7 +133,7 @@ class AutoSequence(smach.Sequence):
 
     def __init__(self, *actions):
         input_keys, output_keys = _auto_keys(actions)     
-        super().__init__( 
+        smach.Sequence.__init__(self, 
             input_keys = input_keys,
             output_keys = output_keys,
             outcomes = ['success', 'fail', 'preempted'],
@@ -148,7 +148,7 @@ class AutoConcurrence(smach.Concurrence):
 
     def __init__(self, **actions):
         input_keys, output_keys = _auto_keys(actions.items())
-        super().__init__( 
+        smach.Concurrence.__init__(self, 
             input_keys = input_keys,
             output_keys = output_keys,
             outcomes = ['success', 'fail', 'preempted'],

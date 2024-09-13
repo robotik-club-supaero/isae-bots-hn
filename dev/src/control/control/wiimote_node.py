@@ -24,7 +24,6 @@
 
 import sys
 import time
-import signal
 from time import perf_counter
 import rclpy
 from rclpy.node import Node
@@ -249,7 +248,6 @@ class WiiControlNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = WiiControlNode()
     try:

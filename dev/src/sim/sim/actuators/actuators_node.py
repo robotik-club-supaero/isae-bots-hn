@@ -21,7 +21,6 @@
 
 import math
 import sys
-import signal
 from time import sleep
 
 import rclpy
@@ -71,7 +70,7 @@ class ActuatorNode(Node):
         super().__init__("ACN")
         self.get_logger().info("Initializing actuator node...")
 
-        qos_profile = QoSProfile()
+        qos_profile = 10
         latch_profile =  QoSProfile(
             depth=10,  # Keep last 10 messages
             durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
@@ -116,9 +115,7 @@ class ActuatorNode(Node):
         self.curr_square = 0
 
 
-        # Publication continue s'il y a besoin
-        # while(True):
-        # 	time.sleep(0.01)
+        self.get_logger().info("Actuator node initialized")
 
     def log_info(self, msg):
         """Fonction intermediaire affichant les logs pendant l'execution."""
@@ -184,7 +181,6 @@ class ActuatorNode(Node):
 #################################################################
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = ActuatorNode()
     try:

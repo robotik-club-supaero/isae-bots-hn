@@ -14,9 +14,10 @@
 # pyright: reportMissingImports=false
 
 import os
+import sys
+
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 
 from geometry_msgs.msg import Pose2D, Quaternion
 from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
@@ -30,12 +31,11 @@ import numpy as np
 import tkinter as tk
 import configparser as ConfigParser
 
-import signal
 import sys
 
 from enum import IntEnum
 
-from interface_const import *
+from .interface_const import *
 
 ScreenUnits = float
 PhysicalUnits = float
@@ -701,30 +701,30 @@ class InterfaceNode(Node):
         self.lock = RLock()
 
         # initialisation des suscribers
-        self._subStart = self.create_subscription(Int16, "/color", self.updateColor, QoSProfile())
+        self._subStart = self.create_subscription(Int16, "/color", self.updateColor, 10)
 
         self._subGrid = self.create_subscription(
-            Float32MultiArray, "/simu/nodegrid", self.updateGrid, QoSProfile())
+            Float32MultiArray, "/simu/nodegrid", self.updateGrid, 10)
 
         self._subPos = self.create_subscription(
-            Pose2D, "/current_position", self.updateRobotPosition, QoSProfile())
+            Pose2D, "/current_position", self.updateRobotPosition, 10)
         self._subDoors = self.create_subscription(
-            Int16, "/act/callback/doors", self.updateRobotDoorState, QoSProfile())
+            Int16, "/act/callback/doors", self.updateRobotDoorState, 10)
         self._subLeftArm = self.create_subscription(
-            Int16, "/act/callback/left_arm", self.updateRobotLeftArmState, QoSProfile())
+            Int16, "/act/callback/left_arm", self.updateRobotLeftArmState, 10)
         self._subRightArm = self.create_subscription(
-            Int16, "/act/callback/right_arm", self.updateRobotRightArmState, QoSProfile())
+            Int16, "/act/callback/right_arm", self.updateRobotRightArmState, 10)
         self._subObstacles = self.create_subscription(
-            Int16MultiArray, "/obstaclesInfo", self.updateObstacles, QoSProfile())
+            Int16MultiArray, "/obstaclesInfo", self.updateObstacles, 10)
         self._subRobotObstacle = self.create_subscription(
-            Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, QoSProfile())
+            Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, 10)
         self._subPath = self.create_subscription(
-            Float32MultiArray, "/simu/current_path", self.updatePath, QoSProfile())
+            Float32MultiArray, "/simu/current_path", self.updatePath, 10)
 
         self._subOrder = self.create_subscription(
-            Quaternion, "/nextPositionTeensy", self.updateOrder, QoSProfile())
+            Quaternion, "/nextPositionTeensy", self.updateOrder, 10)
 
-        self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, QoSProfile())
+        self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, 10)
 
         self._pubOrder = self.create_publisher(Quaternion, "/nextPositionTeensy", 10)
 
@@ -868,7 +868,14 @@ class InterfaceNode(Node):
     def mainloop(self, n=0):
         self._fenetre.mainloop(n)
 
-if __name__ == '__main__':
+def main():
+    rclpy.init(args=sys.argv)
     node = InterfaceNode()
-    signal(SIGINT, handler)
-    node.mainloop()
+    try:
+        node.mainloop()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

@@ -26,18 +26,18 @@ from std_msgs.msg      import Empty
 from geometry_msgs.msg import Quaternion
 
 # import les states de la SM
-from an_sm_states.sm_park import Park
-from an_sm_states.sm_turn_solar import TurnPanel
-from an_sm_states.sm_pickup_plants import PickupPlant
-from an_sm_states.sm_pickup_pots import PickupPlot
-from an_sm_states.sm_deposit_pots import DepositPot
-from an_sm_states.sm_waiting import waiting
+from .an_sm_states.sm_park import Park
+from .an_sm_states.sm_turn_solar import TurnPanel
+from .an_sm_states.sm_pickup_plants import PickupPlant
+from .an_sm_states.sm_pickup_pots import PickupPlot
+from .an_sm_states.sm_deposit_pots import DepositPot
+from .an_sm_states.sm_waiting import waiting
 
-from an_const import *
+from .an_const import *
 
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore, Action
+from ..strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore, Action
 
 #################################################################
 #                                                               #
@@ -92,7 +92,6 @@ class Setup(smach.State):
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
-            rclpy.spin_once(self)
             time.sleep(0.01)
         
         self._logger.info('Starting match !')
@@ -172,7 +171,7 @@ class End(smach.State):
 
 class ActionStateMachine(smach.StateMachine):
     def __init__(self, node):
-        super().__init__(outcomes=['exit all', 'exit preempted'])
+        smach.StateMachine.__init__(self, outcomes=['exit all', 'exit preempted'])
 
         with self:
             # Primary States

@@ -3,7 +3,7 @@
 source /opt/ros/jazzy/setup.bash
 
 sleep 2
-if [ -z $(rosnode list) ]; then ROSLAUNCH_RUNNING=0; else ROSLAUNCH_RUNNING=1; fi
+if [ -z $(ros2 node list) ]; then ROSLAUNCH_RUNNING=0; else ROSLAUNCH_RUNNING=1; fi
 clear
 
 # BINDKEYS
@@ -23,13 +23,13 @@ bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNC
 # SIGHUP via la commande trap), pour avoir son PID on parse le résultat de la commande ps aussi
 
 COMMANDH="[ROS MESSAGE] -> Set side to \033[36mHOME\033[0m"
-bind -x '"\C-H":"echo -e $COMMANDH; rostopic pub --once /game/color std_msgs/Int16 0 > /dev/null"'
+bind -x '"\C-H":"echo -e $COMMANDH; ros2 topic pub --once /game/color std_msgs/Int16 0 > /dev/null"'
 
 COMMANDA="[ROS MESSAGE] -> Set side to \033[36mAWAY\033[0m"
-bind -x '"\C-A":"echo -e $COMMANDA; rostopic pub --once /game/color std_msgs/Int16 1 > /dev/null"'
+bind -x '"\C-A":"echo -e $COMMANDA; ros2 topic pub --once /game/color std_msgs/Int16 1 > /dev/null"'
 
 COMMANDG="[ROS MESSAGE] -> \033[32mStart match\033[0m"
-bind -x '"\C-G":"echo -e $COMMANDG; rostopic pub --once /game/start std_msgs/Int16 1 > /dev/null"'
+bind -x '"\C-G":"echo -e $COMMANDG; ros2 topic pub --once /game/start std_msgs/Int16 1 > /dev/null"'
 
 
 # INFO MESSAGE AT STARTUP

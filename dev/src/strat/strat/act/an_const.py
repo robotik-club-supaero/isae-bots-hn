@@ -33,7 +33,7 @@ from enum import IntEnum
 ## Config reader
 
 READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
+READER.read(os.path.join(os.path.dirname(__file__),"../../../robot_config.cfg"))
 
 #################################################################
 #                                                               #

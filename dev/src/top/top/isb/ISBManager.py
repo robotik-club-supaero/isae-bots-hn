@@ -20,7 +20,6 @@
 
 import sys
 import time
-import signal
 
 from .isb_lib import initPin, readPin, writePin
 from .isb_const import *

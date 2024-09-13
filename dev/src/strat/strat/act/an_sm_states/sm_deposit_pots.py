@@ -24,12 +24,12 @@ import time
 from geometry_msgs.msg import Quaternion
 from std_msgs.msg      import Empty
 
-from an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
-from an_utils import AutoSequence, OpenDoors, CloseDoors
+from ..an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
+from ..an_utils import AutoSequence, OpenDoors, CloseDoors
 
-from strat_const import DEPOSIT_POS
-from strat_utils import adapt_pos_to_side
-from an_sm_states.sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
+from strat.strat_const import DEPOSIT_POS
+from strat.strat_utils import adapt_pos_to_side
+from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
 
 #################################################################
 #                                                               #
@@ -44,7 +44,7 @@ class CalcPositionningPots(smach.State):
                                 outcomes=['fail','success','preempted'],
                                 input_keys=['robot_pos','color','next_action'],
                                 output_keys=['next_move'])
-        self._get_pickup_id = node
+        self._get_pickup_id = get_pickup_id
         
     def execute(self, userdata):    
         x, y = userdata.robot_pos[0].x, userdata.robot_pos[0].y
@@ -58,7 +58,7 @@ class CalcPositionningPots(smach.State):
 # TODO find a better way
 class ReportDeposit(smach.State):
     def __init__(self, deposit_pub):
-        super().__init__(outcomes=['success'])
+        smach.State.__init__(self, outcomes=['success'])
         self._deposit_pub = deposit_pub
 
     def execute(self, userdata):

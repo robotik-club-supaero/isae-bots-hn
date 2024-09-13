@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y \
     nano \
     python-is-python3
 
+# Smach viewer dependencies
+RUN apt-get install -y python-wxtools python3-gi gobject-introspection gir1.2-gtk-3.0
+
 # Install pyqtgraph
 RUN pip install pyqtgraph==0.10.0 --break-system-packages
 RUN pip install pyastar2d --break-system-packages
@@ -35,8 +38,5 @@ COPY ./docker/49-teensy.rules /etc/udev/rules.d/
 # Setup the work directory and entrypoint
 WORKDIR '/app'
 COPY ./docker/autosetup.sh /app/autosetup.sh
-
-RUN pip freeze > test.txt
-RUN cat test.txt
 
 ENTRYPOINT [ "/app/autosetup.sh" ]

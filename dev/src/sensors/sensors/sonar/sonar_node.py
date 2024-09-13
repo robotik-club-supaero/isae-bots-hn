@@ -21,11 +21,9 @@
 
 import os
 import sys
-import signal
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 import numpy as np
 import configparser
 import ast
@@ -58,7 +56,7 @@ class SonarNode(Node):
         
         # Get sonars from config file of the robot
         reader = configparser.ConfigParser()
-        reader.read(os.path.join(os.path.dirname(__file__),f"../../{_CFG_FILE_}"))
+        reader.read(os.path.join(os.path.dirname(__file__),f"../../../{_CFG_FILE_}"))
         
         self.nb_sonars = 0
         self.sonars_lst = []     #on enregistre chaque sonar (sa position et son cap) dans cette liste
@@ -70,8 +68,8 @@ class SonarNode(Node):
             self.nb_sonars += 1
 
         self.obs_pub = self.create_publisher(Int16MultiArray, "/sensors/obstaclesSonar", 10)
-        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, QoSProfile())
-        self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, QoSProfile())  # can change topic name ?
+        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
+        self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, 10)  # can change topic name ?
     
     def recv_position(self, msg):
         """
@@ -140,7 +138,6 @@ class SonarNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     node = ObstaclesNode()
     try:

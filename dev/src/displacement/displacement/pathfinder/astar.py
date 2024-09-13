@@ -31,8 +31,8 @@ import numpy as np
 import pyastar2d
 import math
 
-from disp_utils import GRID_INTERVAL, log_info
-from pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
+from ..disp_utils import GRID_INTERVAL
+from .exceptions import PathNotFoundError, TimeOutError, DestBlockedError
 
 ### CONSTANTES ########################################################
 
@@ -60,7 +60,7 @@ def can_go_straight(tableMap, init, goal):
 #
 #######################################################################
 
-def a_star(init, goal, tableMap, weights, _maxAstarTime):
+def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
     start_time = time.perf_counter()
 
@@ -134,9 +134,9 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime):
 
     post_process_time = time.perf_counter()
 
-    log_info(f"Pre-process duration: {pre_process_time - start_time}s")
-    log_info(f"Astar duration: {astar_time - pre_process_time}s")
-    log_info(f"Post-process duration: {post_process_time - astar_time}s")
+    logger.debug(f"Pre-process duration: {pre_process_time - start_time}s")
+    logger.debug(f"Astar duration: {astar_time - pre_process_time}s")
+    logger.debug(f"Post-process duration: {post_process_time - astar_time}s")
 
     return path_with_caps[1:]
 

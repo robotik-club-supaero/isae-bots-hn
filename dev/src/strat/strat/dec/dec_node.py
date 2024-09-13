@@ -24,16 +24,17 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import sys
-import signal
 import time
 from ast import literal_eval
 
-from dn_const    import *
-import dn_strats
+from .dn_const import *
+import strat.dec.dn_strats as dn_strats
 
+from std_msgs.msg import Int16, Int16MultiArray, Empty
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
+from geometry_msgs.msg import Pose2D
 
-from strat_const import Action, ActionScore
+from ..strat_const import Action, ActionScore
 
 #################################################################
 #                                                               #
@@ -55,15 +56,15 @@ class DecisionsNode(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
         )
 
-        self.start_sub = self.create_subscription(Int16, "/game/start", self.start_match, QoSProfile())
-        self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, QoSProfile())
-        self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, QoSProfile())
-        self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, QoSProfile())
-        self.position_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, QoSProfile())
+        self.start_sub = self.create_subscription(Int16, "/game/start", self.start_match, 10)
+        self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, 10)
+        self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, 10)
+        self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, 10)
+        self.position_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
 
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
-        self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, QoSProfile())
-        self.done_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/callback", self.recv_action_callback, QoSProfile())
+        self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, 10)
+        self.done_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/callback", self.recv_action_callback, 10)
 
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
@@ -275,7 +276,6 @@ class DecisionsNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    signal.signal(signal.SIGINT, signal.default_int_handler)
     
     time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 

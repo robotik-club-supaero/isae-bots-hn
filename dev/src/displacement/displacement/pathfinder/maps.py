@@ -27,7 +27,7 @@ import os
 import numpy as np
 from ast import literal_eval
 
-from disp_utils import READER, GRID_INTERVAL
+from ..disp_utils import READER, GRID_INTERVAL
 #################################################################################################
 """ if os.environ['USER'] == 'pi':
 	from isae_robotics_msgs.msg import InfoMsg, ActionnersMsg, EndOfActionMsg 		# sur robot

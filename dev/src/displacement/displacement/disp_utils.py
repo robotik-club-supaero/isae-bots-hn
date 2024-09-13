@@ -47,7 +47,7 @@ NODE_NAME = "[DSP]"
 
 READER = configparser.ConfigParser()
 try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../robot_config.cfg"))
+	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
 except:
 	print("no file found...")
 

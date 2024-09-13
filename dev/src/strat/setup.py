@@ -34,4 +34,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
+    entry_points={
+        'console_scripts': [
+            'act_node = strat.act.act_node:main',
+            'dec_node = strat.dec.dec_node:main',
+        ],
+    },
 )

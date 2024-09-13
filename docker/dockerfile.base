@@ -1,5 +1,5 @@
 # DOCKERFILE for isaebots-dev-env-img :
-# - Ubuntu 20.04 focal fossa + packages
+# - Ubuntu 24.04 focal fossa + packages
 # - ROS 1 noetic + deps
 # - Python 3.8 + deps
 
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     git \
     python3-pip \
-    python3-catkin-tools \
+    python3-colcon-common-extensions \
     nano \
     python-is-python3
 
@@ -31,9 +31,6 @@ RUN pip3 install numpy==1.22.4
 
 RUN apt install -y python3-tk
 RUN pip install mttkinter
-
-# Install dependency of lidar driver node (hokuyo or sick)
-RUN apt-get install -y ros-noetic-diagnostics
 
 # Add user so that we don't log in as root
 RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio dockeruser
@@ -97,8 +94,5 @@ COPY ./docker/autosetup.sh /app/autosetup.sh
 
 RUN pip freeze > test.txt
 RUN cat test.txt
-
-# Setup ROS environment
-RUN echo "source dev/devel/setup.bash" >> ~/.bashrc
 
 ENTRYPOINT [ "/app/autosetup.sh" ]

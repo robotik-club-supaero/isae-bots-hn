@@ -1,9 +1,9 @@
 # DOCKERFILE for isaebots-dev-env-img :
-# - Ubuntu 20.04 focal fossa + packages
+# - Ubuntu 24.04 focal fossa + packages
 # - ROS 1 noetic + deps
 # - Python 3.8 + deps
 
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 #############################################################
 # 1 - Create CORE image                                     #
@@ -19,11 +19,16 @@ RUN apt-get install -y gnupg2
 RUN apt-get install -y locales
 RUN dpkg-reconfigure locales
 
-# Install ROS noetic
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+# Install ROS2 Jazzy
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository universe
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null'
+
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends ros-noetic-ros-base
+RUN apt-get install -y --no-install-recommends ros-dev-tools
+RUN apt-get install -y --no-install-recommends ros-jazzy-desktop
+# TODO: replace with ros-jazzy-ros-base?
 RUN apt-get install -y --no-install-recommends python3-rosdep
 
 RUN update-ca-certificates --fresh
@@ -35,16 +40,14 @@ RUN rosdep init
 RUN sudo rosdep fix-permissions
 RUN rosdep update
 
-# bn
-RUN apt-get install -y ros-noetic-rosserial-arduino
-RUN apt-get install -y ros-noetic-rosserial-python
-RUN apt-get install -y ros-noetic-rosserial
+# Installations BN
+# !!!!!!!!!!TODO: replace rosserial!!!!!!!
 
 # hn
-RUN apt-get install -y ros-noetic-smach ros-noetic-smach-viewer
+RUN apt-get install -y ros-jazzy-smach-ros
 
 # Setup ROS environment
-RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 
 # alias python to python3
 RUN echo "alias python=python3" >> ~/.bashrc
@@ -64,7 +67,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     git \
     python3-pip \
-    python3-catkin-tools \
+    python3-colcon-common-extensions \
     nano \
     python-is-python3 \
     usbutils
@@ -110,9 +113,6 @@ RUN pip install pyserial
 
 # Install smbus for isb and lcd
 RUN pip3 install smbus
-
-# Install dependency of lidar driver node (hokuyo or sick)
-RUN apt-get install -y ros-noetic-diagnostics
 
 # Install lib Adafruit-SSD1306 and RPi.GPIO for oled screen
 RUN pip3 install Adafruit-SSD1306==1.6.2

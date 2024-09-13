@@ -34,7 +34,7 @@ roslaunch main.launch method:='sim'
 	</group>
 	
 	<group if="$(eval arg('LIDAR') != 'None')"> <!-- Le LIDAR est present -->
-		<node pkg="hokuyo_node" type="hokuyo_node" name="Hokuyo" output="screen" >
+		<node pkg="urg_node2" type="urg_node2" name="Hokuyo" output="screen" >
 			<param name="port" type="string" value="$(eval arg('LIDAR'))"/>
 		</node>
 		<node pkg="sensors" type="lidar_node.py" name="LidarNode" output="screen" />

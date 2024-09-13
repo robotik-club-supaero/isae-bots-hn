@@ -11,10 +11,10 @@
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 #
 
-# Basic entrypoint for ROS / Catkin Docker containers
+# Basic entrypoint for ROS / ament Docker containers
 
 # Setup ros environment
-source /opt/ros/noetic/setup.bash
+source /opt/ros/jazzy/setup.bash
 
 
 # Make the node files executable
@@ -32,14 +32,8 @@ chmod +x ./dev/src/strat/act/act_node.py \
 chmod +x ./dev/src/uix/log/echo_logs.sh
 chmod +x ./dev/src/uix/log/simTerm_rc.sh
 
-cdir=$(pwd)
-cd $WDIR
-touch src/hokuyo_node/CATKIN_IGNORE
-catkin_make
-rm src/hokuyo_node/CATKIN_IGNORE
-catkin_make
-cd cdir
-source "$WDIR/devel/setup.bash"
+colcon build --symlink-install
+source "$WDIR/install/setup.bash"
 
 # Setup environment variables
 # export ROS_IP=192.168.43.12

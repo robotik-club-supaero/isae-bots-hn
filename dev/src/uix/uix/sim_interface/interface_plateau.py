@@ -37,6 +37,8 @@ from enum import IntEnum
 
 from .interface_const import *
 
+from strat.strat_utils import create_quaternion
+
 ScreenUnits = float
 PhysicalUnits = float
 
@@ -795,7 +797,7 @@ class InterfaceNode(Node):
         self.get_logger().info("click received at " + str(x) + "," + str(y))
 
         x0, y0 = self._clickMarker.location.tolist()
-        self._pubOrder.publish(Quaternion(x0, y0, atan2(y-y0, x-x0), 0))
+        self._pubOrder.publish(create_quaternion(x0, y0, atan2(y-y0, x-x0), 0))
 
     def updateOrder(self, msg):
         with self.lock:

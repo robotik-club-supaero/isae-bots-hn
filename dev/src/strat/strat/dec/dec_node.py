@@ -26,6 +26,7 @@ from rclpy.qos import QoSProfile, DurabilityPolicy
 import sys
 import time
 from ast import literal_eval
+import threading
 
 from .dn_const import *
 import strat.dec.dn_strats as dn_strats
@@ -109,13 +110,18 @@ class DecisionsNode(Node):
         self.nb_actions = 0
 
     def publishScore(self):
-        self.score_pub.publish(data=self.score)
+        score = Int16()
+        score.data = self.score
+        self.score_pub.publish(score)
 
     def publishAction(self):
-        self.get_logger().info(self.curr_action)
+        self.get_logger().info(str(self.curr_action))
         self.action_successful = False
         self.retry_count += 1
-        self.next_action_pub.publish(data = [self.curr_action[0].value] + self.curr_action[1:])
+
+        action_msg = Int16MultiArray()
+        action_msg.data = [self.curr_action[0].value] + self.curr_action[1:]
+        self.next_action_pub.publish(action_msg)
     
 
     #################################################################
@@ -251,22 +257,27 @@ class DecisionsNode(Node):
     #                                                               #
     #################################################################
 
-    def park_IT():
+    def park_IT(self):
         """
         Interrupt : time to park
         """
         self.get_logger().info('\033[1m\033[36m' + "#"*19 + " Park interrupt " + "#"*18 + '\033[0m')
         self.go_park = True
-        self.park_pub.publish(data=1)
+
+        msg = Int16()
+        msg.data = 1
+        self.park_pub.publish(msg)
 
 
-    def stop_IT():
+    def stop_IT(self):
         """
         Interrupt : end of match => stop moving
         """
         self.get_logger().info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
 
-        self.next_action_pub.publish(data = [Action.END.value])
+        action_msg = Int16MultiArray()
+        action_msg.data = [Action.END.value]
+        self.next_action_pub.publish(action_msg)
 
 #################################################################
 #                                                               #

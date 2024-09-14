@@ -26,11 +26,9 @@ import math
 from enum import IntEnum
 from numpy.linalg import norm
 
-from geometry_msgs.msg import Quaternion
-
 from ..an_const import DspCallback, DspOrderMode
 from ..an_utils import AutoSequence
-from strat.strat_utils import adapt_pos_to_side
+from strat.strat_utils import adapt_pos_to_side, create_quaternion
 
 #################################################################
 #                                                               #
@@ -48,7 +46,7 @@ class Approach(IntEnum):
 def colored_destination(color, x_d, y_d, t_d, w):
     """Allows a quick conversion of destination given the side played."""
     x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
-    return Quaternion(x_d, y_d, t_d, w.value)
+    return create_quaternion(x_d, y_d, t_d, w.value)
 
 def colored_approach(userdata, xd, yd, margin, phase, theta_final=None):
     x, y, _ = adapt_pos_to_side(userdata.robot_pos[0].x, userdata.robot_pos[0].y, 0, userdata.color)
@@ -69,7 +67,7 @@ def colored_approach_with_angle(color, xd, yd, td, margin, theta_final=None):
         theta_final = td
     else:
         _, _, theta_final = adapt_pos_to_side(0, 0, theta_final)
-    return Quaternion(xd - margin * math.cos(td), yd - margin * math.sin(td), theta_final, DspOrderMode.AVOIDANCE.value)
+    return create_quaternion(xd - margin * math.cos(td), yd - margin * math.sin(td), theta_final, DspOrderMode.AVOIDANCE.value)
                 
                 
 #################################################################
@@ -174,7 +172,7 @@ class MoveBackwardsStraight(smach.State):
         xd = x - self._dist * math.cos(theta)
         yd = y - self._dist * math.sin(theta)
 
-        self._node.disp_pub.publish(Quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
+        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
         
         begin = time.perf_counter()
         while time.perf_counter() - begin < DISP_TIMEOUT:           

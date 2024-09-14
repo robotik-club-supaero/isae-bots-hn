@@ -129,51 +129,62 @@ class ActuatorNode(Node):
         """Callback de couleur."""
         self.color = msg.data
 
-        # Generation aleatoire des carres de fouille
-        self.log_info("Random Stuff generated ????")
-
     def update_position(self, msg):
         """Callback de position."""
         self.curr_pos = msg
 
     def doors_response(self, msg):
         sleep(DOORS_TIME)
+        rsp = Int16()
+
         if msg.data == DoorOrder.OPEN:
-            self.doors_pub.publish(data=DoorCallback.OPEN)
+            rsp.data = DoorCallback.OPEN
             self.log_info("Réponse simulée : Portes ouvertes")
         else:
-            self.doors_pub.publish(data=DoorCallback.CLOSED)
+            rsp.data = DoorCallback.CLOSED
             self.log_info("Réponse simulée : Portes fermées")
+
+        self.doors_pub.publish(rsp)
 
     def elevator_response(self, msg):
         sleep(ELEVATOR_TIME)
+        rsp = Int16()
+
         if msg.data == ElevatorOrder.MOVE_UP:
-            self.elevator_pub.publish(data=ElevatorCallback.UP)
+            rsp.data = ElevatorCallback.UP
             self.log_info("Réponse simulée : Ascenseur haut")
         else:
-            self.elevator_pub.publish(data=ElevatorCallback.DOWN)
+            rsp.data = ElevatorCallback.DOWN
             self.log_info("Réponse simulée : Ascenseur bas")
+
+        self.elevator_pub.publish(rsp)
 
     def clamp_response(self, msg):
         sleep(CLAMP_TIME)
+        rsp = Int16()
+
         if msg.data == ClampOrder.OPEN:
-            self.clamp_pub.publish(data=ClampCallback.OPEN)
+            rsp.data = ClampCallback.OPEN
             self.log_info("Réponse simulée : Pince ouverte")
         else:
-            self.clamp_pub.publish(data=ClampCallback.CLOSED)
+            rsp.data = ClampCallback.CLOSED
             self.log_info("Réponse simulée : Pince fermée")
 
+        self.clamp_pub.publish(rsp)
 
     @staticmethod
     def arm_response(pub, msg):
         sleep(ARM_TIME)
+        rsp = Int16()
+
         if msg.data == ArmOrder.EXTEND:
-            pub.publish(data=ArmCallback.EXTENDED)
+            rsp.data = ArmCallback.EXTENDED     
             self.log_info("Réponse simulée : Bras tendu")
         else:
-            pub.publish(data=ArmCallback.RETRACTED)
+            rsp.data = ArmCallback.RETRACTED
             self.log_info("Réponse simulée : Bras rentré")
 
+        pub.publish(rsp)
 #################################################################
 #																#
 # 							Main 								#

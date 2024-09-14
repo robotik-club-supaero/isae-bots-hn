@@ -23,6 +23,7 @@ DEBUG_PRINTS = True
 
 import os
 import sys
+import threading
 
 import rclpy
 from rclpy.node import Node
@@ -38,7 +39,7 @@ from geometry_msgs.msg import Quaternion, Pose2D
 from .an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, \
                     ClampCallback, COLOR
 from .an_sm import ActionStateMachine
-from .an_utils import color_dict
+from .an_utils import color_dict, Color
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
@@ -96,17 +97,23 @@ class ActionNode(Node):
 
         self.sm = ActionStateMachine(self)
         self.sis = smach_ros.IntrospectionServer('pr_an', self.sm, '/SM_ROOT')
+        self._sm_thread = threading.Thread(target=self.sm.execute)
         
 
     @property
     def smData(self):
         return self.sm.userdata if self.sm is not None else type("", (), {})()
 
-    def __enter__(self):
+    def __enter__(self):        
         self.sis.start()
+        self._sm_thread.start()
+        return self
 
     def __exit__(self, *args):
         self.sis.stop()
+        self.sm.request_preempt()
+        self._sm_thread.join()
+        self.get_logger().info('Exiting state machine.')
 
     # Debug print function
     def debug_print(self, format, *msgs):
@@ -163,7 +170,6 @@ class ActionNode(Node):
         """
         Callback function from topic /sm/color.
         """
-        if not ok_comm : return
         if msg.data not in [0,1]:
             self.get_logger().error(f"Wrong value of color given ({msg.data})...")
             return
@@ -176,12 +182,11 @@ class ActionNode(Node):
         """
         Callback for next action (DN -> Repartitor)
         """
-        if msg.data[0] == -2:
-            # Tmp fix from last year (= sm did not quit normally on parking...)
+        if msg.data[0] == Action.PARK:
             self.sm.request_preempt()
             self.get_logger().info("Received stop signal (initiate parking)")
             return
-        if msg.data[0] == -1:
+        if msg.data[0] == Action.END:
             self.sm.request_preempt()
             self.get_logger().info("Received park signal (end of match)")
             return
@@ -260,16 +265,14 @@ def main():
 
     time.sleep(1)  # NOTE : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
-    with node:
-        try:
-            node.sm.execute()
-            node.get_logger().info('Exiting state machine.')
+    try:
+        with node:
             rclpy.spin(node)
-        except KeyboardInterrupt:
-            node.get_logger().warning("Node forced to terminate")
-        finally:
-            node.destroy_node()
-            rclpy.shutdown()
+    except KeyboardInterrupt:
+        node.get_logger().warning("Node forced to terminate")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

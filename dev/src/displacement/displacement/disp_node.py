@@ -55,6 +55,8 @@ from .disp_utils import MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
 # import comms
 from .disp_comm import DispCallbacks, SIMULATION, COM_STRAT, CMD_TEENSY
 
+from strat.strat_utils import create_quaternion
+
 #################################################################
 #																#
 # 						DISPLACEMENT NODE						#
@@ -160,7 +162,10 @@ class DisplacementNode(Node):
                 path_coords.append(path[k][0])
                 path_coords.append(path[k][1])
                 if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
-            pub_path.publish(data = path_coords)  # liste des coordonnees successives
+            
+            path_msg = Float32MultiArray()
+            path_msg.data = path_coords
+            self.pub_path.publish(path_msg)  # liste des coordonnees successives
             self.get_logger().info("## Simulation ## Path published : {}".format(path_coords))
 
 #######################################################################
@@ -244,7 +249,7 @@ class DisplacementNode(Node):
 
         result = self.build_path(self.avoid_mode, self.is_first_accurate)
 
-        debug_print(node, 'c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
+        debug_print(self, 'c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
 
         ## Si on a trouvé un chemin
         if result['success']:
@@ -260,15 +265,15 @@ class DisplacementNode(Node):
         else:
             if self.bypassing:
                 self.get_logger().warning("ERROR - Reason: Cannot bypass obstacle")
-                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                self.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
             elif result['message'] == "Dest Blocked":
                 self.get_logger().warning("ERROR - Reason: " + result['message'])
-                pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                self.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
             else:
                 #NOTE no path found
                 self.get_logger().warning("ERROR - Reason: " + result['message'])
                 # Retour de l'erreur a la strat
-                pub_strat.publish(Int16(COM_STRAT["path not found"]))
+                self.pub_strat.publish(Int16(COM_STRAT["path not found"]))
 
     def next_point(self, just_arrived):
         """Envoie une commande du prochain point a la Teensy.
@@ -301,13 +306,13 @@ class DisplacementNode(Node):
                 xLoc, _ = to_robot_coord(self.current_pos[0], self.current_pos[1], self.current_pos[2], self.path[0])
                 if xLoc > 0: # Marche avant necessaire
                     self.forward = True
-                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
+                    self.pub_teensy.publish(create_quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
                 else:
                     self.forward = False
-                    pub_teensy.publish(Quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
+                    self.pub_teensy.publish(create_quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
             else:
                 self.forward = True
-                pub_teensy.publish(Quaternion(x,y,0,CMD_TEENSY["disp"]))
+                self.pub_teensy.publish(create_quaternion(x,y,0,CMD_TEENSY["disp"]))
 
             # Init params du mouvement
             self.turn = True
@@ -331,29 +336,29 @@ class DisplacementNode(Node):
                 
                 xLoc, _ = to_robot_coord(xRob, yRob, cRob, [x,y,c])
                 if xLoc >= 0:
-                    pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["accurate"]))
+                    self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["accurate"]))
                     self.forward = True
                 else:
-                    pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["accurate"]))
+                    self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["accurate"]))
                     self.forward = False
                 return
 
             if self.rotation:
                 self.get_logger().info("\nDisplacement request ({}, {}, {}) rotation.".format(x, y, c))
                 #print("\n\n\n\nspeedRot = {}\n\n\n\n".format(self.speedRot))
-                pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["rotation"]))
+                self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["rotation"]))
                 return
 
             if self.recalage:
                 self.get_logger().info("\nDisplacement request ({}, {}, {}) recalage.".format(x, y, c))
                 self.final_move = False     #Pas d'orientation finale en fin de recalage 
-                pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["recalage"]))
+                self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["recalage"]))
                 return
         
             ## Point final
             self.get_logger().info("\nDisplacement request ({}, {}, {}) standard.".format(x, y, c))
             self.forward = True
-            pub_teensy.publish(Quaternion(x, y, c, CMD_TEENSY["dispFinal"]))
+            self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["dispFinal"]))
             
         # Sinon, on on a fini (ou bien a nulle part ou aller, pcq obstacle
         # detecte sans qu'on bouge...)
@@ -374,7 +379,7 @@ class DisplacementNode(Node):
             self.wait_start = None
 
             # Publication a la strat
-            pub_strat.publish(Int16(COM_STRAT["ok pos"]))
+            self.pub_strat.publish(Int16(COM_STRAT["ok pos"]))
 
 
     def set_avoid_reset_point(self):

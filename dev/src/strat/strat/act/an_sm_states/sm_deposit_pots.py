@@ -21,7 +21,6 @@
 import smach
 import math
 import time
-from geometry_msgs.msg import Quaternion
 from std_msgs.msg      import Empty
 
 from ..an_const import DspOrderMode, DspCallback, R_APPROACH_POTS

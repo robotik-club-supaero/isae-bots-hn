@@ -17,7 +17,7 @@
 source /opt/ros/jazzy/setup.bash
 
 # Make the scripts to display logs executable
-chmod +x ./dev/src/uix/log/echo_logs.sh
+chmod +x ./dev/src/uix/log/echo_logs.py
 chmod +x ./dev/src/uix/log/simTerm_rc.sh
 
 colcon build --symlink-install

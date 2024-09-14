@@ -31,7 +31,7 @@ terminator -mu -l simulation -p sim -T "Robot Simulation Station" --working-dire
 # on peut aussi utiliser stop qui arrête proprement le process mais qui met plus de temps s'il faut escalate au SIGKILL
 #docker kill $(docker container ls -q)
 docker stop $(docker container ls -q)
-
+docker stop isaebots
 
 # La commande stty quit \[STOP_KEY] permet de bind temporairement une touche à la commande quit (par défaut Ctrl-\)
 # Par défaut on l'utilise sur la touche "suppr" (de symbole ^[[3~ par défaut, pour avoir le symbole sur votre ordi faites dans un terminal Ctrl-V + [KEY])

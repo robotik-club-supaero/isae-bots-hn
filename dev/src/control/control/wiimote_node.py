@@ -31,6 +31,7 @@ import cwiid
 from enum import IntEnum, Enum
 from std_msgs.msg      import Int16
 from geometry_msgs.msg import Quaternion
+from strat.strat_utils import create_quaternion
 
 #################################################################
 #                                                               #
@@ -102,7 +103,7 @@ class WiiControlNode(Node):
         self.wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_NUNCHUK
         self.wiimote.led = (1 << (self.coeff_speed+1)) - 1
 
-        self.msg_pos = Quaternion(x=0, y=0, z=0, w=0)
+        self.msg_pos = create_quaternion(x=0, y=0, z=0, w=0)
 
 
     def wiimote_connect(self):

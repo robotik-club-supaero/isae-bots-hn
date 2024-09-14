@@ -38,6 +38,7 @@ from .an_const import *
 from geometry_msgs.msg import Quaternion, Pose2D
 
 from ..strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore, Action
+from ..strat_utils import create_quaternion
 
 #################################################################
 #                                                               #
@@ -79,7 +80,7 @@ class Setup(smach.State):
 
         ## Game infos variables
         userdata.next_action = [Action.PENDING]  # action en cours (avec arguments eventuels)
-        userdata.next_move = Quaternion(x=-1, y=-1, z=-1, w=-1)
+        userdata.next_move = create_quaternion(x=-1, y=-1, z=-1, w=-1)
 
         time.sleep(0.01)
 
@@ -159,8 +160,8 @@ class End(smach.State):
         ###########################
         ## STOP RUNNING PROGRAMS ##
         ###########################
-        self._disp_pub.publish(Quaternion(x=0,y=0,z=0,w=-1))			# arrêt PF : w = -1
-        self._stop_teensy_pub.publish(Quaternion(x=0,y=0,z=0,w=2))	# arrêt BR (code w=2 pour le BN)
+        self._disp_pub.publish(create_quaternion(x=0,y=0,z=0,w=-1))			# arrêt PF : w = -1
+        self._stop_teensy_pub.publish(create_quaternion(x=0,y=0,z=0,w=2))	# arrêt BR (code w=2 pour le BN)
         return 'end'
 
 #################################################################
@@ -171,7 +172,11 @@ class End(smach.State):
 
 class ActionStateMachine(smach.StateMachine):
     def __init__(self, node):
-        smach.StateMachine.__init__(self, outcomes=['exit all', 'exit preempted'])
+        smach.StateMachine.__init__(self,
+            outcomes=['exit all', 'exit preempted'],
+            input_keys=USERDATA_VAR_LIST,
+            output_keys=USERDATA_VAR_LIST
+        )
 
         with self:
             # Primary States

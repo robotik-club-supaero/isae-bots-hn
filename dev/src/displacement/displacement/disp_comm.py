@@ -36,9 +36,10 @@ from ast import literal_eval
 from .pathfinder.pathfinder import Pathfinder
 # import msgs
 from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray, String
-from geometry_msgs.msg import Quaternion, Pose2D
+from geometry_msgs.msg import Quaternion
 # import logs
 from .disp_utils import *
+from strat.strat_utils import create_quaternion
 
 #################################################################################################
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
@@ -215,34 +216,34 @@ class DispCallbacks:
 
         ## Commande d'arrêt
         if msg.w == CMD_STRAT["stop"]:
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
             self._node.move = False
             self.final_move = False
 
         elif msg.w == CMD_STRAT["accurate"]:
             self._node.path = [[msg.x, msg.y, msg.z]]
             self._node.accurate = True
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
 
         elif msg.w == CMD_STRAT["recalage"]:
             self._node.path = [[msg.x, msg.y, msg.z]]
             self._node.recalage = True
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
         
         elif msg.w == CMD_STRAT["rotation"]:
             self._node.rotation = True
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
 
         elif msg.w == CMD_STRAT["marcheArr"]:
             self._node.marche_arr_dest = [msg.x, msg.y, msg.z]
             self._node.move = True
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
         
         elif msg.w == CMD_STRAT["noAvoidance"]:
             self._node.avoid_mode = False
             self._node.is_reset_possible = False
             self._node.move = True
-            self._node.pub_teensy.publish(Quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['dispFinal']))
+            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['dispFinal']))
 
         elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"]:
             ## Setup de la vitesse
@@ -337,15 +338,15 @@ class DispCallbacks:
                 # Bypassing may require going a little closer to the obstacle before moving away                i   
                 if dist_obs <= STOP_RANGE_X or (x_loc_obs < STOP_RANGE_X and abs(y_loc_obs) < STOP_RANGE_Y):
                     self._node.get_logger().warning("Object Detected Too Close : Interrupting move")
-                    self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     self._node.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
                 
                 elif not self._node.bypassing and (dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y)):
-                    self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     if self._node.wait_start is None:
                         self._node.get_logger().warning("Object Detected : Need to wait")
                         self._node.wait_start = time.perf_counter()
-                        self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                        self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
                     elif time.perf_counter() - self._node.wait_start >= STAND_BEFORE_BYPASS:                            
                         self._node.get_logger().warning("Object Won't Move Out Of The Way  : Initiating bypass")                              
                         self._node.move_forward() # Recompute path with updated opponent pos
@@ -371,19 +372,21 @@ class DispCallbacks:
                 dist_obs, x_loc_obs, y_loc_obs = closest_obs_behind
                 if dist_obs < STOP_RANGE_X and self._node.move:
                     self._node.get_logger().warning("Object Detected In The Back : Need to wait")
-                    self._node.pub_teensy.publish(Quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
             
             if not self._node.move and self._node.marche_arr_dest is not None:
                 self._node.get_logger().info("Object Has Cleared The Way : Resuming reverse")
                 self._node.move = True
-                self._node.pub_teensy.publish(Quaternion(*self._node.marche_arr_dest, CMD_TEENSY['marcheArr']))
+                self._node.pub_teensy.publish(create_quaternion(*self._node.marche_arr_dest, CMD_TEENSY['marcheArr']))
 
         if self._node.bypassing and self._node.is_reset_possible:
             self._node.bypassing = False
             self._node.wait_start = None
             set_opponent_pos(None, 0)
 
-        self._node.pub_speed.publish(data=int(speed)) ## On prévient le cas échéant le BN qu'on a vu un truc et qu'il faut ralentir
+        speedmsg = Int16()
+        speedmsg.data = int(speed)
+        self._node.pub_speed.publish(speedmsg) ## On prévient le cas échéant le BN qu'on a vu un truc et qu'il faut ralentir
 
 
     def callback_init_pos(self):
@@ -399,12 +402,12 @@ class DispCallbacks:
             y = 3000 - y
             z = -z
 
-        self._node.pub_teensy.publish(Quaternion(x, y, z, CMD_TEENSY["set"]))
+        self._node.pub_teensy.publish(create_quaternion(x, y, z, CMD_TEENSY["set"]))
         self._node.current_pos = [x, y, z]
 
         ## Init pathfinder with correct color
         self._node.pathfinder = Pathfinder(self._node.color, self._node.get_logger()) 
-        self._node.publish_grid(self._node.pathfinder.table_map.get_grid().reshape(-1,2))
+        self.publish_grid(self._node.pathfinder.table_map.get_grid().reshape(-1,2))
 
 
     def callback_position(self, msg):
@@ -430,6 +433,9 @@ class DispCallbacks:
             for n in range(len(grid)):
                 node_coords.append(grid[n,0])
                 node_coords.append(grid[n,1])
-            self._node.pub_grid.publish(data=node_coords)
+            
+            msg = Float32MultiArray()
+            msg.data = node_coords
+            self._node.pub_grid.publish(msg)
             self._node.get_logger().info("## Simulation ## Grid published to interface.")
 

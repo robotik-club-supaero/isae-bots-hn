@@ -28,7 +28,6 @@ from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import socket
 from std_msgs.msg      import Int16, Empty, Int16MultiArray
-from geometry_msgs.msg import Quaternion
 
 from top_const import *
 

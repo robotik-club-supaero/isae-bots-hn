@@ -31,7 +31,8 @@ DOCKER_VOLUMES = \
 	--volume="${PWD}/dev":"/app/dev" \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
-	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
+	--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
+	--volume="${PWD}/../isae-bots-bn-2024":"/home/dockeruser/bn"
 
 
 DOCKER_VOLUMES_PI = \
@@ -211,7 +212,6 @@ term:
         docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; ${CMD}"; \
     fi
 
-	
 # Terminal used for the simulation with special bindkeys
 .PHONY: sim_term
 sim_term:

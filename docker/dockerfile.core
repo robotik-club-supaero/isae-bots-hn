@@ -43,7 +43,7 @@ RUN rosdep fix-permissions
 RUN rosdep update
 
 # Installations BN
-# !!!!!!!!!!TODO: replace rosserial!!!!!!!
+RUN apt-get install -y ros-jazzy-micro-ros-agent
 
 # Installations HN
 RUN apt-get install -y ros-jazzy-smach-ros

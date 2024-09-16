@@ -263,17 +263,20 @@ class DisplacementNode(Node):
 
         ## Sinon, erreur de la recherche de chemin
         else:
+            rsp = Int16()
             if self.bypassing:
                 self.get_logger().warning("ERROR - Reason: Cannot bypass obstacle")
-                self.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                rsp.data = COM_STRAT["stop blocked"]
             elif result['message'] == "Dest Blocked":
                 self.get_logger().warning("ERROR - Reason: " + result['message'])
-                self.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+                rsp.data = COM_STRAT["stop blocked"]
             else:
                 #NOTE no path found
                 self.get_logger().warning("ERROR - Reason: " + result['message'])
                 # Retour de l'erreur a la strat
-                self.pub_strat.publish(Int16(COM_STRAT["path not found"]))
+                rsp.data = COM_STRAT["path not found"]
+                
+            self.pub_strat.publish(rsp)
 
     def next_point(self, just_arrived):
         """Envoie une commande du prochain point a la Teensy.
@@ -379,7 +382,9 @@ class DisplacementNode(Node):
             self.wait_start = None
 
             # Publication a la strat
-            self.pub_strat.publish(Int16(COM_STRAT["ok pos"]))
+            rsp = Int16()
+            rsp.data = COM_STRAT["ok pos"]
+            self.pub_strat.publish(rsp)
 
 
     def set_avoid_reset_point(self):

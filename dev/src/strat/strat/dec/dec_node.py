@@ -35,7 +35,7 @@ from std_msgs.msg import Int16, Int16MultiArray, Empty
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 from geometry_msgs.msg import Pose2D
 
-from ..strat_const import Action, ActionScore
+from ..strat_const import Action, ActionScore, ActionResult
 
 #################################################################
 #                                                               #
@@ -150,7 +150,6 @@ class DecisionsNode(Node):
         Feedback on color side /game/color.
         """
        
-        self.color = msg.data
         if msg.data not in [0,1]:
             self.get_logger().error(f"Wrong value of color given ({msg.data})...")
             return

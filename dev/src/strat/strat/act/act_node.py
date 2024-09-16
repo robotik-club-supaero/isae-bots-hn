@@ -50,6 +50,7 @@ class ActionNode(Node):
         super().__init__("ACT")
         self.get_logger().info("Initializing Action Node ...")
         self.sm = None
+        self.setupComplete = False
       
         latch_profile = QoSProfile(
             depth=10,  # Keep last 10 messages
@@ -102,7 +103,7 @@ class ActionNode(Node):
 
     @property
     def smData(self):
-        return self.sm.userdata if self.sm is not None else type("", (), {})()
+        return self.sm.userdata
 
     def __enter__(self):        
         self.sis.start()
@@ -163,13 +164,16 @@ class ActionNode(Node):
         """
         Callback function from topic /sm/start.
         """
-        self.smData.start = (msg.data == 1)
+        if self.setupComplete:
+            self.smData.start = (msg.data == 1)
 
 
     def setup_color(self, msg):
         """
         Callback function from topic /sm/color.
         """
+        if not self.setupComplete: return
+
         if msg.data not in [0,1]:
             self.get_logger().error(f"Wrong value of color given ({msg.data})...")
             return
@@ -182,6 +186,8 @@ class ActionNode(Node):
         """
         Callback for next action (DN -> Repartitor)
         """
+        if not self.setupComplete: return
+
         if msg.data[0] == Action.PARK:
             self.sm.request_preempt()
             self.get_logger().info("Received stop signal (initiate parking)")
@@ -200,38 +206,46 @@ class ActionNode(Node):
         """
         Callback of displacement result from Disp Node.
         """
-        self.smData.cb_depl[0] = DspCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_depl[0] = DspCallback.parse(msg.data)
         
     def cb_position_fct(self, msg):
         """
         Callback of current position of the robot.
         """
-        self.smData.robot_pos[0] = msg
+        if self.setupComplete:
+            self.smData.robot_pos[0] = msg
 
 
     def cb_doors_fct(self, msg):
         """
         Callback of the state of the doors (opened or closed)
         """
-        self.smData.cb_doors[0] = DoorCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_doors[0] = DoorCallback.parse(msg.data)
 
     def cb_elevator_fct(self, msg):
         """
         Callback of the state of the elevator (for the cakes)
         """
-        self.smData.cb_elevator[0] = ElevatorCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_elevator[0] = ElevatorCallback.parse(msg.data)
 
     def cb_left_arm_fct(self, msg):
-        self.smData.cb_left_arm[0] = ArmCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_left_arm[0] = ArmCallback.parse(msg.data)
 
     def cb_right_arm_fct(self, msg):
-        self.smData.cb_right_arm[0] = ArmCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_right_arm[0] = ArmCallback.parse(msg.data)
 
     def cb_clamp_fct(self, msg):
-        self.smData.cb_clamp[0] = ClampCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_clamp[0] = ClampCallback.parse(msg.data)
 
     def cb_load_detector(self, msg):
-        self.smData.cb_load_detector = LoadDetectorCallback.parse(msg.data)
+        if self.setupComplete:
+            self.smData.cb_load_detector = LoadDetectorCallback.parse(msg.data)
 
     def cb_park_fct(self, msg):
         """
@@ -239,7 +253,8 @@ class ActionNode(Node):
 
         <copy> this template for your update / callback functions.
         """
-        self.smData.park[0] = msg.data
+        if self.setupComplete:
+            self.smData.park[0] = msg.data
 
     def get_pickup_id(self, what, userdata):
         try:

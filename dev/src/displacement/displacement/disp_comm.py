@@ -159,7 +159,10 @@ class DispCallbacks:
         ## Problème asserv
         if msg.data == CB_TEENSY["errorAsserv"]:
             self._node.get_logger().info("ERROR - asserv.")
-            self._node.pub_strat.publish(COM_STRAT["asserv error"])
+
+            msg = Int16()
+            msg.data = COM_STRAT["asserv error"]
+            self._node.pub_strat.publish(msg)
             return
 
         ## On est arrivé a point (okPos)
@@ -339,7 +342,10 @@ class DispCallbacks:
                 if dist_obs <= STOP_RANGE_X or (x_loc_obs < STOP_RANGE_X and abs(y_loc_obs) < STOP_RANGE_Y):
                     self._node.get_logger().warning("Object Detected Too Close : Interrupting move")
                     self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
-                    self._node.pub_strat.publish(Int16(COM_STRAT["stop blocked"]))
+
+                    rsp = Int16()
+                    rsp.data = COM_STRAT["stop blocked"]
+                    self._node.pub_strat.publish(rsp)
                 
                 elif not self._node.bypassing and (dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y)):
                     self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))

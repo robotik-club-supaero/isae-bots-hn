@@ -22,7 +22,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose2D, Quaternion
 from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
 
-from threading import RLock
+from threading import RLock, Thread
 import time, random
 
 from math import cos, sin, atan2
@@ -868,11 +868,16 @@ class InterfaceNode(Node):
                 self._plants.append(plant)
 
     def mainloop(self, n=0):
-        self._fenetre.mainloop(n)
+        thread = Thread(target=lambda: rclpy.spin(self))
+        try:
+            thread.start()
+            self._fenetre.mainloop(n)           
+        finally:
+            thread.join()
 
 def main():
     rclpy.init(args=sys.argv)
-    node = InterfaceNode()
+    node = InterfaceNode()    
     try:
         node.mainloop()
     finally:

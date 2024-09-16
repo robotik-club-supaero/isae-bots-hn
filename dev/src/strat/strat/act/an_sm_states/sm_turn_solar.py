@@ -25,6 +25,7 @@ from ..an_const import SOLAR_POS, MAX_X, ROBOT_LONG, R_APPROACH_PANEL, EDGE_DIST
 from ..an_utils import AutoSequence, HardwareOrder
 from .sm_displacement import colored_approach_with_angle, MoveTo, Approach
 from strat.strat_const import ActionResult
+from strat.strat_utils import create_end_of_action_msg
 
 #################################################################
 #                                                               #
@@ -89,7 +90,7 @@ class TurnPanelEnd(smach.State):
         
         
         #TODO check that the action was actually successful
-        self._callback_action_pub.publish(exit=ActionResult.SUCCESS, reason='success')
+        self._callback_action_pub.publish(create_end_of_action_msg(exit=ActionResult.SUCCESS, reason='success'))
         
         return 'success'
         

@@ -51,12 +51,13 @@ class Setup(smach.State):
     STATE MACHINE: setup the SM
     """
 
-    def __init__(self, logger):
+    def __init__(self, node):
         smach.State.__init__(	self, 	
                                 outcomes=['start', 'preempted'],
                                 input_keys=USERDATA_VAR_LIST,
                                 output_keys=USERDATA_VAR_LIST)
-        self._logger = logger
+        self._node = node
+        self._logger = node.get_logger()
 
     def execute(self, userdata):
         ##############################
@@ -83,6 +84,7 @@ class Setup(smach.State):
         userdata.next_move = create_quaternion(x=-1, y=-1, z=-1, w=-1)
 
         time.sleep(0.01)
+        self._node.setupComplete = True
 
         ##############################
         ## WAITING FOR START SIGNAL ##
@@ -172,16 +174,12 @@ class End(smach.State):
 
 class ActionStateMachine(smach.StateMachine):
     def __init__(self, node):
-        smach.StateMachine.__init__(self,
-            outcomes=['exit all', 'exit preempted'],
-            input_keys=USERDATA_VAR_LIST,
-            output_keys=USERDATA_VAR_LIST
-        )
+        smach.StateMachine.__init__(self, outcomes=['exit all', 'exit preempted'])
 
         with self:
             # Primary States
             smach.StateMachine.add('SETUP', 
-                                    Setup(node.get_logger()),
+                                    Setup(node),
                                     transitions={'preempted':'END','start':'REPARTITOR'})
             smach.StateMachine.add('REPARTITOR', 
                                     Repartitor(node.get_logger(), node.repartitor_pub),

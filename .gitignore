@@ -6,6 +6,7 @@ __pycache__
 **/build
 **/.catkin_workspace
 /dev/log
+/dev/install
 
 *.tar
 

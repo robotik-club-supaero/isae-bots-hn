@@ -4,3 +4,4 @@
 [submodule "dev/src/executive_smach_visualization"]
 	path = dev/src/executive_smach_visualization
 	url = https://github.com/nobleo/executive_smach_visualization/
+	branch = iron

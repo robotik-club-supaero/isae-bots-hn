@@ -2,6 +2,8 @@
 import smach
 import time
 
+from std_msgs.msg import Int16
+
 from .an_const import DoorOrder, DoorCallback, ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
 
 #################################################################
@@ -35,11 +37,13 @@ class HardwareOrder(smach.State):
         self._pending = pending
         self._expected = expected
         self._timeout = timeout
+        self._msg = Int16()
 
     def execute(self, userdata):
         getattr(userdata, self._cb_key)[0] = self._pending
 
-        self._publisher.publish(self._order.value)
+        self._msg.data = self._order.value
+        self._publisher.publish(self._msg)
    
         begin = time.perf_counter()
         while time.perf_counter() - begin < self._timeout:

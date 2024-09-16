@@ -27,7 +27,7 @@ from ..an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
 from ..an_utils import AutoSequence, OpenDoors, CloseDoors
 
 from strat.strat_const import DEPOSIT_POS
-from strat.strat_utils import adapt_pos_to_side
+from strat.strat_utils import adapt_pos_to_side, create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
 
 #################################################################
@@ -77,7 +77,7 @@ class DepositPotsEnd(smach.State):
         
         
         #TODO check that the action was actually successful      
-        self._callback_action_pub.publish(exit=1, reason='success')
+        self._callback_action_pub.publish(create_end_of_action_msg(exit=1, reason='success'))
         
         return 'success'
     

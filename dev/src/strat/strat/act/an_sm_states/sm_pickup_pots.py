@@ -22,9 +22,15 @@ import smach
 import math
 import time
 
+from std_msgs.msg import String
+
 from ..an_const import R_APPROACH_POTS, R_TAKE_POTS, DspOrderMode
 from ..an_utils import AutoSequence, AutoConcurrence, OpenDoors, CloseDoors, OpenClamp, RiseElevator, DescendElevator
+
 from strat.strat_const import POTS_POS, ActionResult
+from strat.strat_utils import create_end_of_action_msg
+
+
 from .sm_displacement import MoveTo, Approach, colored_approach_with_angle
 from .sm_waiting import ObsWaitingOnce
 
@@ -42,10 +48,13 @@ class CalcPositionningPots(smach.State):
                                 input_keys=['color','next_action'],
                                 output_keys=['next_move'])
         self._node = node
+        self._msg = String()
         
     def execute(self, userdata):    
         pots_id = self._node.get_pickup_id("pots", userdata)
-        self._node.remove_obs.publish(f"pot{pots_id}") # FIXME if action fails, obstacle is not restored
+
+        self._msg.data = f"pot{pots_id}"
+        self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
         xp, yp, thetap = POTS_POS[pots_id]
         userdata.next_move = colored_approach_with_angle(userdata.color, xp, yp, thetap, R_APPROACH_POTS)
@@ -82,7 +91,7 @@ class PickupPotsEnd(smach.State):
     def execute(self, userdata):
         #TODO check that the action was actually successful
         # TODO check whether the robot actually carries pots
-        self._callback_action_pub.publish(exit=ActionResult.SUCCESS, reason='success')        
+        self._callback_action_pub.publish(create_end_of_action_msg(exit=ActionResult.SUCCESS, reason='success'))   
         return 'success'
     
 #################################################################

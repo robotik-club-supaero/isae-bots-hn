@@ -136,7 +136,7 @@ class Displacement(smach.State):
                         retried = True
                         self._logger.info('Retrying displacement')
                         userdata.cb_depl[0] = DspCallback.PENDING
-                        disp_pub.publish(dest)
+                        self._node.disp_pub.publish(dest)
                         continue
 
                 self._logger.info('Displacement result: success displacement')

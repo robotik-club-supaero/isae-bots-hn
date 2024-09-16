@@ -26,6 +26,7 @@ import math
 from ..an_const import *
 from .sm_displacement import Displacement, colored_approach, Approach
 from strat.strat_const import PARK_POS
+from strat.strat_utils import create_end_of_action_msg
 
 #################################################################
 #                                                               #
@@ -77,7 +78,7 @@ class ParkEnd(smach.State):
         #TODO actions before exiting the state machine
 
         #TODO check that the action was actually successful
-        self._callback_action_pub.publish(exit=1, reason='success')
+        self._callback_action_pub.publish(create_end_of_action_msg(exit=1, reason='success'))
 
         return 'success'
 

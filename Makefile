@@ -28,7 +28,7 @@ PI_PLATFORM = linux/arm64/v8
 
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
-	--volume="${PWD}/dev":"/app/dev" \
+	--volume="${PWD}/dev/src":"/app/dev/src" \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
@@ -36,7 +36,7 @@ DOCKER_VOLUMES = \
 
 
 DOCKER_VOLUMES_PI = \
-	--volume="${PWD}/dev":"/app/dev" \
+	--volume="${PWD}/dev/src":"/app/dev/src" \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 

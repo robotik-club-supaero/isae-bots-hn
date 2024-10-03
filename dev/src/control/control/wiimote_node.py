@@ -87,7 +87,7 @@ class WiiControlNode(Node):
         super().__init__("wii_node")
         self.log_info("Initializing WII node ...")
         # -- Publishers & subscribers
-        self.nextpos_pub = _wii_node.create_publisher(Quaternion, "/nextPositionTeensy", 10)
+        self.nextpos_pub = self.create_publisher(Quaternion, "/nextPositionTeensy", 10)
 
         # -- Connection to Wiimote
         self.wiimote = None
@@ -137,15 +137,14 @@ class WiiControlNode(Node):
             # print(corr_vert, corr_hori)
         else:
             speed = angle = 0
-        self.msg_pos.x = min(max( (speed-angle) *2,-255),255)
-        self.msg_pos.y = min(max( (speed+angle) *2,-255),255)
-        self.msg_pos.z = 0
-        self.msg_pos.w = 4  # cmd for remote control
+        self.msg_pos.x = float(min(max( (speed-angle) *2,-255),255))
+        self.msg_pos.y = -float(min(max( (speed+angle) *2,-255),255))
+        self.msg_pos.z = 0.
+        self.msg_pos.w = 4.  # cmd for remote control
 
         # seuillage
-        if abs(self.msg_pos.x) < 10: self.msg_pos.x = 0
-        if abs(self.msg_pos.y) < 10: self.msg_pos.y = 0
-
+        if abs(self.msg_pos.x) < 15: self.msg_pos.x = 0.
+        if abs(self.msg_pos.y) < 15: self.msg_pos.y = 0.
 
         self.nextpos_pub.publish(self.msg_pos)
 
@@ -231,14 +230,13 @@ class WiiControlNode(Node):
         """
         begin = perf_counter()
         while rclpy.ok():
-
             # Refreshing rate of 20Hz with 1000Hz resolution
             while perf_counter() - begin < 0.1:
                 time.sleep(0.001)
             begin = perf_counter()
 
             self.unitstep()
-            rclpy.spin_once(self)
+        #    rclpy.spin_once(self)
             # print(self.msg_pos.x, self.msg_pos.y)
 
 #################################################################

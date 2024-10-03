@@ -39,7 +39,6 @@ setup(
         'console_scripts': [
             'actuator_node = sim.actuators.actuators_node:main',
             'obstacle_node = sim.obstacles.obstacles_node:main',
-            'br_node = sim.br.br_node:main',
         ],
     },
 )

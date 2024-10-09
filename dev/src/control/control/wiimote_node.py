@@ -39,9 +39,6 @@ from strat.strat_utils import create_quaternion
 #                                                               #
 #################################################################
 
-class ROBOT_SIDES(IntEnum):
-    HOME = 0
-    AWAY = 1
 
 class STICK_SCALE(IntEnum):
     MIN = 0
@@ -88,6 +85,7 @@ class WiiControlNode(Node):
         self.log_info("Initializing WII node ...")
         # -- Publishers & subscribers
         self.nextpos_pub = self.create_publisher(Quaternion, "/nextPositionTeensy", 10)
+        self.idle_pub = self.create_publisher(Int16, "/br/idle", 10)
 
         # -- Connection to Wiimote
         self.wiimote = None
@@ -98,13 +96,15 @@ class WiiControlNode(Node):
         # -- Dynamic variables
         self.coeff_speed = 2
         self.t_upd_speed = 0
-        
+        self.t_btn_a = 0
+        self.t_btn_b = 0
+
         # --- Config wiimote report button presses & accel
         self.wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_NUNCHUK
         self.wiimote.led = (1 << (self.coeff_speed+1)) - 1
 
         self.msg_pos = create_quaternion(x=0, y=0, z=0, w=0)
-
+        self.msg_idle = Int16()
 
     def wiimote_connect(self):
         """
@@ -152,17 +152,24 @@ class WiiControlNode(Node):
 
         # --- Check for buttons events | to change as actions change
         wiimote_buttons = self.wiimote.state['buttons']
-        nunchuk_buttons = self.wiimote.state['nunchuk']['buttons']
-        
+        nunchuk_buttons = self.wiimote.state['nunchuk']['buttons'] if 'nunchuk' in self.wiimote.state else 0
+
+
         if wiimote_buttons & cwiid.BTN_A != 0:
-            pass
+            if self.t_btn_a == 0 or time.time() - self.t_btn_a > 1:
+                self.msg_idle.data = 1
+                self.idle_pub.publish(self.msg_idle)
+                self.t_btn_a = time.time()
         else:
-            pass
-        
+            self.t_btn_a = 0
+
         if wiimote_buttons & cwiid.BTN_B != 0:
-            pass
+            if self.t_btn_b == 0 or time.time() - self.t_btn_b > 1:
+                self.msg_idle.data = 0
+                self.idle_pub.publish(self.msg_idle)
+                self.t_btn_b = time.time()
         else:
-            pass
+            self.t_btn_b = 0
 
         if wiimote_buttons & cwiid.BTN_1 != 0:
             pass
@@ -180,12 +187,12 @@ class WiiControlNode(Node):
         if wiimote_buttons & cwiid.BTN_RIGHT != 0:
             pass
 
-        if nunchuk_buttons == 1: # Z btn
+        if nunchuk_buttons & cwiid.NUNCHUK_BTN_Z != 0:
             pass
         else:
             pass
-   
-        if nunchuk_buttons == 2: # C btn
+
+        if nunchuk_buttons & cwiid.NUNCHUK_BTN_C != 0:
             pass
         else:
             pass
@@ -236,7 +243,7 @@ class WiiControlNode(Node):
             begin = perf_counter()
 
             self.unitstep()
-        #    rclpy.spin_once(self)
+            rclpy.spin_once(self, timeout_sec=0)
             # print(self.msg_pos.x, self.msg_pos.y)
 
 #################################################################

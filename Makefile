@@ -15,7 +15,7 @@ architecture = $(shell uname -m)
 
 # Docker intern variables
 IMAGE_NAME = isaebots_desktop_env
-IMAGE_NAME_PI = isaebots_pi_env_full:1.2
+IMAGE_NAME_PI = isaebots_pi_env_full:2.0
 CONTAINER_NAME = isaebots
 PS_ID = null
 CMD = bash --login
@@ -38,8 +38,7 @@ DOCKER_VOLUMES = \
 DOCKER_VOLUMES_PI = \
 	--volume="${PWD}/dev/src":"/app/dev/src" \
 	--volume="/dev":"/dev" \
-	--volume="${PWD}/scripts":"/app/scripts" \
-
+	--volume="${PWD}/scripts":"/app/scripts"
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \
@@ -101,7 +100,7 @@ build-base: build-core
 # To be able to do that, docker buildx needs to be installed (cf tuto installs on new pi)
 .PHONY: build-image-pi
 build-image-pi:
-	@docker buildx build --no-cache --platform=${PI_PLATFORM} -f ${PI_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
+	@docker buildx build --platform=${PI_PLATFORM} -f ${PI_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
 
 
 .PHONY: create-container

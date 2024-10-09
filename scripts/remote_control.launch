@@ -1,26 +1,9 @@
 <!--
-exemple de lancement: 
-ros2 launch main.launch method:='sim'
+Exemple: ros2 launch scripts/remote_control.launch BR:=/dev/ttyACM0 
 -->
-
-
 <launch>  
-	<!-- <arg name='BR' default="None" /> -->
+	<arg name="BR" default="/dev/ttyBR"/>
 
-	<!-- <rosparam param="BR" subst_value="True">$(arg BR)</rosparam> -->
-
-	<!-- Disjonction de cas -->
-
-	<!-- <group if="$(eval arg('BR') != 'None')"> La carte Base Roulante est presente -->
-		<!-- on est sur le vrai robot -->
-		<node pkg="rosserial_python" type="serial_node.py" name="SerialNodeBR" output="screen">
-			<param name="port" value="/dev/ttyACM0"/>
-			<param name="baud" value="115200"/>
-		</node>
-	<!-- </group> -->
-
-
-	<!-- wiimote node -->
-	<node name="WiimoteNode" pkg="control"  type="wiimote_node.py" output="screen" cwd="node" required="true"/>
-	
+	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var BR)" />
+	<node name="WiimoteNode" pkg="control"  exec="wiimote_node" output="screen"/>
 </launch>

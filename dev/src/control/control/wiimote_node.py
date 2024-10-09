@@ -122,8 +122,8 @@ class WiiControlNode(Node):
 
     def unitstep(self):
         # --- Nunchuk constants (TODO: check values)
-        nunchuk_v_consts = (0, 131, 255, 1)
-        nunchuk_h_consts = (1, 127, 254, 1)
+        nunchuk_v_consts = (33, 126, 218, 1)
+        nunchuk_h_consts = (24, 120, 220, 1)
         max_speed = 255
 
         # --- Check for any move cmd from nunchuk & publish
@@ -132,19 +132,20 @@ class WiiControlNode(Node):
             hori = self.wiimote.state['nunchuk']['stick'][0]
             corr_vert = nunchuk(vert, nunchuk_v_consts)
             corr_hori = nunchuk(hori, nunchuk_h_consts)
-            speed = (corr_vert - 50)*2 / (5-self.coeff_speed) * max_speed /100
-            angle = (corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed /100 /2
-            # print(corr_vert, corr_hori)
+            speed = (corr_vert - 50)*2 / (5-self.coeff_speed) * max_speed / 100
+            angle = (corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed / 100 / 2
         else:
             speed = angle = 0
-        self.msg_pos.x = float(min(max( (speed-angle) *2,-255),255))
-        self.msg_pos.y = -float(min(max( (speed+angle) *2,-255),255))
+        self.msg_pos.x = float(min(max(speed, -max_speed), max_speed))
+        self.msg_pos.y = -float(min(max(angle, -max_speed), max_speed))
         self.msg_pos.z = 0.
         self.msg_pos.w = 4.  # cmd for remote control
 
         # seuillage
-        if abs(self.msg_pos.x) < 15: self.msg_pos.x = 0.
-        if abs(self.msg_pos.y) < 15: self.msg_pos.y = 0.
+        if abs(self.msg_pos.x) < 10:
+            self.msg_pos.x = 0.
+        if abs(self.msg_pos.y) < 10:
+            self.msg_pos.y = 0.
 
         self.nextpos_pub.publish(self.msg_pos)
 

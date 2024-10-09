@@ -46,7 +46,7 @@ class PointsNode(Node):
 
 		# display match logs in case of a real match
 		while rclpy.ok():
-			rclpy.spin_once(self)
+			rclpy.spin_once(self, timeout_sec=0)
 
 			begin_time = time.time()
 

@@ -1,3 +1,0 @@
-*.pyc
-CMakeLists.txt
-package.xml

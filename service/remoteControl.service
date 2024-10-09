@@ -1,0 +1,16 @@
+[Unit]
+Description=WiiMote Remote Control Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+
+User=pi
+Group=pi
+UMask=007
+
+ExecStart=/home/pi/isae-bots-hn-2024/scripts/remote_control.sh
+
+[Install]
+WantedBy=multi-user.target

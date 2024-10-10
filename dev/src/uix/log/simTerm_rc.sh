@@ -23,13 +23,13 @@ bind -x '"\C-R":"if [[ $ROSLAUNCH_RUNNING == 0 ]]; then echo $COMMANDR; ROSLAUNC
 # SIGHUP via la commande trap), pour avoir son PID on parse le résultat de la commande ps aussi
 
 COMMANDH="[ROS MESSAGE] -> Set side to \033[36mHOME\033[0m"
-bind -x "\"\C-H\":\"echo -e '$COMMANDH'; ros2 topic pub --once /game/color std_msgs/msg/Int16 'data: 0' > /dev/null\""
+bind -x "\"\C-H\":\"echo -e '$COMMANDH'; ros2 topic pub --once -w4 /game/color std_msgs/msg/Int16 'data: 0' > /dev/null\""
 
 COMMANDA="[ROS MESSAGE] -> Set side to \033[36mAWAY\033[0m"
-bind -x "\"\C-A\":\"echo -e '$COMMANDA'; ros2 topic pub --once /game/color std_msgs/msg/Int16 'data: 1' > /dev/null\""
+bind -x "\"\C-A\":\"echo -e '$COMMANDA'; ros2 topic pub --once -w4 /game/color std_msgs/msg/Int16 'data: 1' > /dev/null\""
 
 COMMANDG="[ROS MESSAGE] -> \033[32mStart match\033[0m"
-bind -x "\"\C-G\":\"echo -e '$COMMANDG'; ros2 topic pub --once /game/start std_msgs/msg/Int16 'data: 1' > /dev/null\""
+bind -x "\"\C-G\":\"echo -e '$COMMANDG'; ros2 topic pub --once -w2 /game/start std_msgs/msg/Int16 'data: 1' > /dev/null\""
 
 
 # INFO MESSAGE AT STARTUP

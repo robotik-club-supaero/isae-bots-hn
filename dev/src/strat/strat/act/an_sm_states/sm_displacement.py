@@ -21,13 +21,13 @@
 import os
 import sys
 import time
-import smach
+import yasmin
 import math
 from enum import IntEnum
 from numpy.linalg import norm
 
 from ..an_const import DspCallback, DspOrderMode
-from ..an_utils import AutoSequence
+from ..an_utils import Sequence
 from strat.strat_utils import adapt_pos_to_side, create_quaternion
 
 #################################################################
@@ -49,7 +49,7 @@ def colored_destination(color, x_d, y_d, t_d, w):
     return create_quaternion(x_d, y_d, t_d, w.value)
 
 def colored_approach(userdata, xd, yd, margin, phase, theta_final=None):
-    x, y, _ = adapt_pos_to_side(userdata.robot_pos[0].x, userdata.robot_pos[0].y, 0, userdata.color)
+    x, y, _ = adapt_pos_to_side(userdata["robot_pos"].x, userdata["robot_pos"].y, 0, userdata["color"])
     d = norm([xd - x, yd - y])
     
     x_dest = xd + phase.value * margin/d*(xd - x)
@@ -57,9 +57,9 @@ def colored_approach(userdata, xd, yd, margin, phase, theta_final=None):
     if theta_final is None:
         theta_dest = math.atan2(yd - y,xd - x)
     else:
-        _, _, theta_dest = adapt_pos_to_side(0, 0, theta_final, userdata.color)
+        _, _, theta_dest = adapt_pos_to_side(0, 0, theta_final, userdata["color"])
     
-    return colored_destination(userdata.color, x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+    return colored_destination(userdata["color"], x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
 
 def colored_approach_with_angle(color, xd, yd, td, margin, theta_final=None):
     xd, yd, td = adapt_pos_to_side(xd, yd, td, color)
@@ -76,7 +76,7 @@ def colored_approach_with_angle(color, xd, yd, td, margin, theta_final=None):
 #                                                               #
 #################################################################
 
-class Displacement(smach.State):
+class Displacement(yasmin.State):
     """
     STATE MACHINE : Substate Displacement.
 
@@ -84,19 +84,16 @@ class Displacement(smach.State):
     """
 
     def __init__(self, node):
-        smach.State.__init__(	self, 	
-                                   outcomes=['success','fail','preempted'],
-                                input_keys=['cb_depl','robot_pos','next_move','color'],
-                                output_keys=['cb_depl'])
+        super().__init__(outcomes=['success','fail','preempted'])
         self._node = node
         self._logger = node.get_logger()
         
     def execute(self, userdata):
         # Init the callback var of dsp result. CHECK an_const to see details on cb_depl
-        userdata.cb_depl[0] = DspCallback.PENDING
+        userdata["cb_depl"] = DspCallback.PENDING
 
         retried = False
-        dest = userdata.next_move
+        dest = userdata["next_move"]
         self._node.debug_print('c*', f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
         self._node.disp_pub.publish(dest)
 
@@ -104,38 +101,37 @@ class Displacement(smach.State):
         while (time.time() - init_time < DISP_TIMEOUT):
             time.sleep(0.01)
 
-            if self.preempt_requested():
-                self.service_preempt()
+            if self.is_canceled():
                 return 'preempted'
 
-            if userdata.cb_depl[0] == DspCallback.ERROR_ASSERV:
+            if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
                 self._logger.error("Displacement result: error asserv.")
                 # --- try and correct if it's a problem of same position order reject
                 return 'fail'
 
-            if userdata.cb_depl[0] == DspCallback.PATH_NOT_FOUND:
+            if userdata["cb_depl"] == DspCallback.PATH_NOT_FOUND:
                 self._logger.error("Displacement result: no path found with PF.")
                 return 'fail'
 
-            if userdata.cb_depl[0] == DspCallback.PATH_BLOCKED:
+            if userdata["cb_depl"] == DspCallback.PATH_BLOCKED:
                 self._logger.error("Displacement result: path blocked.")
                 return 'fail'
 
-            if userdata.cb_depl[0] == DspCallback.DESTINATION_BLOCKED:
+            if userdata["cb_depl"] == DspCallback.DESTINATION_BLOCKED:
                 self._logger.error("Displacement result: destination blocked.")
                 return 'fail'
 
-            if userdata.cb_depl[0] == DspCallback.SUCCESS:
+            if userdata["cb_depl"] == DspCallback.SUCCESS:
 
                 # FIXME: this fixes a bug (is it?) when the displacement node sometimes reports a success when the robot is blocked by an obstacle
-                if math.sqrt((dest.x - userdata.robot_pos[0].x) ** 2 + (dest.y - userdata.robot_pos[0].y) ** 2) > ACCURACY_MARGIN:
+                if math.sqrt((dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2) > ACCURACY_MARGIN:
                     self._logger.error('Displacement result: Too far away from target')
                     if retried:
                         return 'fail'
                     else:
                         retried = True
                         self._logger.info('Retrying displacement')
-                        userdata.cb_depl[0] = DspCallback.PENDING
+                        userdata["cb_depl"] = DspCallback.PENDING
                         self._node.disp_pub.publish(dest)
                         continue
 
@@ -146,18 +142,15 @@ class Displacement(smach.State):
         self._logger.error('Timeout reached - [displacement]')
         return 'fail'
 
-class MoveTo(AutoSequence):
+class MoveTo(Sequence):
     def __init__(self, node, destination):
-        super().__init__(('COMPUTE_DEST', destination), ('DEPL', Displacement(node)))    
+        super().__init__(states=[('COMPUTE_DEST', destination), ('DEPL', Displacement(node))])
 
 
-class MoveBackwardsStraight(smach.State):
+class MoveBackwardsStraight(yasmin.State):
 
     def __init__(self, node, dist):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['cb_depl', 'next_action', 'color', 'robot_pos'],
-                                output_keys=['cb_depl'])
+        super().__init__(outcomes=['fail','success','preempted'])
         self._dist = dist
         self._node = node
         self._logger = node.get_logger()
@@ -166,9 +159,9 @@ class MoveBackwardsStraight(smach.State):
         
         self._node.debug_print('c', "Request to move backwards")
         
-        userdata.cb_depl[0] = DspCallback.PENDING
+        userdata["cb_depl"] = DspCallback.PENDING
 
-        x,y,theta = userdata.robot_pos[0].x, userdata.robot_pos[0].y, userdata.robot_pos[0].theta
+        x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
         xd = x - self._dist * math.cos(theta)
         yd = y - self._dist * math.sin(theta)
 
@@ -178,15 +171,14 @@ class MoveBackwardsStraight(smach.State):
         while time.perf_counter() - begin < DISP_TIMEOUT:           
             time.sleep(0.01)
 
-            if self.preempt_requested():
-                self.service_preempt()
+            if self.is_canceled():
                 return 'preempted'
 
-            if userdata.cb_depl[0] == DspCallback.ERROR_ASSERV:
+            if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
                 self._logger.error("Displacement result: error asserv.")
                 return 'fail'
 
-            if userdata.cb_depl[0] == DspCallback.SUCCESS:
+            if userdata["cb_depl"] == DspCallback.SUCCESS:
                 self._logger.info('Displacement result: success displacement')
                 return 'success'
 

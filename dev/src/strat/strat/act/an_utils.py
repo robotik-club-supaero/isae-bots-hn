@@ -1,6 +1,8 @@
 
-import smach
+import yasmin
+from yasmin.yasmin_logs import YASMIN_LOG_INFO
 import time
+from threading import Thread, Lock
 
 from std_msgs.msg import Int16
 
@@ -26,10 +28,10 @@ class Color():
 color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
              'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
 
-class HardwareOrder(smach.State):
+class HardwareOrder(yasmin.State):
 
     def __init__(self, logger, publisher, cb_key, order, pending, expected, timeout=WAIT_TIME):
-        smach.State.__init__(self, input_keys=[cb_key], output_keys=[cb_key], outcomes=['fail','success','preempted'])
+        super().__init__(outcomes=['fail','success','preempted'])
         self._logger = logger
         self._publisher = publisher
         self._cb_key = cb_key
@@ -40,7 +42,7 @@ class HardwareOrder(smach.State):
         self._msg = Int16()
 
     def execute(self, userdata):
-        getattr(userdata, self._cb_key)[0] = self._pending
+        userdata[self._cb_key] = self._pending
 
         self._msg.data = self._order.value
         self._publisher.publish(self._msg)
@@ -48,11 +50,10 @@ class HardwareOrder(smach.State):
         begin = time.perf_counter()
         while time.perf_counter() - begin < self._timeout:
             
-            if self.preempt_requested():
-                self.service_preempt()
+            if self.is_canceled():
                 return 'preempted'       
 
-            response = getattr(userdata, self._cb_key)[0]
+            response = userdata[self._cb_key]
             if response == self._expected:
                 return 'success'
             elif response != self._pending:
@@ -124,56 +125,85 @@ class CloseClamp(HardwareOrder):
         self._debug_print('c', "Request to close clamp")
         return super().execute(userdata)
 
-def _auto_keys(actions):
-    input_keys = set()
-    output_keys = set()
-    for _, sm in actions:
-        input_keys.update(sm.get_registered_input_keys())
-        output_keys.update(sm.get_registered_output_keys())
-    
-    return list(input_keys), list(output_keys)
-       
-class AutoSequence(smach.Sequence):
+class Sequence(yasmin.StateMachine):
+    def __init__(self, outcomes = ["success", "fail", "preempted"], states = []):
+        super().__init__(outcomes)
+        self._last_state = None
+        self._connector = None
+        for state in states:
+            self.add_state(state[0], state[1], connector=state[2] if len(state) > 2 else "success")
 
-    def __init__(self, *actions):
-        input_keys, output_keys = _auto_keys(actions)     
-        smach.Sequence.__init__(self, 
-            input_keys = input_keys,
-            output_keys = output_keys,
-            outcomes = ['success', 'fail', 'preempted'],
-            connector_outcome = 'success'
-        )
+    def add_state(self, name, state, connector="success"):
+        if self._last_state is not None:
+            self.get_states()[self._last_state]["transitions"][self._connector] = name
+        
+        self._last_state = name
+        self._connector = connector
 
-        with self:
-            for id, sm in actions:
-                smach.Sequence.add(id, sm)
+        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes()})
 
-class AutoConcurrence(smach.Concurrence):
+    def set_start_state(self, name):
+        raise NotImplementedError("Cannot set start state on Sequence")
 
-    def __init__(self, **actions):
-        input_keys, output_keys = _auto_keys(actions.items())
-        smach.Concurrence.__init__(self, 
-            input_keys = input_keys,
-            output_keys = output_keys,
-            outcomes = ['success', 'fail', 'preempted'],
-            default_outcome = 'fail',
-            child_termination_cb = AutoConcurrence._child_termination_cb,
-            outcome_cb = AutoConcurrence._outcome_cb
-        )
+class Concurrence(yasmin.StateMachine):
+    def __init__(self, /, **states):
+        super().__init__(outcomes=["success", "fail", "preempted"])
+        self._threads = {}
+        self._lock = Lock()
+        self._results = {}
 
-        with self:
-            for id, sm in actions.items():
-                smach.Concurrence.add(id, sm)
+        for state in states:
+            self.add_state(state, states[state])
 
-    @staticmethod
-    def _child_termination_cb(outcomes):
-        return any(outcome == 'preempted' for outcome in outcomes)
+    def add_state(self, name, state, /):
+        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes()})
 
-    @staticmethod
-    def _outcome_cb(outcomes):
-        if any(outcome == 'preempted' for outcome in outcomes.values()):
-            return 'preempted'
-        elif all(outcome == 'success' for outcome in outcomes.values()):
-            return 'success'
-        else:
-            return 'fail'
+    def execute(self, blackboard):
+        with self._lock:
+            if self._threads != {}:
+                raise RuntimeError("Concurrence is already running")
+            self._results.clear()
+            for state in self.get_states():
+                if self.is_canceled(): break
+                self._threads[state] = Thread(target=self._run_state, args=(state, blackboard))
+                self._threads[state].start()
+
+        while True:
+            with self._lock:
+                if len(self._results) == len(self._threads):
+                    break
+            time.sleep(0.1)
+
+        self._threads.clear()
+
+        if any(result == "preempted" for result in self._results.values()):
+            return "preempted"
+        if all(result == "success" for result in self._results.values()):
+            return "success"
+        
+        return "fail"
+
+    def cancel_state(self):
+        super().cancel_state()
+        with self._lock:
+            for state in self._threads:
+                self.get_states()[state].cancel_state()
+        YASMIN_LOG_INFO("Cancelling concurrent states...")
+
+    def set_start_state(self, name):
+        raise NotImplementedError("Cannot set start state on Concurrence")
+
+    def _run_state(self, state, blackboard):
+        YASMIN_LOG_INFO("Starting concurrent state %s", state)
+        try:
+            outcome = self.get_states()[state]["state"](blackboard)             
+            YASMIN_LOG_INFO("Concurrent state %s returned outcome %s", state, outcome)
+        except Exception as e:
+            outcome = "fail"
+            YASMIN_LOG_ERROR("State %s raised exception: %s", state, repr(e))
+
+        with self._lock:
+            self._results[state] = outcome
+
+        if outcome in ["fail", "preempted"]:
+            self.cancel_state()

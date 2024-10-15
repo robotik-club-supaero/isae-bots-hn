@@ -163,7 +163,7 @@ def match_strat(node):
 
     if node.parked:
         node.get_logger().info("End of strategy : MATCH")
-        stop_IT()
+        node.stop_IT()
         return
     
     # If no other action is applicable, go to park

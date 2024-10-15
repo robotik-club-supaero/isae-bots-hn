@@ -19,11 +19,11 @@
 #################################################################
 
 import time
-import smach
+import yasmin
 import rclpy
 
 from std_msgs.msg      import Empty
-from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import Quaternion, Pose2D
 
 # import les states de la SM
 from .an_sm_states.sm_park import Park
@@ -35,9 +35,7 @@ from .an_sm_states.sm_waiting import waiting
 
 from .an_const import *
 
-from geometry_msgs.msg import Quaternion, Pose2D
-
-from ..strat_const import ACTIONS_LIST, ACTION_TRANSITIONS, ActionScore, Action
+from ..strat_const import ACTIONS_OUTCOMES, ACTION_TRANSITIONS, ActionScore, Action
 from ..strat_utils import create_quaternion
 
 #################################################################
@@ -46,16 +44,13 @@ from ..strat_utils import create_quaternion
 #                                                               #
 #################################################################
 
-class Setup(smach.State):
+class Setup(yasmin.State):
     """
     STATE MACHINE: setup the SM
     """
 
     def __init__(self, node):
-        smach.State.__init__(	self, 	
-                                outcomes=['start', 'preempted'],
-                                input_keys=USERDATA_VAR_LIST,
-                                output_keys=USERDATA_VAR_LIST)
+        super().__init__(outcomes=['start', 'preempted'])
         self._node = node
         self._logger = node.get_logger()
 
@@ -65,23 +60,23 @@ class Setup(smach.State):
         ##############################
         
         ## Game param variables
-        userdata.start = False
-        userdata.color = 0
-        userdata.park = [0] 
+        userdata["start"] = False
+        userdata["color"] = 0
+        userdata["park"] = 0
         
         ## Callback of subscribers
-        userdata.cb_depl = [DspCallback.PENDING]  # result of displacement action. CHECK an_const to see details on cb_depl
-        userdata.robot_pos = [Pose2D(x=-1, y=-1, theta=-1)]  # current position of the robot
-        userdata.cb_left_arm = [-1]    # state of the arm
-        userdata.cb_right_arm = [-1]    # state of the arm
-        userdata.cb_doors = [-1]	# state of the doors
-        userdata.cb_clamp = [-1] 	# state of the clamp
-        userdata.cb_elevator = [-1] # state of the elevator
-        userdata.cb_load_detector = [LoadDetectorCallback.EMPTY] # whether the robot carries something # TODO no hardware to detect it
+        userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
+        userdata["robot_pos"] = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
+        userdata["cb_left_arm"] = ArmCallback.PENDING   # state of the arm
+        userdata["cb_right_arm"] = ArmCallback.PENDING  # state of the arm
+        userdata["cb_doors"] = DoorCallback.PENDING	# state of the doors
+        userdata["cb_clamp"] = ClampCallback.PENDING # state of the clamp
+        userdata["cb_elevator"] = ElevatorCallback.PENDING # state of the elevator
+        userdata["cb_load_detector"] = LoadDetectorCallback.EMPTY # whether the robot carries something # TODO no hardware to detect it
 
         ## Game infos variables
-        userdata.next_action = [Action.PENDING]  # action en cours (avec arguments eventuels)
-        userdata.next_move = create_quaternion(x=-1, y=-1, z=-1, w=-1)
+        userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
+        userdata["next_move"] = create_quaternion(x=-1, y=-1, z=-1, w=-1)
 
         time.sleep(0.01)
         self._node.setupComplete = True
@@ -91,9 +86,8 @@ class Setup(smach.State):
         ##############################
         self._logger.info('Waiting for match to start ...')
 
-        while not userdata.start:
-            if self.preempt_requested():
-                self.service_preempt()
+        while not userdata["start"]:
+            if self.is_canceled():
                 return 'preempted'
             time.sleep(0.01)
         
@@ -106,16 +100,13 @@ class Setup(smach.State):
 #                                                               #
 #################################################################
 
-class Repartitor(smach.State):
+class Repartitor(yasmin.State):
     """
     STATE MACHINE : Dispatch actions between sm substates.
     """
 
     def __init__(self, logger, repartitor_pub):
-        smach.State.__init__(	self, 	
-                                outcomes=ACTIONS_LIST,
-                                input_keys=['next_action'],
-                                output_keys=['next_action'])
+        super().__init__(outcomes=list(ACTIONS_OUTCOMES.values())+ ["preempted"])
         self._logger = logger
         self._repartitor_pub = repartitor_pub
 
@@ -123,14 +114,15 @@ class Repartitor(smach.State):
         self._logger.info('[Repartitor] Requesting next action ...')
         self._repartitor_pub.publish(Empty()) # demande nextAction au DN
 
-        userdata.next_action[0] = Action.PENDING # reset variable prochaine action
-        while userdata.next_action[0] == Action.PENDING: # en attente de reponse du DN
-            if self.preempt_requested():
-                self.service_preempt()
-                return 'preempted'
+        userdata["next_action"][0] = Action.PENDING # reset variable prochaine action
+        while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
+            if self.is_canceled():
+                if userdata["next_action"][0] == Action.PENDING:
+                    return 'preempted'
+                break
             time.sleep(0.01)
 
-        return ACTIONS_LIST[userdata.next_action[0].value]   # lancement prochaine action  
+        return ACTIONS_OUTCOMES[userdata["next_action"][0]]   # lancement prochaine action  
         
 #################################################################
 #                                                               #
@@ -138,16 +130,13 @@ class Repartitor(smach.State):
 #                                                               #
 #################################################################
 
-class End(smach.State):
+class End(yasmin.State):
     """
     STATE MACHINE : Dispatch actions between sm substates.
     """
 
     def __init__(self, logger, disp_pub, stop_teensy_pub):
-        smach.State.__init__(	self, 	
-                                 outcomes=['end','preempted'],
-                                input_keys=[''],
-                                output_keys=[''])
+        super().__init__(outcomes=['end','preempted'])
         self._logger = logger
         self._disp_pub = disp_pub
         self._stop_teensy_pub = stop_teensy_pub
@@ -155,8 +144,7 @@ class End(smach.State):
     def execute(self, userdata):
         self._logger.info('[End] Killing state machine ...')
 
-        if self.preempt_requested():
-            self.service_preempt()
+        if self.is_canceled():
             return 'preempted'
 
         ###########################
@@ -172,35 +160,30 @@ class End(smach.State):
 #                                                               #
 #################################################################
 
-class ActionStateMachine(smach.StateMachine):
+class ActionStateMachine(yasmin.StateMachine):
     def __init__(self, node):
-        smach.StateMachine.__init__(self, outcomes=['exit all', 'exit preempted'])
+        super().__init__(outcomes=['exit all', 'exit preempted'])
 
-        with self:
-            # Primary States
-            smach.StateMachine.add('SETUP', 
-                                    Setup(node),
-                                    transitions={'preempted':'END','start':'REPARTITOR'})
-            smach.StateMachine.add('REPARTITOR', 
-                                    Repartitor(node.get_logger(), node.repartitor_pub),
-                                    transitions=ACTION_TRANSITIONS)
-            smach.StateMachine.add('END', 
-                                    End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
-                                    transitions={'end':'exit all','preempted':'exit preempted'})
+        # Primary States
+        self.add_state('SETUP', Setup(node), transitions={'preempted':'END','start':'REPARTITOR'})
+        self.add_state('REPARTITOR', Repartitor(node.get_logger(), node.repartitor_pub),
+                        transitions=dict(ACTION_TRANSITIONS, **{'preempted':'END'}))
+        self.add_state('END', End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
+                        transitions={'end':'exit all','preempted':'exit preempted'})
 
-            # Specific Action States
-            smach.StateMachine.add('TURNPANEL', TurnPanel(node),
-                            transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
+        # Specific Action States
+        self.add_state('TURNPANEL', TurnPanel(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
 
-            smach.StateMachine.add('PICKUPPLANT', PickupPlant(node),
-                            transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
-            smach.StateMachine.add('PICKUPPOT', PickupPlot(node),
-                            transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
-            smach.StateMachine.add('DEPOSITPOT', DepositPot(node),
-                            transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'exit preempted'})
-    
-            # Other States
-            smach.StateMachine.add('PARK', Park(node),
-                                    transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
-            smach.StateMachine.add('WAITING', waiting,
-                                    transitions={'preempted':'END','success':'REPARTITOR'})
+        self.add_state('PICKUPPLANT', PickupPlant(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        self.add_state('PICKUPPOT', PickupPlot(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        self.add_state('DEPOSITPOT', DepositPot(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+
+        # Other States
+        self.add_state('PARK', Park(node),
+                        transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
+        self.add_state('WAITING', waiting,
+                        transitions={'preempted':'END','success':'REPARTITOR'})

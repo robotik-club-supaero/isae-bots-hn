@@ -21,7 +21,7 @@
 import os
 import sys
 import time
-import smach
+import yasmin
 from ..an_const import *
 
 #################################################################
@@ -30,12 +30,12 @@ from ..an_const import *
 #                                                               #
 #################################################################
 
-class ObsWaitingOnce(smach.State):
+class ObsWaitingOnce(yasmin.State):
     """
     SM WAITING : Observer state
     """
     def __init__(self, wait_time=100, outcomes=['preempted','success']):
-        smach.State.__init__(self, outcomes=outcomes)
+        super().__init__(outcomes=outcomes)
         self._wait_time = wait_time
 
     def execute(self, userdata):
@@ -43,8 +43,7 @@ class ObsWaitingOnce(smach.State):
 
         while time.time() - begin_time < self._wait_time:
             time.sleep(0.01)
-            if self.preempt_requested():
-                self.service_preempt()
+            if self.is_canceled():
                 return 'preempted'       
 
         return 'success'

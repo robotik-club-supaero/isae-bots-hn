@@ -17,6 +17,8 @@ fi
 #TODO maybe could use xhost +local:docker instead to only allow access to docker
 xhost + > /dev/null
 
+xdg-open http://localhost:5000
+
 # launch the log interface
 ./dev/src/uix/log/log_launch.sh
 

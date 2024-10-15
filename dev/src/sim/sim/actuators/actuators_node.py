@@ -172,7 +172,6 @@ class ActuatorNode(Node):
 
         self.clamp_pub.publish(rsp)
 
-    @staticmethod
     def arm_response(self, pub, msg):
         sleep(ARM_TIME)
         rsp = Int16()

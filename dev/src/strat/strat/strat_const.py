@@ -36,19 +36,17 @@ class Action(IntEnum):
     PARK         = 4
     WAIT         = 5
     END          = 6
-    PREEMPT      = 7
 
 
-ACTIONS_LIST = [
-    'turnPanel',
-    'pickupPlant',
-    'pickupPot',
-    'depositPot',
-    'park',
-    'preempted',
-    'end',
-    'waiting',
-    ]
+ACTIONS_OUTCOMES = {
+    Action.TURN_SOLAR_PANEL: 'turnPanel',
+    Action.PICKUP_PLANT: 'pickupPlant',
+    Action.PICKUP_POT: 'pickupPot',
+    Action.DEPOSIT_POT: 'depositPot',
+    Action.PARK: 'park',
+    Action.END: 'end',
+    Action.WAIT: 'waiting',
+}
 
 ACTION_TRANSITIONS = {
     'turnPanel': 'TURNPANEL',
@@ -56,10 +54,9 @@ ACTION_TRANSITIONS = {
     'pickupPot': 'PICKUPPOT',
     'depositPot': 'DEPOSITPOT',
     'park':'PARK',
-    'preempted':'END',
     'end':'END',
     'waiting':'WAITING',
-    }
+}
 
 
 class ActionScore(IntEnum): #TODO update

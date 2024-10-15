@@ -19,12 +19,12 @@
 #################################################################
 
 import time
-import smach
+import yasmin
 
 from std_msgs.msg import String
 
 from ..an_const import R_APPROACH_PLANTS
-from ..an_utils import AutoSequence, AutoConcurrence, OpenDoors, OpenClamp, CloseDoors, CloseClamp, RiseElevator, DescendElevator
+from ..an_utils import Sequence, Concurrence, OpenDoors, OpenClamp, CloseDoors, CloseClamp, RiseElevator, DescendElevator
 
 from .sm_displacement import MoveTo, Approach, colored_approach
 from .sm_waiting import ObsWaitingOnce
@@ -38,30 +38,24 @@ from strat.strat_utils import create_end_of_action_msg
 #                                                               #
 #################################################################
 
-class CalcPositionningPlants(smach.State):
+class CalcPositionningPlants(yasmin.State):
     
     def __init__(self, node):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color','next_action'],
-                                output_keys=['next_move'])
+        super().__init__(outcomes=['fail','success','preempted'])
         self._node = node
         
     def execute(self, userdata):  
         plants_id = self._node.get_pickup_id("plants", userdata)
         (xp, yp) = PLANTS_POS[plants_id]
 
-        userdata.next_move = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.INITIAL)
+        userdata["next_move"] = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.INITIAL)
                 
         return 'success'
     
-class CalcTakePlants(smach.State):
+class CalcTakePlants(yasmin.State):
     
     def __init__(self, node):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=['robot_pos','color','next_action'],
-                                output_keys=['next_move'])
+        super().__init__(outcomes=['fail','success','preempted'])
         self._node = node
         self._msg = String()
         
@@ -73,17 +67,14 @@ class CalcTakePlants(smach.State):
 
         (xp, yp) = PLANTS_POS[plants_id]
 
-        userdata.next_move = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
+        userdata["next_move"] = colored_approach(userdata, xp, yp, R_APPROACH_PLANTS, Approach.FINAL)
 
         return 'success'
        
-class PickupPlantsEnd(smach.State):
+class PickupPlantsEnd(yasmin.State):
     
     def __init__(self, callback_action_pub):
-        smach.State.__init__(	self,
-                                outcomes=['fail','success','preempted'],
-                                input_keys=[],
-                                output_keys=[])
+        super().__init__(outcomes=['fail','success','preempted'])
         self._callback_action_pub = callback_action_pub
         
     def execute(self, userdata):
@@ -102,32 +93,32 @@ class PickupPlantsEnd(smach.State):
 #                                                               #
 #################################################################
 
-class _PickupPlantSequence(AutoSequence):
+class _PickupPlantSequence(Sequence):
     def __init__(self, node):
-        super().__init__(
-            ('PREPARE', AutoConcurrence(
+        super().__init__(states=[
+            ('PREPARE', Concurrence(
                     PREPARE_ELEVATOR = RiseElevator(node),
                     OPEN_DOORS = OpenDoors(node),
                     OPEN_CLAMP = OpenClamp(node),
                 )),
             ('KEEP_OPEN', ObsWaitingOnce(wait_time=2)),
-            ('TAKE', AutoConcurrence(
+            ('TAKE', Concurrence(
                 CLOSE_DOORS = CloseDoors(node),
-                PICKUP = AutoSequence(
+                PICKUP = Sequence(states=[
                     ('DESC_ELEVATOR', DescendElevator(node)),
                     ('GRAB_PLANTS', CloseClamp(node)), # TODO check the robot has actually picked up plants
                     ('RISE_PLANTS', RiseElevator(node)),
-                ),
+                ]),
             )),   
-        ) 
+        ]) 
 
-class PickupPlant(AutoSequence):
+class PickupPlant(Sequence):
     def __init__(self, node):
-        super().__init__(
+        super().__init__(states=[
             ('DEPL_POSITIONING_PLANTS', MoveTo(node, CalcPositionningPlants(node))),             
-            ('PICKUP_PLANTS_CONC', AutoConcurrence(
+            ('PICKUP_PLANTS_CONC', Concurrence(
                 DEPL_SEQ = MoveTo(node, CalcTakePlants(node)),
                 PICKUP_PLANT_SEQ = _PickupPlantSequence(node),        
             )),
             ('PICKUP_PLANT_END', PickupPlantsEnd(node.callback_action_pub)),
-        )
+        ])

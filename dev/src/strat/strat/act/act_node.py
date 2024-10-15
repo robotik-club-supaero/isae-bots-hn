@@ -29,8 +29,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
-import smach
-import smach_ros
+from yasmin import Blackboard
+from yasmin_viewer import YasminViewerPub
 import time
 
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
@@ -43,7 +43,7 @@ from .an_utils import color_dict, Color
 
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
-from ..strat_const import ACTIONS_LIST, Action
+from ..strat_const import ACTIONS_OUTCOMES, Action
 
 class ActionNode(Node):
     def __init__(self):
@@ -86,6 +86,7 @@ class ActionNode(Node):
         self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, 10)
         self.position_sub = self.create_subscription(Pose2D, '/current_position', self.cb_position_fct, 10)
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, 10)
+        self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, 10)
 
         # SPECIFIC TO CURRENT YEAR [2024] [TODO obsolete]
         self.doors_sub = self.create_subscription(Int16, '/act/callback/doors', self.cb_doors_fct, 10)
@@ -96,23 +97,22 @@ class ActionNode(Node):
 
         self.load_detector = self.create_subscription(Int16, '/act/callback/load_detector', self.cb_load_detector, 10) # TODO
 
-        self.sm = ActionStateMachine(self)
-        self.sis = smach_ros.IntrospectionServer('pr_an', self.sm, '/SM_ROOT')
-        self._sm_thread = threading.Thread(target=self.sm.execute)
-        
+        self._blackboard = Blackboard()
 
+        self.sm = ActionStateMachine(self)
+        self.sis = YasminViewerPub('SM_ROOT', self.sm, node=self)
+        self._sm_thread = threading.Thread(target=self.sm, args=(self._blackboard,))
+        
     @property
     def smData(self):
-        return self.sm.userdata
+        return self._blackboard
 
-    def __enter__(self):        
-        self.sis.start()
+    def __enter__(self):
         self._sm_thread.start()
         return self
 
     def __exit__(self, *args):
-        self.sis.stop()
-        self.sm.request_preempt()
+        self.sm.cancel_state()
         self._sm_thread.join()
         self.get_logger().info('Exiting state machine.')
 
@@ -165,7 +165,7 @@ class ActionNode(Node):
         Callback function from topic /sm/start.
         """
         if self.setupComplete:
-            self.smData.start = (msg.data == 1)
+            self.smData["start"] = (msg.data == 1)
 
 
     def setup_color(self, msg):
@@ -178,8 +178,8 @@ class ActionNode(Node):
             self.get_logger().error(f"Wrong value of color given ({msg.data})...")
             return
         else: 
-            self.smData.color = msg.data
-            self.get_logger().info("Received color : {}".format(COLOR[self.smData.color]))
+            self.smData["color"] = msg.data
+            self.get_logger().info("Received color : {}".format(COLOR[self.smData["color"]]))
 
 
     def cb_next_action(self, msg):
@@ -187,34 +187,33 @@ class ActionNode(Node):
         Callback for next action (DN -> Repartitor)
         """
         if not self.setupComplete: return
-
+        
+        self.smData["next_action"] = [Action(msg.data[0])] + list(msg.data[1:])
         if msg.data[0] == Action.PARK:
-            self.sm.request_preempt()
+            self.sm.cancel_state()
             self.get_logger().info("Received stop signal (initiate parking)")
             return
         if msg.data[0] == Action.END:
-            self.sm.request_preempt()
+            self.sm.cancel_state()
             self.get_logger().info("Received park signal (end of match)")
             return
-        if msg.data[0] not in range(len(ACTIONS_LIST)): # Index de ACTIONS_LIST dans an_const
+        if Action(msg.data[0]) not in ACTIONS_OUTCOMES:
             self.get_logger().error(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
             return
-        self.smData.next_action = [Action(msg.data[0])] + list(msg.data[1:])
-
 
     def cb_depl_fct(self, msg):
         """
         Callback of displacement result from Disp Node.
         """
         if self.setupComplete:
-            self.smData.cb_depl[0] = DspCallback.parse(msg.data)
+            self.smData["cb_depl"] = DspCallback.parse(msg.data)
         
     def cb_position_fct(self, msg):
         """
         Callback of current position of the robot.
         """
         if self.setupComplete:
-            self.smData.robot_pos[0] = msg
+            self.smData["robot_pos"] = msg
 
 
     def cb_doors_fct(self, msg):
@@ -222,30 +221,30 @@ class ActionNode(Node):
         Callback of the state of the doors (opened or closed)
         """
         if self.setupComplete:
-            self.smData.cb_doors[0] = DoorCallback.parse(msg.data)
+            self.smData["cb_doors"] = DoorCallback.parse(msg.data)
 
     def cb_elevator_fct(self, msg):
         """
         Callback of the state of the elevator (for the cakes)
         """
         if self.setupComplete:
-            self.smData.cb_elevator[0] = ElevatorCallback.parse(msg.data)
+            self.smData["cb_elevator"] = ElevatorCallback.parse(msg.data)
 
     def cb_left_arm_fct(self, msg):
         if self.setupComplete:
-            self.smData.cb_left_arm[0] = ArmCallback.parse(msg.data)
+            self.smData["cb_left_arm"] = ArmCallback.parse(msg.data)
 
     def cb_right_arm_fct(self, msg):
         if self.setupComplete:
-            self.smData.cb_right_arm[0] = ArmCallback.parse(msg.data)
+            self.smData["cb_right_arm"] = ArmCallback.parse(msg.data)
 
     def cb_clamp_fct(self, msg):
         if self.setupComplete:
-            self.smData.cb_clamp[0] = ClampCallback.parse(msg.data)
+            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
 
     def cb_load_detector(self, msg):
         if self.setupComplete:
-            self.smData.cb_load_detector = LoadDetectorCallback.parse(msg.data)
+            self.smData["cb_load_detector"] = LoadDetectorCallback.parse(msg.data)
 
     def cb_park_fct(self, msg):
         """
@@ -254,11 +253,16 @@ class ActionNode(Node):
         <copy> this template for your update / callback functions.
         """
         if self.setupComplete:
-            self.smData.park[0] = msg.data
+            self.smData["park"] = msg.data
+            if msg.data != 0:
+                self.sm.cancel_state()
+
+    def cb_end_fct(self, msg):
+        self.sm.cancel_state()
 
     def get_pickup_id(self, what, userdata):
         try:
-            return userdata.next_action[1]
+            return userdata["next_action"][1]
         except IndexError:
             self.get_logger().warning(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
             return 0

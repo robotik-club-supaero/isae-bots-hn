@@ -21,7 +21,7 @@
 import os
 import sys
 import time
-import smach
+import yasmin
 import math
 from ..an_const import *
 from .sm_displacement import Displacement, colored_approach, Approach
@@ -34,20 +34,16 @@ from strat.strat_utils import create_end_of_action_msg
 #                                                               #
 #################################################################
 
-class CalcParkPos(smach.State):
+class CalcParkPos(yasmin.State):
     """
     SM PARK : Observer state
     """
     def __init__(self, node):
-        smach.State.__init__(   self,  
-                                outcomes=['preempted','success','fail'],
-			                    input_keys=['cb_depl','robot_pos','next_move','color','next_action'],
-			                    output_keys=['cb_depl','next_move'])
+        super().__init__(outcomes=['preempted','success','fail'])			                   
         self._node = node
 
     def execute(self, userdata):
-        if self.preempt_requested():
-            self.service_preempt()
+        if self.is_canceled():
             return 'preempted'
 
         ## Move to parking position
@@ -55,24 +51,20 @@ class CalcParkPos(smach.State):
         x_dest, y_dest, theta = PARK_POS[park_id]
         # Modif pour la strat du dernier match 
 
-        userdata.next_move = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL)
+        userdata["next_move"] = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL)
         return 'success'
     
     
-class ParkEnd(smach.State):
+class ParkEnd(yasmin.State):
     """
     SM PARK : Observer state
     """
     def __init__(self, callback_action_pub):
-        smach.State.__init__(   self,  
-                                outcomes=['preempted','success','fail'],
-			                    input_keys=[],
-			                    output_keys=[])
+        super().__init__(outcomes=['preempted','success','fail'])
         self._callback_action_pub = callback_action_pub
 
     def execute(self, userdata):
-        if self.preempt_requested():
-            self.service_preempt()
+        if self.is_canceled():
             return 'preempted'
         
         #TODO actions before exiting the state machine
@@ -89,22 +81,17 @@ class ParkEnd(smach.State):
 #                                                               #
 #################################################################
 
-class Park(smach.StateMachine):
+class Park(yasmin.StateMachine):
     def __init__(self, node):
-        smach.StateMachine.__init__(self,
-            outcomes=['preempted', 'end', 'fail'],
-            input_keys=['cb_depl','robot_pos','next_move', 'color', 'next_action'],
-            output_keys=['cb_depl','next_move']
-        )
-                                
-        with self:
-            smach.StateMachine.add('CALC_PARK_POS', 
-                                    CalcParkPos(node), 
-                                    transitions={'preempted':'preempted','success':'DEPL_PARK','fail':'fail'})
-            smach.StateMachine.add('DEPL_PARK', 
-                                    Displacement(node), 
-                                    transitions={'preempted':'preempted','success':'PARK_END','fail':'fail'})
-            smach.StateMachine.add('PARK_END', 
-                                    ParkEnd(node.callback_action_pub), 
-                                    transitions={'preempted':'preempted','success':'end','fail':'fail'})
+        super().__init__(outcomes=['preempted', 'end', 'fail'])
+                
+        self.add_state('CALC_PARK_POS', 
+                        CalcParkPos(node), 
+                        transitions={'preempted':'preempted','success':'DEPL_PARK','fail':'fail'})
+        self.add_state('DEPL_PARK', 
+                        Displacement(node), 
+                        transitions={'preempted':'preempted','success':'PARK_END','fail':'fail'})
+        self.add_state('PARK_END', 
+                        ParkEnd(node.callback_action_pub), 
+                        transitions={'preempted':'preempted','success':'end','fail':'fail'})
 

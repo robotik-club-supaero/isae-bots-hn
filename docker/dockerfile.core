@@ -35,9 +35,6 @@ RUN export SSL_CERT_DIR=/etc/ssl/certs
 
 COPY ./docker/20-default.list /etc/ros/rosdep/sources.list.d/20-default.list
 
-# Smach (state machine)
-RUN apt-get install -y ros-jazzy-smach-ros
-
 # Setup ROS environment
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 

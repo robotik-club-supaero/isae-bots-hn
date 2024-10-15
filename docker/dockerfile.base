@@ -41,9 +41,9 @@ RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/
 COPY ./dev/lib/br_messages /app/dev/lib/br_messages
 
 # ---- HN ----
-RUN apt-get install -y ros-jazzy-smach-ros
-# Smach-viewer is not officially migrated to ROS2 yet
-RUN git clone --recursive -b iron https://github.com/nobleo/executive_smach_visualization/ /app/dev/lib/executive_smach_visualization
+# Yasmin (state machines)
+RUN git clone https://github.com/uleroboticsgroup/yasmin.git /app/dev/lib/yasmin
+RUN cd /app/dev/lib/yasmin && pip3 install -r requirements.txt --break-system-packages
 
 # ---- Pre-build (only third-party packages)
 WORKDIR '/app'

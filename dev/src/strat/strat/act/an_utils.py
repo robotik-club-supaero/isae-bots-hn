@@ -1,6 +1,7 @@
 
 import yasmin
-from yasmin.yasmin_logs import YASMIN_LOG_INFO
+from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR
+yasmin.YASMIN_LOG_DEBUG = lambda text: None # Yasmin is very verbose and would flood the terminal
 import time
 from threading import Thread, Lock
 
@@ -140,10 +141,13 @@ class Sequence(yasmin.StateMachine):
         self._last_state = name
         self._connector = connector
 
-        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes()})
+        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes() if outcome in state.get_outcomes()})
 
     def set_start_state(self, name):
-        raise NotImplementedError("Cannot set start state on Sequence")
+        if self.get_start_state():
+            raise NotImplementedError("Cannot set start state on Sequence")
+        else:
+            super().set_start_state(name)
 
 class Concurrence(yasmin.StateMachine):
     def __init__(self, /, **states):
@@ -191,7 +195,10 @@ class Concurrence(yasmin.StateMachine):
         YASMIN_LOG_INFO("Cancelling concurrent states...")
 
     def set_start_state(self, name):
-        raise NotImplementedError("Cannot set start state on Concurrence")
+        if self.get_start_state():
+            raise NotImplementedError("Cannot set start state on Concurrence")
+        else:
+            super().set_start_state(name)
 
     def _run_state(self, state, blackboard):
         YASMIN_LOG_INFO("Starting concurrent state %s", state)

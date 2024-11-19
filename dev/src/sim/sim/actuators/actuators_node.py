@@ -94,12 +94,11 @@ class ActuatorNode(Node):
         self.clamp_pub = self.create_publisher(Int16, "/act/callback/clamp", latch_profile)  
 
         # Simule la reponse du BN sur le bras
-        self.left_arm_sub = self.create_subscription(Int16, '/act/order/left_arm', lambda msg: self.arm_response(self.left_arm_pub, msg), qos_profile)
         self.left_arm_pub = self.create_publisher(Int16, "/act/callback/left_arm", latch_profile)  
+        self.left_arm_sub = self.create_subscription(Int16, '/act/order/left_arm', lambda msg: self.arm_response(self.left_arm_pub, msg), qos_profile)
         
-        self.right_arm_sub = self.create_subscription(Int16, '/act/order/right_arm', lambda msg: self.arm_response(self.right_arm_pub, msg), qos_profile)
         self.right_arm_pub = self.create_publisher(Int16, "/act/callback/right_arm",  latch_profile)  
-
+        self.right_arm_sub = self.create_subscription(Int16, '/act/order/right_arm', lambda msg: self.arm_response(self.right_arm_pub, msg), qos_profile)
 
         # Comm avec l'interface de simulation
         self.square_layout_pub = self.create_publisher(Int16, "/simu/squareLayout", latch_profile)

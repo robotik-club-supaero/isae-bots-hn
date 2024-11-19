@@ -20,6 +20,7 @@
 
 import time
 import yasmin
+from yasmin_viewer import YasminViewerPub
 import rclpy
 
 from std_msgs.msg      import Empty
@@ -163,6 +164,8 @@ class End(yasmin.State):
 class ActionStateMachine(yasmin.StateMachine):
     def __init__(self, node):
         super().__init__(outcomes=['exit all', 'exit preempted'])
+        self._viewers = []
+        self._node = node
 
         # Primary States
         self.add_state('SETUP', Setup(node), transitions={'preempted':'END','start':'REPARTITOR'})
@@ -172,18 +175,22 @@ class ActionStateMachine(yasmin.StateMachine):
                         transitions={'end':'exit all','preempted':'exit preempted'})
 
         # Specific Action States
-        self.add_state('TURNPANEL', TurnPanel(node),
+        self.add_submachine('TURNPANEL', TurnPanel(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
 
-        self.add_state('PICKUPPLANT', PickupPlant(node),
+        self.add_submachine('PICKUPPLANT', PickupPlant(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_state('PICKUPPOT', PickupPlot(node),
+        self.add_submachine('PICKUPPOT', PickupPlot(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_state('DEPOSITPOT', DepositPot(node),
+        self.add_submachine('DEPOSITPOT', DepositPot(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
 
         # Other States
-        self.add_state('PARK', Park(node),
+        self.add_submachine('PARK', Park(node),
                         transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
         self.add_state('WAITING', waiting,
                         transitions={'preempted':'END','success':'REPARTITOR'})
+
+    def add_submachine(self, name, machine, transitions):
+        self.add_state(name, machine, transitions)
+        self._viewers.append(YasminViewerPub(name, machine, node=self._node))

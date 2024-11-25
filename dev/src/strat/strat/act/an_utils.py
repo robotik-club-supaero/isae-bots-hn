@@ -156,8 +156,8 @@ class Concurrence(yasmin.StateMachine):
         self._lock = Lock()
         self._results = {}
 
-        for state in states:
-            self.add_state(state, states[state])
+        for name, state in states.items():
+            self.add_state(name, state)
 
     def add_state(self, name, state, /):
         super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes()})
@@ -191,7 +191,7 @@ class Concurrence(yasmin.StateMachine):
         super().cancel_state()
         with self._lock:
             for state in self._threads:
-                self.get_states()[state].cancel_state()
+                self.get_states()[state]["state"].cancel_state()
         YASMIN_LOG_INFO("Cancelling concurrent states...")
 
     def set_start_state(self, name):
@@ -201,13 +201,13 @@ class Concurrence(yasmin.StateMachine):
             super().set_start_state(name)
 
     def _run_state(self, state, blackboard):
-        YASMIN_LOG_INFO("Starting concurrent state %s", state)
+        YASMIN_LOG_INFO(f"Starting concurrent state {state}")
         try:
-            outcome = self.get_states()[state]["state"](blackboard)             
-            YASMIN_LOG_INFO("Concurrent state %s returned outcome %s", state, outcome)
+            outcome = self.get_states()[state]["state"](blackboard)
+            YASMIN_LOG_INFO(f"Concurrent state {state} returned outcome {outcome}")
         except Exception as e:
             outcome = "fail"
-            YASMIN_LOG_ERROR("State %s raised exception: %s", state, repr(e))
+            YASMIN_LOG_ERROR(f"State {state} raised exception: {repr(e)}")
 
         with self._lock:
             self._results[state] = outcome

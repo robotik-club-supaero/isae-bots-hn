@@ -78,18 +78,18 @@ class ObstacleCirc:
         direct = self.center-pos
         rad = self.radius
 
-        if rad == np.norm(direct):
+        if rad >= np.linalg.norm(direct):
             return []
 
-        tan_norm = np.sqrt(np.norm(direct)**2 - rad**2)
+        tan_norm = np.sqrt(np.linalg.norm(direct)**2 - rad**2)
 
-        cos_tan = tan_norm/np.norm(direct)
-        sin_tan = rad/np.norm(direct)
-        vec_tan_pos = direct * np.array([[cos_tan, sin_tan], [-sin_tan, cos_tan]])
-        vec_tan_neg = direct * np.array([[cos_tan, -sin_tan], [sin_tan, cos_tan]])
+        cos_tan = tan_norm/np.linalg.norm(direct)
+        sin_tan = rad/np.linalg.norm(direct)
+        vec_tan_pos = np.dot(direct, np.array([[cos_tan, sin_tan], [-sin_tan, cos_tan]]))
+        vec_tan_neg = np.dot(direct, np.array([[cos_tan, -sin_tan], [sin_tan, cos_tan]]))
         
-        tan_pos = pos + vec_tan_pos
-        tan_neg = pos + vec_tan_neg
+        tan_pos = (pos + vec_tan_pos).tolist()
+        tan_neg = (pos + vec_tan_neg).tolist()
         corners = [tan_pos, tan_neg]
 
         return corners

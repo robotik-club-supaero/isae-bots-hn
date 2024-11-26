@@ -126,7 +126,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
         return path
 
-    path = reduce_path(tableMap, path)
+    # path = reduce_path(tableMap, path)
 
     path_with_caps = []
     for i in range(len(path)):
@@ -173,7 +173,7 @@ def astar_path(tableMap, start, goal):
             # on voit l'objectif, et on l'ajoute aux points explorables, on ne le sort pas encore
             g = cost(s[1], goal) + s[3]
             path = s[2].copy()
-            path.append(goal)
+            path.append(np.array(goal))
             ns = (g, goal, path, g)
             heapq.heappush(openQ, ns)
 
@@ -184,14 +184,14 @@ def astar_path(tableMap, start, goal):
             for corner in corners:
                 if corner in visited:
                     continue
-
-                if can_go_straight(tableMap, s[1], corner):
-                    c = cost(s[1], corner) + s[3]
-                    g = c + heuristic(corner, goal)
-                    path = s[2].copy()
-                    path.append(corner)
-                    ns = (g, corner, path, c)
-                    heapq.heappush(openQ, ns)
+                else:
+                    if can_go_straight(tableMap, s[1], corner):
+                        c = cost(s[1], corner) + s[3]
+                        g = c + heuristic(corner, goal)
+                        path = s[2].copy()
+                        path.append(np.array(corner))
+                        ns = (g, corner, path, c)
+                        heapq.heappush(openQ, ns)
 
     return None
 

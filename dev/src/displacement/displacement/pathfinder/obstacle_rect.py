@@ -104,5 +104,4 @@ class ObstacleRect:
                 continue
             corners.append(corner)
 
-        print(corners)
         return corners

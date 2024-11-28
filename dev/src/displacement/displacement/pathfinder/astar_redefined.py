@@ -63,16 +63,14 @@ def can_go_straight(tableMap, init, goal):
 
 def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
-    print(_maxAstarTime)
-
     start_time = time.perf_counter()
 
     if not tableMap.get_avoid():
-        print("End of a_star if in no avoid mode")
+        print("End of a_star if in no avoid mode \n")
         return [goal]
 
     if can_go_straight(tableMap, init, goal[:2]):
-        print("End of a_star if can go straight")
+        print("End of a_star if can go straight \n")
         return [goal]
 
     final_cap = goal[2]
@@ -97,13 +95,14 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
     path = astar_path(tableMap, start, dest, _maxAstarTime)
 
-    print("end of a_star algorithm")
+    print("end of a_star algorithm \n")
 
     if path is None:
         raise PathNotFoundError
         
     astar_time = time.perf_counter()
 
+    path = np.array(path)
     path *= GRID_INTERVAL
     path[-1] = goal[:2]
     path = list(path)
@@ -128,7 +127,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     logger.debug(f"Astar duration: {astar_time - pre_process_time}s")
     logger.debug(f"Post-process duration: {post_process_time - astar_time}s")
 
-    print("End of a_star elsewise")
+    print("End of a_star elsewise \n")
     return path_with_caps[1:]
 
 
@@ -151,7 +150,7 @@ def astar_path(tableMap, start, goal, strMaxTime):
 
     while len(openQ) >0:
         if time.perf_counter() - init_time >= float(strMaxTime):
-            print("No path was found in time")
+            print("No path was found in time \n")
             return None
 
         s = heapq.heappop(openQ)
@@ -159,18 +158,23 @@ def astar_path(tableMap, start, goal, strMaxTime):
 
         if s[1][0] == goal[0] and s[1][1] == goal[1]:
             # on a trouvé le path otpimal vers l'objectif
-            print("showing path")
-            print(s[2])
-            print("end showing path")
 
-            return s[2]
+            
+            print("showing path \n")
+            print(s[2])
+            print("end showing path \n")
+
+            path = s[2]
+            return path
 
         if can_go_straight(tableMap, s[1], goal):
             # on voit l'objectif, et on l'ajoute aux points explorables, on ne le sort pas encore
             g = cost(s[1], goal) + s[3]
+
             path = s[2].copy()
-            # path.append(np.array(goal))
+            # path.append(np.array(goal))
             path.append(goal)
+
             ns = (g, goal, path, g)
             heapq.heappush(openQ, ns)
 
@@ -186,11 +190,12 @@ def astar_path(tableMap, start, goal, strMaxTime):
                     if can_go_straight(tableMap, s[1], corner):
                         c = cost(s[1], corner) + s[3] # calcul du nouveau coût
                         g = c + heuristic(corner, goal) # calcul de la fontcion obj totale (coût + heuristic)
+
                         path = s[2].copy()
-                        # path.append(np.array(corner))
+                        # path.append(np.array(corner))
                         path.append(corner)
+
                         ns = (g, corner, path, c)
-                        # print(ns)
                         heapq.heappush(openQ, ns)
 
     return None

@@ -92,4 +92,5 @@ class ObstacleCirc:
         tan_neg = (pos + vec_tan_neg).tolist()
         corners = [tan_pos, tan_neg]
 
+        print(corners)
         return corners

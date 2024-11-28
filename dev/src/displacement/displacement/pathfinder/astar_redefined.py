@@ -13,7 +13,7 @@
 # pyright: reportMissingImports=false
 
 """
-@file: astar.py
+@file: astar_redefined.py
 @status: in progress
 
 Librairie implementant un algorithme de A* sur un ensemble de noeud et 
@@ -63,12 +63,16 @@ def can_go_straight(tableMap, init, goal):
 
 def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
+    print(_maxAstarTime)
+
     start_time = time.perf_counter()
 
     if not tableMap.get_avoid():
+        print("End of a_star if in no avoid mode")
         return [goal]
 
     if can_go_straight(tableMap, init, goal[:2]):
+        print("End of a_star if can go straight")
         return [goal]
 
     final_cap = goal[2]
@@ -89,9 +93,11 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     pre_process_time = time.perf_counter()
    
     # path = pyastar2d.astar_path(weights, start, dest, allow_diagonal=True)
-    # Grid reducer: idea --> remove from grid the positions corresponding to empty zones and obstacles
+    # Grid reducer: idea --> remove from grid the positions corresponding to empty zones and obstacles, only keep borders of obstacles
 
-    path = astar_path(tableMap, start, dest)
+    path = astar_path(tableMap, start, dest, _maxAstarTime)
+
+    print("end of a_star algorithm")
 
     if path is None:
         raise PathNotFoundError
@@ -104,38 +110,17 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
     # POST-PROCESSING
     # pyastar2d only allows 8-connexity, but this might not be optimal
-            
-    def reduce_path(tableMap, path):
-        if len(path) > 2:
-            if can_go_straight(tableMap, path[0], path[-1]):
-                return [path[0], path[-1]]
-            else:
-                i = 0 # first connectable to first node
-                j = len(path) # first non-connectable to first node
-                while j - i > 1:
-                    h = (i + j) // 2
-                    if can_go_straight(tableMap, path[0], path[h]):
-                        i = h
-                    else:
-                        j = h
-
-                if i == 0:
-                    return [path[0]] + reduce_path(tableMap, path[i+1:])
-                else:
-                    return [path[0]] + reduce_path(tableMap, path[i:])
-
-        return path
-
-    # path = reduce_path(tableMap, path)
+        
+    # path = reduce_path(tableMap, path)
 
     path_with_caps = []
     for i in range(len(path)):
         if i < len(path) - 1:
-            seg = path[i+1] - path[i]
+            seg = np.array(path[i+1]) - np.array(path[i])
             cap = np.arctan2(seg[1], seg[0])
-            path_with_caps.append([*path[i], cap.item()])
+            path_with_caps.append([*np.array(path[i]), cap.item()])
         else:
-            path_with_caps.append([*path[i], final_cap])
+            path_with_caps.append([*np.array(path[i]), final_cap])
 
     post_process_time = time.perf_counter()
 
@@ -143,6 +128,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     logger.debug(f"Astar duration: {astar_time - pre_process_time}s")
     logger.debug(f"Post-process duration: {post_process_time - astar_time}s")
 
+    print("End of a_star elsewise")
     return path_with_caps[1:]
 
 
@@ -152,7 +138,9 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 #
 #######################################################################
 
-def astar_path(tableMap, start, goal):
+def astar_path(tableMap, start, goal, strMaxTime):
+
+    init_time = time.perf_counter()
 
     visited = []
     openQ = []
@@ -162,18 +150,27 @@ def astar_path(tableMap, start, goal):
     heapq.heappush(openQ, start_state)
 
     while len(openQ) >0:
+        if time.perf_counter() - init_time >= float(strMaxTime):
+            print("No path was found in time")
+            return None
+
         s = heapq.heappop(openQ)
         visited.append(s[1])
 
         if s[1][0] == goal[0] and s[1][1] == goal[1]:
             # on a trouvé le path otpimal vers l'objectif
+            print("showing path")
+            print(s[2])
+            print("end showing path")
+
             return s[2]
 
         if can_go_straight(tableMap, s[1], goal):
             # on voit l'objectif, et on l'ajoute aux points explorables, on ne le sort pas encore
             g = cost(s[1], goal) + s[3]
             path = s[2].copy()
-            path.append(np.array(goal))
+            # path.append(np.array(goal))
+            path.append(goal)
             ns = (g, goal, path, g)
             heapq.heappush(openQ, ns)
 
@@ -182,15 +179,18 @@ def astar_path(tableMap, start, goal):
         for obstacle in obstacles:
             corners = obstacle.bb_corners(s[1][0], s[1][1])
             for corner in corners:
+                # print(corner in visited)
                 if corner in visited:
                     continue
                 else:
                     if can_go_straight(tableMap, s[1], corner):
-                        c = cost(s[1], corner) + s[3]
-                        g = c + heuristic(corner, goal)
+                        c = cost(s[1], corner) + s[3] # calcul du nouveau coût
+                        g = c + heuristic(corner, goal) # calcul de la fontcion obj totale (coût + heuristic)
                         path = s[2].copy()
-                        path.append(np.array(corner))
+                        # path.append(np.array(corner))
+                        path.append(corner)
                         ns = (g, corner, path, c)
+                        # print(ns)
                         heapq.heappush(openQ, ns)
 
     return None
@@ -210,3 +210,29 @@ def heuristic(pos, goal):
 
     dist = np.sqrt((pos[0]-goal[0])**2 + (pos[1]-goal[1])**2)
     return dist
+
+
+
+
+
+
+def reduce_path(tableMap, path):
+    if len(path) > 2:
+        if can_go_straight(tableMap, path[0], path[-1]):
+            return [path[0], path[-1]]
+        else:
+            i = 0 # first connectable to first node
+            j = len(path) # first non-connectable to first node
+            while j - i > 1:
+                h = (i + j) // 2
+                if can_go_straight(tableMap, path[0], path[h]):
+                    i = h
+                else:
+                    j = h
+
+            if i == 0:
+                return [path[0]] + reduce_path(tableMap, path[i+1:])
+            else:
+                return [path[0]] + reduce_path(tableMap, path[i:])
+
+    return path

@@ -26,7 +26,7 @@
 import numpy as np
 
 from .maps import Maps
-from .astar import a_star
+from .astar_redefined import a_star
 from .exceptions import PathNotFoundError
 
 import displacement.pathfinder.obstacles_creator as oc
@@ -93,4 +93,5 @@ class Pathfinder:
         self.table_map.set_avoid(isAvoid)
 
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))
+        print("Initializing a_star call...")
         return a_star(self.init_pos[:2], self.goal_pos, self.table_map, self.weights_buf, self.max_astar_time, self._logger)

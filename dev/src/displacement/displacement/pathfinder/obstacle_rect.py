@@ -63,7 +63,8 @@ class ObstacleRect:
         origin_y = segment[0,1]
 
         line_vect = segment[1] - segment[0]
-        line_vect /= np.linalg.norm(line_vect)
+        if np.linalg.norm(line_vect) != 0:
+            line_vect /= np.linalg.norm(line_vect)
         node_dist = np.linalg.norm(line_vect)
 
         if line_vect[0] != 0 :
@@ -102,4 +103,6 @@ class ObstacleRect:
             if self.crosses(segment) or np.array_equal(pos, np.array(corner)):
                 continue
             corners.append(corner)
+
+        print(corners)
         return corners

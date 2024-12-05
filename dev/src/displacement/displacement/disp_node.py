@@ -130,28 +130,17 @@ class DisplacementNode(Node):
 
         ## Variable liées au déplacement du robot
         self.move = False                       # Le robot est en cours de deplacement
-        self.final_move = False                  # Le robot se dirige vers le point final
-        self.turn = False
-        self.final_turn = False 
-        self.resume = False 
-        self.paused = False                     # Le robot est arrete a cause d'un obstacle
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
         self.current_pos = [0,0,0]                # La position actuelle du robot
 
         # ## Variables de mode de DEPLACEMENT
-        self.accurate = False             # Le robot se deplace precisement / lentement vers l'avant
-        self.recalage = False               # Le robot se recale contre un mur / ou vient seulement en contact
         self.avoid_mode = False                  # Le robot se deplace en mode evitement
-        self.rotation = False 
 
         # ## Variables speciales
         self.reset_point = [0,0]                 # Point au alentour duquel il faut reset les marges d'arret de l'evitement
         self.is_reset_possible = False            # Variable décrivant si il faut reset les marges d'evitement ou non
-        self.is_first_accurate = False            # Variable permettant de savoir si le robot est dans un obstacle lors d'un evitement (savoir si on recule ou non)
 
         # ## Variables de gestion des obstacles / arrets
-        self.marche_arr_dest = None
-        self.bypassing = False
         self.wait_start = None
 
     def publish_path(self, path):
@@ -172,7 +161,7 @@ class DisplacementNode(Node):
 # Fonctions de construction de path
 #######################################################################
 
-    def build_path(self, isInAvoidMode, isFirstAccurate):
+    def build_path(self, isInAvoidMode):
         """Fonction appelee quand on cherche chemin et le pathfinder setup.
         
         Retourne un chemin de la forme:
@@ -200,7 +189,7 @@ class DisplacementNode(Node):
             - msg: un message d'erreur le cas echeant
             - success: si un chemin a ete trouve
             - chemin_calcule: le chemin calcule."""
-
+        self.get_logger().info("p")
         # Update temps max de l'Astar
         self.pathfinder.set_max_astar_time(self.max_astar_time)
 
@@ -209,7 +198,9 @@ class DisplacementNode(Node):
 
         # On essaie d'obtenir un chemin
         try:
-            path = self.pathfinder.get_path(isInAvoidMode, isFirstAccurate)
+            self.get_logger().info("p1")
+            path = self.pathfinder.get_path(isInAvoidMode)
+            self.get_logger().info("p2")
             if not len(path):
                 self.get_logger().error("Error - Empty path found")
                 result['message'] = "Empty path found" 
@@ -237,17 +228,14 @@ class DisplacementNode(Node):
 
         return result
 
-    def move_forward(self):
-
-        if self.bypassing:
-            self.get_logger().info("Obstacle found ahead. Computing new path to bypass it...")
+    def start_move(self):
 
         self.wait_start = None
-        self.final_move = False     
+        self.move = False     
 
         begin_time = time.perf_counter()
 
-        result = self.build_path(self.avoid_mode, self.is_first_accurate)
+        result = self.build_path(self.forward and self.avoid_mode)
 
         debug_print(self, 'c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
 
@@ -258,16 +246,19 @@ class DisplacementNode(Node):
             if len(self.path) > 0:
                 self.publish_path(self.path)
 
-            self.move = True 
-            self.next_point(False)
+            self.move = True
+
+            self.pub_teensy.publish(create_quaternion(0,0,0,CMD_TEENSY["curveReset"]))
+            for point in self.path[:-1]:
+                self.pub_teensy.publish(create_quaternion(point[0],point[1],0,CMD_TEENSY["curvePoint"]))
+
+            xf, yf, thetaf = self.path[-1]
+            self.pub_teensy.publish(create_quaternion(xf, yf, thetaf, CMD_TEENSY["curveStart"] if self.forward else CMD_TEENSY["curveStartReverse"]))
 
         ## Sinon, erreur de la recherche de chemin
         else:
             rsp = Int16()
-            if self.bypassing:
-                self.get_logger().warning("ERROR - Reason: Cannot bypass obstacle")
-                rsp.data = COM_STRAT["stop blocked"]
-            elif result['message'] == "Dest Blocked":
+            if result['message'] == "Dest Blocked":
                 self.get_logger().warning("ERROR - Reason: " + result['message'])
                 rsp.data = COM_STRAT["stop blocked"]
             else:
@@ -278,114 +269,8 @@ class DisplacementNode(Node):
                 
             self.pub_strat.publish(rsp)
 
-    def next_point(self, just_arrived):
-        """Envoie une commande du prochain point a la Teensy.
-        
-        - Soit on vient d'arriver au point (just_arrived=True) --> on supp 
-        le premier point du path.
-        - Soit on etait a un obstacle ou on vient de repartir --> on garde 
-        le premier point du path (dest temporaire).
-        
-        Si il n'y a plus de point, on vient d'arriver, notif a la strat.
-        Et gestion des differents modes de deplacements si param avant."""
-
-        # Si on vient d'arriver, on retire le premier point si possible
-        if just_arrived:
-            if len(self.path) > 0:
-                self.path = self.path[1:]
-        
-        # S'il existe un point 
-        # S'il existe un point intermediaire
-        if len(self.path) >= 2:
-            x = self.path[0][0]
-            y = self.path[0][1]
-            self.get_logger().info("\nDisplacement Pass By ({}, {})".format(x,y))
-
-            """ # TODO - remove patch
-            x,y,_ = patch_frame_br(x,y,0,self.color) """
-
-            # Si on est dans un obstacle
-            if self.is_first_accurate:
-                xLoc, _ = to_robot_coord(self.current_pos[0], self.current_pos[1], self.current_pos[2], self.path[0])
-                if xLoc > 0: # Marche avant necessaire
-                    self.forward = True
-                    self.pub_teensy.publish(create_quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
-                else:
-                    self.forward = False
-                    self.pub_teensy.publish(create_quaternion(x,y,self.current_pos[2],CMD_TEENSY["accurate"]))
-            else:
-                self.forward = True
-                self.pub_teensy.publish(create_quaternion(x,y,0,CMD_TEENSY["disp"]))
-
-            # Init params du mouvement
-            self.turn = True
-            self.final_move = False
-            return
-
-        # Sinon, s'il reste un point c'est le dernier
-        if len(self.path) == 1:
-            x, y, c = self.path[0]
-            self.turn = True
-            self.final_move = True
-
-            """ # TODO - remove patch 
-            x,y,c = patch_frame_br(x,y,c) """
-
-            ## Gestion differents types de deplacement
-            if self.accurate:
-                xRob, yRob, cRob = self.current_pos
-
-                self.get_logger().info("\nDisplacement request ({}, {}, {}) accurate".format(x, y, c))
-                
-                xLoc, _ = to_robot_coord(xRob, yRob, cRob, [x,y,c])
-                if xLoc >= 0:
-                    self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["accurate"]))
-                    self.forward = True
-                else:
-                    self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["accurate"]))
-                    self.forward = False
-                return
-
-            if self.rotation:
-                self.get_logger().info("\nDisplacement request ({}, {}, {}) rotation.".format(x, y, c))
-                #print("\n\n\n\nspeedRot = {}\n\n\n\n".format(self.speedRot))
-                self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["rotation"]))
-                return
-
-            if self.recalage:
-                self.get_logger().info("\nDisplacement request ({}, {}, {}) recalage.".format(x, y, c))
-                self.final_move = False     #Pas d'orientation finale en fin de recalage 
-                self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["recalage"]))
-                return
-        
-            ## Point final
-            self.get_logger().info("\nDisplacement request ({}, {}, {}) standard.".format(x, y, c))
-            self.forward = True
-            self.pub_teensy.publish(create_quaternion(x, y, c, CMD_TEENSY["dispFinal"]))
-            
-        # Sinon, on on a fini (ou bien a nulle part ou aller, pcq obstacle
-        # detecte sans qu'on bouge...)
-        if len(self.path) == 0 and just_arrived:
-            self.get_logger().info("Arrived at destination!")
-            # Reset des params
-            self.move = False
-            self.turn = False
-            self.final_turn = False
-            self.final_move = False
-
-            self.avoid_mode = False
-            self.recalage = False
-            self.accurate = False
-            self.rotation = False 
-
-            self.bypassing = False
-            self.wait_start = None
-
-            # Publication a la strat
-            rsp = Int16()
-            rsp.data = COM_STRAT["ok pos"]
-            self.pub_strat.publish(rsp)
-
+    def stop_move(self):
+        self.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
 
     def set_avoid_reset_point(self):
         """Calcul du point de reset des marges d'evitement.

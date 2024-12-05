@@ -89,7 +89,7 @@ class Pathfinder:
 #                            COMPUTE PATH 
 #######################################################################
         
-    def get_path(self, isAvoid, _isFirstAccurate):
+    def get_path(self, isAvoid):
         self.table_map.set_avoid(isAvoid)
 
         #print("POSITION ADV " + str(self.table_map.get_obstacle_robot_pos().get_x_center()))

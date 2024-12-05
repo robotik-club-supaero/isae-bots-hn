@@ -52,7 +52,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
 #################################################################
 
 ## CONSTANTES
-NOMINAL_SPEED = 80
+NOMINAL_SPEED = 100
 DIST_MIN = 50
 RADIUS_ROBOT_OBSTACLE = 150
 
@@ -85,7 +85,11 @@ CMD_TEENSY = {
     "rotation":             9,      # Cas où on fait une rotation simple
     "set":                  3,      # Fixe la position de départ
     "wii":                  4,       # Cas d'utilisation de la manette wii
-    "marcheArr":            8
+    "marcheArr":            8,
+    "curvePoint":           20,
+    "curveStart":           21,
+    "curveStartReverse":    22,
+    "curveReset":           23,
 }
 
 
@@ -116,7 +120,8 @@ CB_TEENSY = {
     "errorAsserv": 0,
     "okPos": 1,
     "okTurn": 2,
-    "marcheArrOK": 3
+    "marcheArrOK": 3,
+    "okOrder": 7,
 }
 
 
@@ -165,33 +170,22 @@ class DispCallbacks:
             self._node.pub_strat.publish(msg)
             return
 
-        ## On est arrivé a point (okPos)
+        if msg.data == CB_TEENSY["okOrder"]:
+            self._node.path = []
+            self.move = False
+
+            rsp = Int16()
+            rsp.data = COM_STRAT["ok pos"]
+            self._node.pub_strat.publish(rsp)
+            return
+
         if msg.data == CB_TEENSY["okPos"]:
-            if self._node.final_move:
-                self._node.get_logger().info("Arrived to position")
-                self._node.turn = True
-                self._node.final_turn = True
-                self._node.avoid_mode = False
-            else:
-                self._node.get_logger().info("Go to path next point.")
-                self._node.next_point(True)
             return
         
-        ## okTurn de la part de la Teensy
         if msg.data == CB_TEENSY["okTurn"]:
-            self._node.turn = False
-            self._node.resume = False
-
-            if self._node.final_turn:
-                self._node.final_turn = False
-                self._node.get_logger().info("Final orientation done.")
-                self._node.next_point(True)
             return
         
         if msg.data == CB_TEENSY["marcheArrOK"]:
-            self._node.marche_arr_dest = None
-            self._node.move = False
-            self._node.get_logger().info("Reverse Gear done.")
             return
         
         self._node.get_logger().info("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
@@ -202,83 +196,45 @@ class DispCallbacks:
         """Traitement des commandes de la strat."""
         
         ## Reset des params
-        self._node.accurate = False
-        self._node.rotation = False
-        self._node.recalage = False 
         self._node.move = False
-        self._node.avoid_mode = False
-
-        # self._node.finalTurn = False
-        # self._node.stop_obstacle_detection = False
-        # self._node.resume = False
-        # self._node.paused = False
+        self._node.avoid_mode = True
+        self._node.forward = True
 
         self._node.get_logger().info("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
-        #self._node.get_logger().info("Robot State : " + str(self._node.blocked))
         self._node.path = []
 
         ## Commande d'arrêt
         if msg.w == CMD_STRAT["stop"]:
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["stop"])) ## Les coordonnées ici importent peu car on demande de s'arrêter.
-            self._node.move = False
-            self.final_move = False
+            self._node.stop_move()
 
-        elif msg.w == CMD_STRAT["accurate"]:
-            self._node.path = [[msg.x, msg.y, msg.z]]
-            self._node.accurate = True
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["accurate"]))
-
-        elif msg.w == CMD_STRAT["recalage"]:
-            self._node.path = [[msg.x, msg.y, msg.z]]
-            self._node.recalage = True
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY["recalage"]))
-        
         elif msg.w == CMD_STRAT["rotation"]:
-            self._node.rotation = True
             self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
-
-        elif msg.w == CMD_STRAT["marcheArr"]:
-            self._node.marche_arr_dest = [msg.x, msg.y, msg.z]
-            self._node.move = True
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['marcheArr']))
         
-        elif msg.w == CMD_STRAT["noAvoidance"]:
-            self._node.avoid_mode = False
-            self._node.is_reset_possible = False
-            self._node.move = True
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['dispFinal']))
-
-        elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"]:
+        elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] or msg.w == CMD_STRAT["marcheArr"]:
             ## Setup de la vitesse
-
             dest_pos = [msg.x, msg.y, msg.z]
             curr_pos = self._node.current_pos
+            
+            self._node.avoid_mode = msg.w != CMD_STRAT["noAvoidance"]
+            self._node.is_reset_possible = False
+            self._node.move = True
+            self._node.forward = msg.w != CMD_STRAT["marcheArr"]
 
             ## - Déplacement standard
             if msg.w == CMD_STRAT["standard"] :
                 self._node.get_logger().info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
-                self._node.avoid_mode = True
-                self._node.is_reset_possible = False
-                self._node.move = True
-
-                ## Setup du Pathfinder
-                self._node.max_astar_time = MAX_ASTAR_TIME
-                self._node.pathfinder.set_goal(dest_pos)
-                self._node.pathfinder.set_init(curr_pos)            
-
+            elif msg.w == CMD_STRAT["marcheArr"]:
+                self._node.get_logger().info("Reverse displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
             ## - Deplacement sans evitement
             else:   
                 self._node.get_logger().info("Displacement without avoidance :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
-                self._node.avoid_mode = False
-                self._node.is_reset_possible = False
-                self._node.move = True
 
-                ## Setup du Pathfinder
-                self._node.max_astar_time = MAX_ASTAR_TIME
-                self._node.pathfinder.set_goal(dest_pos)
-                self._node.pathfinder.set_init(curr_pos)
+            ## Setup du Pathfinder
+            self._node.max_astar_time = MAX_ASTAR_TIME
+            self._node.pathfinder.set_goal(dest_pos)
+            self._node.pathfinder.set_init(curr_pos)
 
-            self._node.move_forward()
+            self._node.start_move()
 
     def callback_lidar(self, msg):    
         """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
@@ -338,28 +294,28 @@ class DispCallbacks:
                 dist_obs, x_loc_obs, y_loc_obs = closest_obs_ahead
 
                 # We trust the path finder to avoid the obstacle
-                # Bypassing may require going a little closer to the obstacle before moving away                i   
+                # Bypassing may require going a little closer to the obstacle before moving away
                 if dist_obs <= STOP_RANGE_X or (x_loc_obs < STOP_RANGE_X and abs(y_loc_obs) < STOP_RANGE_Y):
                     self._node.get_logger().warning("Object Detected Too Close : Interrupting move")
-                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    self._node.stop_move()
 
                     rsp = Int16()
                     rsp.data = COM_STRAT["stop blocked"]
                     self._node.pub_strat.publish(rsp)
                 
-                elif not self._node.bypassing and (dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y)):
-                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                elif dist_obs <= BYPASS_RANGE_X or (x_loc_obs < BYPASS_RANGE_X and abs(y_loc_obs) < BYPASS_RANGE_Y):
+                    self._node.stop_move()
                     if self._node.wait_start is None:
                         self._node.get_logger().warning("Object Detected : Need to wait")
                         self._node.wait_start = time.perf_counter()
-                        self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                        self._node.stop_move()
                     elif time.perf_counter() - self._node.wait_start >= STAND_BEFORE_BYPASS:                            
                         self._node.get_logger().warning("Object Won't Move Out Of The Way  : Initiating bypass")                              
-                        self._node.move_forward() # Recompute path with updated opponent pos
+                        self._node.start_move() # Recompute path with updated opponent pos
                 
                 elif self._node.wait_start is not None:
                     self._node.get_logger().info("Object Has Cleared The Way : Resuming displacement")     
-                    self._node.move_forward()
+                    self._node.start_move()
         
                 if dist_obs < SLOWDOWN_RANGE:
                     speed_coeff = 1 - (dist_obs-SLOWDOWN_RANGE)/(STOP_RANGE_X-SLOWDOWN_RANGE)
@@ -368,9 +324,9 @@ class DispCallbacks:
 
             else:
                 set_opponent_pos(None, 0) 
-                if not self._node.bypassing and self._node.wait_start is not None:
+                if self._node.wait_start is not None:
                     self._node.get_logger().info("Object Has Cleared The Way : Resuming displacement")     
-                    self._node.move_forward()
+                    self._node.start_move()
 
         else:
             # No avoiding strategy when reversing, because only straight, short-distance reverses are used
@@ -378,15 +334,14 @@ class DispCallbacks:
                 dist_obs, x_loc_obs, y_loc_obs = closest_obs_behind
                 if dist_obs < STOP_RANGE_X and self._node.move:
                     self._node.get_logger().warning("Object Detected In The Back : Need to wait")
-                    self._node.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+                    self._node.stop_move()
             
             if not self._node.move and self._node.marche_arr_dest is not None:
                 self._node.get_logger().info("Object Has Cleared The Way : Resuming reverse")
                 self._node.move = True
                 self._node.pub_teensy.publish(create_quaternion(*self._node.marche_arr_dest, CMD_TEENSY['marcheArr']))
 
-        if self._node.bypassing and self._node.is_reset_possible:
-            self._node.bypassing = False
+        if self._node.is_reset_possible:
             self._node.wait_start = None
             set_opponent_pos(None, 0)
 
@@ -414,7 +369,6 @@ class DispCallbacks:
         ## Init pathfinder with correct color
         self._node.pathfinder = Pathfinder(self._node.color, self._node.get_logger()) 
         self.publish_grid(self._node.pathfinder.table_map.get_grid().reshape(-1,2))
-
 
     def callback_position(self, msg):
         """Update la position actuelle du robot."""

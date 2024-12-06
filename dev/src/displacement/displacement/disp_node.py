@@ -189,7 +189,7 @@ class DisplacementNode(Node):
             - msg: un message d'erreur le cas echeant
             - success: si un chemin a ete trouve
             - chemin_calcule: le chemin calcule."""
-        self.get_logger().info("p")
+            
         # Update temps max de l'Astar
         self.pathfinder.set_max_astar_time(self.max_astar_time)
 
@@ -198,9 +198,7 @@ class DisplacementNode(Node):
 
         # On essaie d'obtenir un chemin
         try:
-            self.get_logger().info("p1")
             path = self.pathfinder.get_path(isInAvoidMode)
-            self.get_logger().info("p2")
             if not len(path):
                 self.get_logger().error("Error - Empty path found")
                 result['message'] = "Empty path found" 

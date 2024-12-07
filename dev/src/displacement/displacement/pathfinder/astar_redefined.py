@@ -28,7 +28,7 @@ d'obstacle définie dans la classe Map.
 
 import time
 import numpy as np
-import pyastar2d
+# import pyastar2d
 import math
 import heapq
 
@@ -74,30 +74,28 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
         return [goal]
 
     final_cap = goal[2]
-   
-    weights[:] = 1 # avoids recreating the array every time
-    if tableMap.get_avoid():
-        obstacles = list(tableMap.get_obstacles()) # Avoid concurrent list change during iteration
-        for obstacle in obstacles:
-            bb = obstacle.bounding_box() / GRID_INTERVAL
-            for i in range(math.floor(bb[0,0]), min(math.floor(bb[1,0]+1), weights.shape[0])):
-                for j in range(math.floor(bb[0,1]), min(math.floor(bb[1,1]+1), weights.shape[1])):
-                    if weights[i,j] == 1 and obstacle.is_node_in(i*GRID_INTERVAL, j*GRID_INTERVAL):
-                        weights[i,j] = None
-                        
+
     start = [min(int(round(init[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(init[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
     dest = [min(int(round(goal[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(goal[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
 
+    astarMap = [dest]
+    obstacles = tableMap.get_obstacles()
+
+    # on crée la map avant d'exécuter l'algo
+    for obstacle in obstacles:
+        corners = obstacle.corners()
+        for corner in corners:
+            astarMap.append(corner)
+
     pre_process_time = time.perf_counter()
    
-    # path = pyastar2d.astar_path(weights, start, dest, allow_diagonal=True)
     # Grid reducer: idea --> remove from grid the positions corresponding to empty zones and obstacles, only keep borders of obstacles
 
-    path = astar_path(tableMap, start, dest, _maxAstarTime)
+    path = astar_path(tableMap, astarMap, start, dest, _maxAstarTime) # see implementation at the end --> objective is to implement such method in C++
 
     print("end of a_star algorithm \n")
 
-    if path is None:
+    if path is None or len(path) == 0:
         raise PathNotFoundError
         
     astar_time = time.perf_counter()
@@ -108,9 +106,6 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     path = list(path)
 
     # POST-PROCESSING
-    # pyastar2d only allows 8-connexity, but this might not be optimal
-        
-    # path = reduce_path(tableMap, path)
 
     path_with_caps = []
     for i in range(len(path)):
@@ -137,7 +132,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 #
 #######################################################################
 
-def astar_path(tableMap, start, goal, strMaxTime):
+def astar_path(tableMap, astarMap, start, goal, strMaxTime):
 
     init_time = time.perf_counter()
 
@@ -158,15 +153,10 @@ def astar_path(tableMap, start, goal, strMaxTime):
 
         if s[1][0] == goal[0] and s[1][1] == goal[1]:
             # on a trouvé le path otpimal vers l'objectif
-
-            
-            print("showing path \n")
-            print(s[2])
-            print("end showing path \n")
-
             path = s[2]
             return path
 
+        """
         if can_go_straight(tableMap, s[1], goal):
             # on voit l'objectif, et on l'ajoute aux points explorables, on ne le sort pas encore
             g = cost(s[1], goal) + s[3]
@@ -178,18 +168,19 @@ def astar_path(tableMap, start, goal, strMaxTime):
             ns = (g, goal, path, g)
             heapq.heappush(openQ, ns)
 
+
         obstacles = tableMap.get_obstacles()
 
         for obstacle in obstacles:
             corners = obstacle.bb_corners(s[1][0], s[1][1])
             for corner in corners:
-                # print(corner in visited)
+                # print(corner in visited)
                 if corner in visited:
                     continue
                 else:
                     if can_go_straight(tableMap, s[1], corner):
                         c = cost(s[1], corner) + s[3] # calcul du nouveau coût
-                        g = c + heuristic(corner, goal) # calcul de la fontcion obj totale (coût + heuristic)
+                        g = c + heuristic(corner, goal) # calcul de la fontcion obj totale (coût + heuristic)
 
                         path = s[2].copy()
                         # path.append(np.array(corner))
@@ -197,6 +188,24 @@ def astar_path(tableMap, start, goal, strMaxTime):
 
                         ns = (g, corner, path, c)
                         heapq.heappush(openQ, ns)
+        """
+        # vieux bout de code où la fonction astar implémentait la carte des points en même temps qu'elle était explorée
+
+
+        for point in astarMap:
+            if point in visited:
+                continue
+            else:
+                if can_go_straight(tableMap, s[1], point):
+                        c = cost(s[1], point) + s[3] # calcul du nouveau coût
+                        g = c + heuristic(point, goal) # calcul de la fontcion obj totale (coût + heuristic)
+
+                        path = s[2].copy()
+                        path.append(point)
+
+                        ns = (g, point, path, c)
+                        heapq.heappush(openQ, ns)
+
 
     return None
 
@@ -215,29 +224,3 @@ def heuristic(pos, goal):
 
     dist = np.sqrt((pos[0]-goal[0])**2 + (pos[1]-goal[1])**2)
     return dist
-
-
-
-
-
-
-def reduce_path(tableMap, path):
-    if len(path) > 2:
-        if can_go_straight(tableMap, path[0], path[-1]):
-            return [path[0], path[-1]]
-        else:
-            i = 0 # first connectable to first node
-            j = len(path) # first non-connectable to first node
-            while j - i > 1:
-                h = (i + j) // 2
-                if can_go_straight(tableMap, path[0], path[h]):
-                    i = h
-                else:
-                    j = h
-
-            if i == 0:
-                return [path[0]] + reduce_path(tableMap, path[i+1:])
-            else:
-                return [path[0]] + reduce_path(tableMap, path[i:])
-
-    return path

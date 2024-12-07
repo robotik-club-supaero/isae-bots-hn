@@ -88,6 +88,7 @@ class ObstacleRect:
     def bounding_box(self):
         return self.coords
     
+
     def bb_corners(self, x, y):
 
         pos = np.array([x, y])
@@ -103,5 +104,11 @@ class ObstacleRect:
             if self.crosses(segment) or np.array_equal(pos, np.array(corner)):
                 continue
             corners.append(corner)
+
+        return corners
+
+
+    def corners(self):
+        corners = [[self.x_min, self.y_min], [self.x_max, self.y_min], [self.x_min, self.y_max], [self.x_max, self.y_max]]
 
         return corners

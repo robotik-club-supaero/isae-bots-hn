@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     python-is-python3
 
-RUN apt-get install libsfml-dev
+RUN apt-get install -y libsfml-dev
 
 # Install pyqtgraph
 RUN pip install pyqtgraph==0.10.0 --break-system-packages

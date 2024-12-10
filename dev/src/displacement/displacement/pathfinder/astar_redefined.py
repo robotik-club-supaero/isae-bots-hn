@@ -66,13 +66,15 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     start_time = time.perf_counter()
 
     if not tableMap.get_avoid():
-        print("End of a_star if in no avoid mode \n")
+        #print("End of a_star if in no avoid mode \n")
         return [goal]
 
+    """
     if can_go_straight(tableMap, init, goal[:2]):
-        print("End of a_star if can go straight \n")
+        #print("End of a_star if can go straight \n")
         return [goal]
-
+    """
+        
     final_cap = goal[2]
 
     start = [min(int(round(init[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(init[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
@@ -93,9 +95,12 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
     path = astar_path(tableMap, astarMap, start, dest, _maxAstarTime) # see implementation at the end --> objective is to implement such method in C++
 
-    print("end of a_star algorithm \n")
+    #print("end of a_star algorithm \n")
+    
+    if path == -1:
+        raise TimeOutError
 
-    if path is None or len(path) == 0:
+    if path is None:
         raise PathNotFoundError
         
     astar_time = time.perf_counter()
@@ -122,7 +127,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     logger.debug(f"Astar duration: {astar_time - pre_process_time}s")
     logger.debug(f"Post-process duration: {post_process_time - astar_time}s")
 
-    print("End of a_star elsewise \n")
+    #print("End of a_star elsewise \n")
     return path_with_caps[1:]
 
 
@@ -138,59 +143,23 @@ def astar_path(tableMap, astarMap, start, goal, strMaxTime):
 
     visited = []
     openQ = []
-    start_state = (0, start, [], 0) 
+    start_state = (0, start, [start], 0) 
     # le state contient dans l'ordre (total, position, path, coût)
     # heapq trie les éléments en fonction de la première variable, donc total
     heapq.heappush(openQ, start_state)
 
     while len(openQ) >0:
         if time.perf_counter() - init_time >= float(strMaxTime):
-            print("No path was found in time \n")
-            return None
+            #print("No path was found in time \n")
+            return -1
 
         s = heapq.heappop(openQ)
         visited.append(s[1])
 
         if s[1][0] == goal[0] and s[1][1] == goal[1]:
             # on a trouvé le path otpimal vers l'objectif
-            path = s[2]
-            return path
-
-        """
-        if can_go_straight(tableMap, s[1], goal):
-            # on voit l'objectif, et on l'ajoute aux points explorables, on ne le sort pas encore
-            g = cost(s[1], goal) + s[3]
-
             path = s[2].copy()
-            # path.append(np.array(goal))
-            path.append(goal)
-
-            ns = (g, goal, path, g)
-            heapq.heappush(openQ, ns)
-
-
-        obstacles = tableMap.get_obstacles()
-
-        for obstacle in obstacles:
-            corners = obstacle.bb_corners(s[1][0], s[1][1])
-            for corner in corners:
-                # print(corner in visited)
-                if corner in visited:
-                    continue
-                else:
-                    if can_go_straight(tableMap, s[1], corner):
-                        c = cost(s[1], corner) + s[3] # calcul du nouveau coût
-                        g = c + heuristic(corner, goal) # calcul de la fontcion obj totale (coût + heuristic)
-
-                        path = s[2].copy()
-                        # path.append(np.array(corner))
-                        path.append(corner)
-
-                        ns = (g, corner, path, c)
-                        heapq.heappush(openQ, ns)
-        """
-        # vieux bout de code où la fonction astar implémentait la carte des points en même temps qu'elle était explorée
-
+            return path
 
         for point in astarMap:
             if point in visited:
@@ -200,12 +169,11 @@ def astar_path(tableMap, astarMap, start, goal, strMaxTime):
                         c = cost(s[1], point) + s[3] # calcul du nouveau coût
                         g = c + heuristic(point, goal) # calcul de la fontcion obj totale (coût + heuristic)
 
-                        path = s[2].copy()
-                        path.append(point)
+                        tpath = s[2].copy()
+                        tpath.append(point)
 
-                        ns = (g, point, path, c)
+                        ns = (g, point, tpath, c)
                         heapq.heappush(openQ, ns)
-
 
     return None
 

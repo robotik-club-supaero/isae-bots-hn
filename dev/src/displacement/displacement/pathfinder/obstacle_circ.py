@@ -71,32 +71,6 @@ class ObstacleCirc:
     def bounding_box(self):
         return np.array([self.center - self.radius, self.center + self.radius])
     
-    def bb_corners(self, x, y):
-
-        pos = np.array([x, y])
-
-        direct = self.center-pos
-        rad = self.radius
-        dist = np.linalg.norm(direct)
-
-        if rad >= dist:
-            return []
-
-        tan_norm = np.sqrt(dist**2 - rad**2)
-
-        cos_tan = tan_norm/dist
-        sin_tan = rad/dist
-        vec_tan_pos = np.dot(direct, np.array([[cos_tan, sin_tan], [-sin_tan, cos_tan]]))
-        vec_tan_neg = np.dot(direct, np.array([[cos_tan, -sin_tan], [sin_tan, cos_tan]]))
-        
-        face = (dist-rad) * direct / dist
-        face = face.tolist()
-        tan_pos = (pos + vec_tan_pos).tolist()
-        tan_neg = (pos + vec_tan_neg).tolist()
-        corners = [tan_pos, tan_neg, face]
-
-        return corners
-    
     def corners(self):
         radx = 0.9*np.array([self.radius,0])
         rady = 0.9*np.array([0,self.radius])

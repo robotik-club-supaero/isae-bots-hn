@@ -194,11 +194,8 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
         
     final_cap = goal[2]
 
-    # start = [min(int(round(init[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(init[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
-    # dest = [min(int(round(goal[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(goal[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
-
-    start = [min(int(init[0]), GRID_INTERVAL*(weights.shape[0]-1)), min(int(init[1]), GRID_INTERVAL*(weights.shape[1]-1))]
-    dest = [min(int(goal[0]), GRID_INTERVAL*(weights.shape[0]-1)), min(int(goal[1]), GRID_INTERVAL*(weights.shape[1]-1))]
+    start = [min(int(round(init[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(init[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
+    dest = [min(int(round(goal[0] / GRID_INTERVAL, 0)), weights.shape[0]-1), min(int(round(goal[1] / GRID_INTERVAL, 0)), weights.shape[1]-1)]
 
 
     astarMap = Map_astar(Point_astar(start[0], start[1]), Point_astar(dest[0], dest[1]))
@@ -229,6 +226,7 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
     astar_time = time.perf_counter()
 
     path = np.array(path)
+    path *= GRID_INTERVAL
     path[-1] = goal[:2]
     path = list(path)
 
@@ -239,9 +237,9 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
         if i < len(path) - 1:
             seg = np.array(path[i+1]) - np.array(path[i])
             cap = np.arctan2(seg[1], seg[0])
-            path_with_caps.append([*path[i], cap.item()])
+            path_with_caps.append([*np.array(path[i]), cap.item()])
         else:
-            path_with_caps.append([*path[i], final_cap])
+            path_with_caps.append([*np.array(path[i]), final_cap])
 
     post_process_time = time.perf_counter()
 

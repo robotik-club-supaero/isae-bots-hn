@@ -216,15 +216,8 @@ def a_star(init, goal, tableMap, weights, _maxAstarTime, logger):
 
     pre_process_time = time.perf_counter()
 
-<<<<<<< HEAD
-
-    #path = astar_path(tableMap, astarMap, start, dest, _maxAstarTime) # see implementation at the end --> objective is to implement such method in C++
     path = astar_path_v2(tableMap, astarMap, _maxAstarTime)
 
-=======
-    path = astar_path_v2(tableMap, astarMap, _maxAstarTime)
-
->>>>>>> da3c20c (map defined outside function)
     # print("end of a_star algorithm \n")
     
     if path == -1:

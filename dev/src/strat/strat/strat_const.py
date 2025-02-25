@@ -29,30 +29,33 @@ class ActionResult(IntEnum):
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    TURN_SOLAR_PANEL = 0
-    PICKUP_PLANT = 1
-    PICKUP_POT   = 2
-    DEPOSIT_POT =  3
-    PARK         = 4
-    WAIT         = 5
-    END          = 6
+    PICKUP_CAN = 0
+    DEPOSIT_CAN = 1
+    PICKUP_PLANCK   = 2
+    DEPOSIT_PLANCK =  3
+    CLEAR_TOP_PLANCK = 4
+    PARK         = 5
+    WAIT         = 6
+    END          = 7
 
 
 ACTIONS_OUTCOMES = {
-    Action.TURN_SOLAR_PANEL: 'turnPanel',
-    Action.PICKUP_PLANT: 'pickupPlant',
-    Action.PICKUP_POT: 'pickupPot',
-    Action.DEPOSIT_POT: 'depositPot',
+    Action.PICKUP_CAN: 'pickupCan',
+    Action.DEPOSIT_CAN: 'depositCan',
+    Action.PICKUP_PLANCK: 'pickupPlanck',
+    Action.DEPOSIT_PLANCK: 'depositPlanck',
+    Action.CLEAR_TOP_PLANCK: 'clearTopPlanck',
     Action.PARK: 'park',
     Action.END: 'end',
     Action.WAIT: 'waiting',
 }
 
 ACTION_TRANSITIONS = {
-    'turnPanel': 'TURNPANEL',
-    'pickupPlant':'PICKUPPLANT',
-    'pickupPot': 'PICKUPPOT',
-    'depositPot': 'DEPOSITPOT',
+    'pickupCan': 'PICKUP_CAN',
+    'depositCan':'DEPOSIT_CAN',
+    'pickupPlanck': 'PICKUP_PLANCK',
+    'depositPlanck': 'DEPOSIT_PLANCK',
+    'clearTopPlanck': 'CLEAR_TOP_PLANCK',
     'park':'PARK',
     'end':'END',
     'waiting':'WAITING',
@@ -62,36 +65,20 @@ ACTION_TRANSITIONS = {
 class ActionScore(IntEnum): #TODO update
     SCORE_INIT = 0
     SCORE_PARK = 10
-    SCORE_DEPOSIT_PLANTS = 4
-    SCORE_SOLAR_PANEL = 5
+    SCORE_DEPOSIT_PLANCK = 4
     SCORE_COCCINELLE = 5
 
-PLANTS_POS = [
-    [ 700, 1000],
-    [1300, 1000],
-    [1500, 1500],
-    [1300, 2000],
-    [ 700, 2000],
-    [ 500, 1500],
+CAN_POS = [
+    list(literal_eval(READER.get("MAP", "pickup_can_pos"))),
 ]
 
-POTS_POS = [
-    [ 612.5,   35, -pi/2],
-    [1387.5,   35, -pi/2],
-    [1965  , 1000,     0],
-    [ 612.5, 2965,  pi/2],
-    [1387.5, 2965,  pi/2],
-    [1965  , 2000,     0],
+PLANCK_POS = [
+    list(literal_eval(READER.get("MAP", "pickup_planck_pos"))),
 ]
 
 
 DEPOSIT_POS = [
-	#[ 225,  225, -pi/2],
-    [1000,  100, -pi/2],
-  #  [1775,  225, -pi/2],
-	[1775, 2900,  pi/2],
-  #  [1000, 2775,  pi/2],
-    [ 225, 2900,  pi/2],
+	list(literal_eval(READER.get("MAP", "deposit_pos"))),
 ]
 
 PARK_POS = [

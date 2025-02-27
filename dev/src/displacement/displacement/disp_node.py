@@ -42,8 +42,7 @@ from math import sqrt
 import time
 
 # import fonction du Pathfinder
-from .pathfinder.pathfinder import Pathfinder
-from .pathfinder.exceptions import PathNotFoundError, TimeOutError, DestBlockedError
+from .pathfinder import PathFinder, PathNotFoundError
 
 # import msgs
 from geometry_msgs.msg import Quaternion, Pose2D
@@ -125,7 +124,7 @@ class DisplacementNode(Node):
         ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
 
         self.path = []
-        self.pathfinder = Pathfinder(self.color, self.get_logger())
+        self.pathfinder = PathFinder(self.color, self.get_logger())
         self.max_astar_time = MAX_ASTAR_TIME
 
         ## Variable liées au déplacement du robot
@@ -148,9 +147,9 @@ class DisplacementNode(Node):
         if SIMULATION:
             path_coords = []
             for k in range (len(path)):
-                path_coords.append(path[k][0])
-                path_coords.append(path[k][1])
-                if k == len(path)-1: path_coords.append(path[k][2])  # le cap final
+                path_coords.append(path[k].x)
+                path_coords.append(path[k].y)
+                if k == len(path)-1: path_coords.append(self.pathfinder.get_goal_heading())  # le cap final
             
             path_msg = Float32MultiArray()
             path_msg.data = path_coords
@@ -190,37 +189,19 @@ class DisplacementNode(Node):
             - success: si un chemin a ete trouve
             - chemin_calcule: le chemin calcule."""
             
-        # Update temps max de l'Astar
-        self.pathfinder.set_max_astar_time(self.max_astar_time)
-
         # Instanciation de resultisInAvoidMode
         result = {'message':"", 'success':False}
 
         # On essaie d'obtenir un chemin
         try:
-            path = self.pathfinder.get_path(isInAvoidMode)
-            if not len(path):
-                self.get_logger().error("Error - Empty path found")
-                result['message'] = "Empty path found" 
-                result['success'] = False
-                return result
-
+            path = self.pathfinder.get_path()
+         
             self.path = path
             result['message'] = "Path found" 
             result['success'] = True
 
         except PathNotFoundError:   
             result['message'] = "Path not found"
-            result['success'] = False
-            return result
-        
-        except TimeOutError:
-            result['message'] = "Time out"
-            result['success'] = False
-            return result
-
-        except DestBlockedError:
-            result['message'] = "Dest Blocked"
             result['success'] = False
             return result
 
@@ -248,10 +229,11 @@ class DisplacementNode(Node):
 
             self.pub_teensy.publish(create_quaternion(0,0,0,CMD_TEENSY["curveReset"]))
             for point in self.path[:-1]:
-                self.pub_teensy.publish(create_quaternion(point[0],point[1],0,CMD_TEENSY["curvePoint"]))
+                self.pub_teensy.publish(create_quaternion(point.x,point.y,0,CMD_TEENSY["curvePoint"]))
 
-            xf, yf, thetaf = self.path[-1]
-            self.pub_teensy.publish(create_quaternion(xf, yf, thetaf, CMD_TEENSY["curveStart"] if self.forward else CMD_TEENSY["curveStartReverse"]))
+            pointf = self.path[-1]
+            thetaf = self.pathfinder.get_goal_heading()
+            self.pub_teensy.publish(create_quaternion(pointf.x, pointf.y, thetaf, CMD_TEENSY["curveStart"] if self.forward else CMD_TEENSY["curveStartReverse"]))
 
         ## Sinon, erreur de la recherche de chemin
         else:
@@ -276,7 +258,7 @@ class DisplacementNode(Node):
         Il s'agit du point à partir duquel on sera suffissament loin de
         l'obstacle jusqu'a la fin du trajet."""
 
-        avoid_robot_pos = self.pathfinder.get_robot_to_avoid_pos()
+        avoid_robot_pos = self.pathfinder.get_obstacle_robot_pos()
         if avoid_robot_pos is None:
             return # opponent position not known
         avoid_robot_pos = avoid_robot_pos[0]

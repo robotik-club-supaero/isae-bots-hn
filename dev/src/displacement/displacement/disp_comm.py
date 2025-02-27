@@ -33,7 +33,7 @@ import time
 from ast import literal_eval
 
 # import pathfinder
-from .pathfinder.pathfinder import Pathfinder
+from .pathfinder import PathFinder
 # import msgs
 from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray, String
 from geometry_msgs.msg import Quaternion
@@ -240,11 +240,12 @@ class DispCallbacks:
         """Fonction qui gere l'adaptation du robot aux obstacles (pas que lidar en fait...)."""
 
         def set_opponent_pos(pos, radius):
-            self._node.pathfinder.set_robot_to_avoid_pos([pos[0], pos[1]] if pos is not None else None, radius) # TODO center
+            self._node.pathfinder.set_obstacle_robot_pos([pos[0], pos[1]] if pos is not None else None, radius) # TODO center
             if SIMULATION:
                 msg2 = Int16MultiArray()
                 msg2.data = [int(pos[0]) if pos is not None else -10000, int(pos[1]) if pos is not None else -10000, int(radius)]
                 self._node.pub_obstacle.publish(msg2)
+                self.publish_grid()
 
         
         if (not self._node.avoid_mode) or self._node.matchEnded: 
@@ -336,10 +337,10 @@ class DispCallbacks:
                     self._node.get_logger().warning("Object Detected In The Back : Need to wait")
                     self._node.stop_move()
             
-            if not self._node.move and self._node.marche_arr_dest is not None:
+            if not self._node.move and not self._node.forward:
                 self._node.get_logger().info("Object Has Cleared The Way : Resuming reverse")
                 self._node.move = True
-                self._node.pub_teensy.publish(create_quaternion(*self._node.marche_arr_dest, CMD_TEENSY['marcheArr']))
+                self._node.pub_teensy.publish(create_quaternion(*self._node.pathfinder.get_goal(), CMD_TEENSY['marcheArr']))
 
         if self._node.is_reset_possible:
             self._node.wait_start = None
@@ -367,8 +368,8 @@ class DispCallbacks:
         self._node.current_pos = [x, y, z]
 
         ## Init pathfinder with correct color
-        self._node.pathfinder = Pathfinder(self._node.color, self._node.get_logger()) 
-        self.publish_grid(self._node.pathfinder.table_map.get_grid().reshape(-1,2))
+        self._node.pathfinder = PathFinder(self._node.color, self._node.get_logger()) 
+        self.publish_grid()
 
     def callback_position(self, msg):
         """Update la position actuelle du robot."""
@@ -385,10 +386,14 @@ class DispCallbacks:
 
     def callback_delete(self, msg):
         self._node.pathfinder.remove_obstacle(msg.data)
+        self.publish_grid()
 
-    def publish_grid(self, grid):
+    def publish_grid(self, grid=None):
         """Publish grid to the interfaceNode."""
         if SIMULATION:
+            if grid is None:
+                grid = self._node.pathfinder.get_grid()
+                
             node_coords = []
             for n in range(len(grid)):
                 node_coords.append(grid[n,0])
@@ -397,5 +402,5 @@ class DispCallbacks:
             msg = Float32MultiArray()
             msg.data = node_coords
             self._node.pub_grid.publish(msg)
-            self._node.get_logger().info("## Simulation ## Grid published to interface.")
+       #     self._node.get_logger().info("## Simulation ## Grid published to interface.")
 

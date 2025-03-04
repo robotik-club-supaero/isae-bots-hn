@@ -120,7 +120,7 @@ def match_strat(node):
                 node.publishAction()
                 return
             elif len(node.curr_action) >= 2:
-                coeffs[node.curr_action[1]] = 999
+                coeffs[node.curr_action[1]] = 999 # penalise
 
         if (node.curr_action[0] == Action.PICKUP_PLANT and node.action_successful) or (node.curr_action[0] == Action.PICKUP_POT and not node.action_successful):
             pot_id = find_closest(node, POTS_POS, node.remaining_pots, coeffs=coeffs)

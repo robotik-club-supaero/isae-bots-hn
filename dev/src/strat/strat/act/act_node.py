@@ -36,8 +36,7 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from geometry_msgs.msg import Quaternion, Pose2D
 
-from .an_const import  DoorCallback, ElevatorCallback, DspCallback, ArmCallback, LoadDetectorCallback, \
-                    ClampCallback, COLOR
+from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
@@ -67,13 +66,13 @@ class ActionNode(Node):
         self.disp_pub = self.create_publisher(Quaternion, '/dsp/order/next_move', latch_profile)
         self.stop_teensy_pub = self.create_publisher(Quaternion, '/stop_teensy', latch_profile)
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)
-
-        # SPECIFIC TO CURRENT YEAR [2024] [TODO obsolete]
-        self.doors_pub = self.create_publisher(Int16, '/act/order/doors', latch_profile)
-        self.elevator_pub = self.create_publisher(Int16, '/act/order/elevator', latch_profile)
-        self.left_arm_pub = self.create_publisher(Int16, '/act/order/left_arm', latch_profile)
-        self.right_arm_pub = self.create_publisher(Int16,'/act/order/right_arm', latch_profile)
-        self.clamp_pub = self.create_publisher(Int16, '/act/order/clamp', latch_profile)
+        
+        # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
+        self.clamp_1_pub = self.create_publisher(Int16, '/act/order/clamp_1', latch_profile)
+        self.clamp_2_pub = self.create_publisher(Int16, '/act/order/clamp_2', latch_profile)
+        self.elevator_1_pub = self.create_publisher(Int16, '/act/order/elevator_1', latch_profile)
+        self.elevator_2_pub = self.create_publisher(Int16, '/act/order/elevator_2', latch_profile)
+        self.banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
         self.deposit_pub = self.create_publisher(Empty, '/simu/deposit_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
 
         """
@@ -88,14 +87,12 @@ class ActionNode(Node):
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, 10)
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, 10)
 
-        # SPECIFIC TO CURRENT YEAR [2024] [TODO obsolete]
-        self.doors_sub = self.create_subscription(Int16, '/act/callback/doors', self.cb_doors_fct, 10)
-        self.elevator_sub = self.create_subscription(Int16, '/act/callback/elevator', self.cb_elevator_fct, 10)
-        self.left_arm_sub = self.create_subscription(Int16, '/act/callback/left_arm', self.cb_left_arm_fct, 10)
-        self.right_arm_sub = self.create_subscription(Int16, '/act/callback/right_arm', self.cb_right_arm_fct, 10)
-        self.clamp_sub = self.create_subscription(Int16, '/act/callback/clamp', self.cb_clamp_fct, 10)
-
-        self.load_detector = self.create_subscription(Int16, '/act/callback/load_detector', self.cb_load_detector, 10) # TODO
+        # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
+        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.cb_clamp_1_fct, 10)
+        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.cb_clamp_2_fct, 10)
+        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.cb_elevator_1_fct, 10)
+        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.cb_elevator_2_fct, 10)
+        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.cb_banderolle_fct, 10)
 
         self._blackboard = Blackboard()
 
@@ -150,7 +147,7 @@ class ActionNode(Node):
         except KeyError:
             self.get_logger().info(Color.RED + "Wrong debugPrint color" + Color.RESET)
             return
-        
+    
     def debug_print_move(quaternion):
         debug_print('c*', f"({quaternion.x}, {quaternion.y}, {quaternion.z}, {quaternion.w})")
 
@@ -167,7 +164,6 @@ class ActionNode(Node):
         if self.setupComplete:
             self.smData["start"] = (msg.data == 1)
 
-
     def setup_color(self, msg):
         """
         Callback function from topic /sm/color.
@@ -180,7 +176,6 @@ class ActionNode(Node):
         else: 
             self.smData["color"] = msg.data
             self.get_logger().info("Received color : {}".format(COLOR[self.smData["color"]]))
-
 
     def cb_next_action(self, msg):
         """
@@ -200,7 +195,7 @@ class ActionNode(Node):
         if Action(msg.data[0]) not in ACTIONS_OUTCOMES:
             self.get_logger().error(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
             return
-
+    
     def cb_depl_fct(self, msg):
         """
         Callback of displacement result from Disp Node.
@@ -215,37 +210,35 @@ class ActionNode(Node):
         if self.setupComplete:
             self.smData["robot_pos"] = msg
 
-
-    def cb_doors_fct(self, msg):
-        """
-        Callback of the state of the doors (opened or closed)
-        """
+    def cb_clamp_1_fct(self, msg):
         if self.setupComplete:
-            self.smData["cb_doors"] = DoorCallback.parse(msg.data)
+            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
+    
+    def cb_clamp_2_fct(self, msg):
+        if self.setupComplete:
+            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
 
-    def cb_elevator_fct(self, msg):
+    def cb_elevator_1_fct(self, msg):
         """
         Callback of the state of the elevator (for the cakes)
         """
         if self.setupComplete:
-            self.smData["cb_elevator"] = ElevatorCallback.parse(msg.data)
-
-    def cb_left_arm_fct(self, msg):
+            self.smData["cb_elevator_1"] = ElevatorCallback.parse(msg.data)
+        
+    def cb_elevator_2_fct(self, msg):
+        """
+        Callback of the state of the elevator (for the cakes)
+        """
         if self.setupComplete:
-            self.smData["cb_left_arm"] = ArmCallback.parse(msg.data)
-
-    def cb_right_arm_fct(self, msg):
+            self.smData["cb_elevator_2"] = ElevatorCallback.parse(msg.data)
+    
+    def cb_banderolle_fct(self, msg):
+        """
+        Callback of the state of the elevator (for the cakes)
+        """
         if self.setupComplete:
-            self.smData["cb_right_arm"] = ArmCallback.parse(msg.data)
-
-    def cb_clamp_fct(self, msg):
-        if self.setupComplete:
-            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
-
-    def cb_load_detector(self, msg):
-        if self.setupComplete:
-            self.smData["cb_load_detector"] = LoadDetectorCallback.parse(msg.data)
-
+            self.smData["cb_banderolle"] = BanderolleCallback.parse(msg.data)
+    
     def cb_park_fct(self, msg):
         """
         Callback function to update sm variable XXXXX.
@@ -281,7 +274,7 @@ def main():
     rclpy.init(args=sys.argv)
     
     node = ActionNode()
-
+    
     time.sleep(1)  # NOTE : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
 
     try:

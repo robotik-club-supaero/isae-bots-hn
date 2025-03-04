@@ -121,16 +121,6 @@ class DspCallback(Callback):
     PATH_BLOCKED = 1
     RESTART = 2 # DEPRECATED - no longer published TODO cleanup
     DESTINATION_BLOCKED = 3
-     
-class DoorOrder(IntEnum):
-    OPEN = 0
-    CLOSE = 1
-    
-class DoorCallback(Callback):
-    UNKNOWN = -2
-    PENDING = -1
-    CLOSED = 0
-    OPEN = 1
     
 class ElevatorOrder(IntEnum):
     MOVE_UP = 1
@@ -152,33 +142,24 @@ class ClampCallback(Callback):
     OPEN = 0
     CLOSED = 1
 
-class ArmOrder(IntEnum):
-    EXTEND = 1
-    RETRACT = 2
+class Banderolle(IntEnum):
+    LAUNCH = 1
 
-class ArmCallback(Callback):
+class BanderolleCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
-    EXTENDED = 1
-    RETRACTED = 2
-
-class LoadDetectorCallback(Callback):
-    UNKNOWN = -2
-    EMPTY = 0
-    LOADED = 1
-
+    STORED = 1
+    LAUNCHED = 2
 
 ## I/O keys for states of the sm
 USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
     'cb_depl',
-    'cb_left_arm',
-    'cb_right_arm',
-    'cb_elevator',
-    'cb_clamp',
-    'cb_doors',
-    'cb_load_detector',
+    'cb_elevator_1',
+    'cb_elevator_2'
+    'cb_clamp_1',
+    'cb_clamp_2',
     'robot_pos',
     'arm_order',
     'depositArea',

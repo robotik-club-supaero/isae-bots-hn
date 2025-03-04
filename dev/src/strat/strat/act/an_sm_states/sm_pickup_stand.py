@@ -25,7 +25,7 @@ import time
 from std_msgs.msg import String
 
 from ..an_const import R_APPROACH_POTS, R_TAKE_POTS, DspOrderMode
-from ..an_utils import Sequence, Concurrence, OpenDoors, CloseDoors, OpenClamp, RiseElevator, DescendElevator
+from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendElevator
 
 from strat.strat_const import POTS_POS, ActionResult
 from strat.strat_utils import create_end_of_action_msg
@@ -40,7 +40,7 @@ from .sm_waiting import ObsWaitingOnce
 #                                                               #
 #################################################################
 
-class CalcPositionningPots(yasmin.State):
+class CalcPositionningPots(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -59,7 +59,7 @@ class CalcPositionningPots(yasmin.State):
         return 'success'
 
 
-class CalcTakePots(yasmin.State):
+class CalcTakePots(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -73,7 +73,7 @@ class CalcTakePots(yasmin.State):
              
         return 'success'
  
-class PickupPotsEnd(yasmin.State):
+class PickupPotsEnd(yasmin.State): # TODO
     
     def __init__(self, callback_action_pub):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -87,11 +87,11 @@ class PickupPotsEnd(yasmin.State):
     
 #################################################################
 #                                                               #
-#                        SM STATE : PICKUP_POTS                 #
+#                        SM STATE : PICKUP_STAND                #
 #                                                               #
 #################################################################
 
-class _PickupPlotSequence(Sequence):
+class _PickupStandSequence(Sequence): # TODO
     def __init__(self, node):
         super().__init__(states=[
             ('OPEN_DOORS', OpenDoors(node)),
@@ -103,13 +103,13 @@ class _PickupPlotSequence(Sequence):
             ('RISE_ELEVATOR', RiseElevator(node)),
         ])
 
-class PickupPlot(Sequence):
+class PickupStand(Sequence): # TODO
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_POTS', MoveTo(node, CalcPositionningPots(node))),
             ('PICKUP_POTS_CONC', Concurrence(
                 DEPL_SEQ = MoveTo(node, CalcTakePots(node)),
-                PICKUP_POT_SEQ = _PickupPlotSequence(node),
+                PICKUP_POT_SEQ = _PickupStandSequence(node),
             )),
             ('PICKUP_POTS_END', PickupPotsEnd(node.callback_action_pub)),
     ])

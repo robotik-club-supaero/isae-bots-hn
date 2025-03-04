@@ -28,10 +28,8 @@ from geometry_msgs.msg import Quaternion, Pose2D
 
 # import les states de la SM
 from .an_sm_states.sm_park import Park
-from .an_sm_states.sm_turn_solar import TurnPanel
-from .an_sm_states.sm_pickup_plants import PickupPlant
-from .an_sm_states.sm_pickup_pots import PickupPlot
-from .an_sm_states.sm_deposit_pots import DepositPot
+from .an_sm_states.sm_pickup_stand import PickupStand
+from .an_sm_states.sm_deposit_stand import DepositStand
 from .an_sm_states.sm_waiting import waiting
 
 from .an_const import *
@@ -68,13 +66,11 @@ class Setup(yasmin.State):
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
         userdata["robot_pos"] = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
-        userdata["cb_left_arm"] = ArmCallback.PENDING   # state of the arm
-        userdata["cb_right_arm"] = ArmCallback.PENDING  # state of the arm
-        userdata["cb_doors"] = DoorCallback.PENDING	# state of the doors
-        userdata["cb_clamp"] = ClampCallback.PENDING # state of the clamp
-        userdata["cb_elevator"] = ElevatorCallback.PENDING # state of the elevator
-        userdata["cb_load_detector"] = LoadDetectorCallback.EMPTY # whether the robot carries something # TODO no hardware to detect it
-
+        userdata["cb_clamp_1"] = ClampCallback.PENDING # state of the clamp
+        userdata["cb_clamp_2"] = ClampCallback.PENDING # state of the clamp
+        userdata["cb_elevator_1"] = ElevatorCallback.PENDING # state of the elevator
+        userdata["cb_elevator_2"] = ElevatorCallback.PENDING # state of the elevator
+        
         ## Game infos variables
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
         userdata["next_move"] = create_quaternion(x=-1, y=-1, z=-1, w=-1)
@@ -101,7 +97,7 @@ class Setup(yasmin.State):
 #                                                               #
 #################################################################
 
-class Repartitor(yasmin.State):
+class Repartitor(yasmin.State): # TO UPDATE
     """
     STATE MACHINE : Dispatch actions between sm substates.
     """
@@ -161,12 +157,12 @@ class End(yasmin.State):
 #                                                               #
 #################################################################
 
-class ActionStateMachine(yasmin.StateMachine):
+class ActionStateMachine(yasmin.StateMachine): # TODO
     def __init__(self, node):
         super().__init__(outcomes=['exit all', 'exit preempted'])
         self._viewers = []
         self._node = node
-
+        
         # Primary States
         self.add_state('SETUP', Setup(node), transitions={'preempted':'END','start':'REPARTITOR'})
         self.add_state('REPARTITOR', Repartitor(node.get_logger(), node.repartitor_pub),
@@ -180,9 +176,9 @@ class ActionStateMachine(yasmin.StateMachine):
 
         self.add_submachine('PICKUPPLANT', PickupPlant(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('PICKUPPOT', PickupPlot(node),
+        self.add_submachine('PICKUPPOT', PickupStand(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('DEPOSITPOT', DepositPot(node),
+        self.add_submachine('DEPOSITPOT', DepositStand(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
 
         # Other States

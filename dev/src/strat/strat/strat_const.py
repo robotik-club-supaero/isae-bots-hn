@@ -29,38 +29,34 @@ class ActionResult(IntEnum):
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    PICKUP_CAN = 0
-    DEPOSIT_CAN = 1
-    PICKUP_PLANCK   = 2
-    DEPOSIT_PLANCK =  3
-    CLEAR_TOP_PLANCK = 4
-    PARK         = 5
-    WAIT         = 6
-    END          = 7
+    PICKUP_STAND_1 = 0
+    PICKUP_STAND_2 = 1
+    DEPOSIT_STAND = 2
+    DEPOSIT_BANDEROLLE = 3
+    PARK         = 4
+    WAIT         = 5
+    END          = 6
 
 
 ACTIONS_OUTCOMES = {
-    Action.PICKUP_CAN: 'pickupCan',
-    Action.DEPOSIT_CAN: 'depositCan',
-    Action.PICKUP_PLANCK: 'pickupPlanck',
-    Action.DEPOSIT_PLANCK: 'depositPlanck',
-    Action.CLEAR_TOP_PLANCK: 'clearTopPlanck',
+    Action.PICKUP_STAND_1: 'pickupStand_1',
+    Action.PICKUP_STAND_2: 'pickupStand_2',
+    Action.DEPOSIT_STAND: 'depositStand',
+    Action.DEPOSIT_BANDEROLLE: 'depositBanderolle',
     Action.PARK: 'park',
     Action.END: 'end',
     Action.WAIT: 'waiting',
 }
 
 ACTION_TRANSITIONS = {
-    'pickupCan': 'PICKUP_CAN',
-    'depositCan':'DEPOSIT_CAN',
-    'pickupPlanck': 'PICKUP_PLANCK',
-    'depositPlanck': 'DEPOSIT_PLANCK',
-    'clearTopPlanck': 'CLEAR_TOP_PLANCK',
+    'pickupStand_1': 'PICKUP_STAND_1',
+    'pickupStand_2':'PICKUP_STAND_2',
+    'depositStand': 'DEPOSIT_STAND',
+    'depositBanderolle': 'DEPOSIT_BANDEROLLE',
     'park':'PARK',
     'end':'END',
     'waiting':'WAITING',
 }
-
 
 class ActionScore(IntEnum): #TODO update
     SCORE_INIT = 0

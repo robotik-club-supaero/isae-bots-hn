@@ -7,7 +7,7 @@ from threading import Thread, Lock
 
 from std_msgs.msg import Int16
 
-from .an_const import DoorOrder, DoorCallback, ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
+from .an_const import ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
 
 #################################################################
 # Colors gestion												#
@@ -64,66 +64,50 @@ class HardwareOrder(yasmin.State):
         
         # timeout
         self._logger.warning(f"Timeout while waiting for response from hardware for order {self._order}")        
-        return 'fail'
-     
-class OpenDoors(HardwareOrder):
-    
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.doors_pub, 'cb_doors', DoorOrder.OPEN, DoorCallback.PENDING, DoorCallback.OPEN)
-        self._debug_print = node.debug_print
-    
-    def execute(self, userdata):
-        self._debug_print('c', "Request to open doors")
-        return super().execute(userdata)
-    
-class CloseDoors(HardwareOrder):
-    
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.doors_pub, 'cb_doors', DoorOrder.CLOSE, DoorCallback.PENDING, DoorCallback.CLOSED)
-        self._debug_print = node.debug_print
-
-    def execute(self, userdata):
-        self._debug_print('c', "Request to close doors")
-        return super().execute(userdata)    
+        return 'fail' 
    
 class RiseElevator(HardwareOrder):
     
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.elevator_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
         self._debug_print = node.debug_print
+        self.etage = etage
         
     def execute(self, userdata):        
-        self._debug_print('c', "Request to move elevator up")
+        self._debug_print('c', f"Request to move elevator n°{self.etage} up")
         return super().execute(userdata)
  
 class DescendElevator(HardwareOrder):
     
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.elevator_pub, 'cb_elevator', ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.elevator_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
         self._debug_print = node.debug_print
-        
+        self.etage = etage
+    
     def execute(self, userdata):        
-        self._debug_print('c', "Request to move elevator down")
+        self._debug_print('c', f"Request to move elevator n°{self.etage} down")
         return super().execute(userdata)
 
 class OpenClamp(HardwareOrder):
     
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.clamp_pub, 'cb_clamp', ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.clamp_pub, f"cb_clamp_{etage}", ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
         self._debug_print = node.debug_print
-        
+        self.etage = etage
+    
     def execute(self, userdata):        
-        self._debug_print('c', "Request to open clamp")
+        self._debug_print('c', f"Request to open clamp n°{self.etage}")
         return super().execute(userdata)
        
 class CloseClamp(HardwareOrder):
     
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.clamp_pub, 'cb_clamp', ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.clamp_pub, f"cb_clamp_{etage}", ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
         self._debug_print = node.debug_print
-        
+        self.etage = etage
+    
     def execute(self, userdata):        
-        self._debug_print('c', "Request to close clamp")
+        self._debug_print('c', f"Request to close clamp n°{self.etage}")
         return super().execute(userdata)
 
 class Sequence(yasmin.StateMachine):

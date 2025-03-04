@@ -24,7 +24,7 @@ import time
 from std_msgs.msg import Empty
 
 from ..an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
-from ..an_utils import Sequence, OpenDoors, CloseDoors
+from ..an_utils import Sequence, DescendElevator, OpenClamp
 
 from strat.strat_const import DEPOSIT_POS
 from strat.strat_utils import adapt_pos_to_side, create_end_of_action_msg
@@ -37,7 +37,7 @@ from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_ap
 #################################################################
 
 
-class CalcPositionningPots(yasmin.State):
+class CalcPositionningPots(yasmin.State): # DEPRECATED TODO
 
     def __init__(self, get_pickup_id):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
@@ -55,7 +55,7 @@ class CalcPositionningPots(yasmin.State):
 # TODO find a better way
 
 
-class ReportDeposit(yasmin.State):
+class ReportDeposit(yasmin.State): # DEPRECATED TODO
     def __init__(self, deposit_pub):
         super().__init__(outcomes=['success'])
         self._deposit_pub = deposit_pub
@@ -65,7 +65,7 @@ class ReportDeposit(yasmin.State):
         return 'success'
 
 
-class DepositPotsEnd(yasmin.State):
+class DepositPotsEnd(yasmin.State): # DEPRECATED TODO
 
     def __init__(self, callback_action_pub):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
@@ -84,7 +84,7 @@ class DepositPotsEnd(yasmin.State):
 #################################################################
 
 
-class DepositPot(Sequence):
+class DepositStand(Sequence): # DEPRECATED TODO
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_POTS', MoveTo(node, CalcPositionningPots(node.get_pickup_id))),

@@ -1,4 +1,3 @@
-
 import yasmin
 from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR
 yasmin.YASMIN_LOG_DEBUG = lambda text: None # Yasmin is very verbose and would flood the terminal

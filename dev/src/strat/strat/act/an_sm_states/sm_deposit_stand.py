@@ -48,7 +48,7 @@ class CalcPositionningStand(yasmin.State): # DEPRECATED TODO
         pots_id = self._get_pickup_id("deposit pots", userdata)
 
         xp, yp, thetap = DEPOSIT_POS[pots_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_POTS)
+        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_STAND)
 
         return 'success'
 

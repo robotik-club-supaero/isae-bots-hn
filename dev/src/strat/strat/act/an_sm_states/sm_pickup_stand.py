@@ -68,7 +68,7 @@ class CalcTakeStand(yasmin.State): # TODO
     def execute(self, userdata):    
         pots_id = self._node.get_pickup_id("stand", userdata)
 
-        xp, yp, thetap = POTS_POS[pots_id]
+        xp, yp, thetap = STAND_POS[pots_id]
         userdata["next_move"] = colored_approach_with_angle(userdata["stand"], xp, yp, thetap, R_TAKE_STAND)
              
         return 'success'
@@ -95,7 +95,7 @@ class _PickupStandSequence(Sequence): # TODO
     def __init__(self, node, etage):
         super().__init__(states=[
             ('OPEN_CLAMP', OpenClamp(node, etage)),
-            ('RISE_ELEVATOR', DescendElevator(node, etage)),
+            ('DESCEND_ELEVATOR', DescendElevator(node, etage)),
             ('CLOSE_CLAMP', CloseClamp(node, etage)),
             ('RISE_ELEVATOR', RiseElevator(node, etage)),
         ])

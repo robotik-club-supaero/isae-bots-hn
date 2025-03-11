@@ -74,7 +74,6 @@ class ActionNode(Node):
         self.elevator_2_pub = self.create_publisher(Int16, '/act/order/elevator_2', latch_profile)
         self.banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
         self.deposit_pub = self.create_publisher(Empty, '/simu/deposit_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
-
         """
         Initialize all subscribers of AN
         """

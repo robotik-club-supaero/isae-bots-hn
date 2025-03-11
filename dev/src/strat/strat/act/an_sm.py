@@ -169,23 +169,23 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions=dict(ACTION_TRANSITIONS, **{'preempted':'END'}))
         self.add_state('END', End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
                         transitions={'end':'exit all','preempted':'exit preempted'})
+        self.add_state('WAITING', waiting,
+                        transitions={'preempted':'END','success':'REPARTITOR'})
 
         # Specific Action States
-        self.add_submachine('TURNPANEL', TurnPanel(node),
+        self.add_submachine('DEPOSIT_STAND', DepositStand(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-
-        self.add_submachine('PICKUPPLANT', PickupPlant(node),
+        self.add_submachine('PICKUP_STAND_1', PickupStand(node, 1),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('PICKUPPOT', PickupStand(node),
+        self.add_submachine('PICKUP_STAND_2', PickupStand(node, 2),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('DEPOSITPOT', DepositStand(node),
+        self.add_submachine('DEPOSIT_BANDEROLLE', Banderolle(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-
+        
         # Other States
         self.add_submachine('PARK', Park(node),
                         transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
-        self.add_state('WAITING', waiting,
-                        transitions={'preempted':'END','success':'REPARTITOR'})
+        
 
     def add_submachine(self, name, machine, transitions):
         self.add_state(name, machine, transitions)

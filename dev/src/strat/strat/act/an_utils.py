@@ -52,7 +52,7 @@ class HardwareOrder(yasmin.State):
         while time.perf_counter() - begin < self._timeout:
             
             if self.is_canceled():
-                return 'preempted'       
+                return 'preempted'   
 
             response = userdata[self._cb_key]
             if response == self._expected:

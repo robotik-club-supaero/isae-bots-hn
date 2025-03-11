@@ -64,7 +64,7 @@ class ActionScore(IntEnum): #TODO update
     SCORE_DEPOSIT_PLANCK = 4
     SCORE_COCCINELLE = 5
 
-CAN_POS = [
+STAND_POS = [
     list(literal_eval(READER.get("MAP", "pickup_can_pos"))),
 ]
 

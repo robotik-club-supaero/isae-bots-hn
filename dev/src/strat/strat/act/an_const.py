@@ -51,28 +51,11 @@ ROBOT_LARG = int(READER.get('ROBOT', 'robot_larg'))
 ROBOT_LONG = int(READER.get('ROBOT', 'robot_long'))
 ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
-DOORS_SHIFT = ROBOT_DIAG//2 + 30
-ARM_SHIFT = ROBOT_DIAG//2 + 30
-
-
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5
-R_APPROACH_PLANTS = 300   #rayon du cercle d'approche des plantes
-R_APPROACH_POTS = 200 # TODO change value
-R_TAKE_POTS = 100 # TODO change value
+R_APPROACH_STAND = 200 # TODO change value
+R_TAKE_STAND = 100 # TODO change value
 
-
-EDGE_DIST = 20 # when turning panel
-R_APPROACH_PANEL = 100 # TODO change value
-
-SOLAR_POS = [
-    2726,
-    2504,
-    2276,
-    1729,
-    1498,
-    1276,
-]
 
 #################################################################
 #                                                               #
@@ -161,7 +144,6 @@ USERDATA_VAR_LIST = [ #TODO update
     'cb_clamp_1',
     'cb_clamp_2',
     'robot_pos',
-    'arm_order',
     'depositArea',
     'next_action',
     'next_move',

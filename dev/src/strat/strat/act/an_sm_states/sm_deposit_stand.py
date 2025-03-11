@@ -23,8 +23,8 @@ import math
 import time
 from std_msgs.msg import Empty
 
-from ..an_const import DspOrderMode, DspCallback, R_APPROACH_POTS
-from ..an_utils import Sequence, DescendElevator, OpenClamp
+from ..an_const import DspOrderMode, DspCallback, R_APPROACH_STAND
+from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurrence
 
 from strat.strat_const import DEPOSIT_POS
 from strat.strat_utils import adapt_pos_to_side, create_end_of_action_msg
@@ -37,7 +37,7 @@ from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_ap
 #################################################################
 
 
-class CalcPositionningPots(yasmin.State): # DEPRECATED TODO
+class CalcPositionningStand(yasmin.State): # DEPRECATED TODO
 
     def __init__(self, get_pickup_id):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
@@ -65,7 +65,7 @@ class ReportDeposit(yasmin.State): # DEPRECATED TODO
         return 'success'
 
 
-class DepositPotsEnd(yasmin.State): # DEPRECATED TODO
+class DepositStandEnd(yasmin.State): # DEPRECATED TODO
 
     def __init__(self, callback_action_pub):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
@@ -84,13 +84,18 @@ class DepositPotsEnd(yasmin.State): # DEPRECATED TODO
 #################################################################
 
 
-class DepositStand(Sequence): # DEPRECATED TODO
+class DepositStand(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('DEPL_POSITIONING_POTS', MoveTo(node, CalcPositionningPots(node.get_pickup_id))),
-            ('OPEN_DOORS', OpenDoors(node)),
+            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node.get_pickup_id))),
+            ('DESCEND_ELEVATORS', Concurrence(
+                    ELEVATOR_1 = DescendElevator(node, 1),
+                    ELEVATOR_2 = DescendElevator(node, 2)
+            )),
+            ('OPEN_CLAMPS', Concurrence(
+                    CLAMP_1 = OpenClamp(node, 1),
+                    CLAMP_2 = OpenClamp(node, 2)
+            )), 
             ('REPORT_TO_INTERFACE', ReportDeposit(node.deposit_pub)),
-            ('RELEASE_POTS', MoveBackwardsStraight(node, dist=R_APPROACH_POTS)),  # TODO change dist
-            ('CLOSE_DOORS', CloseDoors(node)),
-            ('DEPOSIT_POTS_END',  DepositPotsEnd(node.callback_action_pub)),
+            ('DEPOSIT_POTS_END',  DepositStandEnd(node.callback_action_pub)),
         ])

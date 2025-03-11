@@ -212,11 +212,11 @@ class ActionNode(Node):
 
     def cb_clamp_1_fct(self, msg):
         if self.setupComplete:
-            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
+            self.smData["cb_clamp_1"] = ClampCallback.parse(msg.data)
     
     def cb_clamp_2_fct(self, msg):
         if self.setupComplete:
-            self.smData["cb_clamp"] = ClampCallback.parse(msg.data)
+            self.smData["cb_clamp_2"] = ClampCallback.parse(msg.data)
 
     def cb_elevator_1_fct(self, msg):
         """
@@ -255,7 +255,7 @@ class ActionNode(Node):
 
     def get_pickup_id(self, what, userdata):
         try:
-            return userdata["next_action"][1]
+            return userdata["next_action"][1] # userdata["next_action"] = [Enum Action, argument optionnelle] ici l'id du truc a prendre
         except IndexError:
             self.get_logger().warning(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
             return 0

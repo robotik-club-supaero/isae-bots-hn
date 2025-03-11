@@ -24,10 +24,10 @@ import time
 
 from std_msgs.msg import String
 
-from ..an_const import R_APPROACH_POTS, R_TAKE_POTS, DspOrderMode
-from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendElevator
+from ..an_const import R_APPROACH_STAND, R_TAKE_STAND, DspOrderMode
+from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendElevator, CloseClamp
 
-from strat.strat_const import POTS_POS, ActionResult
+from strat.strat_const import STAND_POS, ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
 
@@ -40,40 +40,40 @@ from .sm_waiting import ObsWaitingOnce
 #                                                               #
 #################################################################
 
-class CalcPositionningPots(yasmin.State): # TODO
+class CalcPositionningStand(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
         self._node = node
         self._msg = String()
-        
+    
     def execute(self, userdata):    
-        pots_id = self._node.get_pickup_id("pots", userdata)
+        stand_id = self._node.get_pickup_id("stand", userdata)
 
-        self._msg.data = f"pot{pots_id}"
+        self._msg.data = f"stand{stand_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        xp, yp, thetap = POTS_POS[pots_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_POTS)
+        xp, yp, thetap = STAND_POS[stand_id]
+        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_STAND)
              
         return 'success'
 
 
-class CalcTakePots(yasmin.State): # TODO
+class CalcTakeStand(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
         self._node = node
         
     def execute(self, userdata):    
-        pots_id = self._node.get_pickup_id("pots", userdata)
+        pots_id = self._node.get_pickup_id("stand", userdata)
 
         xp, yp, thetap = POTS_POS[pots_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_TAKE_POTS)
+        userdata["next_move"] = colored_approach_with_angle(userdata["stand"], xp, yp, thetap, R_TAKE_STAND)
              
         return 'success'
  
-class PickupPotsEnd(yasmin.State): # TODO
+class PickupStandEnd(yasmin.State): # TODO
     
     def __init__(self, callback_action_pub):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -92,24 +92,23 @@ class PickupPotsEnd(yasmin.State): # TODO
 #################################################################
 
 class _PickupStandSequence(Sequence): # TODO
-    def __init__(self, node):
+    def __init__(self, node, etage):
         super().__init__(states=[
-            ('OPEN_DOORS', OpenDoors(node)),
-            ('KEEP_OPEN', ObsWaitingOnce(wait_time=0.2)),
-            ('CLOSE_DOORS', CloseDoors(node)), # gather pots
-            # TODO check the robot has actually picked up pots
-            ('POT_PLANTS', DescendElevator(node)), # put grabbed plants into pots
-            ('RELEASE_PLANTS', OpenClamp(node)),
-            ('RISE_ELEVATOR', RiseElevator(node)),
+            ('OPEN_CLAMP', OpenClamp(node, etage)),
+            ('RISE_ELEVATOR', DescendElevator(node, etage)),
+            ('CLOSE_CLAMP', CloseClamp(node, etage)),
+            ('RISE_ELEVATOR', RiseElevator(node, etage)),
         ])
 
 class PickupStand(Sequence): # TODO
-    def __init__(self, node):
+    def __init__(self, node, etage):
         super().__init__(states=[
-            ('DEPL_POSITIONING_POTS', MoveTo(node, CalcPositionningPots(node))),
-            ('PICKUP_POTS_CONC', Concurrence(
-                DEPL_SEQ = MoveTo(node, CalcTakePots(node)),
-                PICKUP_POT_SEQ = _PickupStandSequence(node),
-            )),
-            ('PICKUP_POTS_END', PickupPotsEnd(node.callback_action_pub)),
-    ])
+            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
+            ('PICKUP_STAND_CONC', 
+                Concurrence(
+                    DEPL_SEQ = MoveTo(node, CalcTakeStand(node)),
+                    PICKUP_POT_SEQ = _PickupStandSequence(node, etage),
+                )),
+            ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub)),
+            ])
+        self.etage = etage

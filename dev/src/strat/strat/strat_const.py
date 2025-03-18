@@ -65,16 +65,11 @@ class ActionScore(IntEnum): #TODO update
     SCORE_COCCINELLE = 5
 
 STAND_POS = [
-    list(literal_eval(READER.get("MAP", "pickup_can_pos"))),
+    list(literal_eval(READER.get("MAP", "pickup_stand_pos_1"))),
 ]
-
-PLANCK_POS = [
-    list(literal_eval(READER.get("MAP", "pickup_planck_pos"))),
-]
-
 
 DEPOSIT_POS = [
-	list(literal_eval(READER.get("MAP", "deposit_pos"))),
+	list(literal_eval(READER.get("MAP", "deposit_pos_1"))),
 ]
 
 PARK_POS = [

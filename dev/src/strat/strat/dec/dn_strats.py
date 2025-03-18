@@ -19,7 +19,7 @@
 #################################################################
 
 import time
-from .dn_const import PLANTS_POS, POTS_POS, DEPOSIT_POS, PARK_POS
+from .dn_const import STAND_POS, DEPOSIT_POS, PARK_POS
 import numpy as np
 
 from ..strat_const import Action, ActionScore
@@ -31,7 +31,7 @@ from ..strat_utils import adapt_pos_to_side
 #                                                               #
 #################################################################
 
-PLANT_THRESHOLD = 0
+STAND_THRESHOLD = 0
 
 #################################################################
 #                                                               #
@@ -60,24 +60,6 @@ def homologation(node):
         -
         -
     """
-    
-   # if node.go_park or node.solar_panels[2]:
-   #     node.curr_action = [Action.PARK, 0]
-  #  if not node.solar_panels[0]:
-   #     node.curr_action = [Action.TURN_SOLAR_PANEL, 0]
-  #  elif not node.solar_panels[1]:
-  #      node.curr_action = [Action.TURN_SOLAR_PANEL, 1]
-   # elif not node.solar_panels[2]:
-  #      node.curr_action = [Action.TURN_SOLAR_PANEL, 2]
-
- #   node.publishAction()
- #   return
-
-   # node.nb_actions += 1
-   # if node.nb_actions == 1:
-   #     node.curr_action = [Action.PICKUP_PLANT, 4]
-
-   # if node.nb_actions == 2:
     node.curr_action = [Action.PARK, 2]
 
     node.publishAction()
@@ -94,7 +76,7 @@ def match_strat(node):
     """
     
     def find_closest(node, positions, remaining, cond=None, relative=True, coeffs=1):
-        if cond is None: cond = lambda cluster: remaining[cluster] > PLANT_THRESHOLD
+        if cond is None: cond = lambda cluster: remaining[cluster] > STAND_THRESHOLD
         x, y, _ = adapt_pos_to_side(*node.position, node.color) if relative else node.position
         dists = coeffs * np.linalg.norm(np.array([x,y]) - positions, axis=1)
         clusters = np.argsort(dists)
@@ -106,14 +88,7 @@ def match_strat(node):
     time.sleep(0.01)
 
     if not node.go_park:
-
-        if node.curr_action[0] == Action.TURN_SOLAR_PANEL:
-            if node.curr_action[1] < 5 and node.action_successful:
-                node.curr_action[1] += 1
-                node.publishAction()
-                return
-            # else change action, retry later
-
+        
         coeffs = np.ones(6)
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
             if node.retry_count < 3:
@@ -122,44 +97,46 @@ def match_strat(node):
             elif len(node.curr_action) >= 2:
                 coeffs[node.curr_action[1]] = 999 # penalise
 
-        if (node.curr_action[0] == Action.PICKUP_PLANT and node.action_successful) or (node.curr_action[0] == Action.PICKUP_POT and not node.action_successful):
-            pot_id = find_closest(node, POTS_POS, node.remaining_pots, coeffs=coeffs)
-            if pot_id is not None:
-                node.curr_action = [Action.PICKUP_POT, pot_id]
-                node.get_logger().info("Next action order : Pickup Pots")
-                node.publishAction()        
+        if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):
+            if not node.action_successful: # Continue to search for stand
+                stand_id = find_closest(node, STAND_POS, node.remaining_pots, coeffs=coeffs)
+                if stand_id is not None:
+                    node.curr_action[1] = stand_id
+                    node.get_logger().info(f"Next action order : Pickup Stand n°{stand_id}")
+                    node.publishAction()        
+                    return
+                else:
+                    node.get_logger().info("No stand found to pick up !")
                 return
-            else:
-                node.get_logger().info("No more pot to pick up")
-            return
+            elif node.action_successful and node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked
+                node.remaining_pots.remove(node.curr_action[1])
+                node.curr_action = [Action.PICKUP_STAND_2, find_closest(node, STAND_POS, node.remaining_pots, coeffs=coeffs)]
+            elif node.action_successful and node.curr_action[0] == Action.PICKUP_STAND_1: # bottom stand picked
+                node.remaining_pots[node.curr_action[1]] = 0
+                node.curr_action = [Action.PICKUP_STAND_2, find_closest(node, STAND_POS, node.remaining_pots, coeffs=coeffs)]
 
-        if (node.curr_action[0] == Action.PICKUP_POT and node.action_successful) or (node.curr_action[0] == Action.DEPOSIT_POT and not node.action_successful):
-            pot_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=[1,1,0.3]*coeffs[:3]) # deposit in secure area first
-            if pot_id is not None:
-                node.curr_action = [Action.DEPOSIT_POT, pot_id]
-                node.get_logger().info("Next action order : Deposit Pots")
+        # Deposit
+        coeffs_deposit = np.ones(3)
+        if (node.curr_action[0] == Action.DEPOSIT_STAND and not node.action_successful):
+            deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=coeffs_deposit)
+            if deposit_id is not None:
+                node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
+                node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")
                 node.publishAction()        
                 return
             else:
                 node.get_logger().info("No more free slot to deposit")
 
-        if node.curr_action[0] == Action.DEPOSIT_POT:
-            for i in range(6):
-                if not node.solar_panels[i]:
-                    node.curr_action = [Action.TURN_SOLAR_PANEL, i]
-                    node.publishAction()
-                    return
+        # If no other action is applicable, defaulting to picking up stand
 
-        # If no other action is applicable, defaulting to picking up plant
-
-        plant_id = find_closest(node, PLANTS_POS, node.remaining_plants, coeffs=coeffs)
-        if plant_id is not None:
-            node.curr_action = [Action.PICKUP_PLANT, plant_id]
-            node.get_logger().info("Next action order : Pickup Plants")
+        stand_id = find_closest(node, STAND_POS, node.remaining_plants, coeffs=coeffs)
+        if stand_id is not None:
+            node.curr_action = [Action.PICKUP_STAND_2, stand_id]
+            node.get_logger().info("Next action order : Pickup Stand")
             node.publishAction()
             return
         else:
-            node.get_logger().info("No more plant to pick up")
+            node.get_logger().info("No more stand to pick up")
 
     if node.parked:
         node.get_logger().info("End of strategy : MATCH")
@@ -167,7 +144,7 @@ def match_strat(node):
         return
     
     # If no other action is applicable, go to park
-
+    
     zone = find_closest(node, PARK_POS, None, cond=lambda index: index != node.init_zone)
     node.curr_action = [Action.PARK, zone]
     node.get_logger().info("Next action order : Park")

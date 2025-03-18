@@ -70,18 +70,18 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-       
 
+        
         self.match_started = False
         self.color = 0
         self.score = ActionScore.SCORE_INIT.value
 
         self.start_time = 0
         self.match_time = int(READER.get("STRAT", "match_time"))
-        self.delay_park =  int(READER.get("STRAT", "delay_park"))
+        self.delay_park = int(READER.get("STRAT", "delay_park"))
         self.go_park = False
         self.parked = False
-
+        
         self.strat = int(READER.get("STRAT", "strat_default"))
         self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
         

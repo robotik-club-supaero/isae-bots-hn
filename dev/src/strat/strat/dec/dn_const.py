@@ -23,7 +23,7 @@ import configparser
 from enum import IntEnum, Enum
 import numpy as np
 
-from ..strat_const import PLANTS_POS as PLANTS_POS_RAW, POTS_POS as POTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW, PARK_POS as PARK_POS_RAW
+from ..strat_const import STAND_POS as PLANTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW, PARK_POS as PARK_POS_RAW
 
 READER = configparser.ConfigParser()
 READER.read(os.path.join(os.path.dirname(__file__),'../../../robot_config.cfg'))
@@ -45,11 +45,9 @@ COLOR = {
       1: 'AWAY'
 }
 
-PLANT_CAPACITY = 6
-CULTURE_SLOTS = 12 # per area
+STAND_CAPACITE = 2
 
-PLANTS_POS = np.array(PLANTS_POS_RAW)
-POTS_POS = np.array(POTS_POS_RAW)[:, :2]
+STAND_POS = np.array(PLANTS_POS_RAW)
 DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)[:, :2]
 PARK_POS = np.array(PARK_POS_RAW)[:, :2]
 

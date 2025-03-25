@@ -30,6 +30,7 @@ from geometry_msgs.msg import Quaternion, Pose2D
 from .an_sm_states.sm_park import Park
 from .an_sm_states.sm_pickup_stand import PickupStand
 from .an_sm_states.sm_deposit_stand import DepositStand
+from .an_sm_states.sm_banderolle import LaunchBanderolle
 from .an_sm_states.sm_waiting import waiting
 
 from .an_const import *
@@ -179,7 +180,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         self.add_submachine('PICKUP_STAND_2', PickupStand(node, 2),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('DEPOSIT_BANDEROLLE', Banderolle(node),
+        self.add_submachine('DEPOSIT_BANDEROLLE', LaunchBanderolle(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Other States

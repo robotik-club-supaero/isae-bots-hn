@@ -19,6 +19,7 @@ source /opt/ros/jazzy/setup.bash
 # Make the scripts to display logs executable
 chmod +x ./dev/src/uix/log/echo_logs.py
 chmod +x ./dev/src/uix/log/simTerm_rc.sh
+chmod +x ./dev/src/sim/sim/br/simulation_br
 
 # Why is this necessary?
 rm -rf /app/build/micro_ros_msgs/ament_cmake_python/micro_ros_msgs/micro_ros_msgs

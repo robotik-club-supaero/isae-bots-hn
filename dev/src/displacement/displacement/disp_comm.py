@@ -76,30 +76,13 @@ SIMULATION = True
 
 '''Dictionnaire des commandes envoyees a la Teensy'''
 
-CMD_TEENSY = {
-    "disp":                 1,      # Déplacement du robot vers un point (transitoire, pas le dernier)
-    "dispFinal":            0,      # Déplacement du robot vers un point final de traj
-    "stop":                 2,      # Arrête le mouvement
-    "accurate":             5,      # Déplacement précis du robot vers l'avant
-    "recalage":             6,      # Déplacement de type recalage arrière (bumper qu'à l'arrière(contre un bord du terrain typiquement))
-    "rotation":             9,      # Cas où on fait une rotation simple
-    "set":                  3,      # Fixe la position de départ
-    "wii":                  4,       # Cas d'utilisation de la manette wii
-    "marcheArr":            8,
-    "curvePoint":           20,
-    "curveStart":           21,
-    "curveStartReverse":    22,
-    "curveReset":           23,
-}
-
-
 '''Dictionnaire des commandes recues de la strat'''
 CMD_STRAT = {
     "standard":     0,        # Déplacement du robot vers un point
-    "noAvoidance":  1,     # On désactive l'évitement pour ces déplacements
+    "noAvoidance":  1,     # On désactive l'évitement pour ces déplacements # DEPRECATED
     "stop":         2,            # Arrête le mouvement
-    "accurate":     3,        # Déplacement précis du robot
-    "recalage":     4,        # Déplacement de type recalage (contre un bord du terrain typiquement)
+    "accurate":     3,        # Déplacement précis du robot # DEPRECATED
+    "recalage":     4,        # Déplacement de type recalage (contre un bord du terrain typiquement) # DEPRECATED
     "rotation":     5,         # On ne demande qu'une rotation (Peut servir)
     "marcheArr":    8
 }
@@ -118,9 +101,9 @@ COM_STRAT = {
 '''Dictionnaire des callbacks reçus de la teensy'''
 CB_TEENSY = {
     "errorAsserv": 0,
-    "okPos": 1,
-    "okTurn": 2,
-    "marcheArrOK": 3,
+    "okPos": 1, # DEPRECATED
+    "okTurn": 2, # DEPRECATED
+    "marcheArrOK": 3, # DEPRECATED
     "okOrder": 7,
 }
 
@@ -171,8 +154,7 @@ class DispCallbacks:
             return
 
         if msg.data == CB_TEENSY["okOrder"]:
-            self._node.path = []
-            self.move = False
+            self._node.clear_destination()
 
             rsp = Int16()
             rsp.data = COM_STRAT["ok pos"]
@@ -190,36 +172,19 @@ class DispCallbacks:
         
         self._node.get_logger().info("Teensy cmd unknown. Callback msg.data = {}".format(msg.data))
         
-
-
     def callback_strat(self, msg):
         """Traitement des commandes de la strat."""
-        
-        ## Reset des params
-        self._node.move = False
-        self._node.avoid_mode = True
-        self._node.forward = True
-
-        self._node.get_logger().info("Order of displacement from AN: [{},{},{}] - method of displacement : [{}]".format(msg.x, msg.y, msg.z, msg.w))
-        self._node.path = []
-
         ## Commande d'arrêt
         if msg.w == CMD_STRAT["stop"]:
             self._node.stop_move()
 
         elif msg.w == CMD_STRAT["rotation"]:
-            self._node.pub_teensy.publish(create_quaternion(msg.x, msg.y, msg.z, CMD_TEENSY['rotation']))
+            self._node.set_target_heading(msg.z)
+            self._node.start_move()
         
-        elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] or msg.w == CMD_STRAT["marcheArr"]:
-            ## Setup de la vitesse
-            dest_pos = [msg.x, msg.y, msg.z]
+        elif msg.w == CMD_STRAT["standard"] or msg.w == CMD_STRAT["noAvoidance"] or msg.w == CMD_STRAT["marcheArr"]: 
             curr_pos = self._node.current_pos
-            
-            self._node.avoid_mode = msg.w != CMD_STRAT["noAvoidance"]
-            self._node.is_reset_possible = False
-            self._node.move = True
-            self._node.forward = msg.w != CMD_STRAT["marcheArr"]
-
+            dest_pos = [msg.x, msg.y, msg.z]
             ## - Déplacement standard
             if msg.w == CMD_STRAT["standard"] :
                 self._node.get_logger().info("Standard displacement :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
@@ -229,11 +194,7 @@ class DispCallbacks:
             else:   
                 self._node.get_logger().info("Displacement without avoidance :\n{} -> {}\n".format(printable_pos(curr_pos), printable_pos(dest_pos)))
 
-            ## Setup du Pathfinder
-            self._node.max_astar_time = MAX_ASTAR_TIME
-            self._node.pathfinder.set_goal(dest_pos)
-            self._node.pathfinder.set_init(curr_pos)
-
+            self._node.set_destination(dest_pos, msg.w != CMD_STRAT["marcheArr"], msg.w != CMD_STRAT["noAvoidance"])   
             self._node.start_move()
 
     def callback_lidar(self, msg):    
@@ -245,7 +206,7 @@ class DispCallbacks:
                 msg2 = Int16MultiArray()
                 msg2.data = [int(pos[0]) if pos is not None else -10000, int(pos[1]) if pos is not None else -10000, int(radius)]
                 self._node.pub_obstacle.publish(msg2)
-                self.publish_grid()
+                self._node.publish_grid()
 
         
         if (not self._node.avoid_mode) or self._node.matchEnded: 
@@ -330,17 +291,15 @@ class DispCallbacks:
                     self._node.start_move()
 
         else:
-            # No avoiding strategy when reversing, because only straight, short-distance reverses are used
             if closest_obs_behind is not None:
                 dist_obs, x_loc_obs, y_loc_obs = closest_obs_behind
                 if dist_obs < STOP_RANGE_X and self._node.move:
                     self._node.get_logger().warning("Object Detected In The Back : Need to wait")
                     self._node.stop_move()
             
-            if not self._node.move and not self._node.forward:
+            if not self._node.move:
                 self._node.get_logger().info("Object Has Cleared The Way : Resuming reverse")
-                self._node.move = True
-                self._node.pub_teensy.publish(create_quaternion(*self._node.pathfinder.get_goal(), CMD_TEENSY['marcheArr']))
+                self._node.start_move()
 
         if self._node.is_reset_possible:
             self._node.wait_start = None
@@ -364,12 +323,7 @@ class DispCallbacks:
             y = 3000 - y
             z = -z
 
-        self._node.pub_teensy.publish(create_quaternion(x, y, z, CMD_TEENSY["set"]))
-        self._node.current_pos = [x, y, z]
-
-        ## Init pathfinder with correct color
-        self._node.pathfinder = PathFinder(self._node.color, self._node.get_logger()) 
-        self.publish_grid()
+        self._node.reset_position(x, y, z)
 
     def callback_position(self, msg):
         """Update la position actuelle du robot."""
@@ -386,21 +340,4 @@ class DispCallbacks:
 
     def callback_delete(self, msg):
         self._node.pathfinder.remove_obstacle(msg.data)
-        self.publish_grid()
-
-    def publish_grid(self, grid=None):
-        """Publish grid to the interfaceNode."""
-        if SIMULATION:
-            if grid is None:
-                grid = self._node.pathfinder.get_grid()
-                
-            node_coords = []
-            for n in range(len(grid)):
-                node_coords.append(grid[n,0])
-                node_coords.append(grid[n,1])
-            
-            msg = Float32MultiArray()
-            msg.data = node_coords
-            self._node.pub_grid.publish(msg)
-       #     self._node.get_logger().info("## Simulation ## Grid published to interface.")
-
+        self._node.publish_grid()

@@ -28,8 +28,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import random
-from std_msgs.msg      import Int16
-from geometry_msgs.msg import Pose2D
+from std_msgs.msg      import Int16, Empty
+from br_messages.msg import Position
 from enum import Enum
 
 from enum import IntEnum
@@ -79,7 +79,7 @@ class ActuatorNode(Node):
         #### Communication - pubs & subs ####
         # Sub a /color pour s'initialiser au set de la couleur
         self.sub_color = self.create_subscription(Int16, "/game/color", self.update_color, qos_profile)
-        self.sub_pos = self.create_subscription(Pose2D,"/current_position", self.update_position, qos_profile)
+        self.sub_pos = self.create_subscription(Position,"/br/currentPosition", self.update_position, qos_profile)
     
 
         # Simule la reponse du BN sur les portes
@@ -108,7 +108,7 @@ class ActuatorNode(Node):
         #### Variables ####
 
         self.color = 0  							# par défaut
-        self.curr_pos = Pose2D(x=0, y=0, theta=0)	# par defaut
+        self.curr_pos = Position(x=0, y=0, theta=0)	# par defaut
 
         self.info_square = [-1] * 7  				# init undefined
         self.curr_square = 0

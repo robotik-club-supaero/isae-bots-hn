@@ -24,7 +24,8 @@ from yasmin_viewer import YasminViewerPub
 import rclpy
 
 from std_msgs.msg      import Empty
-from geometry_msgs.msg import Quaternion, Pose2D
+from geometry_msgs.msg import Quaternion
+from br_messages.msg import Position
 
 # import les states de la SM
 from .an_sm_states.sm_park import Park
@@ -67,7 +68,7 @@ class Setup(yasmin.State):
         
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
-        userdata["robot_pos"] = Pose2D(x=-1, y=-1, theta=-1)  # current position of the robot
+        userdata["robot_pos"] = Position(x=-1, y=-1, theta=-1)  # current position of the robot
         userdata["cb_left_arm"] = ArmCallback.PENDING   # state of the arm
         userdata["cb_right_arm"] = ArmCallback.PENDING  # state of the arm
         userdata["cb_doors"] = DoorCallback.PENDING	# state of the doors
@@ -152,7 +153,7 @@ class End(yasmin.State):
         ## STOP RUNNING PROGRAMS ##
         ###########################
         self._disp_pub.publish(create_quaternion(x=0,y=0,z=0,w=-1))			# arrêt PF : w = -1
-        self._stop_teensy_pub.publish(create_quaternion(x=0,y=0,z=0,w=2))	# arrêt BR (code w=2 pour le BN)
+        self._stop_teensy_pub.publish(Empty())
         return 'end'
 
 #################################################################

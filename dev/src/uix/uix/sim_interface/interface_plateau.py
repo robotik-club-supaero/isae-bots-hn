@@ -19,8 +19,9 @@ import sys
 import rclpy
 from rclpy.node import Node
 
-from geometry_msgs.msg import Pose2D, Quaternion
-from std_msgs.msg import Int16, Int16MultiArray, Float32MultiArray, Empty
+from br_trajectories import getTrajectoryCurves, Point2D, Position2D
+from br_messages.msg import Position, Point, DisplacementOrder
+from std_msgs.msg import Bool, Int16, Int16MultiArray, Float32MultiArray, Empty
 
 from threading import RLock, Thread
 import time, random
@@ -31,13 +32,9 @@ import numpy as np
 import tkinter as tk
 import configparser as ConfigParser
 
-import sys
-
 from enum import IntEnum
 
 from .interface_const import *
-
-from strat.strat_utils import create_quaternion
 
 ScreenUnits = float
 PhysicalUnits = float
@@ -233,6 +230,10 @@ class ScaledCanvas:
         start = self.physical_to_screen_units(start)
         end = self.physical_to_screen_units(end)
         self._canvas.create_line(*start.tolist(), *end.tolist(), **kwargs)
+
+    def draw_curve(self, points, **kwargs):
+        points = self.physical_to_screen_units(points)
+        self._canvas.create_line(*points.flatten().tolist(), **kwargs)
 
     def draw_polygon(self, edges, rotation=0, rotation_center=None, **kwargs):
         """
@@ -570,19 +571,23 @@ class Path(Drawable):
 
     def __init__(self):
         super().__init__()
-        self._startPos = np.zeros(2)
+        self._startPos = np.zeros(3)
         self._path = []
+        self._finalCap = 0
+        self._allowCurve = True
 
-    def replace(self, new_path):
-        self._path = list(new_path)
-        self._finalCap = self._path.pop()
+    def replace(self, new_path, finalCap, allowCurve):
+        self._path = new_path
+        self._finalCap = finalCap
+        self._allowCurve = allowCurve
         self.invalidate()
 
     def clear(self):
         self._path.clear()
 
-    def setStartPos(self, new_pos):
-        self._startPos[:] = new_pos
+    def setStartPos(self, new_pos, rotation):
+        self._startPos[:2] = new_pos
+        self._startPos[2] = rotation
         self.invalidate()
 
     def _draw(self, canvas):
@@ -590,28 +595,33 @@ class Path(Drawable):
         canvas.delete("path_line")
 
         path = self._path
-        l = len(path)//2
-        if l == 0:
+        if len(path) == 0:
             return
         
-        # 1er deplacement
-        self._create_path_circle(canvas, self._startPos)
-        self._create_path_line(canvas, self._startPos,
-                               np.array([path[0], path[1]]))
+        # 1er point
+        self._create_path_circle(canvas, self._startPos[:2])
+        
+        # reste des points
+        for point in path:
+            self._create_path_circle(canvas, np.array([point.x, point.y]))
+     
+        if self._allowCurve:
+            startPos = Position2D(Point2D(*self._startPos[:2]) / 1000., self._startPos[2])
+            curves = getTrajectoryCurves(startPos, [Point2D(point.x, point.y) / 1000. for point in path])
+            for curve in curves:
+                self._create_path_curve(canvas, curve)
+        else:
+            node1 = np.zeros(2)
+            node2 = np.zeros(2)
 
-        node1 = np.zeros(2)
-        node2 = np.zeros(2)
-        # reste des deplacements
-        for k in range(l):
-            node1[:] = path[2*k:2*k+2]
-            if k < l-1:
-                node2[:] = path[2*k+2:2*k+4]
+            node1[:] = self._startPos[:2]
+            for point in path:
+                node2[:] = [point.x, point.y]
                 self._create_path_line(canvas, node1, node2)
-            self._create_path_circle(canvas, node1)
+                node1[:] = node2    
 
         # fleche du dernier cap
-        node1[:] = path[2*l-2:2*l]
-        self._create_path_arrow(canvas, node1, self._finalCap, cache=node2)
+        self._create_path_arrow(canvas, path[-1], self._finalCap)
 
     def _create_path_circle(self, canvas, node):
         canvas.draw_oval(node, PATHCIRCLEWIDTH / INTERFACE_SCALE,
@@ -621,14 +631,19 @@ class Path(Drawable):
         canvas.draw_line(node1, node2, fill='yellow',
                          width=PATHWIDTH, tag="path_line")
 
-    def _create_path_arrow(self, canvas, lastNode, finalCap, cache=None):
-        if cache is None:
-            cache = np.zeros(2)
-        cache[:] = [cos(finalCap), sin(finalCap)]
-        cache *= PATHARROWLENGTH / INTERFACE_SCALE
-        cache += lastNode
+    def _create_path_curve(self, canvas, curve):
+        points = np.zeros((10, 2))
+        for i in range(points.shape[0]):
+            pt = curve.at(i / (points.shape[0] - 1)) 
+            points[i] = [pt.x, pt.y]
+        canvas.draw_curve(points * 1000., fill="yellow", width=PATHWIDTH, tag="path_line")
 
-        canvas.draw_line(lastNode, cache, fill='purple', arrow=tk.LAST, arrowshape=(
+    def _create_path_arrow(self, canvas, lastNode, finalCap):
+        factor = PATHARROWLENGTH / INTERFACE_SCALE
+        lastNode = np.array([lastNode.x, lastNode.y])
+        cache = np.array([cos(finalCap), sin(finalCap)])
+
+        canvas.draw_line(lastNode, lastNode + cache * factor, fill='purple', arrow=tk.LAST, arrowshape=(
             8, 10, 6), width=PATHWIDTH*2/3, tag="path_line")
 
 
@@ -652,6 +667,30 @@ class Grid(Drawable):
         for i in range(len(self._grid) // 2):
             node[:] = self._grid[2*i:2*i+2]
             canvas.draw_oval(node, 5, fill='grey', tag='grid_circle')
+
+class ControlWindow(tk.Toplevel):
+    def __init__(self, node):
+        super().__init__(node._fenetre)
+        self.title('InterfaceNode - Contrôles')
+
+        self._pubIdle = node.create_publisher(Bool, "/br/idle", 10)
+        self._pubColor = node.create_publisher(Int16, "/game/color", 10)
+        self._pubStart = node.create_publisher(Int16, "/game/start", 10)
+
+        idle_bt = tk.Button(self, text="BR idle", command=lambda: self._pubIdle.publish(Bool(data=False)))
+        idle_bt.grid(column=0, row=0)
+
+        ready_bt = tk.Button(self, text="BR ready", command=lambda: self._pubIdle.publish(Bool(data=True)))
+        ready_bt.grid(column=1, row=0)
+
+        home_bt = tk.Button(self, text="Color HOME", command=lambda: self._pubColor.publish(Int16(data=0)))
+        home_bt.grid(column=0, row=1)
+
+        away_bt = tk.Button(self, text="Color AWAY", command=lambda: self._pubColor.publish(Int16(data=1)))
+        away_bt.grid(column=1, row=1)
+
+        start_bt = tk.Button(self, text="Start match", command=lambda: self._pubStart.publish(Int16(data=1)))
+        start_bt.grid(column=0, row=2)
 
 class InterfaceNode(Node):
 
@@ -703,13 +742,13 @@ class InterfaceNode(Node):
         self.lock = RLock()
 
         # initialisation des suscribers
-        self._subStart = self.create_subscription(Int16, "/color", self.updateColor, 10)
+        self._subStart = self.create_subscription(Int16, "/game/color", self.updateColor, 10)
 
         self._subGrid = self.create_subscription(
             Float32MultiArray, "/simu/nodegrid", self.updateGrid, 10)
 
         self._subPos = self.create_subscription(
-            Pose2D, "/current_position", self.updateRobotPosition, 10)
+            Position, "/br/currentPosition", self.updateRobotPosition, 10)
         self._subDoors = self.create_subscription(
             Int16, "/act/callback/doors", self.updateRobotDoorState, 10)
         self._subLeftArm = self.create_subscription(
@@ -720,19 +759,18 @@ class InterfaceNode(Node):
             Int16MultiArray, "/obstaclesInfo", self.updateObstacles, 10)
         self._subRobotObstacle = self.create_subscription(
             Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, 10)
-        self._subPath = self.create_subscription(
-            Float32MultiArray, "/simu/current_path", self.updatePath, 10)
 
         self._subOrder = self.create_subscription(
-            Quaternion, "/nextPositionTeensy", self.updateOrder, 10)
+            DisplacementOrder, "/br/goTo", self.updateOrder, 10)
 
         self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, 10)
 
-        self._pubOrder = self.create_publisher(Quaternion, "/nextPositionTeensy", 10)
+        self._pubOrder = self.create_publisher(DisplacementOrder, "/br/goTo", 10)
 
-
+        self._controlWindow = ControlWindow(self)
         self.get_logger().info("Fin d'initialisation de l'interface")
         self._fenetre.after(refresh_interval, self.refresh)
+        
 
     def invalidate_all(self):
         self._force_redraw = True
@@ -797,13 +835,22 @@ class InterfaceNode(Node):
         self.get_logger().info("click received at " + str(x) + "," + str(y))
 
         x0, y0 = self._clickMarker.location.tolist()
-        self._pubOrder.publish(create_quaternion(x0, y0, atan2(y-y0, x-x0), 0))
+        
+        msg = DisplacementOrder()
+        msg.path = [Point(x=x0, y=y0)]
+        msg.theta = atan2(y-y0, x-x0)
+        msg.kind = DisplacementOrder.ALLOW_CURVE | DisplacementOrder.FINAL_ORIENTATION
+
+        self._pubOrder.publish(msg)
 
     def updateOrder(self, msg):
         with self.lock:
-            if msg.w in [0, 1, 5, 6, 7, 8, 10, 11]:  # What is this?
-                self._orderMarker.location = [msg.x, msg.y]
+            if len(msg.path) > 0:
+                self._orderMarker.location = [msg.path[-1].x, msg.path[-1].y]
                 self._orderMarker.show()
+                 
+            self._path.setStartPos(self._robot.location, self._robot._rotation)
+            self._path.replace(msg.path, msg.theta, msg.kind & DisplacementOrder.ALLOW_CURVE != 0)
 
     def updateRobotPosition(self, msg):
         '''Se fait appeler par un subscriber si c'est avec la simulation 1 robot'''
@@ -841,15 +888,6 @@ class InterfaceNode(Node):
             self._robotObstacle.clear()
             self._robotObstacle.addObstacle([x, y, 0, 0, 0])
             self._robotObstacle.plot_radius = r
-
-    def updatePath(self, msg):
-        
-        self._path.setStartPos(self._robot.location)
-
-        with self.lock:
-            if msg.data is None:
-                return
-            self._path.replace(msg.data)
 
     def updateColor(self, msg):
         with self.lock:

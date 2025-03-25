@@ -32,6 +32,7 @@ NB: code [english], commentaires [french].
 #																#
 #################################################################
 import sys
+import traceback
 
 import rclpy
 from rclpy.node import Node
@@ -45,14 +46,15 @@ import time
 from .pathfinder import PathFinder, PathNotFoundError
 
 # import msgs
-from geometry_msgs.msg import Quaternion, Pose2D
-from std_msgs.msg import Int16, Float32MultiArray, Int16MultiArray, String
+from geometry_msgs.msg import Quaternion
+from std_msgs.msg import Int16, Float32MultiArray, Int16MultiArray, String, Empty
+from br_messages.msg import Position, Point, DisplacementOrder
 
 # import utils
 from .disp_utils import MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
 
 # import comms
-from .disp_comm import DispCallbacks, SIMULATION, COM_STRAT, CMD_TEENSY
+from .disp_comm import DispCallbacks, SIMULATION, COM_STRAT
 
 from strat.strat_utils import create_quaternion
 
@@ -76,7 +78,7 @@ class DisplacementNode(Node):
         super().__init__("DSP")
         self.get_logger().info("Initializing DSP Node ...")
 
-        latch_profile =  QoSProfile(
+        latch_profile = QoSProfile(
             depth=10,  # Keep last 10 messages
             durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
         )
@@ -86,21 +88,22 @@ class DisplacementNode(Node):
         self.end_sub = self.create_subscription(Int16, '/game/end', callbacks.callback_end, 10)
 
         # Comm Teensy
-        self.pub_teensy = self.create_publisher(Quaternion, '/nextPositionTeensy', latch_profile)
-        self.sub_teensy = self.create_subscription(Int16,  "/okPosition", callbacks.callback_teensy, 10) 
+        self.pub_teensy_go_to = self.create_publisher(DisplacementOrder, '/br/goTo', latch_profile)
+        self.pub_teensy_stop = self.create_publisher(Empty, '/br/stop', latch_profile)
+        self.pub_teensy_reset = self.create_publisher(Position, '/br/resetPosition', latch_profile)
 
+        self.sub_teensy = self.create_subscription(Int16,  "/br/callbacks", callbacks.callback_teensy, 10) 
+        self.sub_pos = self.create_subscription(Position,  "/br/currentPosition", callbacks.callback_position, 10) 
+   
         # Comm Lidar
         self.sub_lidar = self.create_subscription(Int16MultiArray, "/obstaclesInfo", callbacks.callback_lidar, 10)
-        self.pub_speed = self.create_publisher(Int16, "/teensy/obstacle_seen", latch_profile)
+        self.pub_speed = self.create_publisher(Int16, "/br/setSpeed", latch_profile)
         if SIMULATION:
             self.pub_obstacle = self.create_publisher(Int16MultiArray, "/simu/robotObstacle", latch_profile)
 
         # Comm Strat
         self.pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)
         self.sub_strat = self.create_subscription(Quaternion, "/dsp/order/next_move", callbacks.callback_strat, 10)
-
-        # Comm Position
-        self.sub_pos = self.create_subscription(Pose2D, "/current_position", callbacks.callback_position, 10)
 
         # Obstacles
         self.sub_delete = self.create_subscription(String, "/removeObs", callbacks.callback_delete, 10)
@@ -109,11 +112,8 @@ class DisplacementNode(Node):
         #### Pour la Simulation ####
         ############################
 
-        # Comm Pathfinder
-        self.pub_path = self.create_publisher(Float32MultiArray, "/simu/current_path", latch_profile)
         # Comm Simulation
         self.pub_grid = self.create_publisher(Float32MultiArray, "/simu/nodegrid", latch_profile)
-
 
         ## Variables liées au match
 
@@ -123,7 +123,6 @@ class DisplacementNode(Node):
 
         ## Variables liées au fonctionnement de l'algorithme A* et de la création du chemin de points
 
-        self.path = []
         self.pathfinder = PathFinder(self.color, self.get_logger())
         self.max_astar_time = MAX_ASTAR_TIME
 
@@ -131,6 +130,7 @@ class DisplacementNode(Node):
         self.move = False                       # Le robot est en cours de deplacement
         self.forward = True                     # Le robot est en marche avant ? (False = marche arriere)
         self.current_pos = [0,0,0]                # La position actuelle du robot
+        self.destination = None
 
         # ## Variables de mode de DEPLACEMENT
         self.avoid_mode = False                  # Le robot se deplace en mode evitement
@@ -142,115 +142,101 @@ class DisplacementNode(Node):
         # ## Variables de gestion des obstacles / arrets
         self.wait_start = None
 
-    def publish_path(self, path):
-        """Publish path to the interfaceNode."""    
+    def reset_position(self, x, y, theta):
+        self.forward = True
+        self.destination = None
+        self.move = False
+
+        msg = Position()
+        msg.x = float(x)
+        msg.y = float(y)
+        msg.theta = float(theta)
+        self.pub_teensy_reset.publish(msg)
+
+        self.pathfinder = PathFinder(self.color, self.get_logger()) 
+        self.publish_grid()
+
+    def publish_grid(self, grid=None):
+        """Publish grid to the interfaceNode."""
         if SIMULATION:
-            path_coords = []
-            for k in range (len(path)):
-                path_coords.append(path[k].x)
-                path_coords.append(path[k].y)
-                if k == len(path)-1: path_coords.append(self.pathfinder.get_goal_heading())  # le cap final
+            if grid is None: grid = self.pathfinder.get_grid()
+            node_coords = []
+            for n in range(len(grid)):
+                node_coords.append(grid[n,0])
+                node_coords.append(grid[n,1])
             
-            path_msg = Float32MultiArray()
-            path_msg.data = path_coords
-            self.pub_path.publish(path_msg)  # liste des coordonnees successives
-            self.get_logger().info("## Simulation ## Path published : {}".format(path_coords))
+            msg = Float32MultiArray()
+            msg.data = node_coords
+            self.pub_grid.publish(msg)
 
-#######################################################################
-# Fonctions de construction de path
-#######################################################################
+    def set_destination(self, destination, forward=True, avoidMode=True):
+        self.is_reset_possible = False
+        self.destination = destination
+        self.forward = forward
+        self.avoid_mode = avoidMode
 
-    def build_path(self, isInAvoidMode):
-        """Fonction appelee quand on cherche chemin et le pathfinder setup.
-        
-        Retourne un chemin de la forme:
-            [[x_1, y_1, theta_1], ..., [x_dest, y_dest, theta_dest]]
+    def set_target_heading(self, orientation):
+        self.forward = True
+        self.destination = [orientation]
 
-        avec (x_1, y_1), ... (x_n, y_n) fournis par le pathfinder, et les 
-        angles calcules tels que:
-            
-        Y  
-        ^
-        |      (x2, y2)
-        |    +
-        |
-        |    ^
-        |    | theta1
-        |    +
-        |      (x1,y1)
-        |  ^
-        | /
-        |/ theta0    
-        +----------> X
-        (x0,y0)
+    def clear_destination(self):
+        self.destination = None
+        self.forward = True
+        self.move = False
 
-        le resultat de la fonction est un dictionnaire qui contient:
-            - msg: un message d'erreur le cas echeant
-            - success: si un chemin a ete trouve
-            - chemin_calcule: le chemin calcule."""
-            
-        # Instanciation de resultisInAvoidMode
-        result = {'message':"", 'success':False}
+    def start_move(self):       
+        if self.destination is not None:             
+            self.wait_start = None
+            if len(self.destination) == 1:
+                self._start_rotation()
+            else:
+                self._start_go_to()
+        else:
+            self.get_logger().warning("start_move called before a destination is set")
 
-        # On essaie d'obtenir un chemin
+    def _start_rotation(self):
+        self.move = True
+        msg = DisplacementOrder()
+        msg.kind = DisplacementOrder.FINAL_ORIENTATION
+        msg.theta = self.destination[0]
+        self.pub_teensy_go_to.publish(msg)
+
+    def _start_go_to(self):
+        self.move = False
         try:
-            path = self.pathfinder.get_path()
-         
-            self.path = path
-            result['message'] = "Path found" 
-            result['success'] = True
+            begin_time = time.perf_counter()
+            path = self.pathfinder.get_path(self.current_pos[:2], self.destination[:2])
+            debug_print(self, 'c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
 
-        except PathNotFoundError:   
-            result['message'] = "Path not found"
-            result['success'] = False
-            return result
-
-        return result
-
-    def start_move(self):
-
-        self.wait_start = None
-        self.move = False     
-
-        begin_time = time.perf_counter()
-
-        result = self.build_path(self.forward and self.avoid_mode)
-
-        debug_print(self, 'c*', f"Time taken to build path : {time.perf_counter() - begin_time}")
-
-        ## Si on a trouvé un chemin
-        if result['success']:
-            self.get_logger().info("Found path: \n"+str(self.path))
-            # Affichage du path
-            if len(self.path) > 0:
-                self.publish_path(self.path)
+            self.get_logger().info("Found path: \n"+str(path))
 
             self.move = True
 
-            self.pub_teensy.publish(create_quaternion(0,0,0,CMD_TEENSY["curveReset"]))
-            for point in self.path[:-1]:
-                self.pub_teensy.publish(create_quaternion(point.x,point.y,0,CMD_TEENSY["curvePoint"]))
+            msg = DisplacementOrder()
+            msg.path = [Point(x=point.x, y=point.y) for point in path]
+            msg.kind = DisplacementOrder.ALLOW_CURVE | DisplacementOrder.FINAL_ORIENTATION
+            if not self.forward:
+                msg.kind |= DisplacementOrder.REVERSE
+            msg.theta = self.destination[2] if len(self.destination) > 2 else 0.
 
-            pointf = self.path[-1]
-            thetaf = self.pathfinder.get_goal_heading()
-            self.pub_teensy.publish(create_quaternion(pointf.x, pointf.y, thetaf, CMD_TEENSY["curveStart"] if self.forward else CMD_TEENSY["curveStartReverse"]))
+            self.pub_teensy_go_to.publish(msg)
 
-        ## Sinon, erreur de la recherche de chemin
-        else:
+        except PathNotFoundError:       
+            self.get_logger().warning("ERROR - Path not found")
+            rsp = Int16()     
+            rsp.data = COM_STRAT["path not found"]
+            self.pub_strat.publish(rsp)
+
+        except Exception as e:
+            traceback.print_exception(e)
+            self.get_logger().warning("ERROR - Exception: " + str(e))
             rsp = Int16()
-            if result['message'] == "Dest Blocked":
-                self.get_logger().warning("ERROR - Reason: " + result['message'])
-                rsp.data = COM_STRAT["stop blocked"]
-            else:
-                #NOTE no path found
-                self.get_logger().warning("ERROR - Reason: " + result['message'])
-                # Retour de l'erreur a la strat
-                rsp.data = COM_STRAT["path not found"]
-                
+            rsp.data = COM_STRAT["path not found"]
             self.pub_strat.publish(rsp)
 
     def stop_move(self):
-        self.pub_teensy.publish(create_quaternion(0, 0, 0, CMD_TEENSY["stop"]))
+        self.move = False
+        self.pub_teensy_stop.publish(Empty())
 
     def set_avoid_reset_point(self):
         """Calcul du point de reset des marges d'evitement.

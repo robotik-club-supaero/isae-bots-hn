@@ -25,7 +25,7 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
-from geometry_msgs.msg import Pose2D
+from br_messages.msg import Position
 
 #################################################################
 #                                                               #
@@ -57,7 +57,7 @@ class SIM_ObstaclesNode(Node):
         super().__init__("OBS")
         self.get_logger().info("Initializing OBS node ...")
 
-        self.position_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
+        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
         self.obs_info_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
 
         self.create_time = time.time()

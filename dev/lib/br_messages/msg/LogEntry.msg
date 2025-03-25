@@ -1,25 +1,16 @@
-
 uint32 time
 #
-float32 robot_pos_x
-float32 robot_pos_y
-float32 robot_pos_theta
+Position robot_pos
 #
-float32 setpoint_pos_x
-float32 setpoint_pos_y
-float32 setpoint_pos_theta
+Position setpoint_pos
 #
-float32 goal_point_pos_x
-float32 goal_point_pos_y 
+Point goal_point_pos
 #
-float32 goal_point_speed_x
-float32 goal_point_speed_y
+Point goal_point_speed
 #
-float32 asserv_error_x
-float32 asserv_error_y
+Point asserv_error
 #
-float32 command_v
-float32 command_omega
+Command command
 #
 float32 commande_motor_r
 float32 commande_motor_l

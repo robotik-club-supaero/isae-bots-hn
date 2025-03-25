@@ -1,7 +1,3 @@
-# FIXME: fix configuration of package pathfinder! (/dev/src/pathfinder)
-import sys
-sys.path.append('/app/dev/src/pathfinder/build')
-
 import numpy as np
 from ast import literal_eval
 
@@ -21,9 +17,6 @@ class PathFinder:
 
     def __init__(self, color, logger):
         self.map = Map(PathFinder.static_obstacles(color, logger))
-        self._init = Point(0, 0)
-        self._goal = Point(0, 0)
-        self._goalHeading = 0
         self._logger = logger
 
     def set_obstacle_robot_pos(self, obstacle_robot_pos, radius):
@@ -38,21 +31,8 @@ class PathFinder:
     def remove_obstacle(self, obstacle):
         self.map.setObstacle(obstacle, None)
 
-    def get_goal_heading(self):
-        return self._goalHeading
-
-    def get_goal(self):
-        return [self._goal.x, self._goal.y, self._goalHeading]
-
-    def set_goal(self, pos):
-        self._goal = Point(*pos[:2])
-        self._goalHeading = pos[2]
-
-    def set_init(self, pos):
-        self._init = Point(*pos[:2])
-
-    def get_path(self):
-        path = self.map.astarPath(self._init, self._goal)
+    def get_path(self, init, goal):
+        path = self.map.astarPath(Point(*init), Point(*goal))
         if path is None or len(path) == 0:
             raise PathNotFoundError()
         

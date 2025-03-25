@@ -4,7 +4,19 @@ project(pathfinder)
 
 find_package(ament_cmake REQUIRED)
 
-install(FILES ${CMAKE_SOURCE_DIR}/build/pathfinder.cpython-312-x86_64-linux-gnu.so
-        DESTINATION lib/${PROJECT_NAME})
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 REQUIRED)
+
+include_directories(include)
+pybind11_add_module(pathfinder src/main.cpp src/Map.cpp src/ObstacleCircle.cpp src/ObstacleRect.cpp src/Point.cpp src/Segment.cpp)
+
+install(TARGETS
+  pathfinder
+  DESTINATION lib/${PROJECT_NAME}
+)
+ament_environment_hooks(
+  ${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.sh.in
+)
 
 ament_package()

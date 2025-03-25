@@ -29,9 +29,8 @@ import rclpy
 from rclpy.node import Node
 import cwiid
 from enum import IntEnum, Enum
-from std_msgs.msg      import Int16
-from geometry_msgs.msg import Quaternion
-from strat.strat_utils import create_quaternion
+from std_msgs.msg      import  Bool
+from br_messages import Command
 
 #################################################################
 #                                                               #
@@ -84,8 +83,8 @@ class WiiControlNode(Node):
         super().__init__("wii_node")
         self.log_info("Initializing WII node ...")
         # -- Publishers & subscribers
-        self.nextpos_pub = self.create_publisher(Quaternion, "/nextPositionTeensy", 10)
-        self.idle_pub = self.create_publisher(Int16, "/br/idle", 10)
+        self.command_pub = self.create_publisher(Command, "/br/command", 10)
+        self.idle_pub = self.create_publisher(Bool, "/br/idle", 10)
 
         # -- Connection to Wiimote
         self.wiimote = None
@@ -103,8 +102,8 @@ class WiiControlNode(Node):
         self.wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_NUNCHUK
         self.wiimote.led = (1 << (self.coeff_speed+1)) - 1
 
-        self.msg_pos = create_quaternion(x=0, y=0, z=0, w=0)
-        self.msg_idle = Int16()
+        self.msg_pos = Command()
+        self.msg_idle = Bool()
 
     def wiimote_connect(self):
         """
@@ -136,16 +135,14 @@ class WiiControlNode(Node):
             angle = (corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed / 100 / 2
         else:
             speed = angle = 0
-        self.msg_pos.x = float(min(max(speed, -max_speed), max_speed))
-        self.msg_pos.y = -float(min(max(angle, -max_speed), max_speed))
-        self.msg_pos.z = 0.
-        self.msg_pos.w = 4.  # cmd for remote control
+        self.msg_pos.linear = float(min(max(speed, -max_speed), max_speed))
+        self.msg_pos.angular = -float(min(max(angle, -max_speed), max_speed))
 
         # seuillage
-        if abs(self.msg_pos.x) < 10:
-            self.msg_pos.x = 0.
-        if abs(self.msg_pos.y) < 10:
-            self.msg_pos.y = 0.
+        if abs(self.msg_pos.linear) < 10:
+            self.msg_pos.linear = 0.
+        if abs(self.msg_pos.angular) < 10:
+            self.msg_pos.angular = 0.
 
         self.nextpos_pub.publish(self.msg_pos)
 
@@ -158,7 +155,7 @@ class WiiControlNode(Node):
 
         if wiimote_buttons & cwiid.BTN_A != 0:
             if self.t_btn_a == 0 or time.time() - self.t_btn_a > 1:
-                self.msg_idle.data = 1
+                self.msg_idle.data = True
                 self.idle_pub.publish(self.msg_idle)
                 self.t_btn_a = time.time()
         else:
@@ -166,7 +163,7 @@ class WiiControlNode(Node):
 
         if wiimote_buttons & cwiid.BTN_B != 0:
             if self.t_btn_b == 0 or time.time() - self.t_btn_b > 1:
-                self.msg_idle.data = 0
+                self.msg_idle.data = False
                 self.idle_pub.publish(self.msg_idle)
                 self.t_btn_b = time.time()
         else:
@@ -245,7 +242,6 @@ class WiiControlNode(Node):
 
             self.unitstep()
             rclpy.spin_once(self, timeout_sec=0)
-            # print(self.msg_pos.x, self.msg_pos.y)
 
 #################################################################
 #                                                               #

@@ -70,7 +70,6 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-
         
         self.match_started = False
         self.color = 0
@@ -103,10 +102,8 @@ class DecisionsNode(Node):
         self.init_zone = int(READER.get("STRAT", "init_zone"))
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
-        self.remaining_plants = [6 for _ in range(6)]
-        self.remaining_pots = [6 for _ in range(6)]
-        self.deposit_slots = [CULTURE_SLOTS for _ in range(3)]
-        self.solar_panels = [False for _ in range(6)]
+        self.remaining_stands = [6 for _ in range(6)]
+        self.deposit_slots = [DEPOSIT_POS for _ in range(3)]
         self.nb_actions = 0
 
     def publishScore(self):
@@ -156,7 +153,7 @@ class DecisionsNode(Node):
         else: 
             self.color = msg.data
             self.get_logger().info("Received color : {}".format(COLOR[self.color]))
-
+    
 
     def setup_strat(self, msg):
         """
@@ -201,20 +198,12 @@ class DecisionsNode(Node):
             
             # FIXME: where should this code be?
             # TODO: how to estimate score of "coccinelles"?
-            if self.curr_action[0] == Action.TURN_SOLAR_PANEL:
-                self.solar_panels[self.curr_action[1]] = True
-                self.score += ActionScore.SCORE_SOLAR_PANEL.value
-                self.publishScore()
+            if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
+                self.remaining_stands[self.curr_action[1]] = 0
             
-            if self.curr_action[0] == Action.PICKUP_PLANT:
-                self.remaining_plants[self.curr_action[1]] -= PLANT_CAPACITY
-            
-            if self.curr_action[0] == Action.PICKUP_POT:
-                self.remaining_pots[self.curr_action[1]] -= PLANT_CAPACITY
-            
-            if self.curr_action[0] == Action.DEPOSIT_POT:
-                self.deposit_slots[self.curr_action[1]] -= PLANT_CAPACITY
-                self.score += PLANT_CAPACITY * ActionScore.SCORE_DEPOSIT_PLANTS.value
+            if self.curr_action[0] == Action.DEPOSIT_STAND:
+                self.deposit_slots[self.curr_action[1]] = 0
+                self.score += ActionScore.SCORE_DEPOSIT_STAND.value
                 self.publishScore()
             
             if self.curr_action[0] == Action.PARK:
@@ -228,10 +217,10 @@ class DecisionsNode(Node):
 
         if msg.exit == ActionResult.NOTHING_TO_PICK_UP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
-            if self.curr_action[0] == Action.PICKUP_PLANT:
-                self.remaining_plants[self.curr_action[1]] = 0
+            if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
+                self.remaining_stands[self.curr_action[1]] = 0
             elif self.curr_action[0] == Action.PICKUP_POT:
-                self.remaining_pots[self.curr_action[1]] = 0
+                self.remaining_stands[self.curr_action[1]] = 0
             else:
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
             return
@@ -255,7 +244,7 @@ class DecisionsNode(Node):
     #                         INTERRUPTION                          #
     #                                                               #
     #################################################################
-
+    
     def park_IT(self):
         """
         Interrupt : time to park

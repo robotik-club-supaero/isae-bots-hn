@@ -85,7 +85,7 @@ class BanderolleEnd(yasmin.State):
 
 class LaunchBanderolle(yasmin.StateMachine):
     def __init__(self, node):
-        super().__init__(outcomes=['preempted', 'end', 'fail'])
+        super().__init__(outcomes=['preempted', 'success', 'fail'])
                 
         self.add_state('CALC_BANDEROLLE_POS', 
                         CalcLaunchPos(node), 
@@ -95,5 +95,5 @@ class LaunchBanderolle(yasmin.StateMachine):
                         transitions={'preempted':'preempted','success':'BANDEROLLE_END','fail':'fail'})
         self.add_state('BANDEROLLE_END', 
                         BanderolleEnd(node.callback_action_pub), 
-                        transitions={'preempted':'preempted','success':'end','fail':'fail'})
+                        transitions={'preempted':'preempted','success':'success','fail':'fail'})
 

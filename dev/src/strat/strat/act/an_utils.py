@@ -68,7 +68,7 @@ class HardwareOrder(yasmin.State):
 class RiseElevator(HardwareOrder):
     
     def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.elevator_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
+        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
         self._debug_print = node.debug_print
         self.etage = etage
         
@@ -79,7 +79,7 @@ class RiseElevator(HardwareOrder):
 class DescendElevator(HardwareOrder):
     
     def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.elevator_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
+        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
         self._debug_print = node.debug_print
         self.etage = etage
     
@@ -90,7 +90,7 @@ class DescendElevator(HardwareOrder):
 class OpenClamp(HardwareOrder):
     
     def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.clamp_pub, f"cb_clamp_{etage}", ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
+        super().__init__(node.get_logger(), node.clamp_1_pub if (etage == 1) else node.clamp_2_pub, f"cb_clamp_{etage}", ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
         self._debug_print = node.debug_print
         self.etage = etage
     
@@ -101,7 +101,7 @@ class OpenClamp(HardwareOrder):
 class CloseClamp(HardwareOrder):
     
     def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.clamp_pub, f"cb_clamp_{etage}", ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
+        super().__init__(node.get_logger(), node.clamp_1_pub if (etage == 1) else node.clamp_2_pub, f"cb_clamp_{etage}", ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
         self._debug_print = node.debug_print
         self.etage = etage
     

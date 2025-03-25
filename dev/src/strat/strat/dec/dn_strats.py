@@ -104,8 +104,6 @@ def match_strat(node):
                     node.curr_action[1] = stand_id        
                 else:
                     node.get_logger().info("No stand found to pick up !")
-                    return
-                return
             elif node.action_successful and node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked
                 node.remaining_pots.remove(node.curr_action[1])
                 node.curr_action = [Action.PICKUP_STAND_2, stand_id]
@@ -127,7 +125,6 @@ def match_strat(node):
                 return
             else:
                 node.get_logger().info("No more free slot to deposit")
-                return
 
         # If no other action is applicable, defaulting to picking up stand
         stand_id = find_closest(node, STAND_POS, node.remaining_stand, coeffs=coeffs)
@@ -138,7 +135,6 @@ def match_strat(node):
             return
         else:
             node.get_logger().info("No more stand to pick up")
-            return
 
     if node.parked:
         node.get_logger().info("End of strategy : MATCH")

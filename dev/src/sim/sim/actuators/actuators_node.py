@@ -44,10 +44,8 @@ from strat.act.an_const import DoorCallback, DoorOrder, ElevatorCallback, Elevat
 #################################################################
 
 ## Constants GR
-DOORS_TIME = 0.200
 ELEVATOR_TIME = 0.200
 CLAMP_TIME = 0.100
-ARM_TIME = 0.200
 
 #############################
 
@@ -63,7 +61,7 @@ class DspOrder(IntEnum):
     
 ## ACTUATOR Node ######################################################
 class ActuatorNode(Node):
-
+    
     """Node used during simulations to send callbacks instead of the actuators."""
 
     def __init__(self):	

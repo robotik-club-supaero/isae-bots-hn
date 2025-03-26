@@ -125,7 +125,7 @@ class ClampCallback(Callback):
     OPEN = 0
     CLOSED = 1
 
-class Banderolle(IntEnum):
+class BanderolleOrder(IntEnum):
     LAUNCH = 1
 
 class BanderolleCallback(Callback):

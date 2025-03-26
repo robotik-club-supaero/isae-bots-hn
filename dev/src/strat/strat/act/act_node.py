@@ -88,11 +88,11 @@ class ActionNode(Node):
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, 10)
 
         # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
-        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.cb_clamp_1_fct, 10)
-        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.cb_clamp_2_fct, 10)
-        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.cb_elevator_1_fct, 10)
-        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.cb_elevator_2_fct, 10)
-        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.cb_banderolle_fct, 10)
+        self.clamp_1_sub = self.create_subscription(Int16, '/act/callback/clamp_1', self.cb_clamp_1_fct, 10)
+        self.clamp_2_sub = self.create_subscription(Int16, '/act/callback/clamp_2', self.cb_clamp_2_fct, 10)
+        self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, 10)
+        self.elevator_2_sub = self.create_subscription(Int16, '/act/callback/elevator_2', self.cb_elevator_2_fct, 10)
+        self.banderolle_sub = self.create_subscription(Int16, '/act/callback/banderolle', self.cb_banderolle_fct, 10)
 
         self._blackboard = Blackboard()
 

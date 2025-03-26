@@ -34,8 +34,9 @@ from enum import Enum
 
 from enum import IntEnum
 
-from strat.act.an_const import DoorCallback, DoorOrder, ElevatorCallback, ElevatorOrder, \
-                                    ArmCallback, ArmOrder, DspCallback, ClampOrder, ClampCallback
+from strat.act.an_const import ElevatorCallback, ElevatorOrder, \
+                                    DspCallback, ClampOrder, ClampCallback, \
+                                    BanderolleCallback, BanderolleOrder
 
 #################################################################
 #                                                               #
@@ -80,28 +81,23 @@ class ActuatorNode(Node):
         self.sub_pos = self.create_subscription(Position,"/br/currentPosition", self.update_position, qos_profile)
     
 
-        # Simule la reponse du BN sur les portes
-        self.doors_sub = self.create_subscription(Int16, '/act/order/doors', self.doors_response, qos_profile)
-        self.doors_pub = self.create_publisher(Int16, "/act/callback/doors", latch_profile)
-        
         # Simule la reponse du BN sur l'ascenseur
-        self.elevator_sub = self.create_subscription(Int16, '/act/order/elevator', self.elevator_response, qos_profile)
-        self.elevator_pub = self.create_publisher(Int16, "/act/callback/elevator", latch_profile)  
-
-        self.clamp_sub = self.create_subscription(Int16, '/act/order/clamp', self.clamp_response, qos_profile)
-        self.clamp_pub = self.create_publisher(Int16, "/act/callback/clamp", latch_profile)  
-
-        # Simule la reponse du BN sur le bras
-        self.left_arm_pub = self.create_publisher(Int16, "/act/callback/left_arm", latch_profile)  
-        self.left_arm_sub = self.create_subscription(Int16, '/act/order/left_arm', lambda msg: self.arm_response(self.left_arm_pub, msg), qos_profile)
+        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.elevator_1_response, qos_profile)
+        self.elevator_1_pub = self.create_publisher(Int16, "/act/callback/elevator_1", latch_profile)  
+       
+        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.elevator_2_response, qos_profile)
+        self.elevator_2_pub = self.create_publisher(Int16, "/act/callback/elevator_2", latch_profile)  
         
-        self.right_arm_pub = self.create_publisher(Int16, "/act/callback/right_arm",  latch_profile)  
-        self.right_arm_sub = self.create_subscription(Int16, '/act/order/right_arm', lambda msg: self.arm_response(self.right_arm_pub, msg), qos_profile)
+        # Simule la reponse du BN sur la clamp
+        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.clamp_1_response, qos_profile)
+        self.clamp_1_pub = self.create_publisher(Int16, "/act/callback/clamp_1", latch_profile)
 
-        # Comm avec l'interface de simulation
-        self.square_layout_pub = self.create_publisher(Int16, "/simu/squareLayout", latch_profile)
-        self.square_info_pub = self.create_publisher(Int16, "/simu/squareInfo", latch_profile)
-        
+        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.clamp_2_response, qos_profile)
+        self.clamp_2_pub = self.create_publisher(Int16, "/act/callback/clamp_2", latch_profile)  
+
+        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.banderolle_response, qos_profile)
+        self.banderolle_pub = self.create_publisher(Int16, "/act/callback/banderolle", latch_profile)  
+
     
         #### Variables ####
 
@@ -130,57 +126,53 @@ class ActuatorNode(Node):
         """Callback de position."""
         self.curr_pos = msg
 
-    def doors_response(self, msg):
-        sleep(DOORS_TIME)
-        rsp = Int16()
-
-        if msg.data == DoorOrder.OPEN:
-            rsp.data = DoorCallback.OPEN
-            self.log_info("Réponse simulée : Portes ouvertes")
-        else:
-            rsp.data = DoorCallback.CLOSED
-            self.log_info("Réponse simulée : Portes fermées")
-
-        self.doors_pub.publish(rsp)
-
-    def elevator_response(self, msg):
+    def elevator_response(self, etage, msg):
         sleep(ELEVATOR_TIME)
         rsp = Int16()
 
         if msg.data == ElevatorOrder.MOVE_UP:
             rsp.data = ElevatorCallback.UP
-            self.log_info("Réponse simulée : Ascenseur haut")
+            self.log_info(f"Réponse simulée : Ascenseur {etage} haut")
         else:
             rsp.data = ElevatorCallback.DOWN
-            self.log_info("Réponse simulée : Ascenseur bas")
+            self.log_info(f"Réponse simulée : Ascenseur {etage} bas")
 
-        self.elevator_pub.publish(rsp)
+        publisher = self.elevator_1_pub if etage == 1 else self.elevator_2_pub
+        publisher.publish(rsp)
 
-    def clamp_response(self, msg):
+    def elevator_1_response(self, msg):
+        self.elevator_response(1, msg)
+
+    def elevator_2_response(self, msg):
+        self.elevator_response(2, msg)
+
+    def clamp_response(self, etage, msg):
         sleep(CLAMP_TIME)
         rsp = Int16()
 
         if msg.data == ClampOrder.OPEN:
             rsp.data = ClampCallback.OPEN
-            self.log_info("Réponse simulée : Pince ouverte")
+            self.log_info(f"Réponse simulée : Pince {etage} ouverte")
         else:
             rsp.data = ClampCallback.CLOSED
-            self.log_info("Réponse simulée : Pince fermée")
+            self.log_info(f"Réponse simulée : Pince {etage} fermée")
 
-        self.clamp_pub.publish(rsp)
+        publisher = self.clamp_1_pub if etage == 1 else self.clamp_2_pub
+        publisher.publish(rsp)
 
-    def arm_response(self, pub, msg):
-        sleep(ARM_TIME)
+    def clamp_1_response(self, msg):
+        self.clamp_response(1, msg)
+
+    def clamp_2_response(self, msg):
+        self.clamp_response(2, msg)
+
+    def banderolle_response(self, msg):
+        sleep(BANDEROLLE_TIME)
         rsp = Int16()
+        rsp.data = BanderolleCallback.LAUNCHED
+        self.banderolle_pub.publish(rsp)
 
-        if msg.data == ArmOrder.EXTEND:
-            rsp.data = ArmCallback.EXTENDED     
-            self.log_info("Réponse simulée : Bras tendu")
-        else:
-            rsp.data = ArmCallback.RETRACTED
-            self.log_info("Réponse simulée : Bras rentré")
 
-        pub.publish(rsp)
 #################################################################
 #																#
 # 							Main 								#

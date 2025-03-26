@@ -32,7 +32,7 @@ DOCKER_VOLUMES = \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
-	--volume="${PWD}/../isae-bots-bn-2024":"/home/dockeruser/bn"
+	--volume="${PWD}/../isae-bots-bn-2025":"/home/dockeruser/bn"
 
 
 DOCKER_VOLUMES_PI = \
@@ -194,7 +194,7 @@ main: create-container
         echo "Container $(CONTAINER_NAME) is already running"; \
     fi
 
-	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; ${CMD}"
+	@docker exec -u 0 ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; source /app/install/setup.bash; ${CMD}"
 
 	@echo "Stopping container $(CONTAINER_NAME) ..."
 	@docker kill $(CONTAINER_NAME) > /dev/null;
@@ -208,7 +208,7 @@ term:
 	@if [ -z $$(docker ps -qf name=$(CONTAINER_NAME)) ]; then \
         echo "Container $(CONTAINER_NAME) is not started yet"; \
     else \
-        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; ${CMD}"; \
+        docker exec ${INTERACTIVE} ${CONTAINER_NAME} bash -c "source /opt/ros/jazzy/setup.bash; source /app/install/setup.bash; ${CMD}"; \
     fi
 
 # Terminal used for the simulation with special bindkeys

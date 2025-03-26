@@ -1,0 +1,154 @@
+![logo isae-robotics-club](../.media/isae_robotics_logo.png)
+
+# Exécuter le code
+
+## Ouvrir un terminal dans le Docker
+
+Ces commandes doivent être faites dans le dossier `isae-bots-hn-2024`.
+Si vous souhaitez exécuter une application graphique (telle que l'interface), vous devez d'abord exécuter la commande `xhost +`.
+
+- Pour démarrer le conteneur Docker et ouvrir le terminal principal, utilisez la commande `make main`.
+- Pour ouvrir des terminaux supplémentaires, tapez `make term`.
+- Pour quitter le terminal, tapez `exit` (dans le Docker).
+
+## Arrêter le conteneur
+
+Pour arrêter le conteneur manuellement, on peut utiliser `docker stop isaebots`.
+
+## Démarrer un programme ROS
+
+Dans le Docker, faire :
+
+```
+ros2 run <package> <executable>
+```
+
+### Liste des exécutables
+
+* #### Interface graphique :
+```bash
+ros2 run uix interface_node # Penser à faire `xhost +` avant d'aller dans le Docker
+```
+
+* #### Yasmin viewer
+Pour visualiser la machine à états définie dans l'action_node :
+```bash
+ros2 run yasmin_viewer yasmin_viewer_node
+```
+
+Ensuite il faut ouvrir l'adresse qui s'affiche (généralement `http://localhost:5000`) dans un navigateur en dehors du Docker.
+
+* #### MicroRos serial
+Permet de connecter ROS2 en série à la BR, les actionneurs, le lidar, etc.
+```bash
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyXXX
+```
+
+`ttyXXX` doit être remplacé par le nom de la carte connectée. Par défaut, le nom ressemble probablement à `ttyACM0`.
+Normalement, le Raspberry est configuré pour utiliser des noms explicites, tels que `ttyBR` pour la BR, `ttyACT` pour la carte actionneurs et `ttyLIDAR` pour le lidar, mais la configuration n'est pas toujours à jour vu qu'on change souvent de carte.
+
+Vous pouvez faire `ls /dev/tty*` (sur le Docker ou non) pour lister les périphériques connectés.
+
+* #### wiimote_node
+Permet de contrôler la BR avec une manette de WII (en bluetooth).
+```bash
+ros2 run control wiimote_node
+```
+
+Attention, ce noeud gère uniquement la communication avec la manette de WII. Pour communiquer avec la BR, vous avez aussi besoin d'un noeud MicroRos. Un script permet d'automatiser le lancement (voir ci-dessous).
+
+* #### La stratégie
+
+**Le noeud de décision :**
+```bash
+ros2 run strat dec_node
+```
+
+**Le noeud d'action :**
+```bash
+ros2 run strat act_node
+```
+
+Les deux sont nécessaires en match, mais vous pouvez les lancer séparément pour faire des tests.
+
+* #### Le pathfinder (noeud de déplacement)
+```bash
+ros2 run displacement disp_node
+```
+
+C'est lui qui reçoit les ordres de déplacement de la stratégie et gère l'évitement des obstacles, donc il est aussi nécessaire en match.
+
+* #### Noeuds de simulation
+
+    * **La BR**
+    ```bash
+    ros2 run sim simulation_br
+    ```
+
+    * **Les actionneurs**
+    ```bash
+    ros2 run sim actuator_node
+    ```
+
+    * **Simulation d'obstacle**
+    ```bash
+    ros2 run sim obstacle_node
+    ```
+
+* #### Noeuds lidar/sonar
+
+    * #### Noeud central :
+    Ce noeud centralise les données du lidar et du sonar et les envoie au noeud de déplacement. Il est nécessaire même si un seul des deux capteurs est utilisé.
+    ```bash
+    ros2 run sensors sensors_node
+    ```
+
+    * #### Noeud du lidar
+    Nécessaire seulement si le lidar est présent
+     ```bash
+    ros2 run sensors lidar_node
+    ```
+
+    * #### Noeud du sonar
+    Nécessaire seulement si le sonar est présent
+    ```bash
+    ros2 run sensors sonar_node
+    ```
+
+## Démarrer un script ROS
+
+Dans le Docker, faire :
+
+```
+ros2 launch scripts/nom_du_script.launch
+```
+
+L'interface graphique est indépendante et doit être démarrée dans un autre terminal.
+
+### Liste des scripts :
+
+Un script ROS contient juste une liste de noeuds à exécuter. Les scripts sont dans le dossier `scripts`.
+
+* **simulator.launch**
+
+Démarre les programmes qui gèrent la stratégie et le pathfinder + la simulation des actionneurs et de la BR. 
+
+```
+ros2 launch scripts/simulator.launch
+```
+
+* **remote_control.launch**
+
+Démarre le programme 
+
+```
+ros2 launch scripts/remote_control.launch BR:=/dev/ttyXXX
+```
+
+où ttyXXX est le nom de la carte BR connectée (voir plus haut la description de MicroRos).
+
+* **match.launch**
+
+Démarre les programmes qui gèrent la stratégie et le pathfinder + tous les autres noeuds nécessaires pour connecter les différentes parties du vrai robot
+
+TODO: pas encore migré sous ROS2 !

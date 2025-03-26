@@ -15,8 +15,13 @@ find_package(std_msgs REQUIRED)
 ################################################
 
 set(msg_files
+  "msg/Command.msg"
+  "msg/DisplacementOrder.msg"
   "msg/GainsPid.msg"
   "msg/LogEntry.msg"
+  "msg/OdosCount.msg"
+  "msg/Point.msg"
+  "msg/Position.msg"
 )
 
 ## Generate added messages and services with any dependencies listed here

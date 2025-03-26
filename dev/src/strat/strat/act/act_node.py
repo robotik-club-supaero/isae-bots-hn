@@ -34,7 +34,8 @@ from yasmin_viewer import YasminViewerPub
 import time
 
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
-from geometry_msgs.msg import Quaternion, Pose2D
+from geometry_msgs.msg import Quaternion
+from br_messages.msg import Position
 
 from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, COLOR
 from .an_sm import ActionStateMachine
@@ -64,7 +65,7 @@ class ActionNode(Node):
         self.repartitor_pub = self.create_publisher(Empty, '/strat/action/request', latch_profile)
         self.callback_action_pub = self.create_publisher(EndOfActionMsg, '/strat/action/callback', latch_profile)
         self.disp_pub = self.create_publisher(Quaternion, '/dsp/order/next_move', latch_profile)
-        self.stop_teensy_pub = self.create_publisher(Quaternion, '/stop_teensy', latch_profile)
+        self.stop_teensy_pub = self.create_publisher(Empty, '/br/stop', latch_profile)
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)
         
         # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
@@ -82,7 +83,7 @@ class ActionNode(Node):
         self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, 10)
         self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, 10)
         self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, 10)
-        self.position_sub = self.create_subscription(Pose2D, '/current_position', self.cb_position_fct, 10)
+        self.position_sub = self.create_subscription(Position, '/br/currentPosition', self.cb_position_fct, 10)
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, 10)
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, 10)
 

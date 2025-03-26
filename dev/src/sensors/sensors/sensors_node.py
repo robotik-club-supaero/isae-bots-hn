@@ -18,7 +18,7 @@ import rclpy
 from rclpy.node import Node
 
 import numpy as np
-from geometry_msgs.msg import Pose2D
+from br_messages.msg import Position
 from std_msgs.msg import Int16MultiArray
 from std_msgs.msg import MultiArrayLayout
 from std_msgs.msg import MultiArrayDimension
@@ -151,7 +151,7 @@ class SensorsNode(Node):
         qos_profile = 10
         self.subLidar=self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, qos_profile)
         self.subSonars = self.create_subscription(Int16MultiArray, "/sensors/obstaclesSonar", self.update_obstacles, qos_profile)
-        self.sub_rospy=self.create_subscription(Pose2D, "/current_position", self.update_position, qos_profile)
+        self.sub_rospy=self.create_subscription(Position, "/br/currentPosition", self.update_position, qos_profile)
 
     
 def main():

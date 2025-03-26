@@ -26,7 +26,7 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
-from geometry_msgs.msg import Pose2D
+from br_messages.msg import Position
     
 #################################################################
 #                                                               #
@@ -60,11 +60,11 @@ class ObstaclesNode(Node):
 
         self.obs_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
         self.lidar_sub = self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, 10)
-        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
+        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
 
     def recv_position(self, msg):
         """
-        Feedback on current position via /disp/current_position topic.
+        Feedback on current position via /br/currentPosition topic.
         """
         self.x_robot = msg.x
         self.y_robot = msg.y

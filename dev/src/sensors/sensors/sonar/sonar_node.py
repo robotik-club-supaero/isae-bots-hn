@@ -29,7 +29,8 @@ import configparser
 import ast
 from sonar_lib import coord_obstacle
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
-from geometry_msgs.msg import Pose2D, Point
+from geometry_msgs.msg import Point
+from br_messages import Position
 
 #################################################################
 #                                                               #
@@ -68,12 +69,12 @@ class SonarNode(Node):
             self.nb_sonars += 1
 
         self.obs_pub = self.create_publisher(Int16MultiArray, "/sensors/obstaclesSonar", 10)
-        self.pos_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
+        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
         self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, 10)  # can change topic name ?
     
     def recv_position(self, msg):
         """
-        Feedback on current position /disp/current_position topic.
+        Feedback on current position /br/currentPosition topic.
         """
         for i in range(self.nb_sonars) :
             [x, y, dir_visee] = self.sonars_lst[i]

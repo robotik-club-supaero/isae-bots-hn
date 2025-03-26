@@ -25,7 +25,7 @@ from lidar_lib import *
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose2D
+from br_messages.msg import Position
 from sensor_msgs.msg   import LaserScan
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
@@ -59,7 +59,7 @@ class LidarNode(Node):
         # initialisation des publishers
         self.pub_obstacles = self.create_publisher(Int16MultiArray, "/sensors/obstaclesLidar", 10)
         # initialisation des suscribers
-        self.sub_pos = self.create_subscription(Pose2D, "/current_position", self.update_position, 10)
+        self.sub_pos = self.create_subscription(Position, "/br/currentPosition", self.update_position, 10)
         self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, 10)
 
 

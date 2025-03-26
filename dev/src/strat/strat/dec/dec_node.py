@@ -33,7 +33,7 @@ import strat.dec.dn_strats as dn_strats
 
 from std_msgs.msg import Int16, Int16MultiArray, Empty
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
-from geometry_msgs.msg import Pose2D
+from br_messages.msg import Position
 
 from ..strat_const import Action, ActionScore, ActionResult
 
@@ -61,7 +61,7 @@ class DecisionsNode(Node):
         self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, 10)
         self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, 10)
         self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, 10)
-        self.position_sub = self.create_subscription(Pose2D, "/current_position", self.recv_position, 10)
+        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
 
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
         self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, 10)

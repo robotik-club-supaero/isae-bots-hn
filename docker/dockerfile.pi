@@ -54,6 +54,7 @@ RUN apt-get update && apt-get install -y \
     git \
     python3-pip \
     python3-numpy \
+    python3-pybind11 \
     python3-colcon-common-extensions \
     nano \
     python-is-python3 \
@@ -75,8 +76,9 @@ RUN mkdir -p /app/dev/lib
 RUN git clone --recursive -b jazzy https://github.com/micro-ROS/micro_ros_setup.git /app/dev/lib/micro_ros_setup
 # Hokuyo driver (Lidar)
 RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/lib/urg_node2
-# Simulation of the simulation of the "base roulante" (copied from GitHub isaebots-bn)
+# Messages of the simulation of the "base roulante" (copied from GitHub isaebots-bn)
 COPY ./dev/lib/br_messages /app/dev/lib/br_messages
+COPY ./dev/lib/br_trajectories /app/dev/lib/br_trajectories
 
 # ---- HN ----
 # Yasmin (state machines)

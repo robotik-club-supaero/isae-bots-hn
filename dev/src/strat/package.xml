@@ -30,8 +30,10 @@
 
   <!-- The *depend tags are used to specify dependencies -->
 
-  <depend>rclpy</depend>
-  <depend>std_msgs</depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>yasmin</exec_depend>
+  <exec_depend>yasmin_viewer</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

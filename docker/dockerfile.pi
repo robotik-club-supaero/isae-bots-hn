@@ -82,8 +82,7 @@ COPY ./dev/lib/br_trajectories /app/dev/lib/br_trajectories
 
 # ---- HN ----
 # Yasmin (state machines)
-RUN git clone https://github.com/uleroboticsgroup/yasmin.git /app/dev/lib/yasmin
-RUN cd /app/dev/lib/yasmin && pip3 install -r requirements.txt --break-system-packages
+RUN apt-get install -y ros-jazzy-yasmin ros-jazzy-yasmin-viewer
 
 # ---- Pre-build (only third-party packages)
 WORKDIR '/app'

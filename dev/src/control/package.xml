@@ -27,9 +27,9 @@
   <!-- Example: -->
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
 
-  <depend>message</depend>
-  <depend>rclpy</depend>
-  <depend>std_msgs</depend>
+  <exec_depend>message</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

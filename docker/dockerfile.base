@@ -40,15 +40,9 @@ RUN mkdir -p /app/dev/lib
 RUN git clone --recursive -b jazzy https://github.com/micro-ROS/micro_ros_setup.git /app/dev/lib/micro_ros_setup
 # Hokuyo driver (Lidar)
 RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/lib/urg_node2
-# Simulation of the "base roulante" (copied from GitHub isae-bots-bn)
-RUN mkdir /app/dev/lib/isae-bots-bn-2025
-WORKDIR '/app/dev/lib/isae-bots-bn-2025'
-RUN git init
-RUN git sparse-checkout init
-RUN git sparse-checkout set BR/TeensyBRpio
-RUN git remote add origin https://github.com/Jean-Michel-Robot/isae-bots-bn-2025.git
-RUN git fetch
-RUN git checkout br_new
+# Messages and trajectories of the simulation of the "base roulante" (copied from GitHub isaebots-bn)
+COPY ./dev/lib/br_messages /app/dev/lib/br_messages
+COPY ./dev/lib/br_trajectories /app/dev/lib/br_trajectories
 
 # ---- HN ----
 # Yasmin (state machines)

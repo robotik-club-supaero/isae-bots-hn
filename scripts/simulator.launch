@@ -13,6 +13,6 @@ Launch script for GR (sim for now)
 
 	<!-- sim nodes -->
 	<node name="OBS" pkg="sim" exec="obstacle_node" output="screen"/>
-	<node name="BRN" pkg="sim" exec="simulation_br" output="screen"/>
+	<node name="BRN" pkg="br_simu" exec="simulation_br" output="screen"/>
 
 </launch>

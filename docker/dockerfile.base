@@ -40,9 +40,10 @@ RUN mkdir -p /app/dev/lib
 RUN git clone --recursive -b jazzy https://github.com/micro-ROS/micro_ros_setup.git /app/dev/lib/micro_ros_setup
 # Hokuyo driver (Lidar)
 RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/lib/urg_node2
-# Messages and trajectories of the simulation of the "base roulante" (copied from GitHub isaebots-bn)
-COPY ./dev/lib/br_messages /app/dev/lib/br_messages
-COPY ./dev/lib/br_trajectories /app/dev/lib/br_trajectories
+# Messages and simulation of the "base roulante" (copied from GitHub isaebots-bn)
+# HACK: The BR is mounted as a volume later (when the container is created) but docker build does not allow to mount volumes when building the image
+# Instead, we just copy the BR here and delete it later (this just allows to pre-compile the BR and save time when the container is created)
+COPY ./dev/lib/br /app/dev/lib/br
 
 # ---- HN ----
 # Yasmin (state machines)
@@ -62,6 +63,9 @@ RUN source /app/install/setup.bash && ros2 run micro_ros_setup build_agent.sh
 
 # Add user so that we don't log in as root
 RUN adduser --quiet --disabled-password dockeruser && usermod -a -G audio dockeruser
+
+# Removing the copy of the BR so we can mount it as a volume instead (see message above)
+RUN rm -rf /app/dev/lib/br
 
 COPY ./docker/49-teensy.rules /etc/udev/rules.d/
 

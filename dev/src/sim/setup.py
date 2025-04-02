@@ -33,7 +33,6 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
-        ('lib/' + package_name, ['sim/br/simulation_br']),
     ],
     entry_points={
         'console_scripts': [

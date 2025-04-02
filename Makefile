@@ -29,10 +29,10 @@ PI_PLATFORM = linux/arm64/v8
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES = \
 	--volume="${PWD}/dev/src":"/app/dev/src" \
+	--volume="${PWD}/dev/lib/br":"/app/dev/lib/br" \
 	--volume="/dev":"/dev" \
 	--volume="${PWD}/scripts":"/app/scripts" \
 	--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
-	--volume="${PWD}/../isae-bots-bn-2025":"/home/dockeruser/bn"
 
 
 DOCKER_VOLUMES_PI = \
@@ -79,7 +79,7 @@ print-architecture:
 	@if [ "${architecture}" = "x86_64" ]; then \
 		echo "The architecture is $(architecture), we are on the PC"; \
 	elif [ "${architecture}" = "aarch64" ]; then \
-		echo "The architecture is $(architecture), we are on the pi"; \
+		echo "The architecture is $(architecture), we may be on the pi"; \
 	else \
 		echo "The architecture is $(architecture), wtf is that"; \
 	fi
@@ -112,16 +112,7 @@ create-container:
 #	Check if container has been created, if not create it
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
-		if [ "${architecture}" = "x86_64" ]; then \
-			docker run ${INTERACTIVE} --privileged --net=host \
-			--name ${CONTAINER_NAME} \
-			${DOCKER_VOLUMES} \
-			${DOCKER_ENV_VAR} \
-			-u 0 \
-			${IMAGE_NAME}_base \
-			"${CMD}"; \
-			echo "Created PC container successfully"; \
-		elif [ "${architecture}" = "aarch64" ]; then \
+		if cat /etc/os-release | grep -iq "raspbian"; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
@@ -132,7 +123,14 @@ create-container:
 			"${CMD}"; \
 			echo "Created pi container successfully"; \
 		else \
-			echo "The architecture is $(architecture), not recognized"; \
+			docker run ${INTERACTIVE} --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES} \
+			${DOCKER_ENV_VAR} \
+			-u 0 \
+			${IMAGE_NAME}_base \
+			"${CMD}"; \
+			echo "Created PC container successfully"; \
 		fi \
     else \
         echo "Container $(CONTAINER_NAME) is already created"; \
@@ -158,16 +156,7 @@ clear-container:
 	else \
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
-		if [ "${architecture}" = "x86_64" ]; then \
-			docker run ${INTERACTIVE} --privileged --net=host \
-			--name ${CONTAINER_NAME} \
-			${DOCKER_VOLUMES} \
-			${DOCKER_ENV_VAR} \
-			-u 0 \
-			${IMAGE_NAME}_base \
-			"${CMD}"; \
-			echo "Replaced PC container successfully"; \
-		elif [ "${architecture}" = "aarch64" ]; then \
+		if cat /etc/os-release | grep -iq "raspbian"; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
@@ -178,7 +167,14 @@ clear-container:
 			"${CMD}"; \
 			echo "Replaced pi container successfully"; \
 		else \
-			echo "The architecture is $(architecture), not recognized"; \
+			docker run ${INTERACTIVE} --privileged --net=host \
+			--name ${CONTAINER_NAME} \
+			${DOCKER_VOLUMES} \
+			${DOCKER_ENV_VAR} \
+			-u 0 \
+			${IMAGE_NAME}_base \
+			"${CMD}"; \
+			echo "Replaced PC container successfully"; \
 		fi \
 	fi
 

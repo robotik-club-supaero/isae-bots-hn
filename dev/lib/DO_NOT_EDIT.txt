@@ -1,5 +1,0 @@
-Pour modifier br_messages, modifiez le code de la base roulante (GitHub du BN) et répercutez
-ensuite les modifications ici.
-
-Ne placez pas les programmes du HN ici ; ils ne seront pas copiés sur le Docker. Utilisez le dossier
-dev/src à la place.

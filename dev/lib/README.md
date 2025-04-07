@@ -45,11 +45,11 @@ git push
 ## Recompilation
 
 La BR doit être recompilée à chaque fois qu'elle est modifiée. 
-```
-colcon build --symlink-install
-```
 
 Si on est sur le Raspberry, il faut copier manuellement les modifications sur le Docker avant de compiler :
+`docker cp ./dev/lib/br/. isaebots:/app/dev/lib/br`. Si on est sur PC, la copie est automatique.
+
+Pour recompiler :
 ```
-docker cp ./dev/lib/br /app/dev/lib/br
+make main CMD="colcon build --symlink-install"
 ```

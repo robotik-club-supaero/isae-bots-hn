@@ -53,7 +53,8 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._msg.data = f"stand{stand_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        xp, yp, thetap = STAND_POS[stand_id]
+        xp, yp = STAND_POS[stand_id]
+        thetap = 0
         userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_STAND)
              
         return 'success'

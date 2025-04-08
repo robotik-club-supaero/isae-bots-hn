@@ -127,7 +127,7 @@ def match_strat(node):
                 node.get_logger().info("No more free slot to deposit")
 
         # If no other action is applicable, defaulting to picking up stand
-        stand_id = find_closest(node, STAND_POS, node.remaining_stand, coeffs=coeffs)
+        stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=coeffs)
         if stand_id is not None:
             node.curr_action = [Action.PICKUP_STAND_2, stand_id]
             node.get_logger().info("Next action order : Pickup Stand")

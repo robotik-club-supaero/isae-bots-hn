@@ -48,7 +48,7 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._msg = String()
     
     def execute(self, userdata):    
-        stand_id = self._node.get_pickup_id("stand", userdata)
+        stand_id = self._node.get_pickup_id("stand", userdata) % len(STAND_POS)
 
         self._msg.data = f"stand{stand_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored

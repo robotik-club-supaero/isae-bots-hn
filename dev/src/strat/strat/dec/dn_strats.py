@@ -98,7 +98,7 @@ def match_strat(node):
                 coeffs[node.curr_action[1]] = 999 # penalise
 
         if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):
-            stand_id = find_closest(node, STAND_POS, node.remaining_stand, coeffs=coeffs)
+            stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=coeffs)
             if not node.action_successful: # Continue to search for stand
                 if stand_id is not None:
                     node.curr_action[1] = stand_id        

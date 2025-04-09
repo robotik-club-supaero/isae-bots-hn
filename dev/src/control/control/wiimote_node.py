@@ -30,7 +30,7 @@ from rclpy.node import Node
 import cwiid
 from enum import IntEnum, Enum
 from std_msgs.msg      import  Bool
-from br_messages import Command
+from br_messages.msg import Command
 
 #################################################################
 #                                                               #
@@ -144,7 +144,7 @@ class WiiControlNode(Node):
         if abs(self.msg_pos.angular) < 10:
             self.msg_pos.angular = 0.
 
-        self.nextpos_pub.publish(self.msg_pos)
+        self.command_pub.publish(self.msg_pos)
 
         time.sleep(0.01)
 

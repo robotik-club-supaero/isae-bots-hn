@@ -15,8 +15,13 @@ class LogReader(Thread):
     def run(self):
         while True:
             try:
-                (readable, _, _) = select.select([self._stream], [], [])
-                line = self._stream.readline()
+                readable, _, _ = select.select([self._stream], [], [], timeout=1)
+                if self.interrupted.is_set():
+                    break
+                if readable == []:
+                    continue
+
+                    line = self._stream.readline()
                 if not line or self.interrupted.is_set():
                     break
             except:

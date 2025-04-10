@@ -15,7 +15,6 @@
 from math import pi
 from enum import IntEnum
 
-from ast import literal_eval
 from config import GlobalConfig
 
 CONFIG = GlobalConfig()

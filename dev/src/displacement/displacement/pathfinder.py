@@ -1,5 +1,4 @@
 import numpy as np
-from ast import literal_eval
 
 from pathfinder import Map, ObstacleCircle, ObstacleRect, Point
 

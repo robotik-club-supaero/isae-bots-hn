@@ -30,8 +30,6 @@ import numpy as np
 from math import sin
 import time
 
-from ast import literal_eval
-
 # import pathfinder
 from .pathfinder import PathFinder
 # import msgs

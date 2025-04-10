@@ -24,7 +24,6 @@ from rclpy.node import Node
 
 import sys
 import time
-from ast import literal_eval
 import threading
 
 from .dn_const import *

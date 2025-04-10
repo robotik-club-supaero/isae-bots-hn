@@ -34,4 +34,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
+    entry_points={
+        'console_scripts': [
+            'isb_node = top.isb.isb_node:main',
+            'lcd_node = top.lcd.lcd_node:main',
+            'master_node = top.master.master_node:main',
+        ],
+    },
 )

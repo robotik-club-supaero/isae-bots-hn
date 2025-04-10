@@ -9,13 +9,12 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
+import os
 import subprocess
 
 from numpy import linspace
 
-
-IMAGES_PATH = '/app/dev/src/top/oled/images/'
-
+IMAGES_PATH = f"{os.path.dirname(os.path.realpath(__file__))}/images"
 
 # Load default font.
 font = ImageFont.load_default()
@@ -72,8 +71,7 @@ class Oled():
         self.bottom = self.height-padding
         # Move left to right keeping track of the current x position for drawing shapes.
         self.x = 0
-        
-        
+
     def oled_clear(self):
         self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
 
@@ -207,43 +205,3 @@ class Oled():
 
         self.disp.image(self.image)
         self.disp.display()
-
-
-    def run(self):
-
-        while True:
-
-            self.update_stats()
-            self.update_display()
-
-
-            sleep(0.8)
-        
-
-if __name__ == '__main__':
-
-
-    '''
-    Pixels going from (0,0) to (127,63)
-    The upper band goes from (0,0) to (127,15)
-    '''
-
-    oled = Oled()
-
-    oled.set_bgImage('SRC_OledLogo2.ppm')
-    
-    #oled.run()
-    
-    # oled.update_display()
-    # sleep(0.2)
-    # oled.update_display()
-    # sleep(0.2)
-    # oled.update_display()
-    # sleep(0.2)
-
-    # oled.sign_states[2] = 1
-
-    # oled.update_display()
-    # sleep(0.2)    
-    # oled.update_display()
-    # sleep(0.2)

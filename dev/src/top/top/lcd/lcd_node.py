@@ -1,59 +1,70 @@
-#!/usr/bin/env python
-# pyright: reportMissingImports=false
-
-
-import os
 import sys
-import time
 
 import rclpy
 from rclpy.node import Node
 
 import lcd_lib
-from subprocess   import Popen, PIPE
-from std_msgs.msg import Int16
+from config.qos import default_profile
 
+class LCDNode(Node):
 
-displayFrequency = 10
+    def __init__(self):
+        super().__init__("ISB")
 
-shortBlinkTime = 0.1
-longBlinkTime = 0.4
+        self.match_started = False
+        self.color = None
+        self.strat = None
+        self.score = 0
 
+        self.lcd = lcd_lib.lcd()
+        self.lcd.lcd_clear()
 
-nbCharsToDisplay = 10
+        self.subScore = self.create_subscription(Int16, "/game/color", self.cb_color, default_profile)
+        self.subScore = self.create_subscription(Int16, "/game/strat", self.cb_strat, default_profile)
+        self.subStart = self.create_subscription(Int16, "/game/start", self.cb_start, default_profile)
 
-class PointsNode(Node):
+        self.subScore = self.create_subscription(Int16, "/game/score", self.cb_score, default_profile)
+        
+    def cb_color(self, msg):
+        self.color = msg.data
+        self.update_display()
 
-	blinkingBackground = True  # choose false to deactivate
+    def cb_strat(self, msg):
+        self.strat = msg.data
+        self.update_display()
 
+    def cb_start(self, msg):
+        if msg.data == 1:
+            self.match_started = True
+            self.update_display()
 
-	def __init__(self):    
-		self.subScore = self.create_subscription(Int16, "/game/score", self.cbScore, 10)
-		self.lcd = lcd_lib.lcd()
-		self.lcd.lcd_clear()
-		self.lcd.lcd_display_string("SCORE : 0", line=1)
+    def cb_score(self, msg):
+        self.score = msg.data
+        self.update_display()
 
+    def update_display(self):
+        self.lcd.lcd_clear()
+        if self.match_started:
+            self.lcd.lcd_display_string("SCORE: " + str(self.score), line=1)
+        else:
+            self.lcd.lcd_display_string("STRAT: " + str(self.strat), line=1)
+            self.lcd.lcd_display_string("COLOR: " + "HOME" if self.color == 0 else "AWAY", line=2)
 
-		self.get_logger().info("LCD Node Initialized")
+#################################################################
+#                                                               #
+#                             Main                              #
+#                                                               #
+#################################################################
 
-
-	def cbScore(self, msg):
-		self.lcd.lcd_clear()
-		self.lcd.lcd_display_string("SCORE : " + str(msg.data), line=1)
-
-
-
-### LAUNCH ###
-
-if __name__ == '__main__':
+def main():
     rclpy.init(args=sys.argv)
-    
-    node = PointsNode()
 
+    node = LCDNode()
     try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().warning("Node forced to terminate")
+        node.run()
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

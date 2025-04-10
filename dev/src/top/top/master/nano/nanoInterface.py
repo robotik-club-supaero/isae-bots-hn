@@ -34,3 +34,15 @@ class NanoEvent(IntEnum):
     EVENT_BUTTON_ON = 202
     EVENT_BUTTON_OFF = 203
 
+class ButtonColorMode(IntEnum):
+    BUTTON_COLOR_UNKNOWN = -1
+    BUTTON_COLOR_STATIC = 0
+    BUTTON_COLOR_BLINKING = 1
+    BUTTON_COLOR_FADING = 3
+    BUTTON_COLOR_NYAN = 4
+    
+class ButtonPressState(IntEnum):
+    BUTTON_PRESS_UNKNOWN = -1
+    BUTTON_PRESS_OFF = 0
+    BUTTON_PRESS_ON = 1
+    

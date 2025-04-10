@@ -16,8 +16,22 @@ import time
 import vlc
 import threading
 
-from .speaker_const import soundDict, SOUNDS_PATH, BLANK_SOUND_FILE
+SOUNDS_PATH = f"{os.path.dirname(os.path.realpath(__file__))}/sounds/"
+BLANK_SOUND_FILE = 'blank.mp3'
 
+# sound dictionary (sound used name to sound file name)
+soundDict = {
+    'cestConCa' : 'cestConCa.mp3',
+    'bip' : 'bip.mp3',
+    'windowsStartup' : 'windows/startup.mp3',
+    'startRos' : 'startup2.mp3',
+    'endRos' : 'exit1.mp3',
+    'RosReady' : 'windows/session_in.mp3',
+    'RosEnded' : 'windows/session_out.mp3',
+    
+    # match startup sounds
+    'cestParti' : 'matchStartup/cestParti.mp3'
+}
 
 class Speaker():
     
@@ -58,24 +72,16 @@ class Speaker():
             
         listPlayer.stop()
         
-    
-    
-    def __startAudio(self, source):
-        
-        # media resource locator
-        mrl = source
-        
+    def __startAudio(self, source):       
         # setting mrl to the media player
-        self.media_player.set_mrl(mrl)
+        self.media_player.set_mrl(source)
         
         # set volume (in case it has been changed)
         # self.media_player.audio_set_volume(self.volume)
         
         # start playing video
         self.media_player.play()
-        
-        
-        
+           
     def playSound(self, sound):
         
         try:
@@ -106,31 +112,13 @@ class Speaker():
         print(f"Set sound volume to {volume}")
         self.volume = volume
         
-                
-        
-    def setMute(self, isMute):
-        
+    def setMute(self, isMute):        
         # if no change
         if isMute == self.isMute:
             return
                 
-        
         self.isMute = isMute
+        self.media_player.audio_set_mute(isMute)
         
-        #TOTEST choisir le type de mute qui marche le mieux sur la pi
-        # sur le PC les deux font la même chose
-        if isMute:
-            # self.media_player.audio_set_volume(0)
-            self.media_player.audio_set_mute(True)
-        else:
-            # self.media_player.audio_set_volume(self.volume)
-            self.media_player.audio_set_mute(False)
-            
-        #TODO mute or unmute
-        
-        # self.media_player.audio_set_mute()
-        
-        
-    def stop(self):
-        
+    def stop(self):        
         self.constantBlankSoundStopEvent.set()

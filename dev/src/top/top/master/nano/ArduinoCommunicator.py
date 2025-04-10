@@ -2,10 +2,10 @@
 
 import serial
 import time
+import logging
+logger = logging.getLogger(__name__)
 
-from .nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER
-from top_const import ButtonColorMode, ButtonPressState
-
+from .nanoInterface import NanoCommand, NanoCallback, NanoEvent, TERMINAL_CHARACTER, ButtonColorMode, ButtonPressState
 
 class ArduinoCommunicator:
     
@@ -26,7 +26,7 @@ class ArduinoCommunicator:
         
         if nanoCommand in [NanoCommand.CMD_COLOR_FIXED, NanoCommand.CMD_COLOR_BLINKING, NanoCommand.CMD_COLOR_FADING]:
             if color is None:
-                print("ERROR : give a color input")
+                logger.error("ERROR : give a color input")
                 return NanoCallback.CLB_KO
             bytesToSend = bytearray([nanoCommand.value] + list(color) + [TERMINAL_CHARACTER])
             
@@ -35,7 +35,7 @@ class ArduinoCommunicator:
             
         self.ser.write(bytesToSend)
         # print("Sent raw command ", bytesToSend.decode())
-        if verbose: print("Sent nano command " + nanoCommand.name)
+        if verbose: logger.debug("Sent nano command " + nanoCommand.name)
 
 
     def receive_response(self, verbose=False):
@@ -59,7 +59,7 @@ class ArduinoCommunicator:
             elif nanoEvent == NanoEvent.EVENT_BUTTON_OFF:
                 self.ledButtonState = 0
             else:
-                print("ERROR : unknown event type")
+                logger.error("ERROR : unknown event type")
                 
             # print("Received button press event to new state ", self.ledButtonState)
                 
@@ -71,16 +71,16 @@ class ArduinoCommunicator:
         try:
             nanoCallback = NanoCallback(res)
             
-            if verbose: print("Received nano callback " + nanoCallback.name)
+            if verbose: logger.debug("Received nano callback " + nanoCallback.name)
             return nanoCallback
         except:
-            print("Received unknown nano callback: " + str(res))
+            logger.warn("Received unknown nano callback: " + str(res))
             return NanoCallback.CLB_CONNEXION_FAILED
     
     
     def establish_communication(self):
         
-        print("Waiting for communication to be established ...")
+        logger.info("Waiting for communication to be established ...")
             
         # set read timeout to a value for non blocking reads
         self.ser.timeout = 0.1
@@ -94,7 +94,7 @@ class ArduinoCommunicator:
             if nanoCallback is None: continue  # an event is not handled at this point
             
             if nanoCallback == NanoCallback.CLB_INIT_OK:
-                print("Connection established")
+                logger.info("Connection established")
                 return 0
             elif nanoCallback == NanoCallback.CLB_CONNEXION_FAILED:
                 return 1
@@ -152,7 +152,7 @@ class ArduinoCommunicator:
         if buttonColorMode in [ButtonColorMode.BUTTON_COLOR_STATIC, ButtonColorMode.BUTTON_COLOR_BLINKING, ButtonColorMode.BUTTON_COLOR_FADING]:
             
             if color is None:
-                print("ERROR : color is None for colored ButtonState")
+                logger.error("ERROR : color is None for colored ButtonState")
             
             if buttonColorMode == ButtonColorMode.BUTTON_COLOR_STATIC:
                 self.send_command(NanoCommand.CMD_COLOR_FIXED, color=color)
@@ -166,73 +166,4 @@ class ArduinoCommunicator:
             self.send_command(NanoCommand.CMD_NYAN)
             
         else:
-            print("ERROR : cannot process this button state")
-        
-        
-        
-
-
-    def run(self):
-        
-        c = 0
-        
-        while True:
-            
-            # if c == 100:
-            #     button_state = self.read_button_state()
-            #     if button_state is not None:
-            #         print("Successfully read button state to ", button_state)
-            #     c = 0
-                
-            # c += 1
-            nanoCallback = self.receive_response()
-            print(nanoCallback)
-            time.sleep(.01)
-            
-
-            
-def main():
-
-    # Example Usage
-    arduino = ArduinoCommunicator()
-    arduino.establish_communication()
-
-    # read the button once at the start
-    # arduino.read_button_state()
-
-
-    # begin = time.perf_counter()
-
-    # set value of timeout to None so that we wait until a value comes
-    arduino.ser.timeout = None
-
-    # wait forever for a button change
-    # TODO use a thread for this
-    # while True:
-    #     # print("waiting for new response")
-    #     res = arduino.receive_response()
-    #     print(f'New LED button State: {res}')
-    #     arduino.ledButtonState = res
-        
-    #     if arduino.ledButtonState == 0:
-    #         c
-    #     else:
-    #         arduino.send_command("colbx")
-    #     res = arduino.receive_response()
-    #     print('res : ', res)
-    #     if res == 'o':
-    #         print("Changed color")
-            
-    #     time.sleep(1)
-    
-    arduino.run()
-    
-    # while True:
-    #     arduino.inputSendCommand()
-
-        
-        
-        
-        
-if __name__ == '__main__':
-    main()
+            logger.error("ERROR : cannot process this button state")

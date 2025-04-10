@@ -49,7 +49,7 @@ class PathFinder:
         ## STATIC OBSTACLES ###############################################
         obstacles = {}
 
-        if int(READER.get("PATHFINDER", "static_obstacles")) != 0:
+        if CONFIG.enable_static_obstacles:
 
             # Walls 
             obstacles["wallNorth"] = ObstacleRect(0, MARGIN, 0, 3000)
@@ -72,6 +72,9 @@ class PathFinder:
             # Pots # TODO update
             #for i, pot in enumerate(POTS_POS):
             #    obstacles[f"pot{i}"] = ObstacleCircle(Point(*adapt_pos_to_side(*pot, color)[:2]), 75+MARGIN)
+
+        else:
+            logger.warn("Static obstacles have been disabled! Make sure to enable before a real match.")
 
         logger.info("Number of static obstacles : {}.".format(len(obstacles)))
     

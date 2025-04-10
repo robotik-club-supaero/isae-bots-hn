@@ -48,7 +48,7 @@ def colored_destination(color, x_d, y_d, t_d, w):
     x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
     return create_quaternion(x_d, y_d, t_d, w.value)
 
-def colored_approach(userdata, xd, yd, margin, phase, theta_final=None):
+def colored_approach(userdata, xd, yd, margin, phase=Approach.INITIAL, theta_final=None):
     x, y, _ = adapt_pos_to_side(userdata["robot_pos"].x, userdata["robot_pos"].y, 0, userdata["color"])
     d = norm([xd - x, yd - y])
     
@@ -124,8 +124,6 @@ class Displacement(yasmin.State):
             if userdata["cb_depl"] == DspCallback.SUCCESS:
 
                 # FIXME: this fixes a bug (is it?) when the displacement node sometimes reports a success when the robot is blocked by an obstacle
-                self._logger.info(str(userdata["robot_pos"]) + str(dest) + str(math.sqrt((dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2)))
-                
                 if math.sqrt((dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2) > ACCURACY_MARGIN:
                     self._logger.error('Displacement result: Too far away from target')
                     if retried:

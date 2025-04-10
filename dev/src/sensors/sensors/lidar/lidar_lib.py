@@ -29,7 +29,7 @@ from __future__ import division
 import math
 import numpy as np
 import os, sys
-import configparser
+from config import RobotConfig
 
 #######################################################################
 # CONSTANTS
@@ -40,15 +40,12 @@ TABLE_W = 2000          # largeur de table (selon x)
 
 LOCAL_LIM = 100         # distance lim de regroupement/localisation
 
-READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),"../../../robot_config.cfg"))
+config = RobotConfig()
 
-ROBOT_NAME = READER.get("ROBOT", "robot_name")
-ROBOT_LARG = int(READER.get("ROBOT", "robot_larg"))
-ROBOT_LONG = int(READER.get("ROBOT", "robot_long"))
+ROBOT_LARG = RobotConfig.robot_width
+ROBOT_LONG = RobotConfig.robot_length
 ROBOT_DIAG = np.linalg.norm([ROBOT_LARG/2, ROBOT_LONG/2])
 TABLE_MARGIN = ROBOT_DIAG/2 + 20      # marge aux bords de table
-
 
 
 #######################################################################

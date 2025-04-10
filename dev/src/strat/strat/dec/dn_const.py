@@ -19,18 +19,13 @@
 #################################################################
 
 import os
-import configparser
 from enum import IntEnum, Enum
 import numpy as np
 
+from config import StratConfig
 from ..strat_const import STAND_POS as PLANTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW, PARK_POS as PARK_POS_RAW
 
-READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),'../../../robot_config.cfg'))
-
-#################################################################
-# WINDOW
-TERM_SIZE = 62
+CONFIG = StratConfig()
 
 #################################################################
 # ROBOTS PARAMS

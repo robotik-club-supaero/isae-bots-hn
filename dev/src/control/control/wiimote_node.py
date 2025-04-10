@@ -31,6 +31,7 @@ import cwiid
 from enum import IntEnum, Enum
 from std_msgs.msg      import  Bool
 from br_messages.msg import Command
+from config.qos import default_profile
 
 #################################################################
 #                                                               #
@@ -83,8 +84,9 @@ class WiiControlNode(Node):
         super().__init__("wii_node")
         self.log_info("Initializing WII node ...")
         # -- Publishers & subscribers
-        self.command_pub = self.create_publisher(Command, "/br/command", 10)
-        self.idle_pub = self.create_publisher(Bool, "/br/idle", 10)
+        
+        self.command_pub = self.create_publisher(Command, "/br/command", default_profile)
+        self.idle_pub = self.create_publisher(Bool, "/br/idle", default_profile)
 
         # -- Connection to Wiimote
         self.wiimote = None

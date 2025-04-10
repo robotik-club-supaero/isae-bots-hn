@@ -23,6 +23,8 @@ from std_msgs.msg import Int16MultiArray
 from std_msgs.msg import MultiArrayLayout
 from std_msgs.msg import MultiArrayDimension
 
+from config.qos import default_profile, br_position_topic_profile
+
 class SensorsNode(Node):
     DISTANCEMIN = 100
     INTERVALLE = 1
@@ -145,13 +147,12 @@ class SensorsNode(Node):
         super().__init__('SensorsNode')
         self.get_logger().info("Initializing SensorsNode ...")
 
-        self.pub_obstaclesInfo=self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
+        self.pub_obstaclesInfo=self.create_publisher(Int16MultiArray, "/obstaclesInfo", qos_profile)
 
         # initialisation des suscribers
-        qos_profile = 10
         self.subLidar=self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, qos_profile)
         self.subSonars = self.create_subscription(Int16MultiArray, "/sensors/obstaclesSonar", self.update_obstacles, qos_profile)
-        self.sub_rospy=self.create_subscription(Position, "/br/currentPosition", self.update_position, qos_profile)
+        self.sub_rospy=self.create_subscription(Position, "/br/currentPosition", self.update_position, br_position_topic_profile)
 
     
 def main():

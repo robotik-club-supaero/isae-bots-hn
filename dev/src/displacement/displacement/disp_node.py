@@ -36,7 +36,6 @@ import traceback
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import numpy as np
 from math import sqrt
@@ -56,7 +55,7 @@ from .disp_utils import MAX_ASTAR_TIME, to_robot_coord, debug_print, INIT_ZONE
 # import comms
 from .disp_comm import DispCallbacks, SIMULATION, COM_STRAT
 
-from strat.strat_utils import create_quaternion
+from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
 #																#
@@ -78,35 +77,31 @@ class DisplacementNode(Node):
         super().__init__("DSP")
         self.get_logger().info("Initializing DSP Node ...")
 
-        latch_profile = QoSProfile(
-            depth=10,  # Keep last 10 messages
-            durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
-        )
         callbacks = DispCallbacks(self)
-        self.color_sub = self.create_subscription(Int16, '/game/color', callbacks.setup_color, 10)
-        self.init_pos_sub = self.create_subscription(Int16, '/game/init_pos', callbacks.setup_init_pos, 10)
-        self.end_sub = self.create_subscription(Int16, '/game/end', callbacks.callback_end, 10)
+        self.color_sub = self.create_subscription(Int16, '/game/color', callbacks.setup_color, default_profile)
+        self.init_pos_sub = self.create_subscription(Int16, '/game/init_pos', callbacks.setup_init_pos, default_profile)
+        self.end_sub = self.create_subscription(Int16, '/game/end', callbacks.callback_end, default_profile)
 
         # Comm Teensy
         self.pub_teensy_go_to = self.create_publisher(DisplacementOrder, '/br/goTo', latch_profile)
         self.pub_teensy_stop = self.create_publisher(Empty, '/br/stop', latch_profile)
         self.pub_teensy_reset = self.create_publisher(Position, '/br/resetPosition', latch_profile)
 
-        self.sub_teensy = self.create_subscription(Int16,  "/br/callbacks", callbacks.callback_teensy, 10) 
-        self.sub_pos = self.create_subscription(Position,  "/br/currentPosition", callbacks.callback_position, 10) 
+        self.sub_teensy = self.create_subscription(Int16,  "/br/callbacks", callbacks.callback_teensy, default_profile) 
+        self.sub_pos = self.create_subscription(Position,  "/br/currentPosition", callbacks.callback_position, br_position_topic_profile) 
    
         # Comm Lidar
-        self.sub_lidar = self.create_subscription(Int16MultiArray, "/obstaclesInfo", callbacks.callback_lidar, 10)
+        self.sub_lidar = self.create_subscription(Int16MultiArray, "/obstaclesInfo", callbacks.callback_lidar, default_profile)
         self.pub_speed = self.create_publisher(Int16, "/br/setSpeed", latch_profile)
         if SIMULATION:
             self.pub_obstacle = self.create_publisher(Int16MultiArray, "/simu/robotObstacle", latch_profile)
 
         # Comm Strat
         self.pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)
-        self.sub_strat = self.create_subscription(Quaternion, "/dsp/order/next_move", callbacks.callback_strat, 10)
+        self.sub_strat = self.create_subscription(Quaternion, "/dsp/order/next_move", callbacks.callback_strat, default_profile)
 
         # Obstacles
-        self.sub_delete = self.create_subscription(String, "/removeObs", callbacks.callback_delete, 10)
+        self.sub_delete = self.create_subscription(String, "/removeObs", callbacks.callback_delete, default_profile)
 
         ############################
         #### Pour la Simulation ####
@@ -284,8 +279,6 @@ class DisplacementNode(Node):
 def main():
     rclpy.init(args=sys.argv)
     
-    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
-
     node = DisplacementNode()
 
     node.get_logger().info("Waiting for match to start")

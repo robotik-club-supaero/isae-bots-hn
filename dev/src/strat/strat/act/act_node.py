@@ -27,7 +27,6 @@ import threading
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from yasmin import Blackboard
 from yasmin_viewer import YasminViewerPub
@@ -44,6 +43,7 @@ from .an_utils import color_dict, Color
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 
 from ..strat_const import ACTIONS_OUTCOMES, Action
+from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 class ActionNode(Node):
     def __init__(self):
@@ -52,11 +52,6 @@ class ActionNode(Node):
         self.sm = None
         self.setupComplete = False
       
-        latch_profile = QoSProfile(
-            depth=10,  # Keep last 10 messages
-            durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
-        )
-
         """
         Initialize all publishers of AN
         """
@@ -79,20 +74,20 @@ class ActionNode(Node):
         Initialize all subscribers of AN
         """
         # GENERAL SUBS
-        self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, 10)
-        self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, 10)
-        self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, 10)
-        self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, 10)
-        self.position_sub = self.create_subscription(Position, '/br/currentPosition', self.cb_position_fct, 10)
-        self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, 10)
-        self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, 10)
+        self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, default_profile)
+        self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, default_profile)
+        self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, default_profile)
+        self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, default_profile)
+        self.position_sub = self.create_subscription(Position, '/br/currentPosition', self.cb_position_fct, br_position_topic_profile)
+        self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, default_profile)
+        self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, default_profile)
 
         # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
-        self.clamp_1_sub = self.create_subscription(Int16, '/act/callback/clamp_1', self.cb_clamp_1_fct, 10)
-        self.clamp_2_sub = self.create_subscription(Int16, '/act/callback/clamp_2', self.cb_clamp_2_fct, 10)
-        self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, 10)
-        self.elevator_2_sub = self.create_subscription(Int16, '/act/callback/elevator_2', self.cb_elevator_2_fct, 10)
-        self.banderolle_sub = self.create_subscription(Int16, '/act/callback/banderolle', self.cb_banderolle_fct, 10)
+        self.clamp_1_sub = self.create_subscription(Int16, '/act/callback/clamp_1', self.cb_clamp_1_fct, default_profile)
+        self.clamp_2_sub = self.create_subscription(Int16, '/act/callback/clamp_2', self.cb_clamp_2_fct, default_profile)
+        self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, default_profile)
+        self.elevator_2_sub = self.create_subscription(Int16, '/act/callback/elevator_2', self.cb_elevator_2_fct, default_profile)
+        self.banderolle_sub = self.create_subscription(Int16, '/act/callback/banderolle', self.cb_banderolle_fct, default_profile)
 
         self._blackboard = Blackboard()
 
@@ -274,9 +269,7 @@ def main():
     rclpy.init(args=sys.argv)
     
     node = ActionNode()
-    
-    time.sleep(1)  # NOTE : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
-
+  
     try:
         with node:
             rclpy.spin(node)

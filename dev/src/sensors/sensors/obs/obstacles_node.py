@@ -27,6 +27,8 @@ from rclpy.node import Node
 import numpy as np
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 from br_messages.msg import Position
+
+from config.qos import default_profile, br_position_topic_profile
     
 #################################################################
 #                                                               #
@@ -58,9 +60,9 @@ class ObstaclesNode(Node):
         self.nb_lidar = 1
         self.nb_sonar = 1
 
-        self.obs_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
-        self.lidar_sub = self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, 10)
-        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
+        self.obs_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", default_profile)
+        self.lidar_sub = self.create_subscription(Int16MultiArray, "/sensors/obstaclesLidar", self.update_obstacles, default_profile)
+        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
 
     def recv_position(self, msg):
         """

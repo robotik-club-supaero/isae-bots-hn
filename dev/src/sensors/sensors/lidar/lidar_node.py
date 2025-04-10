@@ -29,6 +29,7 @@ from br_messages.msg import Position
 from sensor_msgs.msg   import LaserScan
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
 
+from config.qos import default_profile, br_position_topic_profile
 
 OBS_RESOLUTION = 100
 
@@ -57,10 +58,10 @@ class LidarNode(Node):
         self.get_logger().info("Initializing Lidar Node.")
 
         # initialisation des publishers
-        self.pub_obstacles = self.create_publisher(Int16MultiArray, "/sensors/obstaclesLidar", 10)
+        self.pub_obstacles = self.create_publisher(Int16MultiArray, "/sensors/obstaclesLidar", default_profile)
         # initialisation des suscribers
-        self.sub_pos = self.create_subscription(Position, "/br/currentPosition", self.update_position, 10)
-        self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, 10)
+        self.sub_pos = self.create_subscription(Position, "/br/currentPosition", self.update_position, br_position_topic_profile)
+        self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, default_profile)
 
 
     def update_position(self,msg):

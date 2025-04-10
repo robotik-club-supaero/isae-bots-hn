@@ -31,7 +31,7 @@ from strat.strat_const import STAND_POS, ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
 
-from .sm_displacement import MoveTo, Approach, colored_approach_with_angle
+from .sm_displacement import MoveTo, Approach, colored_approach, colored_approach_with_angle
 from .sm_waiting import ObsWaitingOnce
 
 #################################################################
@@ -54,8 +54,7 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
         xp, yp = STAND_POS[stand_id]
-        thetap = 0
-        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_STAND)
+        userdata["next_move"] = colored_approach(userdata, xp, yp, R_APPROACH_STAND)
              
         return 'success'
 
@@ -69,8 +68,9 @@ class CalcTakeStand(yasmin.State): # TODO
     def execute(self, userdata):    
         pots_id = self._node.get_pickup_id("stand", userdata)
 
-        xp, yp, thetap = STAND_POS[pots_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata["stand"], xp, yp, thetap, R_TAKE_STAND)
+        xp, yp = STAND_POS[pots_id]
+
+        userdata["next_move"] = colored_approach(userdata, xp, yp, R_TAKE_STAND)
              
         return 'success'
  

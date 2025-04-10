@@ -25,7 +25,6 @@ from time import sleep
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import random
 from std_msgs.msg      import Int16, Empty
@@ -37,6 +36,8 @@ from enum import IntEnum
 from strat.act.an_const import ElevatorCallback, ElevatorOrder, \
                                     DspCallback, ClampOrder, ClampCallback, \
                                     BanderolleCallback, BanderolleOrder
+
+from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
 #                                                               #
@@ -69,33 +70,27 @@ class ActuatorNode(Node):
         super().__init__("ACN")
         self.get_logger().info("Initializing actuator node...")
 
-        qos_profile = 10
-        latch_profile =  QoSProfile(
-            depth=10,  # Keep last 10 messages
-            durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
-        )
-
         #### Communication - pubs & subs ####
         # Sub a /color pour s'initialiser au set de la couleur
-        self.sub_color = self.create_subscription(Int16, "/game/color", self.update_color, qos_profile)
-        self.sub_pos = self.create_subscription(Position,"/br/currentPosition", self.update_position, qos_profile)
+        self.sub_color = self.create_subscription(Int16, "/game/color", self.update_color, default_profile)
+        self.sub_pos = self.create_subscription(Position,"/br/currentPosition", self.update_position, br_position_topic_profile)
     
 
         # Simule la reponse du BN sur l'ascenseur
-        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.elevator_1_response, qos_profile)
+        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.elevator_1_response, default_profile)
         self.elevator_1_pub = self.create_publisher(Int16, "/act/callback/elevator_1", latch_profile)  
        
-        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.elevator_2_response, qos_profile)
+        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.elevator_2_response, default_profile)
         self.elevator_2_pub = self.create_publisher(Int16, "/act/callback/elevator_2", latch_profile)  
         
         # Simule la reponse du BN sur la clamp
-        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.clamp_1_response, qos_profile)
+        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.clamp_1_response, default_profile)
         self.clamp_1_pub = self.create_publisher(Int16, "/act/callback/clamp_1", latch_profile)
 
-        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.clamp_2_response, qos_profile)
+        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.clamp_2_response, default_profile)
         self.clamp_2_pub = self.create_publisher(Int16, "/act/callback/clamp_2", latch_profile)  
 
-        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.banderolle_response, qos_profile)
+        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.banderolle_response, default_profile)
         self.banderolle_pub = self.create_publisher(Int16, "/act/callback/banderolle", latch_profile)  
 
     

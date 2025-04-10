@@ -21,7 +21,6 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import sys
 import time
@@ -36,6 +35,7 @@ from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
 from br_messages.msg import Position
 
 from ..strat_const import Action, ActionScore, ActionResult
+from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
 #                                                               #
@@ -52,20 +52,15 @@ class DecisionsNode(Node):
         super().__init__("DEC")
         self.get_logger().info("Initializing DEC node ...")
 
-        latch_profile =  QoSProfile(
-            depth=10,  # Keep last 10 messages
-            durability=DurabilityPolicy.TRANSIENT_LOCAL  # Transient Local durability
-        )
-
-        self.start_sub = self.create_subscription(Int16, "/game/start", self.start_match, 10)
-        self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, 10)
-        self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, 10)
-        self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, 10)
-        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
+        self.start_sub = self.create_subscription(Int16, "/game/start", self.start_match, default_profile)
+        self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, default_profile)
+        self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, default_profile)
+        self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, default_profile)
+        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
 
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
-        self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, 10)
-        self.done_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/callback", self.recv_action_callback, 10)
+        self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, default_profile)
+        self.done_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/callback", self.recv_action_callback, default_profile)
 
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
@@ -76,13 +71,13 @@ class DecisionsNode(Node):
         self.score = ActionScore.SCORE_INIT.value
 
         self.start_time = 0
-        self.match_time = int(READER.get("STRAT", "match_time"))
-        self.delay_park = int(READER.get("STRAT", "delay_park"))
+        self.match_time = CONFIG.match_time
+        self.delay_park = CONFIG.delay_park
         self.go_park = False
         self.parked = False
         
-        self.strat = int(READER.get("STRAT", "strat_default"))
-        self.strategies = list(literal_eval(READER.get('STRAT', 'strat_list')))
+        self.strat = CONFIG.default_strat_index
+        self.strategies = CONFIG.strat_names
         
         self.strat_functions = []
         for stratName in self.strategies:
@@ -99,11 +94,11 @@ class DecisionsNode(Node):
         self.action_successful = False
         self.retry_count = 0
 
-        self.init_zone = int(READER.get("STRAT", "init_zone"))
+        self.init_zone = CONFIG.init_zones[CONFIG.default_init_zone]
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
-        self.remaining_stands = [6 for _ in range(6)]
-        self.deposit_slots = [DEPOSIT_POS for _ in range(3)]
+        self.remaining_stands = [STAND_CAPACITE for _ in range(6)]
+        self.deposit_slots = [STAND_CAPACITE for _ in range(3)]
         self.nb_actions = 0
 
     def publishScore(self):
@@ -276,8 +271,6 @@ class DecisionsNode(Node):
 def main():
     rclpy.init(args=sys.argv)
     
-    time.sleep(1)  # TODO : delay for rostopic echo command to setup before we log anything (OK if we can afford this 1 second delay)
-
     node = DecisionsNode()
 
     node.get_logger().info("Waiting for match to start")

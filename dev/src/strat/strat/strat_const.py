@@ -14,12 +14,11 @@
 
 from math import pi
 from enum import IntEnum
-import configparser, os
+
 from ast import literal_eval
+from config import GlobalConfig
 
-
-READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),'../../robot_config.cfg'))
+CONFIG = GlobalConfig()
 
 class ActionResult(IntEnum):
     SUCCESS = 1
@@ -64,16 +63,8 @@ class ActionScore(IntEnum): #TODO update
     SCORE_DEPOSIT_STAND = 12
     SCORE_COCCINELLE = 5
 
-STAND_POS = [
-    list(literal_eval(READER.get("MAP", "pickup_stand_pos_1"))),
-]
+STAND_POS = CONFIG.pickup_stand_pos
 
-DEPOSIT_POS = [
-	list(literal_eval(READER.get("MAP", "deposit_pos_1"))),
-]
+DEPOSIT_POS = CONFIG.deposit_pos
 
-PARK_POS = [
-    list(literal_eval(READER.get("ROBOT", "init_pos"))),
-    list(literal_eval(READER.get("ROBOT", "init_pos2"))),
-    list(literal_eval(READER.get("ROBOT", "init_pos3")))
-]
+PARK_POS = CONFIG.park_pos

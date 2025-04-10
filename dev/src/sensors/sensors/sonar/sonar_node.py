@@ -25,20 +25,13 @@ import sys
 import rclpy
 from rclpy.node import Node
 import numpy as np
-import configparser
 import ast
 from sonar_lib import coord_obstacle
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 from geometry_msgs.msg import Point
 from br_messages import Position
-
-#################################################################
-#                                                               #
-#                            UTILS                              #
-#                                                               #
-#################################################################
-
-_CFG_FILE_ = "robot_config.cfg"
+from config import SonarConfig
+from config.qos import default_profile, br_position_topic_profile
 
 #################################################################
 #                                                               #
@@ -56,21 +49,20 @@ class SonarNode(Node):
         self.get_logger().info("Initializing SonarNode ...")
         
         # Get sonars from config file of the robot
-        reader = configparser.ConfigParser()
-        reader.read(os.path.join(os.path.dirname(__file__),f"../../../{_CFG_FILE_}"))
+        config = SonarConfig()
         
         self.nb_sonars = 0
         self.sonars_lst = []     #on enregistre chaque sonar (sa position et son cap) dans cette liste
-        self.sonars_pos = [[0 for i in range(3)] for j in range(4)]
+        self.sonars_pos = []
         
-        for k, v in reader.items("SONAR"):
-            if k[:5] != 'sonar': continue
-            self.sonars_lst.append(list(ast.literal_eval(v)))
+        for sonar in config.available_sonars:
+            self.sonars_lst.append(sonar)
+            self.sonars_pos.append([0 for i in range(3)])
             self.nb_sonars += 1
 
-        self.obs_pub = self.create_publisher(Int16MultiArray, "/sensors/obstaclesSonar", 10)
-        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
-        self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, 10)  # can change topic name ?
+        self.obs_pub = self.create_publisher(Int16MultiArray, "/sensors/obstaclesSonar", default_profile)
+        self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
+        self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, default_profile)  # can change topic name ?
     
     def recv_position(self, msg):
         """

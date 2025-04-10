@@ -21,8 +21,10 @@
 import os
 import numpy as np
 from ast import literal_eval
-import configparser
+
 from enum import IntEnum
+
+from config import GlobalConfig
 
 #################################################################
 #                                                               #
@@ -30,10 +32,9 @@ from enum import IntEnum
 #                                                               #
 #################################################################
 
-## Config reader
+## Config
 
-READER = configparser.ConfigParser()
-READER.read(os.path.join(os.path.dirname(__file__),"../../../robot_config.cfg"))
+CONFIG = GlobalConfig()
 
 #################################################################
 #                                                               #
@@ -42,13 +43,13 @@ READER.read(os.path.join(os.path.dirname(__file__),"../../../robot_config.cfg"))
 #################################################################
 
 ## Origin Position 
-ORIGIN_POS = list(literal_eval(READER.get('ROBOT','init_pos')))
+ORIGIN_POS = CONFIG.init_zones[CONFIG.default_init_zone]
 
 MAX_X = 2000
 MAX_Y = 3000
 
-ROBOT_LARG = int(READER.get('ROBOT', 'robot_larg'))
-ROBOT_LONG = int(READER.get('ROBOT', 'robot_long'))
+ROBOT_LARG = CONFIG.robot_width
+ROBOT_LONG = CONFIG.robot_length
 ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
 
 ########## CONSTANTES 2024 ##########

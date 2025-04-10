@@ -26,6 +26,7 @@ from rclpy.node import Node
 import numpy as np
 from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 from br_messages.msg import Position
+from config.qos import default_profile, br_position_topic_profile
 
 #################################################################
 #                                                               #
@@ -57,8 +58,8 @@ class SIM_ObstaclesNode(Node):
         super().__init__("OBS")
         self.get_logger().info("Initializing OBS node ...")
 
-        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, 10)
-        self.obs_info_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", 10)
+        self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
+        self.obs_info_pub = self.create_publisher(Int16MultiArray, "/obstaclesInfo", default_profile)
 
         self.create_time = time.time()
         

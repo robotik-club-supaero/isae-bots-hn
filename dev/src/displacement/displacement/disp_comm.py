@@ -39,7 +39,6 @@ from std_msgs.msg      import Int16, Int16MultiArray, Float32MultiArray, String
 from geometry_msgs.msg import Quaternion
 # import logs
 from .disp_utils import *
-from strat.strat_utils import create_quaternion
 
 #################################################################################################
 from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
@@ -177,6 +176,7 @@ class DispCallbacks:
         ## Commande d'arrêt
         if msg.w == CMD_STRAT["stop"]:
             self._node.stop_move()
+            self._node.clear_destination()
 
         elif msg.w == CMD_STRAT["rotation"]:
             self._node.set_target_heading(msg.z)
@@ -312,13 +312,7 @@ class DispCallbacks:
 
     def callback_init_pos(self):
         """Update la position de départ du robot."""
-        if self._node.init_pos == 0:
-            x, y, z = INIT_POS[0], INIT_POS[1], INIT_POS[2]
-        elif self._node.init_pos == 1:
-            x, y, z = INIT_POS2[0], INIT_POS2[1], INIT_POS2[2]
-        elif self._node.init_pos == 2:
-            x, y, z = INIT_POS3[0], INIT_POS3[1], INIT_POS3[2]
-        
+        x, y, z = INIT_POS[self._node.init_pos]
         if self._node.color == 1:
             y = 3000 - y
             z = -z

@@ -30,11 +30,13 @@ from math import cos, sin, atan2
 import numpy as np
 
 import tkinter as tk
-import configparser as ConfigParser
 
 from enum import IntEnum
 
 from .interface_const import *
+
+from config import RobotConfig
+from config.qos import default_profile, br_position_topic_profile
 
 ScreenUnits = float
 PhysicalUnits = float
@@ -353,14 +355,8 @@ class Robot(Drawable):
         self._plants = []
 
     @staticmethod
-    def load(file):
-        reader = ConfigParser.ConfigParser(inline_comment_prefixes=";")
-        reader.read(os.path.join(os.path.dirname(__file__), file))
-
-        height = int(reader.get("ROBOT", "robot_larg"))
-        width = int(reader.get("ROBOT", "robot_long"))
-
-        return Robot(width, height)
+    def load(config):      
+        return Robot(config.robot_length, config.robot_width)
 
     def _draw(self, canvas):
         canvas.delete("robot_doors")
@@ -717,7 +713,7 @@ class InterfaceNode(Node):
             self.image, 0, 0, anchor="nw")
         self._canvas.pack()
 
-        self._robot = Robot.load("../../../robot_config.cfg")
+        self._robot = Robot.load(RobotConfig())
         self._clickMarker = Order(color="yellow", tag="clickPosition")
         self._orderMarker = Order(color="purple", tag="order")
         self._sonarObstacles = Obstacles("purple", "sonars")
@@ -742,30 +738,30 @@ class InterfaceNode(Node):
         self.lock = RLock()
 
         # initialisation des suscribers
-        self._subStart = self.create_subscription(Int16, "/game/color", self.updateColor, 10)
+        self._subStart = self.create_subscription(Int16, "/game/color", self.updateColor, default_profile)
 
         self._subGrid = self.create_subscription(
-            Float32MultiArray, "/simu/nodegrid", self.updateGrid, 10)
+            Float32MultiArray, "/simu/nodegrid", self.updateGrid, default_profile)
 
         self._subPos = self.create_subscription(
-            Position, "/br/currentPosition", self.updateRobotPosition, 10)
+            Position, "/br/currentPosition", self.updateRobotPosition, br_position_topic_profile)
         self._subDoors = self.create_subscription(
-            Int16, "/act/callback/doors", self.updateRobotDoorState, 10)
+            Int16, "/act/callback/doors", self.updateRobotDoorState, default_profile)
         self._subLeftArm = self.create_subscription(
-            Int16, "/act/callback/left_arm", self.updateRobotLeftArmState, 10)
+            Int16, "/act/callback/left_arm", self.updateRobotLeftArmState, default_profile)
         self._subRightArm = self.create_subscription(
-            Int16, "/act/callback/right_arm", self.updateRobotRightArmState, 10)
+            Int16, "/act/callback/right_arm", self.updateRobotRightArmState, default_profile)
         self._subObstacles = self.create_subscription(
-            Int16MultiArray, "/obstaclesInfo", self.updateObstacles, 10)
+            Int16MultiArray, "/obstaclesInfo", self.updateObstacles, default_profile)
         self._subRobotObstacle = self.create_subscription(
-            Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, 10)
+            Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, default_profile)
 
         self._subOrder = self.create_subscription(
-            DisplacementOrder, "/br/goTo", self.updateOrder, 10)
+            DisplacementOrder, "/br/goTo", self.updateOrder, default_profile)
 
-        self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, 10)
+        self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, default_profile)
 
-        self._pubOrder = self.create_publisher(DisplacementOrder, "/br/goTo", 10)
+        self._pubOrder = self.create_publisher(DisplacementOrder, "/br/goTo", default_profile)
 
         self._controlWindow = ControlWindow(self)
         self.get_logger().info("Fin d'initialisation de l'interface")

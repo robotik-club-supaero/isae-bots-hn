@@ -29,8 +29,7 @@ lacement node package.
 import os
 import numpy as np
 
-import configparser
-from ast import literal_eval
+from config import GlobalConfig
 
 #################################################################
 #																#
@@ -44,32 +43,24 @@ VERSION = 1
 NODE_NAME = "[DSP]"   
 
 
+CONFIG = GlobalConfig()
 
-READER = configparser.ConfigParser()
-try :
-	READER.read(os.path.join(os.path.dirname(__file__),"../../robot_config.cfg"))
-except:
-	print("no file found...")
+INIT_POS = CONFIG.init_zones
+INIT_ZONE = CONFIG.default_init_zone
 
-ROBOT_NAME = READER.get("ROBOT", "robot_name")
-INIT_POS = list(literal_eval(READER.get("ROBOT", "init_pos")))
-INIT_POS2 = list(literal_eval(READER.get("ROBOT", "init_pos2")))
-INIT_POS3 = list(literal_eval(READER.get("ROBOT", "init_pos3")))
-INIT_ZONE = int(READER.get("STRAT", "init_zone"))
-
-MAX_ASTAR_TIME = READER.get("PATHFINDER", "max_astar_time")
+MAX_ASTAR_TIME = CONFIG.max_astar_time
 
 COLOR = {
       0: 'HOME',
       1: 'AWAY'
 }
 
-robotW = int(READER.get("ROBOT", "robot_larg"))
-robotL = int(READER.get("ROBOT", "robot_long"))
+robotW = CONFIG.robot_width
+robotL = CONFIG.robot_length
 robotDiag = np.linalg.norm([robotW/2, robotL/2])
 MARGIN = robotDiag // 2 + 20
 
-GRID_INTERVAL = literal_eval(READER.get("PATHFINDER", "grid_interval"))
+# GRID_INTERVAL = CONFIG.grid_interval
 
 ONE_PI = np.pi
 HLF_PI = np.pi/2

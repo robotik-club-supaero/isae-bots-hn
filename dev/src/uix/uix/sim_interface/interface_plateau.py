@@ -36,7 +36,7 @@ from enum import IntEnum
 from .interface_const import *
 
 from config import RobotConfig
-from config.qos import default_profile, br_position_topic_profile
+from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 ScreenUnits = float
 PhysicalUnits = float
@@ -669,9 +669,9 @@ class ControlWindow(tk.Toplevel):
         super().__init__(node._fenetre)
         self.title('InterfaceNode - Contrôles')
 
-        self._pubIdle = node.create_publisher(Bool, "/br/idle", 10)
-        self._pubColor = node.create_publisher(Int16, "/game/color", 10)
-        self._pubStart = node.create_publisher(Int16, "/game/start", 10)
+        self._pubIdle = node.create_publisher(Bool, "/br/idle", latch_profile)
+        self._pubColor = node.create_publisher(Int16, "/game/color", latch_profile)
+        self._pubStart = node.create_publisher(Int16, "/game/start", latch_profile)
 
         idle_bt = tk.Button(self, text="BR idle", command=lambda: self._pubIdle.publish(Bool(data=False)))
         idle_bt.grid(column=0, row=0)

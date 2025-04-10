@@ -1,7 +1,9 @@
 import time
 import subprocess
+import sys
 from enum import IntEnum
 
+import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 
@@ -28,9 +30,8 @@ class MasterNode(Node):
 
         logger.info("Initializing Master node ...")
 
-        self._nanoCom = ArduinoCommunicator(port=nano_port, baudrate=9600)
-        self._oled = Oled()              
-        self.logOled.set_bgImage('SRC_OledLogo2.ppm')
+        self._oled = Oled()
+        self._oled.set_bgImage('SRC_OledLogo2.ppm')
         self._speaker = Speaker()
 
         self._launchMatch = None
@@ -42,14 +43,20 @@ class MasterNode(Node):
 
         ### Connecting to Nano ###
         logger.debug("Connecting to the nano...")
-        while self._nanoCom.establish_communication() == 1:
-            logger.warn("Failed to connect to the nano. Retrying in 2 seconds")
-            time.sleep(2)            
-        logger.info("Connected to the nano")        
-
-        self.buttonState = self._nanoCom.read_button_state()        
-        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_BLINKING, color=(255,0,0))  
-
+        while True:
+            try:
+                self._nanoCom = ArduinoCommunicator(port=nano_port, baudrate=9600)
+                if self._nanoCom.establish_communication() == 0:
+                    break
+                logger.warn("Failed to connect to the nano. Retrying in 2 seconds")
+                time.sleep(2)
+            except Exception as e:
+                logger.warn("Failed to connect to the nano: " + str(e) + ". Retrying in 5 seconds")
+                time.sleep(5)
+        logger.info("Connected to the nano")
+        self.buttonState = self._nanoCom.read_button_state()
+        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_BLINKING, color=(255,0,0))
+           
         logger.info("Master node initialized")
 
     def cb_start(self, msg):

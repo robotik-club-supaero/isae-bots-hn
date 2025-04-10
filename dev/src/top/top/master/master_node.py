@@ -84,6 +84,7 @@ class MasterNode(Node):
                 self.speaker.playSound('endRos')
                 self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,0,255))
                 self._launchMatch.terminate()
+                self._logReader.interrupt()
                 self.status = Status.STOPPING
                                    
             elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON and self.status <= Status.STOPPING:
@@ -131,6 +132,11 @@ class MasterNode(Node):
         while rclpy.ok(): 
             rclpy.spin_once(self, timeout_sec=0.01)
             self.update_state()
+
+        if self._launchMatch is not None:
+            self._launchMatch.terminate()
+        if self._logReader is not None:
+            self._logReader.interrupt()
 
 #################################################################
 #                                                               #

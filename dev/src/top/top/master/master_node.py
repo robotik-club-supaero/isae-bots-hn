@@ -1,6 +1,7 @@
 import time
 import subprocess
 import sys
+import re
 from enum import IntEnum
 
 import rclpy
@@ -11,6 +12,7 @@ from .nano import ArduinoCommunicator
 from .nano.nanoInterface import ButtonPressState, ButtonColorMode
 from .oled import Oled
 from .speaker import Speaker
+from .log_reader import LogReader
 
 from config.qos import default_profile
 
@@ -22,6 +24,10 @@ class Status(IntEnum):
     IN_MATCH = 4
 
 class MasterNode(Node):
+
+    LOG_LINES = 3
+    LOG_STRIP_PATTERN = r'\[[A-Z]{3}\]|\/[A-Z]{3}' 
+
     def __init__(self, nano_port):
         super().__init__("master_node")
         self.declare_parameter('my_parameter', 'world')
@@ -35,6 +41,7 @@ class MasterNode(Node):
         self._speaker = Speaker()
 
         self._launchMatch = None
+        self._logReader = None
         self.status = Status.INACTIVE
         self._startTime = None
 
@@ -89,6 +96,7 @@ class MasterNode(Node):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT
                 )
+                self._logReader = LogReader(self._launchMatch.stdout, MasterNode.LOG_LINES)
                 self._startTime = time.time()
                 self.status = Status.STARTING
                   
@@ -108,6 +116,17 @@ class MasterNode(Node):
                 self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
                 self.status = Status.INACTIVE
 
+        if self._logReader is not None and self._logReader.is_dirty:
+            logs = self._logReader.get_logs()
+            transformedLogs = []
+            for log in logs:
+                output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]               
+                transformedLogs.append(output_line[:21])
+                transformedLogs.append(output_line[21:])
+                
+            self._oled.oled_clear()
+            self._oled.oled_display_logs(transformedLogs)
+                    
     def run(self):
         while rclpy.ok(): 
             rclpy.spin_once(self, timeout_sec=0.01)

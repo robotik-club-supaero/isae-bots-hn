@@ -1,5 +1,4 @@
 import time
-import subprocess
 import sys
 import re
 from enum import IntEnum
@@ -12,11 +11,12 @@ from .nano import ArduinoCommunicator
 from .nano.nanoInterface import ButtonPressState, ButtonColorMode
 from .oled import Oled
 from .speaker import Speaker
-from .log_reader import LogReader
+from .log_reader import ProcessLogReader
 
 from config.qos import default_profile
 
 class Status(IntEnum):
+    INVALID = -1
     INACTIVE = 0
     STOPPING = 1
     STARTING = 2
@@ -26,7 +26,7 @@ class Status(IntEnum):
 class MasterNode(Node):
 
     LOG_LINES = 3
-    LOG_STRIP_PATTERN = r'\[[A-Z]{3}\]|\/[A-Z]{3}' 
+    LOG_STRIP_PATTERN = r'(\[[A-Z]{3}\]|\/[A-Z]{3})[:\s]*' 
 
     def __init__(self, nano_port):
         super().__init__("master_node")
@@ -39,9 +39,8 @@ class MasterNode(Node):
         self._oled = Oled()
         self._oled.set_bgImage('SRC_OledLogo2.ppm')
         self._speaker = Speaker()
-
         self._launchMatch = None
-        self._logReader = None
+
         self.status = Status.INACTIVE
         self._startTime = None
 
@@ -84,7 +83,6 @@ class MasterNode(Node):
                 self.speaker.playSound('endRos')
                 self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,0,255))
                 self._launchMatch.terminate()
-                self._logReader.interrupt()
                 self.status = Status.STOPPING
                                    
             elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON and self.status <= Status.STOPPING:
@@ -92,12 +90,10 @@ class MasterNode(Node):
                 self.speaker.playSound('startRos')
                 self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,255,0))                    
                
-                self._launchMatch = subprocess.run(
-                    ["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"', 'LIDAR:="/dev/ttyLIDAR"', 'NANONPX:="/dev/ttyNANO"'],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT
+                self._launchMatch = ProcessLogReader(
+                    cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"', 'LIDAR:="/dev/ttyLIDAR"', 'NANONPX:="/dev/ttyNANO"'],
+                    max_log_lines=MasterNode.LOG_LINES
                 )
-                self._logReader = LogReader(self._launchMatch.stdout, MasterNode.LOG_LINES)
                 self._startTime = time.time()
                 self.status = Status.STARTING
                   
@@ -117,26 +113,31 @@ class MasterNode(Node):
                 self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
                 self.status = Status.INACTIVE
 
-        if self._logReader is not None and self._logReader.is_dirty:
-            logs = self._logReader.get_logs()
+        if self._launchMatch is not None and self._launchMatch.is_dirty:
+            logs = self._launchMatch.get_logs()
             transformedLogs = []
             for log in logs:
-                output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]               
+                # Remove log header (only keep message)
+                output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]
                 transformedLogs.append(output_line[:21])
                 transformedLogs.append(output_line[21:])
                 
             self._oled.oled_clear()
             self._oled.oled_display_logs(transformedLogs)
+    
+    def __enter__(self):
+        self
+        return self
+
+    def __exit__(self, *args):
+        self.status = Status.STOPPING
+        if self._launchMatch is not None:
+            self._launchMatch.__exit__(*args)
                     
     def run(self):
         while rclpy.ok(): 
             rclpy.spin_once(self, timeout_sec=0.01)
             self.update_state()
-
-        if self._launchMatch is not None:
-            self._launchMatch.terminate()
-        if self._logReader is not None:
-            self._logReader.interrupt()
 
 #################################################################
 #                                                               #
@@ -149,7 +150,8 @@ def main():
 
     node = MasterNode('/dev/ttyUSB0') # TODO: use a parameter instead of hard-coded device
     try:
-        node.run()
+        with node:
+            node.run()
     finally:
         node.destroy_node()
         rclpy.shutdown()

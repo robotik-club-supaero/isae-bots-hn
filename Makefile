@@ -112,7 +112,7 @@ create-container:
 #	Check if container has been created, if not create it
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
-		if cat /etc/os-release | grep -iq "Raspberry"; then \
+		if cat /proc/cpuinfo | grep -iq "Raspberry"; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
@@ -156,7 +156,7 @@ clear-container:
 	else \
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
-		if cat /etc/os-release | grep -iq "Raspberry"; then \
+		if cat /proc/cpuinfo | grep -iq "Raspberry"; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \

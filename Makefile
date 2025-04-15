@@ -112,7 +112,7 @@ create-container:
 #	Check if container has been created, if not create it
 	@if [ -z $$(docker ps -aqf name=$(CONTAINER_NAME)) ]; then \
         echo "Creating container $(CONTAINER_NAME) ..."; \
-		if cat /etc/os-release | grep -iq "raspbian"; then \
+		if egrep -q "BCM(283(5|6|7)|270(8|9)|2711)" /proc/cpuinfo; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \
@@ -156,7 +156,7 @@ clear-container:
 	else \
 		echo "Replacing container $(CONTAINER_NAME) with a new one ..."; \
 		docker container rm $(CONTAINER_NAME) > /dev/null; \
-		if cat /etc/os-release | grep -iq "raspbian"; then \
+		if egrep -q "BCM(283(5|6|7)|270(8|9)|2711)" /proc/cpuinfo; then \
 			docker run ${INTERACTIVE} --privileged --net=host \
 			--name ${CONTAINER_NAME} \
 			${DOCKER_VOLUMES_PI} \

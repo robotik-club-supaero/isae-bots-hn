@@ -28,7 +28,7 @@ from numpy.linalg import norm
 
 from ..an_const import DspCallback, DspOrderMode
 from ..an_utils import Sequence
-from strat.strat_utils import adapt_pos_to_side, create_quaternion
+from strat.strat_utils import adapt_pos_to_color, create_quaternion
 
 #################################################################
 #                                                               #

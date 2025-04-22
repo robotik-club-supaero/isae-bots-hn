@@ -23,7 +23,7 @@ from .dn_const import STAND_POS, DEPOSIT_POS, PARK_POS
 import numpy as np
 
 from ..strat_const import Action, ActionScore
-from ..strat_utils import adapt_pos_to_side
+from ..strat_utils import adapt_pos_to_color
 
 #################################################################
 #                                                               #
@@ -79,7 +79,7 @@ def match_strat(node):
 
         if cond is None: cond = lambda cluster: remaining[cluster] > STAND_THRESHOLD
 
-        x, y, _ = adapt_pos_to_side(*node.position, node.color) if relative else node.position
+        x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
         dists = coeffs * np.linalg.norm(np.array([[x,y]]) - positions, axis=1)
 
         clusters = np.argsort(dists)
@@ -152,7 +152,7 @@ def match_strat(node):
         return
     
     # If no other action is applicable, go to park
-    zone = adapt_pos_to_side(PARK_POS, node.color)
+    zone = adapt_pos_to_color(PARK_POS, node.color)
     node.curr_action = [Action.PARK, zone]
     node.get_logger().info("Next action order : Park")
     node.publishAction()

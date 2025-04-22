@@ -45,11 +45,11 @@ class Approach(IntEnum):
 
 def colored_destination(color, x_d, y_d, t_d, w):
     """Allows a quick conversion of destination given the side played."""
-    x_d, y_d, t_d = adapt_pos_to_side(x_d, y_d, t_d, color)
+    x_d, y_d, t_d = adapt_pos_to_color(x_d, y_d, t_d, color)
     return create_quaternion(x_d, y_d, t_d, w.value)
 
 def colored_approach(userdata, xd, yd, margin, phase=Approach.INITIAL, theta_final=None):
-    x, y, _ = adapt_pos_to_side(userdata["robot_pos"].x, userdata["robot_pos"].y, 0, userdata["color"])
+    x, y, _ = adapt_pos_to_color(userdata["robot_pos"].x, userdata["robot_pos"].y, 0, userdata["color"])
     d = norm([xd - x, yd - y])
     
     x_dest = xd + phase.value * margin/d*(xd - x)
@@ -57,16 +57,16 @@ def colored_approach(userdata, xd, yd, margin, phase=Approach.INITIAL, theta_fin
     if theta_final is None:
         theta_dest = math.atan2(yd - y,xd - x)
     else:
-        _, _, theta_dest = adapt_pos_to_side(0, 0, theta_final, userdata["color"])
+        _, _, theta_dest = adapt_pos_to_color(0, 0, theta_final, userdata["color"])
     
     return colored_destination(userdata["color"], x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
 
 def colored_approach_with_angle(userdata, xd, yd, td, margin, theta_final=None):
-    xd, yd, td = adapt_pos_to_side(xd, yd, td, userdata["color"])
+    xd, yd, td = adapt_pos_to_color(xd, yd, td, userdata["color"])
     if theta_final is None:
         theta_final = td
     else:
-        _, _, theta_final = adapt_pos_to_side(0, 0, theta_final)
+        _, _, theta_final = adapt_pos_to_color(0, 0, theta_final)
     return create_quaternion(xd - margin * math.cos(td), yd - margin * math.sin(td), theta_final, DspOrderMode.AVOIDANCE.value)
                 
                 

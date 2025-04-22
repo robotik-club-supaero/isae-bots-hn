@@ -3,11 +3,11 @@ import numpy as np
 from pathfinder import Map, ObstacleCircle, ObstacleRect, Point
 
 # from strat.strat_const import PLANTS_POS, POTS_POS
-from strat.strat_utils import adapt_pos_to_side
+from ...strat.strat.strat_utils import adapt_pos_to_color
 from .disp_utils import *
 
-HOME = 0
-AWAY = 1
+YELLOW = 0
+BLUE = 1
 
 class PathNotFoundError(RuntimeError):
     pass
@@ -57,12 +57,12 @@ class PathFinder:
             obstacles["wallWest"] = ObstacleRect(0, 2000, 3000-MARGIN, 3000)
 
             # Bases
-            baseHome = ObstacleRect(0, 450+MARGIN, 2550-MARGIN, 3000)
-            baseAway = ObstacleRect(0, 450+MARGIN, 0, 450+MARGIN)
-            if color == HOME:
-                obstacles["oppBase"] = baseAway
+            baseYellow = ObstacleRect(0, 450+MARGIN, 2550-MARGIN, 3000)
+            baseBlue = ObstacleRect(0, 450+MARGIN, 0, 450+MARGIN)
+            if color == YELLOW:
+                obstacles["oppBase"] = baseBlue
             else:
-                obstacles["oppBase"] = baseHome
+                obstacles["oppBase"] = baseYellow
 
             # Plants # TODO update
             #for i, plant in enumerate(PLANTS_POS):

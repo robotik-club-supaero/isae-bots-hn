@@ -43,8 +43,8 @@ COLOR = {
 STAND_CAPACITE = 2
 
 STAND_POS = np.array(PLANTS_POS_RAW)
-DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)[:, :2]
-PARK_POS = np.array(PARK_POS_RAW)[:, :2]
+DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)
+PARK_POS = np.array(PARK_POS_RAW)
 
 class Color():
     BLACK = '\033[30m'

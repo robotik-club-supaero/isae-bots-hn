@@ -97,8 +97,8 @@ class _PickupStandSequence(Sequence): # TODO
         super().__init__(states=
         [
             ('CLAMP_DOWN_&_OPEN',
-                Concurrence(OpenClamp(node, etage=1), OpenClamp(node, etage=2),
-                            DescendElevator(node, etage=1), DescendElevator(node, etage=2))
+                Concurrence(CLAMP_1 = OpenClamp(node, etage=1), CLAMP_2 = OpenClamp(node, etage=2),
+                            ELEV_1 = DescendElevator(node, etage=1), ElEV_2 = DescendElevator(node, etage=2))
             ),
             ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
             ('CLOSE_CLAMP', Concurrence(CloseClamp(node, etage=1), CloseClamp(node, etage=2))),
@@ -107,8 +107,8 @@ class _PickupStandSequence(Sequence): # TODO
         if etage == 1 else # etage = 2 -> bouger que le 2 !
         [
             ('CLAMP_DOWN_&_OPEN',
-                Concurrence(OpenClamp(node, etage=2),
-                            DescendElevator(node, etage=2))
+                Concurrence(CLAMP_2 = OpenClamp(node, etage=2),
+                            ELEV_2 = DescendElevator(node, etage=2))
             ),
             ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
             ('CLOSE_CLAMP', CloseClamp(node, etage=2)),

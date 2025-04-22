@@ -36,7 +36,7 @@ from strat.strat_utils import adapt_pos_to_side, create_quaternion
 #                                                               #
 #################################################################
 
-DISP_TIMEOUT = 30       #[s]
+DISP_TIMEOUT = 30    #[s]
 ACCURACY_MARGIN = 10 # [mm]
 
 class Approach(IntEnum):
@@ -61,8 +61,8 @@ def colored_approach(userdata, xd, yd, margin, phase=Approach.INITIAL, theta_fin
     
     return colored_destination(userdata["color"], x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
 
-def colored_approach_with_angle(color, xd, yd, td, margin, theta_final=None):
-    xd, yd, td = adapt_pos_to_side(xd, yd, td, color)
+def colored_approach_with_angle(userdata, xd, yd, td, margin, theta_final=None):
+    xd, yd, td = adapt_pos_to_side(xd, yd, td, userdata["color"])
     if theta_final is None:
         theta_final = td
     else:
@@ -144,7 +144,8 @@ class Displacement(yasmin.State):
 
 class MoveTo(Sequence):
     def __init__(self, node, destination):
-        super().__init__(states=[('COMPUTE_DEST', destination), ('DEPL', Displacement(node))])
+        super().__init__(states=[('COMPUTE_DEST', destination), 
+                                 ('DEPL', Displacement(node))])
 
 
 class MoveBackwardsStraight(yasmin.State):

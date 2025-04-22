@@ -53,8 +53,8 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._msg.data = f"stand{stand_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        xp, yp = STAND_POS[stand_id]
-        userdata["next_move"] = colored_approach(userdata, xp, yp, R_APPROACH_STAND)
+        xp, yp, tp = STAND_POS[stand_id]
+        userdata["next_move"] = colored_approach_with_angle(userdata, xp, yp, tp, R_APPROACH_STAND)
              
         return 'success'
 
@@ -68,9 +68,9 @@ class CalcTakeStand(yasmin.State): # TODO
     def execute(self, userdata):    
         pots_id = self._node.get_pickup_id("stand", userdata)
 
-        xp, yp = STAND_POS[pots_id]
+        xp, yp, tp = STAND_POS[pots_id]
 
-        userdata["next_move"] = colored_approach(userdata, xp, yp, R_TAKE_STAND)
+        userdata["next_move"] = colored_approach_with_angle(userdata, xp, yp, tp, R_TAKE_STAND)
              
         return 'success'
  
@@ -94,22 +94,33 @@ class PickupStandEnd(yasmin.State): # TODO
 
 class _PickupStandSequence(Sequence): # TODO
     def __init__(self, node, etage):
-        super().__init__(states=[
-            ('OPEN_CLAMP', OpenClamp(node, etage)),
-            ('DESCEND_ELEVATOR', DescendElevator(node, etage)),
-            ('CLOSE_CLAMP', CloseClamp(node, etage)),
-            ('RISE_ELEVATOR', RiseElevator(node, etage)),
-        ])
+        super().__init__(states=
+        [
+            ('CLAMP_DOWN_&_OPEN',
+                Concurrence(OpenClamp(node, etage=1), OpenClamp(node, etage=2),
+                            DescendElevator(node, etage=1), DescendElevator(node, etage=2))
+            ),
+            ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
+            ('CLOSE_CLAMP', Concurrence(CloseClamp(node, etage=1), CloseClamp(node, etage=2))),
+            ('RISE_ELEVATOR', Concurrence(RiseElevator(node, etage=1), RiseElevator(node, etage=2))),
+        ]
+        if etage == 1 else # etage = 2 -> bouger que le 2 !
+        [
+            ('CLAMP_DOWN_&_OPEN',
+                Concurrence(OpenClamp(node, etage=2),
+                            DescendElevator(node, etage=2))
+            ),
+            ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
+            ('CLOSE_CLAMP', CloseClamp(node, etage=2)),
+            ('RISE_ELEVATOR', RiseElevator(node, etage=2)),
+        ]
+        )
 
 class PickupStand(Sequence): # TODO
     def __init__(self, node, etage):
         super().__init__(states=[
             ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
-            ('PICKUP_STAND_CONC', 
-                Concurrence(
-                    DEPL_SEQ = MoveTo(node, CalcTakeStand(node)),
-                    PICKUP_POT_SEQ = _PickupStandSequence(node, etage),
-                )),
+            ('PICKUP_STAND_CONC', _PickupStandSequence(node, etage))
             ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub)),
             ])
         self.etage = etage

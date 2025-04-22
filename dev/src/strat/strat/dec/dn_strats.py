@@ -31,7 +31,7 @@ from ..strat_utils import adapt_pos_to_side
 #                                                               #
 #################################################################
 
-STAND_THRESHOLD = 1
+STAND_THRESHOLD = 0
 
 #################################################################
 #                                                               #
@@ -76,31 +76,38 @@ def match_strat(node):
     """
     
     def find_closest(node, positions, remaining, cond=None, relative=True, coeffs=1):
+
         if cond is None: cond = lambda cluster: remaining[cluster] > STAND_THRESHOLD
+
         x, y, _ = adapt_pos_to_side(*node.position, node.color) if relative else node.position
         dists = coeffs * np.linalg.norm(np.array([[x,y]]) - positions, axis=1)
+
         clusters = np.argsort(dists)
         for cluster in clusters:
             if cond(cluster.item()):
                 return cluster
+            
         return None
 
     time.sleep(0.01)
 
     if not node.go_park:
         
-        coeffs = np.ones(len(STAND_POS))
+        # Retry
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
             if node.retry_count < 3:
                 node.publishAction()
                 return
 
+        # Pickup Up Stand
+        malus_pickup = np.ones(len(STAND_POS))
         if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):
 
             if not node.action_successful:
-                coeffs[node.curr_action[1]] = 999 # penalise
+                malus_pickup[node.curr_action[1]] = 999 # penalise
             
-            stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=coeffs)
+            stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup)
+            
             if stand_id is not None:
                 if not node.action_successful: # Continue to search for stand                
                     node.curr_action[1] = stand_id        
@@ -117,10 +124,10 @@ def match_strat(node):
             else:
                 node.get_logger().info("No stand found to pick up !")
         
-        # Deposit
-        coeffs_deposit = np.ones(len(DEPOSIT_POS))
+        # Deposit Stand
+        malus_deposit = np.ones(len(DEPOSIT_POS))
         if (not node.action_successful and node.curr_action[0] == Action.DEPOSIT_STAND):
-            deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=coeffs_deposit)
+            deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit)
             if deposit_id is not None:
                 node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
                 node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")
@@ -130,7 +137,7 @@ def match_strat(node):
                 node.get_logger().info("No more free slot to deposit")
 
         # If no other action is applicable, defaulting to picking up stand
-        stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=coeffs)
+        stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup)
         if stand_id is not None:
             node.curr_action = [Action.PICKUP_STAND_2, stand_id]
             node.get_logger().info("Next action order : Pickup Stand")
@@ -145,7 +152,7 @@ def match_strat(node):
         return
     
     # If no other action is applicable, go to park
-    zone = find_closest(node, PARK_POS, None, cond=lambda index: index != node.init_zone)
+    zone = adapt_pos_to_side(PARK_POS, node.color)
     node.curr_action = [Action.PARK, zone]
     node.get_logger().info("Next action order : Park")
     node.publishAction()

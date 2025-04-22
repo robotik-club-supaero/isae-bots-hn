@@ -29,15 +29,15 @@ CONFIG = StratConfig()
 
 #################################################################
 # ROBOTS PARAMS
-class ROBOT_SIDES(IntEnum):
-    HOME = 0
-    AWAY = 1
+class ROBOT_COLOR(IntEnum):
+    YELLOW = 0
+    BLUE = 1
 
 #################################################################
 
 COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
+      0: 'YELLOW',
+      1: 'BLUE'
 }
 
 STAND_CAPACITE = 2

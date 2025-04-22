@@ -53,8 +53,8 @@ ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2)
 
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5
-R_APPROACH_STAND = 200 # TODO change value
-R_TAKE_STAND = 100 # TODO change value
+R_APPROACH_STAND = 0
+R_TAKE_STAND = 0
 
 
 #################################################################

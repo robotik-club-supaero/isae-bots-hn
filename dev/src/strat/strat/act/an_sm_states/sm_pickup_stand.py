@@ -92,35 +92,31 @@ class PickupStandEnd(yasmin.State): # TODO
 #                                                               #
 #################################################################
 
-class _PickupStandSequence(Sequence): # TODO
+class PickupStand(Sequence): # TODO
     def __init__(self, node, etage):
-        super().__init__(states=
-        [
-            ('CLAMP_DOWN_&_OPEN',
+        super().__init__(states=[
+            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
+            (('CLAMP_DOWN_&_OPEN',
                 Concurrence(CLAMP_1 = OpenClamp(node, etage=1), CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_1 = DescendElevator(node, etage=1), ElEV_2 = DescendElevator(node, etage=2))
             ),
             ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
             ('CLOSE_CLAMP', Concurrence(CLAMP_1 = CloseClamp(node, etage=1), CLAMP_2 = CloseClamp(node, etage=2))),
-            ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_2 = RiseElevator(node, etage=2))),
-        ]
-        if etage == 1 else # etage = 2 -> bouger que le 2 !
-        [
-            ('CLAMP_DOWN_&_OPEN',
+            ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_2 = RiseElevator(node, etage=2))))
+            ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub))
+            ]
+
+            if etage == 1 else # etage = 2 -> bouger que le 2 !
+            
+            [
+            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
+            (('CLAMP_DOWN_&_OPEN',
                 Concurrence(CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_2 = DescendElevator(node, etage=2))
             ),
             ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
             ('CLOSE_CLAMP', CloseClamp(node, etage=2)),
-            ('RISE_ELEVATOR', RiseElevator(node, etage=2)),
-        ]
-        )
-
-class PickupStand(Sequence): # TODO
-    def __init__(self, node, etage):
-        super().__init__(states=[
-            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
-            ('PICKUP_STAND_CONC', _PickupStandSequence(node, etage))
+            ('RISE_ELEVATOR', RiseElevator(node, etage=2))),
             ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub)),
             ])
         self.etage = etage

@@ -27,7 +27,7 @@ from ..an_const import DspOrderMode, DspCallback, R_APPROACH_STAND
 from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurrence
 
 from strat.strat_const import DEPOSIT_POS
-from strat.strat_utils import adapt_pos_to_side, create_end_of_action_msg
+from strat.strat_utils import adapt_pos_to_color, create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
 
 #################################################################

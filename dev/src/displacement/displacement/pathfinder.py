@@ -3,7 +3,7 @@ import numpy as np
 from pathfinder import Map, ObstacleCircle, ObstacleRect, Point
 
 # from strat.strat_const import PLANTS_POS, POTS_POS
-from ...strat.strat.strat_utils import adapt_pos_to_color
+#from strat_utils import adapt_pos_to_color
 from .disp_utils import *
 
 YELLOW = 0

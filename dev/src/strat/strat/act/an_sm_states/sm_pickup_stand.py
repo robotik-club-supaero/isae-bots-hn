@@ -102,7 +102,7 @@ class _PickupStandSequence(Sequence): # TODO
             ),
             ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
             ('CLOSE_CLAMP', Concurrence(CLAMP_1 = CloseClamp(node, etage=1), CLAMP_2 = CloseClamp(node, etage=2))),
-            ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_1 = RiseElevator(node, etage=2))),
+            ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_2 = RiseElevator(node, etage=2))),
         ]
         if etage == 1 else # etage = 2 -> bouger que le 2 !
         [

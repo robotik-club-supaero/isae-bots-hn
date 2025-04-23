@@ -21,7 +21,7 @@ Fichier de gestion des obstacles LIDAR
 
 import sys
 from math import atan2, sin, cos
-from lidar_lib import *
+from .lidar_lib import *
 
 import rclpy
 from rclpy.node import Node

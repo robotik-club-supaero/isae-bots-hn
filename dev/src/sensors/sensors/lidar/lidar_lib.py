@@ -42,8 +42,8 @@ LOCAL_LIM = 100         # distance lim de regroupement/localisation
 
 config = RobotConfig()
 
-ROBOT_LARG = RobotConfig.robot_width
-ROBOT_LONG = RobotConfig.robot_length
+ROBOT_LARG = config.robot_width
+ROBOT_LONG = config.robot_length
 ROBOT_DIAG = np.linalg.norm([ROBOT_LARG/2, ROBOT_LONG/2])
 TABLE_MARGIN = ROBOT_DIAG/2 + 20      # marge aux bords de table
 

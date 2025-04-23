@@ -1,219 +1,72 @@
-# -*- coding: utf-8 -*-
-# pyright: reportMissingImports=false
-
-from time import sleep
-
-import Adafruit_SSD1306
-
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
-
 import os
-import subprocess
 
-from numpy import linspace
+import board
+import busio
+import digitalio
+import adafruit_ssd1306
 
-IMAGES_PATH = f"{os.path.dirname(os.path.realpath(__file__))}/images"
+from PIL import Image, ImageDraw, ImageFont
 
-# Load default font.
-font = ImageFont.load_default()
+IMAGES_PATH = f"{os.path.dirname(os.path.realpath(__file__))}/images/"
 
-#font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMono.ttf', 15, encoding="unic")
+class OledScreen:
 
-class Oled():
+    WIDTH = 128
+    HEIGHT = 64
 
-    def __init__(self):
+    def __init__(self, addr=0x3d, oled_reset=None):
+        if oled_reset is not None:
+            oled_reset = digitalio.DigitalInOut(oled_reset)
 
-        # parameter, 3 characters max
-        self.signs = ["BR", "ACT", "LID", "LCD", "CAM"]
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self._oled = adafruit_ssd1306.SSD1306_I2C(OledScreen.WIDTH, OledScreen.HEIGHT, i2c, addr=addr, reset=oled_reset)
 
+        self._image = Image.new("1", (self._oled.width, self._oled.height))
+        self._draw = ImageDraw.Draw(image)
+        self._font = ImageFont.load_default()
 
-        self.nb_signs = len(self.signs)
-
-        # 0 : unknown/problem | 1 : OK
-        self.sign_states = [1,1,0,0,1]
-
-
-        self.sign_coords = linspace(0, 127, self.nb_signs+1).astype(int)
-        self.cpu_coords = linspace(0, 50, 5).astype(int)
-
-
-        self.CPULoads = [0]*4
-        self.CPUTemp = 0
-
-        # 128x32 display with hardware I2C:
-        self.disp = Adafruit_SSD1306.SSD1306_128_64(rst=None)
-
-        # Initialize library.
-        self.disp.begin()
-
-        # Clear display.
-        self.disp.clear()
-        self.disp.display()
-
-        # Create blank image for drawing.
-        # Make sure to create image with mode '1' for 1-bit color.
-        self.width = self.disp.width
-        self.height = self.disp.height
-        self.image = Image.new('1', (self.width, self.height))
-
-        # Get drawing object to draw on image.
-        self.draw = ImageDraw.Draw(self.image)
-
-        # Draw a black filled box to clear the image.
-        self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
-
-        # Draw some shapes.
-        # First define some constants to allow easy resizing of shapes.
-        padding = -2
-        self.top = padding
-        self.bottom = self.height-padding
-        # Move left to right keeping track of the current x position for drawing shapes.
-        self.x = 0
-
-    def oled_clear(self):
-        self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
-
-
-    def oled_display_string(self, str, x, y, clear=True):
-        '''
-        x is horizontal
-        y is vertical
-        '''
-
-        # clear
-        if clear:
-            self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
-
-        self.draw.text((x, y), str, font=font, fill=255)
-
-        self.disp.image(self.image)
-        self.disp.display()
-
-
-        return
-
-        # Draw a black filled box to clear the image.
-        self.draw.rectangle((0,0,self.self.width,self.self.height), outline=0, fill=0)
-
-        # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load
-        cmd = "hostname -I | cut -d\' \' -f1"
-        IP = subprocess.check_output(cmd, shell = True )
-        cmd = "top -bn1 | grep load | awk '{printf \"CPU Load: %.2f\", $(NF-2)}'"
-        CPU = subprocess.check_output(cmd, shell = True )
-        cmd = "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f%%\", $3,$2,$3*100/$2 }'"
-        MemUsage = subprocess.check_output(cmd, shell = True )
-        cmd = "df -h | awk '$NF==\"/\"{printf \"Disk: %d/%dGB %s\", $3,$2,$5}'"
-        Disk = subprocess.check_output(cmd, shell = True )
-
-        # Write two lines of text.
-
-        self.draw.text((x, top),       "IP: " + str(IP),  font=font, fill=255)
-        self.draw.text((x, top+8),     str(CPU), font=font, fill=255)
-        self.draw.text((x, top+16),    str(MemUsage),  font=font, fill=255)
-        self.draw.text((x, top+25),    str(Disk),  font=font, fill=255)
-
-        # Display image.
-        self.disp.image(image)
-        self.disp.display()
-        time.sleep(.1)
+        self._oled.fill(0)
+        self._oled.show()
         
-    def oled_display_logs(self, logList, clear = True):
-        
-        if clear:
-            self.draw.rectangle((0,0,self.width,self.height), outline=0, fill=0)
-        
-        for k in range(len(logList)):  # length should be 6
-            self.draw.text((0, k*64/6), logList[k], font=font, fill=255)
+        self.clear_display()
 
-        self.disp.image(self.image)
-        self.disp.display()
+    def _show(self, image=None):
+        if image is None: image = self._image
+        self._oled.image(image)
+        self._oled.show()
 
+    def _clear_image(self):
+        oled = self._oled
 
-    # def display_image(self, fileName, x, y, w, h):
+        # Draw a black background
+        self._draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
 
-    #     self.bg = Image.open(fileName).convert('1')
+    def clear_display(self):
+        self._clear_image()
+        self._show()
 
+    def display_string(self, text):
+        self._clear_image()
 
-    def set_bgImage(self, fileName):
+        oled = self._oled
+
+        # Draw Some Text
+        bbox = self._font.getbbox(text)
+        (font_width, font_height) = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        self._draw.text(
+            (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
+            text,
+            font=self._font,
+            fill=255,
+        )
+
+        self._show()
+
+    def display_lines(self, lines):
+        self.display_string("\n".join(lines))
+
+    def display_image(self, img_name):
         filePath = IMAGES_PATH + fileName
-        self.bg = Image.open(filePath).convert('1')
-        self.disp.image(self.bg)
-        self.disp.display()
+        image = Image.open(filePath).convert('1')
 
-
-
-
-    def update_stats(self):
-
-        '''
-        CPU usage for each CPU (bar diagram )
-        Memory usage
-        CPU temperature
-        '''
-
-        cmd = "top -b1 -n1 | grep Cpu"
-        cpu_info = subprocess.check_output(cmd, shell = True)
-        cpu_info = str(cpu_info).split('ni')
-        for k in range(1, len(cpu_info)):
-            self.CPULoads[k-1] = 100 - float(cpu_info[k][1:6])
-        
-
-        cmd = "cat /sys/class/thermal/thermal_zone0/temp"
-        self.CPUTemp = round(float(subprocess.check_output(cmd, shell = True))/1000, 1)
-
-
-
-    def update_display(self):
-
-        # top bar
-        for k in range(self.nb_signs):
-
-            # TODO : display constant, depends on the number of signs
-            offset_chars_list = [1, 4, 7, 11]
-
-            if self.sign_states[k] == 1:
-                self.draw.rectangle((self.sign_coords[k]+1, 0, self.sign_coords[k+1]-1, 15), outline=0, fill=1)
-
-                x = (self.sign_coords[k] + self.sign_coords[k+1]) // 2 - offset_chars_list[len(self.signs[k])-1]
-                self.draw.text((x, 2), self.signs[k], font=font, fill=0)
-                
-            else:
-                self.draw.rectangle((self.sign_coords[k]+1, 0, self.sign_coords[k+1]-1, 15), outline=0, fill=0)
-        
-                x = (self.sign_coords[k] + self.sign_coords[k+1]) // 2 - offset_chars_list[len(self.signs[k])-1]
-                self.draw.text((x, 2), self.signs[k], font=font, fill=1)
-
-
-        # clear lower section
-        self.draw.rectangle((0, 16, 127, 63), outline=0, fill=0)
-
-        # display CPU bar graph
-        for k in range(4):
-            self.draw.rectangle((self.cpu_coords[k]+2, 48 - 32*self.CPULoads[k]/100, self.cpu_coords[k+1]-2, 50), outline=0, fill=1)
-        
-        # TODO : draw only once ?
-        self.draw.text((18, 16), "CPU", font=font, fill=1)
-        self.draw.text((12, 55), "{0:.2f}".format(sum(self.CPULoads)), font=font, fill=1)
-        self.draw.text((70, 25), "MEM", font=font, fill=1)
-        self.draw.text((64, 45), "TEMP", font=font, fill=1)
-
-        self.draw.text((98, 45), str(self.CPUTemp)+'°', font=font, fill=1)
-
-
-
-        self.disp.image(self.image)
-        self.disp.display()
-
-if __name__ == '__main__':
-
-    '''
-    Pixels going from (0,0) to (127,63)
-    The upper band goes from (0,0) to (127,15)
-    '''
-
-    oled = Oled()
-
-    oled.set_bgImage('SRC_OledLogo2.ppm')
-    
+        self._show(image)

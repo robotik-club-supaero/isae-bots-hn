@@ -107,8 +107,9 @@ RUN pip install pyserial --break-system-packages
 # Install smbus for isb and lcd
 RUN apt install -y python3-smbus
 
-# Install lib Adafruit-SSD1306 and RPi.GPIO for oled screen
-RUN pip install Adafruit-SSD1306==1.6.2 --break-system-packages
+# Install lib Pillow, Adafruit-SSD1306 and RPi.GPIO for oled screen
+RUN apt install -y python3-pil
+RUN pip install adafruit-circuitpython-ssd1306 --break-system-packages
 RUN apt install -y python3-rpi.gpio
 
 # Install alsa-utils for sound, pciutils to have the debug command lspci

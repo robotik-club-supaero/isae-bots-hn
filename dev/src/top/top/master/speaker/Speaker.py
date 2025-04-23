@@ -46,17 +46,19 @@ class Speaker():
     
     def __init__(self) -> None:
         
-        if VLC_PRESENT:
-            self.media_player = vlc.MediaPlayer()
-            
-            # thread to play a counstant blank sound to prevent the speaker to do any poppins sounds
-            self.constantBlankSoundStopEvent = threading.Event()
-            self.constantBlankSoundThread = threading.Thread(target=self._constantBlankSound, args=(self.constantBlankSoundStopEvent,))
-            
-            self.constantBlankSoundThread.start()
+        if not VLC_PRESENT:
+            raise ImportError("Cannot import module VLC")
 
-            self.media_player.audio_set_volume(100) # default volume
+        self.media_player = vlc.MediaPlayer()
         
+        # thread to play a counstant blank sound to prevent the speaker to do any poppins sounds
+        self.constantBlankSoundStopEvent = threading.Event()
+        self.constantBlankSoundThread = threading.Thread(target=self._constantBlankSound, args=(self.constantBlankSoundStopEvent,))
+        
+        self.constantBlankSoundThread.start()
+
+        self.media_player.audio_set_volume(100) # default volume
+    
         
     def _constantBlankSound(self, stop_event):
         
@@ -84,8 +86,6 @@ class Speaker():
         self.media_player.play()
            
     def playSound(self, sound):
-        if not VLC_PRESENT: return
-        
         try:
             soundFile = soundDict[sound]
         except KeyError:
@@ -111,15 +111,12 @@ class Speaker():
         
         
     def setVolume(self, volume):
-        if not VLC_PRESENT: return
-
         print(f"Set sound volume to {volume}")
         self.volume = volume
         self.setMute(False)
         self.media_player.audio_set_volume(volume) 
 
     def setMute(self, isMute): 
-        if not VLC_PRESENT: return
         # if no change
         if isMute == self.isMute:
             return

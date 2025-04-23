@@ -8,7 +8,8 @@ from rclpy.node import Node
 from std_msgs.msg import Int16
 
 from .button import ButtonState, DummyButton, DummyLed, LedState
-#from .oled import Oled
+from .optional import Optional
+from .oled import OledScreen
 from .speaker import Speaker
 from .log_reader import ProcessLogReader
 
@@ -26,7 +27,11 @@ class MasterNode(Node):
 
     LOG_LINES = 3
     LOG_STRIP_PATTERN = r'(\[[A-Z]{3}\]|\/[A-Z]{3})[:\s]*' 
+    LOG_WRAP_LEN = 21
+
     LED_BLINK_INTERVAL = 0.25 # s
+
+    OLED_CLEAR_TIMEOUT = 10 # s
 
     def __init__(self):
         super().__init__("master_node")
@@ -39,13 +44,15 @@ class MasterNode(Node):
         self._buttonState = self._button.getButtonState()
         self._led = DummyLed()
 
-    #    self._oled = Oled()
-    #    self._oled.set_bgImage('SRC_OledLogo2.ppm')
-        self._speaker = Speaker()
+        self._oled = Optional(logger, OledScreen)
+        self._oled.display_image('SRC_OledLogo2.ppm')
+
+        self._speaker = Optional(logger, Speaker)
         self._launchMatch = None
 
         self.status = Status.INACTIVE
         self._startTime = None
+        self._stopTime = None
 
         ### Subscriptions ###
         self.start_sub = self.create_subscription(Int16, '/game/start', self.cb_start, default_profile)
@@ -99,6 +106,7 @@ class MasterNode(Node):
                 
             self.status = Status.INACTIVE
             self._led.setLedState(LedState.OFF)
+            self._stopTime = time.time()
 
         if self.status == Status.STARTING:
             # TODO: other way to trigger state change?
@@ -115,13 +123,14 @@ class MasterNode(Node):
             for log in logs:
                 # Remove log header (only keep message)
                 output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]
-                transformedLogs.append(output_line[:21])
-                transformedLogs.append(output_line[21:])
-
-         #   logger.info(str(transformedLogs))
-                
-           # self._oled.oled_clear()
-           # self._oled.oled_display_logs(transformedLogs)
+                transformedLogs.append(output_line[:MasterNode.LOG_WRAP_LEN])
+                transformedLogs.append(output_line[MasterNode.LOG_WRAP_LEN:])
+ 
+            self._oled.display_lines(transformedLogs)
+        
+        if self.status == Status.INACTIVE and self._stopTime is not None and time.time() - self._stopTime > MasterNode.OLED_CLEAR_TIMEOUT:
+            self._stopTime = None
+            self._oled.display_image('SRC_OledLogo2.ppm')
     
     def __enter__(self):
         return self

@@ -1,1 +1,1 @@
-from .Oled import Oled
+from .Oled import OledScreen

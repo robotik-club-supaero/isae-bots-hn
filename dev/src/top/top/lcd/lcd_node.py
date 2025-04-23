@@ -28,6 +28,7 @@ class LCDNode(Node):
         self.subScore = self.create_subscription(Int16, "/game/score", self.cb_score, default_profile)
 
         self.update_display()
+        self.get_logger().info("LCD node initialized")
         
     def cb_color(self, msg):
         self.color = msg.data

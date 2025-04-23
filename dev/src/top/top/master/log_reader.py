@@ -60,6 +60,7 @@ class ProcessLogReader(subprocess.Popen, LogReader):
     def __init__(self, cmd, max_log_lines):
         subprocess.Popen.__init__(self, cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
         LogReader.__init__(self, self.stdout, depth=max_log_lines)
+        LogReader.start(self)
 
     def terminate(self):
         subprocess.Popen.terminate(self)
@@ -67,7 +68,6 @@ class ProcessLogReader(subprocess.Popen, LogReader):
 
     def __enter__(self):
         subprocess.Popen.__enter__(self)
-        LogReader.__enter__(self)
         return self
 
     def __exit__(self, *args):

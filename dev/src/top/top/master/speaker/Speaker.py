@@ -13,21 +13,24 @@
 
 import os
 import time
-import vlc
 import threading
+
+try:
+    import vlc
+    VLC_PRESENT = True
+except:
+    VLC_PRESENT = False
 
 SOUNDS_PATH = f"{os.path.dirname(os.path.realpath(__file__))}/sounds/"
 BLANK_SOUND_FILE = 'blank.mp3'
 
 # sound dictionary (sound used name to sound file name)
 soundDict = {
-    'cestConCa' : 'cestConCa.mp3',
-    'bip' : 'bip.mp3',
-    'windowsStartup' : 'windows/startup.mp3',
-    'startRos' : 'startup2.mp3',
+    'startRos' : 'startup1.mp3',
     'endRos' : 'exit1.mp3',
     'RosReady' : 'windows/session_in.mp3',
     'RosEnded' : 'windows/session_out.mp3',
+    "error" : "windows/big_error.mp3",
     
     # match startup sounds
     'cestParti' : 'matchStartup/cestParti.mp3'
@@ -43,18 +46,19 @@ class Speaker():
     
     def __init__(self) -> None:
         
-        self.media_player = vlc.MediaPlayer()
+        if VLC_PRESENT:
+            self.media_player = vlc.MediaPlayer()
+            
+            # thread to play a counstant blank sound to prevent the speaker to do any poppins sounds
+            self.constantBlankSoundStopEvent = threading.Event()
+            self.constantBlankSoundThread = threading.Thread(target=self._constantBlankSound, args=(self.constantBlankSoundStopEvent,))
+            
+            self.constantBlankSoundThread.start()
+
+            self.media_player.audio_set_volume(100) # default volume
         
-        # thread to play a counstant blank sound to prevent the speaker to do any poppins sounds
-        self.constantBlankSoundStopEvent = threading.Event()
-        self.constantBlankSoundThread = threading.Thread(target=self.constantBlankSound, args=(self.constantBlankSoundStopEvent,))
         
-        self.constantBlankSoundThread.start()
-        
-        self.media_player.audio_set_volume(100) # default volume
-        
-        
-    def constantBlankSound(self, stop_event):
+    def _constantBlankSound(self, stop_event):
         
         player = vlc.Instance()
         
@@ -75,14 +79,12 @@ class Speaker():
     def __startAudio(self, source):       
         # setting mrl to the media player
         self.media_player.set_mrl(source)
-        
-        # set volume (in case it has been changed)
-        # self.media_player.audio_set_volume(self.volume)
-        
+
         # start playing video
         self.media_player.play()
            
     def playSound(self, sound):
+        if not VLC_PRESENT: return
         
         try:
             soundFile = soundDict[sound]
@@ -109,10 +111,15 @@ class Speaker():
         
         
     def setVolume(self, volume):
+        if not VLC_PRESENT: return
+
         print(f"Set sound volume to {volume}")
         self.volume = volume
-        
-    def setMute(self, isMute):        
+        self.setMute(False)
+        self.media_player.audio_set_volume(volume) 
+
+    def setMute(self, isMute): 
+        if not VLC_PRESENT: return
         # if no change
         if isMute == self.isMute:
             return

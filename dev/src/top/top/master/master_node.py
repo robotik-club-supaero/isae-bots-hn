@@ -7,9 +7,8 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 
-from .nano import ArduinoCommunicator
-from .nano.nanoInterface import ButtonPressState, ButtonColorMode
-from .oled import Oled
+from .button import ButtonState, DummyButton, DummyLed, LedState
+#from .oled import Oled
 from .speaker import Speaker
 from .log_reader import ProcessLogReader
 
@@ -27,17 +26,21 @@ class MasterNode(Node):
 
     LOG_LINES = 3
     LOG_STRIP_PATTERN = r'(\[[A-Z]{3}\]|\/[A-Z]{3})[:\s]*' 
+    LED_BLINK_INTERVAL = 0.25 # s
 
-    def __init__(self, nano_port):
+    def __init__(self):
         super().__init__("master_node")
-        self.declare_parameter('my_parameter', 'world')
 
         logger = self.get_logger()
 
         logger.info("Initializing Master node ...")
 
-        self._oled = Oled()
-        self._oled.set_bgImage('SRC_OledLogo2.ppm')
+        self._button = DummyButton()
+        self._buttonState = self._button.getButtonState()
+        self._led = DummyLed()
+
+    #    self._oled = Oled()
+    #    self._oled.set_bgImage('SRC_OledLogo2.ppm')
         self._speaker = Speaker()
         self._launchMatch = None
 
@@ -47,22 +50,6 @@ class MasterNode(Node):
         ### Subscriptions ###
         self.start_sub = self.create_subscription(Int16, '/game/start', self.cb_start, default_profile)
 
-        ### Connecting to Nano ###
-        logger.debug("Connecting to the nano...")
-        while True:
-            try:
-                self._nanoCom = ArduinoCommunicator(port=nano_port, baudrate=9600)
-                if self._nanoCom.establish_communication() == 0:
-                    break
-                logger.warn("Failed to connect to the nano. Retrying in 2 seconds")
-                time.sleep(2)
-            except Exception as e:
-                logger.warn("Failed to connect to the nano: " + str(e) + ". Retrying in 5 seconds")
-                time.sleep(5)
-        logger.info("Connected to the nano")
-        self.buttonState = self._nanoCom.read_button_state()
-        self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_BLINKING, color=(255,0,0))
-           
         logger.info("Master node initialized")
 
     def cb_start(self, msg):
@@ -71,62 +58,72 @@ class MasterNode(Node):
             self.status = Status.IN_MATCH
 
     def update_state(self):
+        self._led.update()
+
         logger = self.get_logger()
 
-        newButtonState = self._nanoCom.read_button_state()
+        newButtonState = self._button.getButtonState()
 
-        if newButtonState != self.buttonState:
-            self.buttonState = newButtonState
+        if newButtonState != self._buttonState:
+            self._buttonState = newButtonState
 
-            if newButtonState == ButtonPressState.BUTTON_PRESS_OFF and self.status >= Status.STARTING:
+            if newButtonState == ButtonState.OFF and self.status >= Status.STARTING:
                 logger.info("Button OFF")
-                self.speaker.playSound('endRos')
-                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,0,255))
-                self._launchMatch.terminate()
+                self._speaker.playSound('endRos')              
+                
                 self.status = Status.STOPPING
-                                   
-            elif self.buttonState == ButtonPressState.BUTTON_PRESS_ON and self.status <= Status.STOPPING:
+                self._launchMatch.terminate()     
+
+            elif newButtonState == ButtonState.ON and self.status <= Status.STOPPING:
                 logger.info("Button ON")              
-                self.speaker.playSound('startRos')
-                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_FADING, color=(255,255,0))                    
-               
+                self._speaker.playSound('startRos')
+                
+                self.status = Status.STARTING
                 self._launchMatch = ProcessLogReader(
-                    cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"', 'LIDAR:="/dev/ttyLIDAR"', 'NANONPX:="/dev/ttyNANO"'],
+                    cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"', 'LIDAR:="/dev/ttyLIDAR"'],
                     max_log_lines=MasterNode.LOG_LINES
                 )
                 self._startTime = time.time()
-                self.status = Status.STARTING
+                self._led.setLedBlinking(MasterNode.LED_BLINK_INTERVAL)
                   
             else:
-                logger.error(f"ERROR : unknown button callback {self.buttonState}")
+                logger.error(f"ERROR : unknown button callback {self._buttonState}")
+
+        if self.status != Status.INACTIVE and self._launchMatch.poll() is not None:
+            if self.status >= Status.STARTING:
+                logger.error("Match script has died unexpectedly")
+                self._speaker.playSound('error')
+            else:
+                logger.info("Match script has exited successfully")
+                self._speaker.playSound('RosEnded')
+                
+            self.status = Status.INACTIVE
+            self._led.setLedState(LedState.OFF)
 
         if self.status == Status.STARTING:
             # TODO: other way to trigger state change?
             if time.time() - self._startTime > 1:
-                self.speaker.playSound('RosReady')
-                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(0,255,0))
+                logger.info("Match script ready")
+                self._speaker.playSound('RosReady')
                 self.status = Status.STARTED
+                self._led.setLedState(LedState.ON)
         
-        if self.status == Status.STOPPING:
-            if self._launchMatch.poll() is not None:
-                self.speaker.playSound('RosEnded')
-                self.nanoCom.changeButtonColor(ButtonColorMode.BUTTON_COLOR_STATIC, color=(255,0,0))
-                self.status = Status.INACTIVE
-
         if self._launchMatch is not None and self._launchMatch.is_dirty:
             logs = self._launchMatch.get_logs()
+
             transformedLogs = []
             for log in logs:
                 # Remove log header (only keep message)
                 output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]
                 transformedLogs.append(output_line[:21])
                 transformedLogs.append(output_line[21:])
+
+         #   logger.info(str(transformedLogs))
                 
-            self._oled.oled_clear()
-            self._oled.oled_display_logs(transformedLogs)
+           # self._oled.oled_clear()
+           # self._oled.oled_display_logs(transformedLogs)
     
     def __enter__(self):
-        self
         return self
 
     def __exit__(self, *args):
@@ -148,7 +145,7 @@ class MasterNode(Node):
 def main():
     rclpy.init(args=sys.argv)
 
-    node = MasterNode('/dev/ttyUSB0') # TODO: use a parameter instead of hard-coded device
+    node = MasterNode()
     try:
         with node:
             node.run()

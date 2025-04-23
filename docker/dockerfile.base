@@ -40,6 +40,10 @@ RUN mkdir -p /app/dev/lib
 RUN git clone --recursive -b jazzy https://github.com/micro-ROS/micro_ros_setup.git /app/dev/lib/micro_ros_setup
 # Hokuyo driver (Lidar)
 RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/lib/urg_node2
+
+# HACK: urg_node2 hard-codes its configuration, so we need to change the source code...
+RUN sed -i -e 's/ether/serial/g' /app/dev/lib/urg_node2/launch/urg_node2.launch.py
+
 # Messages and simulation of the "base roulante" (copied from GitHub isaebots-bn)
 # HACK: The BR is mounted as a volume later (when the container is created) but docker build does not allow to mount volumes when building the image
 # Instead, we just copy the BR here and delete it later (this just allows to pre-compile the BR and save time when the container is created)

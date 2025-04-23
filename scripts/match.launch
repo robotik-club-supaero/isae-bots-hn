@@ -1,7 +1,6 @@
 <launch>  
 	<arg name='BR' default="/dev/ttyBR" />
 	<arg name='ACT' default="/dev/ttyACT" />
-	<arg name='LIDAR' default="/dev/ttyLIDAR" />
 	<arg name='NANONPX' default="/dev/ttyNANO" />
 
 	<!-- micro_ros -->
@@ -9,7 +8,9 @@
 	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var BR)" />
 	<node name="SerialNodeACT" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var ACT)" />
 
-	<node name="SerialNodeLIDAR" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var LIDAR)" />
+	<!-- driver_lidar -->
+
+	<include file="$(find-pkg-share urg_node2)/launch/urg_node2.launch.py" />
 	
 	<!-- traitement obstacles -->
 

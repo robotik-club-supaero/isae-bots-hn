@@ -88,7 +88,7 @@ class MasterNode(Node):
                 
                 self.status = Status.STARTING
                 self._launchMatch = ProcessLogReader(
-                    cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"', 'LIDAR:="/dev/ttyLIDAR"'],
+                    cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"'],
                     max_log_lines=MasterNode.LOG_LINES
                 )
                 self._startTime = time.time()

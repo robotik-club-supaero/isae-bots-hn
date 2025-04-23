@@ -35,8 +35,6 @@ class LogReader(Thread):
                 self._lines.append(line.decode().strip())
                 self._dirty = True
 
-        print("Exited")
-
     @property
     def is_dirty(self):
         return self._dirty

@@ -24,6 +24,7 @@ class ISBManager:
     def initLed(self, pin):
         self._pca95xx.config(pin=pin, mode=PinMode.OUTPUT.value)
         self._ledState[pin] = {"state": LedState.OFF, "blinking": False}
+        self.setLedState(pin, LedState.OFF)
 
     def initButton(self, pin):
         self._pca95xx.config(pin=pin, mode=PinMode.INPUT.value)

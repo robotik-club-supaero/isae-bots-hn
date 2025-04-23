@@ -43,6 +43,7 @@ TRIGGER_PIN = 5
 
 TRIGGER_LED_ID = 0
 BR_IDLE_LED_ID = 1
+STATUS_LED_ID = len(LED_PINS) - 1
 
 STRAT_BUTTON_ID = 0
 COLOR_BUTTON_ID = 1
@@ -70,7 +71,9 @@ class ISBNode(Node):
         for pin in LED_PINS:
             self.manager.initLed(pin)
 
-        for i, pin in enumerate(BUTTONS_PINS):
+        self.manager.setLedBlinking(LED_PINS[STATUS_LED_ID], True)
+
+        for pin in BUTTONS_PINS:
             self.manager.initButton(pin)
 
         self.manager.initButton(TRIGGER_PIN)
@@ -116,8 +119,10 @@ class ISBNode(Node):
         time.sleep(0.001)
         self.pub_start.publish(self.match_started)
 
-    def run(self):        
-        while True:        
+        self.manager.setLedState(LED_PINS[TRIGGER_LED_ID], LedState.ON)
+
+    def run(self):
+        while True:
             rclpy.spin_once(self, timeout_sec=0)
             self.manager.do_blink()
 
@@ -138,7 +143,10 @@ class ISBNode(Node):
                     self.update_idle()
             
             time.sleep(0.01)
-
+    
+    def destroy_node(self):
+        self.manager.setLedState(LED_PINS[STATUS_LED_ID], LedState.OFF)
+        super().destroy_node()
 
 #################################################################
 #                                                               #

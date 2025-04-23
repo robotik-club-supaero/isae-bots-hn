@@ -2,6 +2,7 @@ from collections import deque
 from threading import Thread, Lock, Event
 import select
 import subprocess
+import signal
 
 class LogReader(Thread):
 
@@ -34,6 +35,8 @@ class LogReader(Thread):
                 self._lines.append(line.decode().strip())
                 self._dirty = True
 
+        print("Exited")
+
     @property
     def is_dirty(self):
         return self._dirty
@@ -63,8 +66,7 @@ class ProcessLogReader(subprocess.Popen, LogReader):
         LogReader.start(self)
 
     def terminate(self):
-        subprocess.Popen.terminate(self)
-        LogReader.interrupt(self)
+        self.send_signal(signal.SIGINT)
 
     def __enter__(self):
         subprocess.Popen.__enter__(self)
@@ -73,9 +75,9 @@ class ProcessLogReader(subprocess.Popen, LogReader):
     def __exit__(self, *args):
         self.terminate()
         subprocess.Popen.__exit__(self, *args)
-        LogReader.__exit__(self, *args)
-
         self.wait()
+
+        LogReader.__exit__(self, *args)
 
 if __name__ == "__main__":
     # TEST

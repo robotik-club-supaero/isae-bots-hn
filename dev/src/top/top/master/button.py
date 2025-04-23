@@ -1,7 +1,8 @@
 import time
 from enum import IntEnum
 
-DUMMY_BUTTON_TRIGGER_TIMEOUT = 2
+DUMMY_BUTTON_TRIGGER_ON_TIMEOUT = 10
+DUMMY_BUTTON_TRIGGER_OFF_TIMEOUT = 15
 
 class ButtonState(IntEnum):
     OFF = 0
@@ -12,12 +13,17 @@ LedState = ButtonState
 class DummyButton:
     def __init__(self):
         self._init = time.time()
+        self._state = ButtonState.OFF
 
     def getButtonState(self):
-        if time.time() - self._init < DUMMY_BUTTON_TRIGGER_TIMEOUT or time.time() - self._init > 5 * DUMMY_BUTTON_TRIGGER_TIMEOUT:
-            return ButtonState.OFF
-        else:
-            return ButtonState.ON
+        if self._state == ButtonState.OFF and time.time() - self._init > DUMMY_BUTTON_TRIGGER_ON_TIMEOUT:
+            self._state = ButtonState.ON
+            self._init = time.time()
+        elif self._state == ButtonState.ON and time.time() - self._init > DUMMY_BUTTON_TRIGGER_OFF_TIMEOUT:
+            self._state = ButtonState.OFF
+            self._init = time.time()
+        
+        return self._state
 
 class DummyLed:
     def __init__(self):

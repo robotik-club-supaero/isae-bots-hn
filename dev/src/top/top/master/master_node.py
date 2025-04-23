@@ -79,7 +79,8 @@ class MasterNode(Node):
                 self._speaker.playSound('endRos')              
                 
                 self.status = Status.STOPPING
-                self._launchMatch.terminate()     
+                self._launchMatch.terminate()
+                self._led.setLedBlinking(MasterNode.LED_BLINK_INTERVAL)
 
             elif newButtonState == ButtonState.ON and self.status <= Status.STOPPING:
                 logger.info("Button ON")              

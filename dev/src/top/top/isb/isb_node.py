@@ -102,7 +102,7 @@ class ISBNode(Node):
     def update_color(self):
         self.current_color.data = 1 - self.current_color.data
         self.pub_color.publish(self.current_color)
-        self.get_logger().info("Update color to " + "HOME" if self.current_color.data == 0 else "AWAY")
+        self.get_logger().info("Update color to " + ("HOME" if self.current_color.data == 0 else "AWAY"))
 
     def update_idle(self):
         self.is_br_ready.data = not self.is_br_ready.data

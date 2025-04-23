@@ -56,7 +56,10 @@ class LCDNode(Node):
             self.lcd.lcd_display_string("COLOR: " + ("HOME" if self.color == 0 else "AWAY"), line=2)
 
     def run(self):     
-        rclpy.spin(self)
+        try:
+            rclpy.spin(self)
+        finally:
+            self.lcd.lcd_clear()
 
 #################################################################
 #                                                               #

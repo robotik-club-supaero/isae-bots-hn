@@ -2,9 +2,11 @@ import sys
 
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Int16
 
-import lcd_lib
 from config.qos import default_profile
+
+from .lcd_lib import lcd
 
 class LCDNode(Node):
 
@@ -16,7 +18,7 @@ class LCDNode(Node):
         self.strat = None
         self.score = 0
 
-        self.lcd = lcd_lib.lcd()
+        self.lcd = lcd()
         self.lcd.lcd_clear()
 
         self.subScore = self.create_subscription(Int16, "/game/color", self.cb_color, default_profile)
@@ -24,6 +26,8 @@ class LCDNode(Node):
         self.subStart = self.create_subscription(Int16, "/game/start", self.cb_start, default_profile)
 
         self.subScore = self.create_subscription(Int16, "/game/score", self.cb_score, default_profile)
+
+        self.update_display()
         
     def cb_color(self, msg):
         self.color = msg.data
@@ -48,7 +52,10 @@ class LCDNode(Node):
             self.lcd.lcd_display_string("SCORE: " + str(self.score), line=1)
         else:
             self.lcd.lcd_display_string("STRAT: " + str(self.strat), line=1)
-            self.lcd.lcd_display_string("COLOR: " + "HOME" if self.color == 0 else "AWAY", line=2)
+            self.lcd.lcd_display_string("COLOR: " + ("HOME" if self.color == 0 else "AWAY"), line=2)
+
+    def run(self):     
+        rclpy.spin(self)
 
 #################################################################
 #                                                               #

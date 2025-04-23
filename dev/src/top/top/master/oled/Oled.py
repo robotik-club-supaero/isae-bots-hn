@@ -205,3 +205,15 @@ class Oled():
 
         self.disp.image(self.image)
         self.disp.display()
+
+if __name__ == '__main__':
+
+    '''
+    Pixels going from (0,0) to (127,63)
+    The upper band goes from (0,0) to (127,15)
+    '''
+
+    oled = Oled()
+
+    oled.set_bgImage('SRC_OledLogo2.ppm')
+    

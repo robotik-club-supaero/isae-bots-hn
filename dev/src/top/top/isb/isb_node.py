@@ -98,7 +98,7 @@ class ISBNode(Node):
 
     def update_color(self):
         self.current_color.data = 1 - self.current_color.data
-        self.color_pub.publish(self.current_color)
+        self.pub_color.publish(self.current_color)
         self.get_logger().info("Update color to " + "HOME" if self.current_color.data == 0 else "AWAY")
 
     def update_idle(self):
@@ -125,7 +125,10 @@ class ISBNode(Node):
                 self.start_match()
                 
             for pin in self.manager.check_buttons():
-                if pin == BUTTONS_PINS[STRAT_BUTTON_ID]:
+                if pin == TRIGGER_PIN:
+                    if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
+                        self.start_match()
+                elif pin == BUTTONS_PINS[STRAT_BUTTON_ID]:
                     self.update_strat()
 
                 elif pin == BUTTONS_PINS[COLOR_BUTTON_ID]:

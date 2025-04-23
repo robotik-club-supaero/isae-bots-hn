@@ -15,9 +15,7 @@ find_package(std_msgs REQUIRED)
 ################################################
 
 set(msg_files
-  "msg/ActionnersMsg.msg"
   "msg/EndOfActionMsg.msg"
-  "msg/InfoMsg.msg"
 )
 
 ## Generate added messages and services with any dependencies listed here

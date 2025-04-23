@@ -39,7 +39,7 @@ from geometry_msgs.msg import Quaternion
 from .disp_utils import *
 
 #################################################################################################
-from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg					# sur ordi
+from message.msg import EndOfActionMsg					# sur ordi
 #################################################################################################
 
 #################################################################

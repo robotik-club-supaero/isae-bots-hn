@@ -30,7 +30,7 @@ from .dn_const import *
 import strat.dec.dn_strats as dn_strats
 
 from std_msgs.msg import Int16, Int16MultiArray, Empty
-from message.msg import InfoMsg, ActionnersMsg, EndOfActionMsg
+from message.msg import EndOfActionMsg
 from br_messages.msg import Position
 
 from ..strat_const import Action, ActionScore, ActionResult

@@ -31,7 +31,7 @@ class MasterNode(Node):
 
     LED_BLINK_INTERVAL = 0.25 # s
 
-    OLED_CLEAR_TIMEOUT = 10 # s
+    OLED_CLEAR_TIMEOUT = 2 # s
 
     def __init__(self):
         super().__init__("master_node")
@@ -128,9 +128,10 @@ class MasterNode(Node):
  
             self._oled.display_lines(transformedLogs)
         
-        if self.status == Status.INACTIVE and self._stopTime is not None and time.time() - self._stopTime > MasterNode.OLED_CLEAR_TIMEOUT:
-            self._stopTime = None
-            self._oled.display_image('SRC_OledLogo2.ppm')
+        if self.status == Status.INACTIVE and self._buttonState == ButtonState.OFF:
+            if self._stopTime is not None and time.time() - self._stopTime > MasterNode.OLED_CLEAR_TIMEOUT:
+                self._stopTime = None
+                self._oled.display_image('SRC_OledLogo2.ppm')
     
     def __enter__(self):
         return self

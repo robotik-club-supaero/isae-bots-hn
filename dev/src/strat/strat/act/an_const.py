@@ -94,6 +94,7 @@ class DspOrderMode(IntEnum):
     STRAIGHT_NO_AVOIDANCE = 1
     STOP = 2
     BACKWARDS = 8
+    FORWARDS = 9
  
 class DspCallback(Callback):
     UNKNOWN = -2

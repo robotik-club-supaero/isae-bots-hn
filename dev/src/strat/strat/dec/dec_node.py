@@ -97,7 +97,7 @@ class DecisionsNode(Node):
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
         self.remaining_stands = [1 for _ in range(len(STAND_POS))]
-        self.deposit_slots = [1 for _ in range(DEPOSIT_POS)]
+        self.deposit_slots = [1 for _ in range(len(DEPOSIT_POS))]
         self.nb_actions = 0
 
     def publishScore(self):

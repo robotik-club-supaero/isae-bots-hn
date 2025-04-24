@@ -708,7 +708,7 @@ class InterfaceNode(Node):
         self._canvas.bind('<ButtonRelease-3>', self.sendOrder)
 
         self.image = tk.PhotoImage(file=os.path.join(
-            os.path.dirname(__file__), "Background_Interface.gif"), height=TABLE_HEIGHT, width=TABLE_WIDTH)
+            os.path.dirname(__file__), "Background_Interface.gif"))
         self._canvas.draw_image(
             self.image, 0, 0, anchor="nw")
         self._canvas.pack()

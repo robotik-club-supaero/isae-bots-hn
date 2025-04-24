@@ -77,12 +77,14 @@ def match_strat(node):
     
     def find_closest(node, positions, remaining, cond=None, relative=True, coeffs=1):
 
-        if cond is None: cond = lambda cluster: remaining[cluster] > STAND_THRESHOLD
+        if cond is None: 
+            cond = lambda ramaining_index: remaining[ramaining_index] > STAND_THRESHOLD
 
         x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
         dists = [ coeffs * ((x_p * x + y_p * y)**0.5) for x_p, y_p, t_p in positions]
 
-        dist_sorted_index = np.argsort(dists)
+        dist_sorted_index = list(np.argsort(dists))
+        print(dists, dist_sorted_index)
         for index in dist_sorted_index:
             if cond(index):
                 return index

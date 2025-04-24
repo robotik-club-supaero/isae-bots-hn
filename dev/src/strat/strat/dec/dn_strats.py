@@ -80,8 +80,8 @@ def match_strat(node):
         if cond is None: cond = lambda cluster: remaining[cluster] > STAND_THRESHOLD
 
         x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
-        dists = coeffs * np.linalg.norm(np.array([[x,y]]) - positions, axis=1)
-
+        dists = [ coeffs * ((x_p * x + y_p * y)**0.5) for x_p, y_p in positions] 
+        
         clusters = np.argsort(dists)
         for cluster in clusters:
             if cond(cluster.item()):

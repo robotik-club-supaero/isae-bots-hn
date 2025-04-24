@@ -47,7 +47,8 @@ STATUS_LED_ID = len(LED_PINS) - 1
 
 STRAT_BUTTON_ID = 0
 COLOR_BUTTON_ID = 1
-BR_IDLE_BUTTON_ID = 2
+INIT_POS_BUTTON_ID = 2
+BR_IDLE_BUTTON_ID = 3
 
 class BR_Callback(IntEnum):
     OK_READY = 5
@@ -61,8 +62,11 @@ class ISBNode(Node):
         config = GlobalConfig()
 
         self.strat_count = len(config.strat_names)
+        self.init_pos_count = len(config.init_zones)
+
         self.current_strat = Int16(data=config.default_strat_index)
         self.current_color = Int16(data=0)
+        self.current_init_pos = Int16(data=0)
         self.is_br_ready = Bool(data=False)
         self.match_started = Int16(data=0)
 
@@ -83,6 +87,7 @@ class ISBNode(Node):
         self.pub_start = self.create_publisher(Int16, "/game/start", latch_profile)
         self.pub_color = self.create_publisher(Int16, '/game/color', latch_profile)
         self.pub_strat = self.create_publisher(Int16, '/game/strat', latch_profile)
+        self.pub_init_pos = self.create_publisher(Int16, '/game/init_pos', latch_profile)
         self.pub_idle = self.create_publisher(Bool, '/br/idle', latch_profile)
 
         self.get_logger().info("ISB node initialized")
@@ -103,6 +108,11 @@ class ISBNode(Node):
         self.current_color.data = 1 - self.current_color.data
         self.pub_color.publish(self.current_color)
         self.get_logger().info("Update color to " + ("HOME" if self.current_color.data == 0 else "AWAY"))
+
+    def update_init_pos(self):
+        self.current_init_pos.data = (self.current_init_pos.data + 1) % self.init_pos_count
+        self.pub_init_pos.publish(self.current_init_pos)
+        self.get_logger().info(f"Update init zone to {self.current_init_pos.data}")
 
     def update_idle(self):
         self.is_br_ready.data = not self.is_br_ready.data
@@ -138,6 +148,9 @@ class ISBNode(Node):
 
                 elif pin == BUTTONS_PINS[COLOR_BUTTON_ID]:
                     self.update_color()
+                
+                elif pin == BUTTONS_PINS[INIT_POS_BUTTON_ID]:
+                    self.update_init_pos()
 
                 elif pin == BUTTONS_PINS[BR_IDLE_BUTTON_ID]:
                     self.update_idle()

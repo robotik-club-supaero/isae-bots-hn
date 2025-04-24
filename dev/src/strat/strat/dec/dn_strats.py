@@ -81,7 +81,7 @@ def match_strat(node):
 
         x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
         print("\n#### Position : ", positions, "##### \n")
-        dists = [ coeffs * ((x_p * x + y_p * y)**0.5) for x_p, y_p in positions]
+        dists = [ coeffs * ((x_p * x + y_p * y)**0.5) for x_p, y_p, t_p in positions]
 
         clusters = np.argsort(dists)
         for cluster in clusters:

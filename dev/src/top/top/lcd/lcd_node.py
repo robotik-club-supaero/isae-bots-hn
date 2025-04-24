@@ -16,6 +16,7 @@ class LCDNode(Node):
         self.match_started = False
         self.color = None
         self.strat = None
+        self.init_pos = None
         self.score = 0
 
         self.lcd = lcd()
@@ -24,6 +25,7 @@ class LCDNode(Node):
         self.subScore = self.create_subscription(Int16, "/game/color", self.cb_color, default_profile)
         self.subScore = self.create_subscription(Int16, "/game/strat", self.cb_strat, default_profile)
         self.subStart = self.create_subscription(Int16, "/game/start", self.cb_start, default_profile)
+        self.subInitPos = self.create_subscription(Int16, '/game/init_pos', self.cb_init_pos, default_profile)
 
         self.subScore = self.create_subscription(Int16, "/game/score", self.cb_score, default_profile)
 
@@ -43,6 +45,10 @@ class LCDNode(Node):
             self.match_started = True
             self.update_display()
 
+    def cb_init_pos(self, msg):
+        self.init_pos = msg.data
+        self.update_display()
+
     def cb_score(self, msg):
         self.score = msg.data
         self.update_display()
@@ -53,7 +59,7 @@ class LCDNode(Node):
             self.lcd.lcd_display_string("SCORE: " + str(self.score), line=1)
         else:
             self.lcd.lcd_display_string("STRAT: " + str(self.strat), line=1)
-            self.lcd.lcd_display_string("COLOR: " + ("HOME" if self.color == 0 else "AWAY"), line=2)
+            self.lcd.lcd_display_string(("HOME" if self.color == 0 else "AWAY") + f" (ZONE {self.init_pos})", line=2)
 
     def run(self):     
         try:

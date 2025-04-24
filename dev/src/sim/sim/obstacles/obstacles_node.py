@@ -140,7 +140,7 @@ class SIM_ObstaclesNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    return
+    
     node = SIM_ObstaclesNode()
     try:
         rclpy.spin(node)

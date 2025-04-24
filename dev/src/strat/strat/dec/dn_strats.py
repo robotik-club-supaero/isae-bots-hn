@@ -84,7 +84,7 @@ def match_strat(node):
         dists = [ coeffs[i] * ((x_p * x + y_p * y)**0.5) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
         dist_sorted_index = list(np.argsort(dists))
-        print(coeffs, dists, dist_sorted_index)
+        #print(coeffs, dists, dist_sorted_index)
         for index in dist_sorted_index:
             if cond(index):
                 return index

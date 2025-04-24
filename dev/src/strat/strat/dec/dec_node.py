@@ -96,8 +96,8 @@ class DecisionsNode(Node):
         self.init_zone = CONFIG.init_zones[CONFIG.default_init_zone]
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
-        self.remaining_stands = [STAND_CAPACITE for _ in range(6)]
-        self.deposit_slots = [STAND_CAPACITE for _ in range(3)]
+        self.remaining_stands = [1 for _ in range(len(STAND_POS))]
+        self.deposit_slots = [1 for _ in range(DEPOSIT_POS)]
         self.nb_actions = 0
 
     def publishScore(self):

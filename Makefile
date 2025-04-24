@@ -27,18 +27,18 @@ PI_DOCKERFILE = ${PWD}/docker/dockerfile.pi
 PI_PLATFORM = linux/arm64/v8
 
 # Setup Docker volumes and env variables
-DOCKER_VOLUMES = \
+DOCKER_VOLUMES_COMMON = \
 	--volume="${PWD}/dev/src":"/app/dev/src" \
 	--volume="${PWD}/dev/lib/br":"/app/dev/lib/br" \
 	--volume="/dev":"/dev" \
-	--volume="${PWD}/scripts":"/app/scripts" \
-	--volume="/tmp/.X11-unix":"/tmp/.X11-unix" \
-
+	--volume="${PWD}/scripts":"/app/scripts"
+	
+DOCKER_VOLUMES = \
+	${DOCKER_VOLUMES_COMMON} \
+	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
 
 DOCKER_VOLUMES_PI = \
-	--volume="${PWD}/dev/src":"/app/dev/src" \
-	--volume="/dev":"/dev" \
-	--volume="${PWD}/scripts":"/app/scripts"
+	${DOCKER_VOLUMES_COMMON}
 
 DOCKER_ENV_VAR = \
 	-e DISPLAY=${DISPLAY} \

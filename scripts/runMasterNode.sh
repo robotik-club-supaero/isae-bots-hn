@@ -11,7 +11,8 @@ export XDG_RUNTIME_DIR=/run/user/1000
 # command to create the link with tcp server to be able to connect from docker
 COMMAND="pactl load-module module-native-protocol-tcp port=34567"
 
-while true; do
+# Replace with `while true` to use a speaker
+while false; do
     output=$($COMMAND 2>&1)
     exitcode=$?
 
@@ -35,8 +36,6 @@ while true; do
 done
 
 
-# lancement du docker avec le script python topServer.py
+# lancement du master_node dans le Docker
 cd /home/pi/isae-bots-hn-2024
-make main INTERACTIVE="" CMD="cd dev/src/top; python topServer.py; bash"
-
-echo "Exited TopServer"
+make main INTERACTIVE="" CMD="ros2 run top master_node 2>&1 > /tmp/master_node.log; $SHELL"

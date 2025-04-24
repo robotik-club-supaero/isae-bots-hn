@@ -1,7 +1,6 @@
 <launch>  
 	<arg name='BR' default="/dev/ttyBR" />
 	<arg name='ACT' default="/dev/ttyACT" />
-	<arg name='NANONPX' default="/dev/ttyNANO" />
 
 	<!-- micro_ros -->
 

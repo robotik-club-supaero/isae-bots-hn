@@ -23,7 +23,7 @@ from enum import IntEnum, Enum
 import numpy as np
 
 from config import StratConfig
-from ..strat_const import STAND_POS as PLANTS_POS_RAW, DEPOSIT_POS as DEPOSIT_POS_RAW, PARK_POS as PARK_POS_RAW
+from ..strat_const import STAND_POS, DEPOSIT_POS, PARK_POS
 
 CONFIG = StratConfig()
 
@@ -41,10 +41,6 @@ COLOR = {
 }
 
 STAND_CAPACITE = 2
-
-STAND_POS = np.array(PLANTS_POS_RAW)
-DEPOSIT_POS = np.array(DEPOSIT_POS_RAW)
-PARK_POS = np.array(PARK_POS_RAW)
 
 class Color():
     BLACK = '\033[30m'

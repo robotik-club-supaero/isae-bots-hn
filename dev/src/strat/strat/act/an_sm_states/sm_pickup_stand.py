@@ -31,7 +31,7 @@ from strat.strat_const import STAND_POS, ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
 
-from .sm_displacement import MoveTo, Approach, colored_approach, colored_approach_with_angle
+from .sm_displacement import MoveTo, MoveForwardStraight, Approach, colored_approach, colored_approach_with_angle
 from .sm_waiting import ObsWaitingOnce
 
 #################################################################
@@ -55,22 +55,6 @@ class CalcPositionningStand(yasmin.State): # TODO
         
         xp, yp, tp = STAND_POS[stand_id]
         userdata["next_move"] = colored_approach_with_angle(userdata, xp, yp, tp, R_APPROACH_STAND)
-             
-        return 'success'
-
-
-class CalcTakeStand(yasmin.State): # TODO
-    
-    def __init__(self, node):
-        super().__init__(outcomes=['fail','success','preempted'])
-        self._node = node
-        
-    def execute(self, userdata):    
-        pots_id = self._node.get_pickup_id("stand", userdata)
-
-        xp, yp, tp = STAND_POS[pots_id]
-
-        userdata["next_move"] = colored_approach_with_angle(userdata, xp, yp, tp, R_TAKE_STAND)
              
         return 'success'
  
@@ -100,7 +84,7 @@ class _PickupStandSequence(Sequence): # TODO
                 Concurrence(CLAMP_1 = OpenClamp(node, etage=1), CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_1 = DescendElevator(node, etage=1), ElEV_2 = DescendElevator(node, etage=2))
             ),
-            ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
+            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 200)),
             ('CLOSE_CLAMP', Concurrence(CLAMP_1 = CloseClamp(node, etage=1), CLAMP_2 = CloseClamp(node, etage=2))),
             ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_2 = RiseElevator(node, etage=2))),
         ]
@@ -110,7 +94,7 @@ class _PickupStandSequence(Sequence): # TODO
                 Concurrence(CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_2 = DescendElevator(node, etage=2))
             ),
-            ('DEPL_TAKE_STAND', MoveTo(node, CalcTakeStand(node))),
+            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 200)),
             ('CLOSE_CLAMP', CloseClamp(node, etage=2)),
             ('RISE_ELEVATOR', RiseElevator(node, etage=2)),
         ]

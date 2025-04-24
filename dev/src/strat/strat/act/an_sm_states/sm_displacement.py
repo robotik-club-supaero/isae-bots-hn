@@ -188,3 +188,41 @@ class MoveBackwardsStraight(yasmin.State):
         
         return 'fail'
     
+class MoveForwardStraight(yasmin.State):
+    def __init__(self, node, dist):
+        super().__init__(outcomes=['fail','success','preempted'])
+        self._dist = dist
+        self._node = node
+        self._logger = node.get_logger()
+
+    def execute(self, userdata):
+        
+        self._node.debug_print('c', "Request to move forward")
+        
+        userdata["cb_depl"] = DspCallback.PENDING
+
+        x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+        xd = x + self._dist * math.cos(theta)
+        yd = y + self._dist * math.sin(theta)
+
+        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
+        
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < DISP_TIMEOUT:           
+            time.sleep(0.01)
+
+            if self.is_canceled():
+                return 'preempted'
+
+            if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
+                self._logger.error("Displacement result: error asserv.")
+                return 'fail'
+
+            if userdata["cb_depl"] == DspCallback.SUCCESS:
+                self._logger.info('Displacement result: success displacement')
+                return 'success'
+
+        # timeout
+        self._logger.warning("Timeout")
+        
+        return 'fail'

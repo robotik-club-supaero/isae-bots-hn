@@ -205,7 +205,7 @@ class MoveForwardStraight(yasmin.State):
         xd = x + self._dist * math.cos(theta)
         yd = y + self._dist * math.sin(theta)
 
-        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
+        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE))
         
         begin = time.perf_counter()
         while time.perf_counter() - begin < DISP_TIMEOUT:           

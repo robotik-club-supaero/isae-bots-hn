@@ -154,7 +154,7 @@ def match_strat(node):
         return
     
     # If no other action is applicable, go to park
-    zone = adapt_pos_to_color(PARK_POS, node.color)
+    zone = adapt_pos_to_color(*PARK_POS, node.color)
     node.curr_action = [Action.PARK, zone]
     node.get_logger().info("Next action order : Park")
     node.publishAction()

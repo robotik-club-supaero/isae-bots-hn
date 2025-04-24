@@ -19,11 +19,11 @@ BORDER_TOP = 0  # marge en haut de l'interface (px)
 BORDER_BOTTOM = 0  # marge en bas de l'interface (px)
 
 # SCALE must match the size of 'Background_interface.gif'
-INTERFACE_SCALE = 780/3000  # conversion mm en pixels (3m <-> 780px)
+INTERFACE_SCALE = 975/3000  # conversion mm en pixels (3m <-> 975px)
 TABLE_HEIGHT = 3000  # (mm)
 TABLE_WIDTH = 2000  # (mm)
 
-OBSTACLE_PLOT_RADIUS = 100  # mm
+OBSTACLE_PLOT_RADIUS = 150  # mm
 RATIOV = 1
 
 PATHWIDTH = 6  # px

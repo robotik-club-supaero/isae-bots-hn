@@ -1,0 +1,20 @@
+import math
+
+TABLE_H = 3000          # hauteur de table (selon y)
+TABLE_W = 2000          # largeur de table (selon x)
+
+# Max distance between two *successive* measurements for them to belong to the same cluster
+CLUSTER_DIST_LIM = 100 # mm
+
+# Do not merge points behond this threshold even if they belong to the same cluster
+# If this is less than the lidar resolution, this has no effect.
+MIN_ANGLE_RESOLUTION = 2 * math.pi / 180
+
+# Ignore detections closer than this
+MIN_RANGE = 50 # mm
+
+# Ignore detections further than this
+MAX_RANGE = 3000 # mm
+
+# Whether to ignore points outside the table
+DROP_OFF_LIMITS = True

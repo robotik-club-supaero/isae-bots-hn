@@ -20,25 +20,6 @@
 
 import os
 from enum import IntEnum, Enum
-import numpy as np
-
-from config import StratConfig
-from ..strat_const import STAND_POS, DEPOSIT_POS, PARK_POS
-
-CONFIG = StratConfig()
-
-#################################################################
-# ROBOTS PARAMS
-class ROBOT_COLOR(IntEnum):
-    YELLOW = 0
-    BLUE = 1
-
-#################################################################
-
-COLOR = {
-      0: 'YELLOW',
-      1: 'BLUE'
-}
 
 STAND_CAPACITE = 2
 

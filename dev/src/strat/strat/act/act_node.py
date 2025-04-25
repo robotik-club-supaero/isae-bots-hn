@@ -33,14 +33,13 @@ from yasmin_viewer import YasminViewerPub
 import time
 
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
-from geometry_msgs.msg import Quaternion
 from br_messages.msg import Position
 
 from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
-from message.msg import EndOfActionMsg
+from message.msg import EndOfActionMsg, DisplacementRequest
 
 from ..strat_const import ACTIONS_OUTCOMES, Action
 from config.qos import default_profile, latch_profile, br_position_topic_profile
@@ -59,7 +58,7 @@ class ActionNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.repartitor_pub = self.create_publisher(Empty, '/strat/action/request', latch_profile)
         self.callback_action_pub = self.create_publisher(EndOfActionMsg, '/strat/action/callback', latch_profile)
-        self.disp_pub = self.create_publisher(Quaternion, '/dsp/order/next_move', latch_profile)
+        self.disp_pub = self.create_publisher(DisplacementRequest, '/dsp/order/next_move', latch_profile)
         self.stop_teensy_pub = self.create_publisher(Empty, '/br/stop', latch_profile)
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)
         
@@ -142,10 +141,7 @@ class ActionNode(Node):
         except KeyError:
             self.get_logger().info(Color.RED + "Wrong debugPrint color" + Color.RESET)
             return
-    
-    def debug_print_move(quaternion):
-        debug_print('c*', f"({quaternion.x}, {quaternion.y}, {quaternion.z}, {quaternion.w})")
-
+   
     #################################################################
     #                                                               #
     #                           FEEDBACK                            #

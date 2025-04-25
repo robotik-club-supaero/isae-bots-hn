@@ -1,3 +1,5 @@
+import math
+
 class RobotConfig:
 
     ROBOT_LARG = 240
@@ -17,3 +19,7 @@ class RobotConfig:
     @property
     def robot_length(self):
         return RobotConfig.ROBOT_LONG
+
+    @property
+    def robot_diagonal(self):
+        return math.sqrt(self.robot_width**2 + self.robot_length**2)

@@ -34,6 +34,7 @@ from message.msg import EndOfActionMsg
 from br_messages.msg import Position
 
 from ..strat_const import Action, ActionScore, ActionResult
+from config import StratConfig, COLOR
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
@@ -64,19 +65,21 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-        
+
+        self.config = None
+
         self.match_started = False
-        self.color = 0
+        self._setColor(0)
         self.score = ActionScore.SCORE_INIT.value
 
         self.start_time = 0
-        self.match_time = CONFIG.match_time
-        self.delay_park = CONFIG.delay_park
+        self.match_time = self.config.match_time
+        self.delay_park = self.config.delay_park
         self.go_park = False
         self.parked = False
         
-        self.strat = CONFIG.default_strat_index
-        self.strategies = CONFIG.strat_names
+        self.strat = self.config.default_strat_index
+        self.strategies = self.config.strat_names
         
         self.strat_functions = []
         for stratName in self.strategies:
@@ -93,11 +96,10 @@ class DecisionsNode(Node):
         self.action_successful = False
         self.retry_count = 0
 
-        self.init_zone = CONFIG.init_zones[CONFIG.default_init_zone]
         self.position = [0,0,0]  # TODO utilser un objet Pose2D
 
-        self.remaining_stands = [1 for _ in range(len(STAND_POS))]
-        self.deposit_slots = [1 for _ in range(len(DEPOSIT_POS))]
+        self.remaining_stands = [1 for _ in range(len(self.config.pickup_stand_pos))]
+        self.deposit_slots = [1 for _ in range(len(self.config.deposit_pos))]
         self.nb_actions = 0
 
     def publishScore(self):
@@ -114,6 +116,9 @@ class DecisionsNode(Node):
         action_msg.data = [self.curr_action[0].value] + self.curr_action[1:]
         self.next_action_pub.publish(action_msg)
     
+    def _setColor(self, color):
+        self.color = color
+        self.config = StratConfig(color)
 
     #################################################################
     #                                                               #
@@ -146,6 +151,7 @@ class DecisionsNode(Node):
             return
         else: 
             self.color = msg.data
+            self.config = StratConfig(self.color)
             self.get_logger().info("Received color : {}".format(COLOR[self.color]))
     
 
@@ -261,6 +267,8 @@ class DecisionsNode(Node):
         action_msg = Int16MultiArray()
         action_msg.data = [Action.END.value]
         self.next_action_pub.publish(action_msg)
+
+        self.end_pub.publish(Int16(data=1))
 
 #################################################################
 #                                                               #

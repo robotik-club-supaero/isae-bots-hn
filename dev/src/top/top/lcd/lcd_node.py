@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 
+from config import COLOR
 from config.qos import default_profile
 
 from .lcd_lib import lcd
@@ -59,7 +60,7 @@ class LCDNode(Node):
             self.lcd.lcd_display_string("SCORE: " + str(self.score), line=1)
         else:
             self.lcd.lcd_display_string("STRAT: " + str(self.strat), line=1)
-            self.lcd.lcd_display_string(("HOME" if self.color == 0 else "AWAY") + f" (ZONE {self.init_pos})", line=2)
+            self.lcd.lcd_display_string(COLOR[self.color % 2] + f" (ZONE {self.init_pos})", line=2)
 
     def run(self):     
         try:

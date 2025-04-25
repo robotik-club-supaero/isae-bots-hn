@@ -26,9 +26,10 @@ import math
 from enum import IntEnum
 from numpy.linalg import norm
 
-from ..an_const import DspCallback, DspOrderMode
+from message.msg import DisplacementRequest
+
+from ..an_const import DspCallback
 from ..an_utils import Sequence
-from strat.strat_utils import adapt_pos_to_color, create_quaternion
 
 #################################################################
 #                                                               #
@@ -43,33 +44,14 @@ class Approach(IntEnum):
     INITIAL = -1
     FINAL = 1
 
-def colored_destination(color, x_d, y_d, t_d, w):
-    """Allows a quick conversion of destination given the side played."""
-    x_d, y_d, t_d = adapt_pos_to_color(x_d, y_d, t_d, color)
-    return create_quaternion(x_d, y_d, t_d, w.value)
-
-def colored_approach(userdata, xd, yd, margin, phase=Approach.INITIAL, theta_final=None):
-    x, y, _ = adapt_pos_to_color(userdata["robot_pos"].x, userdata["robot_pos"].y, 0, userdata["color"])
-    d = norm([xd - x, yd - y])
+def approach(robot_pos, xd, yd, margin, phase=Approach.INITIAL, theta_final=None, backward=False):
+    d = norm([xd - robot_pos.x, yd - robot_pos.y])
     
-    x_dest = xd + phase.value * margin/d*(xd - x)
-    y_dest = yd + phase.value * margin/d*(yd - y)
-    if theta_final is None:
-        theta_dest = math.atan2(yd - y,xd - x)
-    else:
-        _, _, theta_dest = adapt_pos_to_color(0, 0, theta_final, userdata["color"])
-    
-    return colored_destination(userdata["color"], x_dest, y_dest, theta_dest, DspOrderMode.AVOIDANCE)
+    x_dest = xd + phase.value * margin/d*(xd - robot_pos.x)
+    y_dest = yd + phase.value * margin/d*(yd - robot_pos.y)
 
-def colored_approach_with_angle(userdata, xd, yd, td, margin, theta_final=None):
-    xd, yd, td = adapt_pos_to_color(xd, yd, td, userdata["color"])
-    if theta_final is None:
-        theta_final = td
-    else:
-        _, _, theta_final = adapt_pos_to_color(0, 0, theta_final)
-    return create_quaternion(xd - margin * math.cos(td), yd - margin * math.sin(td), theta_final, DspOrderMode.AVOIDANCE.value)
-                
-                
+    return create_displacement_request(x_dest, y_dest, theta_final, backward)
+
 #################################################################
 #                                                               #
 #                     SM_DISPLACEMENT STATE                     #
@@ -94,7 +76,6 @@ class Displacement(yasmin.State):
 
         retried = False
         dest = userdata["next_move"]
-        self._node.debug_print('c*', f"Displacement Request: towards ({dest.x}, {dest.y}, {dest.z}) with w = {dest.w}")
         self._node.disp_pub.publish(dest)
 
         init_time = time.time()
@@ -106,19 +87,14 @@ class Displacement(yasmin.State):
 
             if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
                 self._logger.error("Displacement result: error asserv.")
-                # --- try and correct if it's a problem of same position order reject
                 return 'fail'
 
             if userdata["cb_depl"] == DspCallback.PATH_NOT_FOUND:
                 self._logger.error("Displacement result: no path found with PF.")
                 return 'fail'
 
-            if userdata["cb_depl"] == DspCallback.PATH_BLOCKED:
-                self._logger.error("Displacement result: path blocked.")
-                return 'fail'
-
-            if userdata["cb_depl"] == DspCallback.DESTINATION_BLOCKED:
-                self._logger.error("Displacement result: destination blocked.")
+            if userdata["cb_depl"] == DspCallback.NOT_RECOGNIZED:
+                self._logger.error("Displacement result: order rejected because not recognized.")
                 return 'fail'
 
             if userdata["cb_depl"] == DspCallback.SUCCESS:
@@ -138,7 +114,6 @@ class Displacement(yasmin.State):
                 self._logger.info('Displacement result: success displacement')
                 return 'success'
 
-            
         self._logger.error('Timeout reached - [displacement]')
         return 'fail'
 
@@ -147,82 +122,54 @@ class MoveTo(Sequence):
         super().__init__(states=[('COMPUTE_DEST', destination), 
                                  ('DEPL', Displacement(node))])
 
-
-class MoveBackwardsStraight(yasmin.State):
-
-    def __init__(self, node, dist):
-        super().__init__(outcomes=['fail','success','preempted'])
-        self._dist = dist
-        self._node = node
-        self._logger = node.get_logger()
+class MoveStraight(Displacement):
+    def __init__(self, node, distance, backward):
+        super().__init__(node)
+        self.distance = distance
+        self.backward = backward
 
     def execute(self, userdata):
-        
-        self._node.debug_print('c', "Request to move backwards")
-        
-        userdata["cb_depl"] = DspCallback.PENDING
-
         x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
-        xd = x - self._dist * math.cos(theta)
-        yd = y - self._dist * math.sin(theta)
 
-        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.BACKWARDS))
-        
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < DISP_TIMEOUT:           
-            time.sleep(0.01)
+        offset_x = self.distance * math.cos(theta)
+        offset_y = self.distance * math.sin(theta)
 
-            if self.is_canceled():
-                return 'preempted'
+        if self.backward:
+            offset_x = -offset_x
+            offset_y = -offset_y
 
-            if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
-                self._logger.error("Displacement result: error asserv.")
-                return 'fail'
+        userdata["next_move"] = create_displacement_request(x + offset_x, y + offset_y, theta, self.backward)
 
-            if userdata["cb_depl"] == DspCallback.SUCCESS:
-                self._logger.info('Displacement result: success displacement')
-                return 'success'
+        return super().execute(userdata)
 
-        # timeout
-        self._logger.warning("Timeout")
-        
-        return 'fail'
-    
-class MoveForwardStraight(yasmin.State):
-    def __init__(self, node, dist):
-        super().__init__(outcomes=['fail','success','preempted'])
-        self._dist = dist
-        self._node = node
-        self._logger = node.get_logger()
+class MoveForwardStraight(MoveStraight):
+    def __init__(self, node, distance):
+        super().__init__(node, distance, backward=False)
 
-    def execute(self, userdata):
-        
-        self._node.debug_print('c', "Request to move forward")
-        
-        userdata["cb_depl"] = DspCallback.PENDING
+class MoveBackwardsStraight(MoveStraight):
+    def __init__(self, node, distance):
+        super().__init__(node, distance, backward=True)
 
-        x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
-        xd = x + self._dist * math.cos(theta)
-        yd = y + self._dist * math.sin(theta)
+def create_displacement_request(x, y, theta=None, backward=False):
+    msg = DisplacementRequest()
+    msg.kind |= DisplacementRequest.MOVE
+    msg.x = float(x)
+    msg.y = float(y)
 
-        self._node.disp_pub.publish(create_quaternion(xd, yd, theta, DspOrderMode.STRAIGHT_NO_AVOIDANCE))
-        
-        begin = time.perf_counter()
-        while time.perf_counter() - begin < DISP_TIMEOUT:           
-            time.sleep(0.01)
+    if theta is not None:
+        msg.kind |= DisplacementRequest.ORIENTATION
+        msg.theta = float(theta)
+    if backward:
+        msg.kind |= DisplacementRequest.BACKWARD_FLAG
 
-            if self.is_canceled():
-                return 'preempted'
+    return msg
 
-            if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
-                self._logger.error("Displacement result: error asserv.")
-                return 'fail'
+def create_orientation_request(theta):
+    msg = DisplacementRequest()
+    msg.kind = DisplacementRequest.ORIENTATION
+    msg.theta = float(theta)
 
-            if userdata["cb_depl"] == DspCallback.SUCCESS:
-                self._logger.info('Displacement result: success displacement')
-                return 'success'
+    return msg
 
-        # timeout
-        self._logger.warning("Timeout")
-        
-        return 'fail'
+def create_stop_BR_request():
+    return DisplacementRequest() # Empty msg = STOP

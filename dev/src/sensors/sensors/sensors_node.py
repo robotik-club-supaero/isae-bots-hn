@@ -25,6 +25,7 @@ from std_msgs.msg import MultiArrayDimension
 
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
+# OBSOLETE!!!!
 class SensorsNode(Node):
     DISTANCEMIN = 100
     INTERVALLE = 1

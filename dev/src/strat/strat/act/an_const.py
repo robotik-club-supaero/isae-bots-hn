@@ -19,11 +19,10 @@
 #################################################################
 
 import os
-import numpy as np
 
 from enum import IntEnum
 
-from config import GlobalConfig
+from config import RobotConfig, COLOR
 
 #################################################################
 #                                                               #
@@ -33,7 +32,7 @@ from config import GlobalConfig
 
 ## Config
 
-CONFIG = GlobalConfig()
+CONFIG = RobotConfig()
 
 #################################################################
 #                                                               #
@@ -41,15 +40,12 @@ CONFIG = GlobalConfig()
 #                                                               #
 #################################################################
 
-## Origin Position 
-ORIGIN_POS = CONFIG.init_zones[CONFIG.default_init_zone]
-
 MAX_X = 2000
 MAX_Y = 3000
 
 ROBOT_LARG = CONFIG.robot_width
 ROBOT_LONG = CONFIG.robot_length
-ROBOT_DIAG = np.sqrt(ROBOT_LARG**2 + ROBOT_LONG**2) 
+ROBOT_DIAG = CONFIG.robot_diagonal
 
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5
@@ -62,24 +58,8 @@ R_TAKE_STAND = 0
 #                       SM CONSTANTS                            #
 #                                                               #
 #################################################################
-
-COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
-}
-
     
 ''' ORDERS '''
-
-DISPLACEMENT = {
-      'standard'         : 0, 
-      'noAvoidance'      : 1,
-      'stop'             : 2,
-      'accurate'         : 3,
-      'recalage'         : 4,
-      'rotation'         : 5,
-      'marcheArr'        : 8
-}
 
 class Callback(IntEnum):
     @classmethod
@@ -89,22 +69,15 @@ class Callback(IntEnum):
         except ValueError:
             return cls.UNKNOWN
 
-class DspOrderMode(IntEnum):
-    AVOIDANCE = 0
-    STRAIGHT_NO_AVOIDANCE = 1
-    STOP = 2
-    BACKWARDS = 8
- 
+
 class DspCallback(Callback):
-    UNKNOWN = -2
-    PENDING = -3
-    ERROR_ASSERV = -2
-    PATH_NOT_FOUND = -1
-    SUCCESS = 0
-    PATH_BLOCKED = 1
-    RESTART = 2 # DEPRECATED - no longer published TODO cleanup
-    DESTINATION_BLOCKED = 3
-    
+    UNKNOWN = -5
+    PENDING = -4
+    NOT_RECOGNIZED = -3
+    ERROR_ASSERV = -2     # Erreur de l'asserv (difficile à gérer)
+    PATH_NOT_FOUND = -1     # La recherche de chemin n'a pas abouti
+    SUCCESS = 0      # Le robot est arrivé au point demandé
+
 class ElevatorOrder(IntEnum):
     MOVE_UP = 1
     MOVE_DOWN = 0

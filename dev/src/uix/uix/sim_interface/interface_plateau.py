@@ -15,28 +15,28 @@
 
 import os
 import sys
+from threading import RLock, Thread
+import time
+import random
+from math import cos, sin, atan2
+from enum import IntEnum
+
+import numpy as np
 
 import rclpy
 from rclpy.node import Node
-
-from br_trajectories import getTrajectoryCurves, Point2D, Position2D
-from br_messages.msg import Position, Point, DisplacementOrder
 from std_msgs.msg import Bool, Int16, Int16MultiArray, Float32MultiArray, Empty
-
-from threading import RLock, Thread
-import time, random
-
-from math import cos, sin, atan2
-import numpy as np
 
 import tkinter as tk
 
-from enum import IntEnum
+from message.msg import ProximityMap
 
-from .interface_const import *
-
+from br_trajectories import getTrajectoryCurves, Point2D, Position2D
+from br_messages.msg import Position, Point, DisplacementOrder
 from config import RobotConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
+
+from .interface_const import *
 
 ScreenUnits = float
 PhysicalUnits = float
@@ -388,6 +388,10 @@ class Robot(Drawable):
     @property
     def location(self):
         return self._location
+
+    @property
+    def rotation(self):
+        return self._rotation
 
     def setDoorState(self, new_state):
         self._doorState = DoorState(new_state)
@@ -752,7 +756,7 @@ class InterfaceNode(Node):
         self._subRightArm = self.create_subscription(
             Int16, "/act/callback/right_arm", self.updateRobotRightArmState, default_profile)
         self._subObstacles = self.create_subscription(
-            Int16MultiArray, "/obstaclesInfo", self.updateObstacles, default_profile)
+            ProximityMap, "/sensors/obstacles", self.updateObstacles, default_profile)
         self._subRobotObstacle = self.create_subscription(
             Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, default_profile)
 
@@ -845,7 +849,7 @@ class InterfaceNode(Node):
                 self._orderMarker.location = [msg.path[-1].x, msg.path[-1].y]
                 self._orderMarker.show()
                  
-            self._path.setStartPos(self._robot.location, self._robot._rotation)
+            self._path.setStartPos(self._robot.location, self._robot.rotation)
             self._path.replace(msg.path, msg.theta, msg.kind & DisplacementOrder.ALLOW_CURVE != 0)
 
     def updateRobotPosition(self, msg):
@@ -867,16 +871,20 @@ class InterfaceNode(Node):
 
     def updateObstacles(self, msg):
         with self.lock:
-            if msg.data[0] == 1:
+            if msg.source == ProximityMap.SONAR:
                 obstacles = self._sonarObstacles
             else:
                 obstacles = self._lidarObstacles
 
             obstacles.clear()
 
-            for i in range((msg.layout.dim[0]).size):
-                obstacles.addObstacle([msg.data[5*i + j + 1]
-                                       for j in range(5)])
+            robot_pos = self._robot.location
+            for x_r, y_r in zip(msg.x_r, msg.y_r):
+                coord_abs = np.array([x_r, y_r])
+                ScaledCanvas._rotate(np.zeros(2), coord_abs, self._robot.rotation)
+                coord_abs += robot_pos
+
+                obstacles.addObstacle((coord_abs[0], coord_abs[1], 0, 0, 0))
 
     def updateRobotObstacle(self, msg):
         with self.lock:

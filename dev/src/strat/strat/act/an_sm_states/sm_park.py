@@ -23,9 +23,11 @@ import sys
 import time
 import yasmin
 import math
+
+from config import StratConfig
+
 from ..an_const import *
-from .sm_displacement import Displacement, colored_approach, Approach
-from strat.strat_const import PARK_POS
+from .sm_displacement import Displacement, approach, Approach
 from strat.strat_utils import create_end_of_action_msg
 
 #################################################################
@@ -47,11 +49,10 @@ class CalcParkPos(yasmin.State):
             return 'preempted'
 
         ## Move to parking position
-        park_id = self._node.get_pickup_id("parking zone", userdata)
-        x_dest, y_dest, theta = PARK_POS[park_id]
+        x_dest, y_dest, theta = StratConfig(userdata["color"]).park_pos
         # Modif pour la strat du dernier match 
 
-        userdata["next_move"] = colored_approach(userdata, x_dest, y_dest, 0, Approach.INITIAL)
+        userdata["next_move"] = approach(userdata["robot_pos"], x_dest, y_dest, 0)
         return 'success'
     
     

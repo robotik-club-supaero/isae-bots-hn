@@ -15,7 +15,9 @@ find_package(std_msgs REQUIRED)
 ################################################
 
 set(msg_files
+  "msg/DisplacementRequest.msg"
   "msg/EndOfActionMsg.msg"
+  "msg/ProximityMap.msg"
 )
 
 ## Generate added messages and services with any dependencies listed here

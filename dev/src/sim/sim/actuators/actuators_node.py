@@ -37,6 +37,7 @@ from strat.act.an_const import ElevatorCallback, ElevatorOrder, \
                                     DspCallback, ClampOrder, ClampCallback, \
                                     BanderolleCallback, BanderolleOrder
 
+from config import COLOR
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
@@ -50,12 +51,6 @@ ELEVATOR_TIME = 0.200
 CLAMP_TIME = 0.100
 
 #############################
-
-
-COLOR = {
-      0: 'HOME',
-      1: 'AWAY'
-}
 
 class DspOrder(IntEnum):
     STOP = 0

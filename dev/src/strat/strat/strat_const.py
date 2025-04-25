@@ -15,10 +15,6 @@
 from math import pi
 from enum import IntEnum
 
-from config import GlobalConfig
-
-CONFIG = GlobalConfig()
-
 class ActionResult(IntEnum):
     SUCCESS = 1
     NOTHING_TO_PICK_UP = 5
@@ -61,9 +57,3 @@ class ActionScore(IntEnum): #TODO update
     SCORE_PARK = 10
     SCORE_DEPOSIT_STAND = 12
     SCORE_COCCINELLE = 5
-
-STAND_POS = CONFIG.pickup_stand_pos
-
-DEPOSIT_POS = CONFIG.deposit_pos
-
-PARK_POS = CONFIG.park_pos

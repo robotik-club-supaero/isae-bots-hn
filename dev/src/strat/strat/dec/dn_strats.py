@@ -19,11 +19,9 @@
 #################################################################
 
 import time
-from .dn_const import STAND_POS, DEPOSIT_POS, PARK_POS
 import numpy as np
 
 from ..strat_const import Action, ActionScore
-from ..strat_utils import adapt_pos_to_color
 
 #################################################################
 #                                                               #
@@ -60,7 +58,7 @@ def homologation(node):
         -
         -
     """
-    node.curr_action = [Action.PARK, 2]
+    node.curr_action = [Action.PICKUP_STAND_1, 3]
 
     node.publishAction()
 
@@ -75,14 +73,13 @@ def match_strat(node):
         -
     """
     
-    def find_closest(node, positions, remaining, cond=None, relative=True, coeffs=1):
+    def find_closest(node, positions, remaining, cond=None, coeffs=1):
 
         if cond is None: 
-            cond = lambda ramaining_index: remaining[ramaining_index] > STAND_THRESHOLD
+            cond = lambda remaining_index: remaining[remaining_index] > STAND_THRESHOLD
 
-        x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
-        print("Remaining coeffs : ", coeffs)
-        dists = [ coeffs[i] * ((x_p * x + y_p * y)**0.5) for i, (x_p, y_p, t_p) in enumerate(positions)]
+        x, y, _ = node.position
+        dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
         dist_sorted_index = list(np.argsort(dists))
         #print(coeffs, dists, dist_sorted_index)
@@ -101,6 +98,10 @@ def match_strat(node):
             if node.retry_count < 3:
                 node.publishAction()
                 return
+
+        # Pickup Up Stand
+        STAND_POS = np.array(node.config.pickup_stand_pos)
+        DEPOSIT_POS = np.array(node.config.deposit_pos)
 
         malus_deposit = np.ones(len(DEPOSIT_POS))
         malus_pickup = np.ones(len(STAND_POS))
@@ -164,8 +165,7 @@ def match_strat(node):
         return
     
     # If no other action is applicable, go to park
-    zone = adapt_pos_to_color(*PARK_POS, node.color)
-    node.curr_action = [Action.PARK, zone]
+    node.curr_action = [Action.PARK]
     node.get_logger().info("Next action order : Park")
     node.publishAction()
     return

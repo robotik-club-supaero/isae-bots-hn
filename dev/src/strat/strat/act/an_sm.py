@@ -24,7 +24,6 @@ from yasmin_viewer import YasminViewerPub
 import rclpy
 
 from std_msgs.msg      import Empty
-from geometry_msgs.msg import Quaternion
 from br_messages.msg import Position
 
 # import les states de la SM
@@ -33,11 +32,11 @@ from .an_sm_states.sm_pickup_stand import PickupStand
 from .an_sm_states.sm_deposit_stand import DepositStand
 from .an_sm_states.sm_banderolle import LaunchBanderolle
 from .an_sm_states.sm_waiting import waiting
+from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
 from .an_const import *
 
 from ..strat_const import ACTIONS_OUTCOMES, ACTION_TRANSITIONS, ActionScore, Action
-from ..strat_utils import create_quaternion
 
 #################################################################
 #                                                               #
@@ -75,7 +74,7 @@ class Setup(yasmin.State):
         
         ## Game infos variables
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
-        userdata["next_move"] = create_quaternion(x=-1, y=-1, z=-1, w=-1)
+        userdata["next_move"] = create_displacement_request(x=-1, y=-1)
 
         time.sleep(0.01)
         self._node.setupComplete = True
@@ -149,7 +148,7 @@ class End(yasmin.State):
         ###########################
         ## STOP RUNNING PROGRAMS ##
         ###########################
-        self._disp_pub.publish(create_quaternion(x=0,y=0,z=0,w=-1))			# arrêt PF : w = -1
+        self._disp_pub.publish(create_stop_BR_request())
         self._stop_teensy_pub.publish(Empty())
         return 'end'
 

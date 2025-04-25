@@ -39,6 +39,7 @@ from config.qos import default_profile, br_position_topic_profile
 #                                                               #
 #################################################################
 
+# OBSOLETE!!!!!!!!!
 class SonarNode(Node):
     """
     ROS node SONAR node for sonar obstacles detection.

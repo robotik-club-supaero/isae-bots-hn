@@ -12,171 +12,196 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
-"""
-@file: LidarNode.py
-@status: OK
-
-Fichier de gestion des obstacles LIDAR
-"""
-
-import sys
-from math import atan2, sin, cos
-from .lidar_lib import *
+import math
+from dataclasses import dataclass
 
 import rclpy
 from rclpy.node import Node
-from br_messages.msg import Position
-from sensor_msgs.msg   import LaserScan
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension, Int16
+from sensor_msgs.msg import LaserScan
 
+from br_messages.msg import Position
+from message.msg import ProximityMap
 from config.qos import default_profile, br_position_topic_profile
 
-OBS_RESOLUTION = 100
-
-#######################################################################
-# LIDAR NODE
-#######################################################################
+from .lidar_config import *
 
 class LidarNode(Node):
 
-    """LidarNode class"""
-
     def __init__(self):
-        """Initialisation."""
-        ### VARIABLES #################################################
-        self.x_robot = 0
-        self.y_robot = 0
-        self.c_robot = 0
-        self.radius = 42
-
-        self.iterData = 0
-        self.sizeData = 5
-        self.obstaclesLists = [ [] for i in range(self.sizeData)]
-
-        ### LAUNCH NODE ###############################################
         super().__init__('LidarNode')
         self.get_logger().info("Initializing Lidar Node.")
 
+        self.robot_pos = Position()
+        self.obstacle_msg = ProximityMap()
+        self.obstacle_msg.source = ProximityMap.LIDAR
+
         # initialisation des publishers
-        self.pub_obstacles = self.create_publisher(Int16MultiArray, "/sensors/obstaclesLidar", default_profile)
+        self.pub_obstacles = self.create_publisher(ProximityMap, "/sensors/obstacles", default_profile)
+        
         # initialisation des suscribers
-        self.sub_pos = self.create_subscription(Position, "/br/currentPosition", self.update_position, br_position_topic_profile)
-        self.sub_hokuyo = self.create_subscription(LaserScan, "/scan", self.update_obstacle, default_profile)
+        if DROP_OFF_LIMITS:
+            self.sub_pos = self.create_subscription(Position, "/br/currentPosition", self.update_position, br_position_topic_profile)
+        self.sub_scan = self.create_subscription(LaserScan, "/scan", self.update_obstacle, default_profile)
 
+        self.get_logger().info("Lidar Node initialized")
 
-    def update_position(self,msg):
-        """Fonction de callback de position."""
-        self.x_robot = msg.x
-        self.y_robot = msg.y
-        self.c_robot = msg.theta
- 
+    def update_position(self, msg):
+        self.robot_pos = msg
+
     def update_obstacle(self, msg):
-        """Fonction de callback des obstacles lidar."""
-        x_r = self.x_robot
-        y_r = self.y_robot
-        cap = self.c_robot
+        obstacleCoords = self._get_coords(msg)
+        clusters = self._clustering(obstacleCoords)
 
+        self.obstacle_msg.cluster_dists.clear()
+        self.obstacle_msg.x_r.clear()
+        self.obstacle_msg.y_r.clear()
+        self.obstacle_msg.cluster.clear()
+
+        for i, cluster in enumerate(clusters):
+            self.obstacle_msg.cluster_dists.append(cluster.dist)
+
+            for point in cluster.points:
+                self.obstacle_msg.x_r.append(point.x)
+                self.obstacle_msg.y_r.append(point.y)
+                self.obstacle_msg.cluster.append(i)
+
+        self.pub_obstacles.publish(self.obstacle_msg)
+        
+    def _get_coords(self, msg):
+        # See https://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/LaserScan.html
         ranges = msg.ranges
         angle_min = msg.angle_min
         angle_max = msg.angle_max
-        angle_inc = msg.angle_increment  
-        range_min = msg.range_min
-        range_max = msg.range_max
+        angle_inc = msg.angle_increment
+        range_min = max(MIN_RANGE, msg.range_min)
+        range_max = min(MAX_RANGE, msg.range_max)
+
+        if DROP_OFF_LIMITS:
+            x_r = self.robot_pos.x
+            y_r = self.robot_pos.y
+            theta_r = self.robot_pos.theta
         
-        raw_data = lidar_to_table(x_r, y_r, cap, ranges, angle_min, angle_max, angle_inc, range_min, range_max )
-        obs_detected = clusterisation(raw_data)
-        self.obstaclesLists[self.iterData % self.sizeData] = obs_detected
-        self.iterData += 1
-        self.treats_obstacle()
+        theta = angle_min
+        obstList = [] 
+        for dist in ranges:
+            # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
+            if range_min<dist<range_max:
+                if DROP_OFF_LIMITS:
+                    # Calcul des coords absolue sur la table
+                    x_abs = x_r + 1000*dist*math.cos(theta_r + theta)
+                    y_abs = y_r + 1000*dist*math.sin(theta_r + theta)
+                    # On supprime les points en dehors de la table.
+                    if not ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):
+                        continue
+            
+                # Conversion de (d, theta) en (x_r, y_r)
+                x_rel = 1000*dist*math.cos(theta)
+                y_rel = 1000*dist*math.sin(theta)
+                obstList.append(RawPoint(x_rel, y_rel, dist, theta))
+                
+            theta += angle_inc
 
-    def treats_obstacle(self): # TODO - 
-        """Fonction appelee pour eliminer les 'doublons'.
+        return obstList
+
+    def _clustering(self, coords):
+        """
+        Fonction permettant de clusteriser les points obtenus après traitement. Cela diminue le nombre de points et identifie les obstacles.
+        Les points sont, par construction, dans le sens de l'augmentation de l'angle theta du LiDAR. 
+        """
+
+        if coords == []:
+            return []
+
+        clusters = []
+
+        lastPos = coords[0]
+        current_cluster = ClusterBuilder(coords[0])
+
+        for point in coords[1:]:
+            if lastPos.euclidean_distance(point) < CLUSTER_DIST_LIM:
+                # On regarde si le point suivant fait partie du regroupement en regardant sa distance au regroupement.
+
+                if abs(point.theta - current_cluster.lastTheta) > MIN_ANGLE_RESOLUTION:
+                    # Same cluster, but too far from the last retained point of the cluster (a wide cluster should keep multiple points for accuracy)
+                    current_cluster.append(point)
+                # else:
+                    # Close enough to the last retained point of the cluster. Just drop the point.
+            
+            else:
+                # Different cluster
+                current_cluster.append(lastPos)
+                clusters.append(current_cluster.build())
+
+                current_cluster = ClusterBuilder(point)
+
+            lastPos = point
         
-        Cette fonction va comparer les obstacles detectes au temps
-        t-1 et ceux au temps t. Elle determine alors si un obstacle du 
-        temps t est en realite le meme obstacle du temps t-1 qui s'est 
-        deplace. 
+        if clusters != [] and lastPos.euclidean_distance(clusters[0].points[0]) < CLUSTER_DIST_LIM:
+            # First and last clusters are the same
+            # This can happen on 360° LiDAR, where the last angle in the list is actually close to the first one.
+            clusters[0] = clusters[0].combine(current_cluster.build())
+        else:
+            current_cluster.append(lastPos)
+            clusters.append(current_cluster.build())
+
+        return clusters
         
-        Pour cela, on regarde si pour chaque obstacle au temps t, il y 
-        a des obstacles au temps t-1 qui lui sont assez proche."""
-        
-        obstaclesLists = list(self.obstaclesLists)
+class ClusterBuilder:
+    def __init__(self, pt):
+        self._points = []
+        self._lastTheta = None
+        self._dist = None
 
-        indexOfMax = 0
-        maxLen = len(obstaclesLists[0])
-        for i in range(1, self.sizeData):
-            if(len(obstaclesLists[i]) > maxLen):
-                indexOfMax = i
-                maxLen = len(obstaclesLists[i])
+        self.append(pt)
 
-        biggestList = obstaclesLists[indexOfMax]
+    def append(self, pt):
+        x, y, dist, theta = pt.x, pt.y, pt.dist, pt.theta
 
-        calculatedObstacles = []
-        for potentialObstacle in biggestList :
-            nbOcc = 1
-            for i in range(self.sizeData):
-                if( i != indexOfMax):
-                    for obstacle in obstaclesLists[i]:
-                        if(euclidean_distance(potentialObstacle, obstacle) < OBS_RESOLUTION):
-                            nbOcc += 1
-            if(nbOcc > 2):
-                x_robot = self.x_robot
-                y_robot = self.y_robot
-                x = potentialObstacle[0]
-                y = potentialObstacle[1]
-                theta = atan2((y-y_robot),(x-x_robot))
+        if theta == self.lastTheta:
+            return
 
-                calculatedObstacles.append([x - self.radius * cos(theta),  y - self.radius * sin(theta)])
+        self._points.append((x,y))
+        self._lastTheta = theta
+        if self._dist is None or dist < self._dist:
+            self._dist = dist
 
-        msg = Int16MultiArray()
+    def build(self):
+        return Cluster(self._points, self._dist)
 
-        data = [0] # Le 0 est l'identifiant du LiDAR dans le SensorsNode.
-        for position in calculatedObstacles:
-            for coordinate in position:
-                data.append((int)(coordinate))
+    @property
+    def lastTheta(self):
+        return self._lastTheta
 
-        msg.data = data
+    @property
+    def dist(self):
+        return self._dist
 
-        layout = MultiArrayLayout()
-        layout.data_offset = 1
+    @property
+    def points(self):
+        return self._points
 
-        dimensions = []
-        dim1 = MultiArrayDimension()
-        dim1.label = "obstacle_nb"
-        dim1.size = len(calculatedObstacles)
-        dim1.stride = 2* len(calculatedObstacles)
+@dataclass(frozen=True)
+class Cluster:
+    points: list
+    dist: float
 
-        dim2 = MultiArrayDimension()
-        dim2.label = "coordinate"
-        dim2.size = 2
-        dim2.stride = 2
+    def combine(self, other):
+        points, dist = self.points, self.dist
+        points.extend(other.points)
+        dist = min(dist, other.dist)
 
-        dimensions.append(dim1)
-        dimensions.append(dim2)
+        return Cluster(points, dist)
 
-        layout.dim = dimensions
+class RawPoint:
+    """Before clustering"""
 
-        msg.layout = layout
+    def __init__(self, x, y, dist, theta):
+        self.x = x
+        self.y = y
+        self.dist = dist
+        self.theta = theta
 
-        self.pub_obstacles.publish(msg)
-
-
-
-#######################################################################
-# MAIN
-#######################################################################
-
-def main():
-    rclpy.init(args=sys.argv)
-
-    node = LidarNode()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().warning("Node forced to terminate")
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
+    def euclidean_distance(self, pt2):
+        """Retourne la distance entre 2 points dans un repère cartésien. Ici, le repère du robot."""
+        return math.sqrt((self.x - pt2.x)**2 + (self.y - pt2.y)**2)
+    

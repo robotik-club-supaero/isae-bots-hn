@@ -28,7 +28,7 @@ from rclpy.node import Node
 from std_msgs.msg import Int16, Bool
 
 from .ISBManager import ISBManager, LedState
-from config import GlobalConfig
+from config import NaiveStratConfig, COLOR
 from config.qos import default_profile, latch_profile
 
 DEVICE_BUS = 1
@@ -59,7 +59,7 @@ class ISBNode(Node):
     def __init__(self):
         super().__init__("ISB")
 
-        config = GlobalConfig()
+        config = NaiveStratConfig()
 
         self.strat_count = len(config.strat_names)
         self.init_pos_count = len(config.init_zones)
@@ -107,7 +107,7 @@ class ISBNode(Node):
     def update_color(self):
         self.current_color.data = 1 - self.current_color.data
         self.pub_color.publish(self.current_color)
-        self.get_logger().info("Update color to " + ("HOME" if self.current_color.data == 0 else "AWAY"))
+        self.get_logger().info("Update color to " + COLOR[self.current_color.data])
 
     def update_init_pos(self):
         self.current_init_pos.data = (self.current_init_pos.data + 1) % self.init_pos_count

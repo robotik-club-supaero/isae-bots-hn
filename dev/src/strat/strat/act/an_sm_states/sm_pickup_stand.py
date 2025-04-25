@@ -24,14 +24,15 @@ import time
 
 from std_msgs.msg import String
 
-from ..an_const import R_APPROACH_STAND, R_TAKE_STAND, DspOrderMode
+from config import StratConfig
+
+from ..an_const import R_APPROACH_STAND, R_TAKE_STAND
 from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendElevator, CloseClamp
 
-from strat.strat_const import STAND_POS, ActionResult
+from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
-
-from .sm_displacement import MoveTo, MoveForwardStraight, Approach, colored_approach, colored_approach_with_angle
+from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, approach
 from .sm_waiting import ObsWaitingOnce
 
 #################################################################
@@ -48,13 +49,15 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._msg = String()
     
     def execute(self, userdata):    
+        STAND_POS = StratConfig(userdata["color"]).pickup_stand_pos
+
         stand_id = self._node.get_pickup_id("stand", userdata) % len(STAND_POS)
 
         self._msg.data = f"stand{stand_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
         xp, yp, tp = STAND_POS[stand_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata, xp, yp, tp, R_APPROACH_STAND)
+        userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
              
         return 'success'
  

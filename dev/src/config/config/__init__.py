@@ -1,9 +1,7 @@
-from .pathfinder import PathFinderConfig
 from .robot import RobotConfig
 from .sonar import SonarConfig
-from .strat import StratConfig
+from .strat import StratConfig, NaiveStratConfig
 
-class GlobalConfig(PathFinderConfig, RobotConfig, SonarConfig, StratConfig):
-    pass
+COLOR = ["HOME", "AWAY"]
 
-__all__ = ["GlobalConfig", "PathFinderConfig", "RobotConfig", "SonarConfig", "StratConfig"]
+__all__ = ["COLOR", "RobotConfig", "SonarConfig", "StratConfig", "NaiveStratConfig"]

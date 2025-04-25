@@ -23,12 +23,13 @@ import math
 import time
 from std_msgs.msg import Empty
 
-from ..an_const import DspOrderMode, DspCallback, R_APPROACH_STAND
+from config import StratConfig
+
+from ..an_const import DspCallback, R_APPROACH_STAND
 from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurrence
 
-from strat.strat_const import DEPOSIT_POS
-from strat.strat_utils import adapt_pos_to_color, create_end_of_action_msg
-from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, colored_approach_with_angle, DISP_TIMEOUT
+from strat.strat_utils import create_end_of_action_msg
+from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, DISP_TIMEOUT
 
 #################################################################
 #                                                               #
@@ -44,11 +45,10 @@ class CalcPositionningStand(yasmin.State):
         self._get_pickup_id = get_pickup_id
 
     def execute(self, userdata):
-        x, y = userdata["robot_pos"].x, userdata["robot_pos"].y
         pots_id = self._get_pickup_id("deposit pots", userdata)
 
-        xp, yp, thetap = DEPOSIT_POS[pots_id]
-        userdata["next_move"] = colored_approach_with_angle(userdata["color"], xp, yp, thetap, R_APPROACH_STAND)
+        xp, yp, thetap = StratConfig(userdata["color"]).deposit_pos[pots_id]
+        userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
 
         return 'success'
 

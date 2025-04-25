@@ -44,6 +44,9 @@ class DisplacementNode(Node):
         self.manager = DisplacementManager(self, self.get_logger())
 
         self._setup_config()
+        if not self.config.enable_static_obstacles:
+            self.get_logger().warn("Static obstacles disabled! -- Make sure to enable before a match!")
+
         self.init_pos = self.config.default_init_zone_index
 
         # Comm Teensy

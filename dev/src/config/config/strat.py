@@ -122,6 +122,10 @@ class StratConfig(NaiveStratConfig):
         """Dict of static obstacles for path finder"""
 
         obstacles = {}
+
+        if not self.enable_static_obstacles:
+            return obstacles
+
         margin = self.robot_diagonal / 2
 
         # Walls 

@@ -2,41 +2,11 @@
 
 Package du Displacement Node.
 
-## CONTENT
+Gère l'évitement et exécute le pathfinder.
 
-* displacement_node.py
-* dsp_comm.py
-* dsp_util.py
-* dsp_gain.py
-* pathfinder/
-* pathfinder_data/
+Le fichier `disp_node.py` contient principalement la définition des publishers et subscriptions ROS.
+L'essentiel de la logique d'évitement est implémentée dans `disp_manager.py` 
 
-## FUNCTIONING OF DispN
+L'implémentation du pathfinder (A*) est en C++ dans le package `pathfinder`. Le fichier pathfinder.py est juste un "wrapper".
 
-# PATHFINDER
-
-* Travail sur l'A* remis à plus tard
-* Maps --> Terrain de jeu avec nodes de passage, nodes d'évitement et obstacles (c'est la map koi)
-* Les obstacles --> Cercle, Triangle, Rect 
-* Obs creator --> Obs connus rentrés à la main
-
-# Disp Utils
-
-* patchFrameBR : pas besoin si BR ok
-* toRobotCoord : passage dans repère loc du robot
-* Vaguement des fonctions de mise en forme de LOGS
-
-# Disp Gains
-
-* WTF + coder avec le cul + Aled + Osef
-
-# Disp Comm
-
-* Déf de cstes + dico pour la comm avec Strat et Teensy 
-* callback_teensy pour savoir comment ça se passe
-* callback_strat : pk publier le current path || Pour recalage on devrait pas gérer les gains mais juste pub un truc pour dire au bn de se mettre dans ce mode || Faut tout refaire mdrr
-* Manière de faire pas claire et à revoir
-
-# Disp Node
-
-*
+A FAIRE : recalage (idée : effectuer un premier déplacement pour se rapprocher + se mettre dos au mur, puis envoyer une commande de vitesse faible jusqu'à toucher le mur)

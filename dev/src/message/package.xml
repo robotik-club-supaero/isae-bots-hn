@@ -7,7 +7,7 @@
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="emat.dario@gmail.com">etienne</maintainer>
+  <maintainer email="clubrobotiquesupaero@gmail.com">Jean-Michel-Robot</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -35,6 +35,8 @@
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

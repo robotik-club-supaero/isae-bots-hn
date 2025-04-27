@@ -28,6 +28,7 @@ from rclpy.node import Node
 from std_msgs.msg import Bool, Int16, Int16MultiArray, Float32MultiArray, Empty
 
 import tkinter as tk
+from PIL import Image, ImageTk
 
 from message.msg import ProximityMap
 
@@ -105,6 +106,13 @@ class ScaledCanvas:
     @property
     def outer_height(self) -> ScreenUnits:
         return self.client_height * self._scale + self._border_top + self._border_bottom
+
+    @property
+    def scale(self):
+        return self._scale
+
+    def setScale(self, scale):
+        self._scale = scale
 
     def physical_to_screen_units(self, coords, in_place=False):
         """
@@ -505,7 +513,7 @@ class Order(Drawable):
     def _draw(self, canvas):
         canvas.delete(self._tag)
         if self._visible:
-            canvas.draw_oval(self._location, 10/INTERFACE_SCALE,
+            canvas.draw_oval(self._location, 10/canvas.scale,
                              fill=self._color, tag=self._tag)
 
     @property
@@ -624,7 +632,7 @@ class Path(Drawable):
         self._create_path_arrow(canvas, path[-1], self._finalCap)
 
     def _create_path_circle(self, canvas, node):
-        canvas.draw_oval(node, PATHCIRCLEWIDTH / INTERFACE_SCALE,
+        canvas.draw_oval(node, PATHCIRCLEWIDTH / canvas.scale,
                          fill='yellow', tag='path_circle')
 
     def _create_path_line(self, canvas, node1, node2):
@@ -639,7 +647,7 @@ class Path(Drawable):
         canvas.draw_curve(points * 1000., fill="yellow", width=PATHWIDTH, tag="path_line")
 
     def _create_path_arrow(self, canvas, lastNode, finalCap):
-        factor = PATHARROWLENGTH / INTERFACE_SCALE
+        factor = PATHARROWLENGTH / canvas.scale
         lastNode = np.array([lastNode.x, lastNode.y])
         cache = np.array([cos(finalCap), sin(finalCap)])
 
@@ -703,18 +711,17 @@ class InterfaceNode(Node):
         self.refresh_interval = refresh_interval
         self._force_redraw = False
 
+        self._imageHeight = PREFERRED_WINDOW_HEIGHT
         self._canvas = ScaledCanvas(
-            self._fenetre, TABLE_WIDTH, TABLE_HEIGHT, INTERFACE_SCALE,
+            self._fenetre, TABLE_WIDTH, TABLE_HEIGHT, PREFERRED_WINDOW_HEIGHT/TABLE_HEIGHT,
             border_left = BORDER_LEFT, border_right = BORDER_RIGHT,
             border_top = BORDER_TOP, border_bottom = BORDER_BOTTOM)
 
         self._canvas.bind('<Button-3>', self.noteClickPosition)
         self._canvas.bind('<ButtonRelease-3>', self.sendOrder)
+        self._canvas.bind("<Configure>", self._resize)
 
-        self.image = tk.PhotoImage(file=os.path.join(
-            os.path.dirname(__file__), "Background_Interface.gif"))
-        self._canvas.draw_image(
-            self.image, 0, 0, anchor="nw")
+        self.image_original = Image.open(os.path.join(os.path.dirname(__file__), "Background_Interface.gif"))
         self._canvas.pack()
 
         self._robot = Robot.load(RobotConfig())
@@ -778,7 +785,7 @@ class InterfaceNode(Node):
     def refresh(self, force=False):
         with self.lock:  # verrouille l'acces memoire pendant l'affichage
 
-            force = self._force_redraw
+            force = force or self._force_redraw
 
             self._grid.redraw(self._canvas, force=force)
 
@@ -823,6 +830,30 @@ class InterfaceNode(Node):
                         i += 1
 
         self._fenetre.after(self.refresh_interval, self.refresh)
+
+    def _resize(self, event):
+        window_width = event.width - BORDER_LEFT-BORDER_RIGHT 
+        window_height = event.height - BORDER_TOP-BORDER_BOTTOM
+
+        scale = min(window_height / TABLE_HEIGHT, window_width / TABLE_WIDTH)
+
+        self._canvas.setScale(scale)
+        self._redrawBackground(scale * TABLE_HEIGHT)
+
+    def _redrawBackground(self, window_height):
+        image = self.image_original
+
+        w, h = image.size
+        if window_height != h:
+            image = image.resize((int(w * window_height / h), int(window_height)))
+
+        self.image = ImageTk.PhotoImage(image)
+
+        self._canvas.delete("background")
+        self._canvas.draw_image(
+            self.image, 0, 0, anchor="nw", tag="background")
+        
+        self._force_redraw = True
 
     def noteClickPosition(self, evt):
         x, y = self._canvas.screen_to_physical_units(np.array([evt.x, evt.y]))

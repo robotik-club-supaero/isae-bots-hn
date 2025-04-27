@@ -18,8 +18,8 @@ BORDER_RIGHT = 32  # marge à droite de l'interface (px)
 BORDER_TOP = 0  # marge en haut de l'interface (px)
 BORDER_BOTTOM = 0  # marge en bas de l'interface (px)
 
-# SCALE must match the size of 'Background_interface.gif'
-INTERFACE_SCALE = 975/3000  # conversion mm en pixels (3m <-> 975px)
+# PREFERRED_WINDOW_HEIGHT should match the height of 'Background_interface.gif'
+PREFERRED_WINDOW_HEIGHT = 975 # px
 TABLE_HEIGHT = 3000  # (mm)
 TABLE_WIDTH = 2000  # (mm)
 

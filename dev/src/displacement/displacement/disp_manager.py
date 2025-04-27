@@ -75,7 +75,7 @@ class DisplacementManager:
 
         self.obstacles_bypassable = ObstacleBypassable(logger, config)
         self.obstacles_non_bypassable = ObstacleNonBypassable(logger, config)
-        self.obstacles_wall = ObstacleWalls(logger, BYPASS_RANGE, config)
+        self.obstacles_wall = ObstacleWalls(logger, STOP_RANGE, config)
         self._enable_wall_detection = True
 
         self.map = PathFinder({})

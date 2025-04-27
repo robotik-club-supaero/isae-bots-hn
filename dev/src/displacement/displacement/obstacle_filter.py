@@ -144,7 +144,7 @@ class ObstacleWalls(_ObstacleFilter):
  
     def _makeObstacle(self, x_vertex, y_vertex, dist):
         x_r, y_r = make_relative(self.robot_pos, Point(x=x_vertex, y=y_vertex))
-        return SensorObstacle(x=x_r, y=y_r, dist=abs(dist))
+        return SensorObstacle(x=x_r, y=y_r, dist=max(0, dist))
 
     @property
     def allowUnsafeApproach(self):

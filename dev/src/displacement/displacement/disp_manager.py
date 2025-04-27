@@ -204,29 +204,15 @@ class DisplacementManager:
                 self._manoeuverBackward = False
             else:
                 return False
-
-        if self._hasRoomForManoeuver():
-            speed = 255. * MANOEUVER_SPEED
-            if self._manoeuverBackward:
-                speed = -speed
-
-            self._status = DisplacementStatus.AVOIDANCE_MANOEUVER
-            self.logger.info("Obstacle too close for bypass. Starting avoidance manoeuver.")
-            self.communicator.sendSpeedCommand(speed, 0.)
-            return True
-
-        return False
-
-    def _hasRoomForManoeuver(self):
-        offset_x, offset_y = math.cos(self._robot_pos.theta), math.sin(self._robot_pos.theta)
+        
+        speed = 255. * MANOEUVER_SPEED
         if self._manoeuverBackward:
-            offset_x = -offset_x
-            offset_y = -offset_y
+            speed = -speed
 
-        for dist in [10, self.robot_diag]:
-            if self.map.can_go_straight([self._robot_pos.x, self._robot_pos.y], [self._robot_pos.x + dist * offset_x, self._robot_pos.y + dist * offset_y]):
-                return True
-        return False
+        self._status = DisplacementStatus.AVOIDANCE_MANOEUVER
+        self.logger.info("Obstacle too close for bypass. Starting avoidance manoeuver.")
+        self.communicator.sendSpeedCommand(speed, 0.)
+        return True
 
     def update(self):
         if self._status == DisplacementStatus.MOVING:
@@ -285,25 +271,20 @@ class DisplacementManager:
                 self._resume_move()
 
         elif self._status == DisplacementStatus.AVOIDANCE_MANOEUVER:
-            self._clearObstacleToBypass() # if we let the obstacle, the PF may not find an escape way
-            if self._hasRoomForManoeuver():
-                obs, dist = self._findNearestObstacle(self._backward)
-                if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
-                    self._updateObstacleToBypass()
-                    if self._hasRoomForManoeuver(): # check we are actually outside the obstacle
-                        self.logger.info("Manoeuver complete: resuming displacement")
-                        self._stopAndWait()
-                        self._bypassing = True
-                        self._resume_move()
-
-                else:
-                    _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
-                    if dist < STOP_RANGE:
-                        self.logger.info("Obstacle detected too close: aborting manoeuver")
-                        self._stopAndWait()
-            else:
-                self.logger.warn("Not enough room to continue manoeuver.")
+            obs, dist = self._findNearestObstacle(self._backward)
+            if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
+                self._updateObstacleToBypass()
+                self.logger.info("Manoeuver complete: resuming displacement")
                 self._stopAndWait()
+                self._bypassing = True
+                self._resume_move()
+
+            else:
+                _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
+                self.logger.info(str(dist))
+                if dist < STOP_RANGE:
+                    self.logger.info("Obstacle detected too close: aborting manoeuver")
+                    self._stopAndWait()
 
     def _obstacleSources(self):
         yield self.obstacles_non_bypassable
@@ -316,7 +297,7 @@ class DisplacementManager:
         
         for source in self._obstacleSources():
             obs, dist = source.findNearestObstacle(backward, any_dir, check_sides, low_limit)
-            if source.allowUnsafeApproach and (manoeuver or self._straight_only):
+            if source.allowUnsafeApproach and (manoeuver or self._straight_only) and dist > 0:
                 dist = max(dist, STOP_RANGE)
 
             if dist < low_limit:

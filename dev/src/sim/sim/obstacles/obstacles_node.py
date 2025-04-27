@@ -42,8 +42,8 @@ from config.qos import default_profile, br_position_topic_profile
 #################################################################
 
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
-SPEED = 300 # mm/s | can be 0 for fixed obstacle
-INIT_POS = [800., 500.]
+SPEED = 0 # mm/s | can be 0 for fixed obstacle
+INIT_POS = [500., 300.]
 
 #################################################################
 #                                                               #
@@ -102,7 +102,7 @@ class SIM_ObstaclesNode(Node):
             return random.random() > 0.999
 
         # L'obstacle ne bouge pas quand il est proche de notre robot afin de tester nos manoeuvres d'évitement/éloignement
-        return dist > self.robot_diag + OBSTACLE_RADIUS + 100 and np.linalg.norm(self.obstacle_speed) == 0
+        return SPEED > 0 and dist > self.robot_diag + OBSTACLE_RADIUS + 100 and np.linalg.norm(self.obstacle_speed) == 0
         
     def run(self):
        
@@ -134,6 +134,7 @@ class SIM_ObstaclesNode(Node):
             self.obstacle_pos += self.obstacle_speed * elapsed
              
             x_rel, y_rel = make_relative(Position(x=self.robot_pos[0], y=self.robot_pos[1], theta=self.robot_theta), Point(x=self.obstacle_pos[0], y=self.obstacle_pos[1]))
+
             msg.obstacles = [SensorObstacle(x=x_rel, y=y_rel)]
             self.obs_info_pub.publish(msg)
             self.obs_simu_pub.publish(CircleObstacle(x=self.obstacle_pos[0], y=self.obstacle_pos[1], radius=float(OBSTACLE_RADIUS)))

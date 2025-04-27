@@ -87,7 +87,7 @@ class _PickupStandSequence(Sequence): # TODO
                 Concurrence(CLAMP_1 = OpenClamp(node, etage=1), CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_1 = DescendElevator(node, etage=1), ElEV_2 = DescendElevator(node, etage=2))
             ),
-            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 200)),
+            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 175)),
             ('CLOSE_CLAMP', Concurrence(CLAMP_1 = CloseClamp(node, etage=1), CLAMP_2 = CloseClamp(node, etage=2))),
             ('RISE_ELEVATOR', Concurrence(ELEV_1 = RiseElevator(node, etage=1), ELEV_2 = RiseElevator(node, etage=2))),
         ]
@@ -97,7 +97,7 @@ class _PickupStandSequence(Sequence): # TODO
                 Concurrence(CLAMP_2 = OpenClamp(node, etage=2),
                             ELEV_2 = DescendElevator(node, etage=2))
             ),
-            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 200)),
+            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 175)),
             ('CLOSE_CLAMP', CloseClamp(node, etage=2)),
             ('RISE_ELEVATOR', RiseElevator(node, etage=2)),
         ]

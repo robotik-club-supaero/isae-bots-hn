@@ -1,5 +1,5 @@
-#include <stdexcept>
 #include <cmath>
+#include <stdexcept>
 
 #include "Obstacle.hpp"
 
@@ -24,7 +24,14 @@ bool ObstacleCircle::crosses(Segment segment) const {
     if (Point::dot(OA, segment.start - segment.end) > 0 && Point::dot(OB, segment.end - segment.start) > 0) {
         return std::abs(Point::det(OA, OB)) / segment.getLength() < m_radius;
     } else {
-        return std::min(OA.getNorm(), OB.getNorm()) < m_radius;
+        if (OB.getNorm() < m_radius) {
+            return true;
+        }
+        if (OA.getNorm() < m_radius) {
+            // Enable escape if the robot is already in the obstacle
+            return Point::dot(segment.end - segment.start, m_center - segment.start) < 0;
+        }
+        return false;
     }
 }
 

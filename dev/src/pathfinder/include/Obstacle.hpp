@@ -19,7 +19,7 @@ class ObstacleCircle : public Obstacle {
 
     std::vector<Point> getCorners() const override;
     bool crosses(Segment point) const override;
-
+    
     Point getCenter() const;
     double getRadius() const;
 
@@ -40,6 +40,7 @@ class ObstacleRect : public Obstacle {
 
     std::vector<Point> getCorners() const override;
     bool crosses(Segment point) const override;
+    bool contains(Point point) const;
 
     Point getCenter() const;
     double getWidth() const;

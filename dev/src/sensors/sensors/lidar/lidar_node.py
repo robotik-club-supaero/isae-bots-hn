@@ -20,7 +20,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 
 from br_messages.msg import Position
-from message.msg import ProximityMap
+from message.msg import SensorObstacleList, SensorObstacle
 from config.qos import default_profile, br_position_topic_profile
 
 from .lidar_config import *
@@ -32,11 +32,10 @@ class LidarNode(Node):
         self.get_logger().info("Initializing Lidar Node.")
 
         self.robot_pos = Position()
-        self.obstacle_msg = ProximityMap()
-        self.obstacle_msg.source = ProximityMap.LIDAR
+        self.obstacle_msg = SensorObstacleList()
 
         # initialisation des publishers
-        self.pub_obstacles = self.create_publisher(ProximityMap, "/sensors/obstacles", default_profile)
+        self.pub_obstacles = self.create_publisher(SensorObstacleList, "/sensors/obstaclesLidar", default_profile)
         
         # initialisation des suscribers
         if DROP_OFF_LIMITS:
@@ -52,18 +51,11 @@ class LidarNode(Node):
         obstacleCoords = self._get_coords(msg)
         clusters = self._clustering(obstacleCoords)
 
-        self.obstacle_msg.cluster_dists.clear()
-        self.obstacle_msg.x_r.clear()
-        self.obstacle_msg.y_r.clear()
-        self.obstacle_msg.cluster.clear()
+        self.obstacle_msg.obstacles.clear()
 
-        for i, cluster in enumerate(clusters):
-            self.obstacle_msg.cluster_dists.append(cluster.dist)
-
-            for point in cluster.points:
-                self.obstacle_msg.x_r.append(point.x)
-                self.obstacle_msg.y_r.append(point.y)
-                self.obstacle_msg.cluster.append(i)
+        for cluster in enumerate(clusters):
+            point = cluster.build()
+            self.obstacle_msg.obstacles.append(SensorObstacle(x=point.x, y=point.y))
 
         self.pub_obstacles.publish(self.obstacle_msg)
         
@@ -97,7 +89,7 @@ class LidarNode(Node):
                 # Conversion de (d, theta) en (x_r, y_r)
                 x_rel = 1000*dist*math.cos(theta)
                 y_rel = 1000*dist*math.sin(theta)
-                obstList.append(RawPoint(x_rel, y_rel, dist, theta))
+                obstList.append(Point(x_rel, y_rel))
                 
             theta += angle_inc
 
@@ -120,86 +112,51 @@ class LidarNode(Node):
         for point in coords[1:]:
             if lastPos.euclidean_distance(point) < CLUSTER_DIST_LIM:
                 # On regarde si le point suivant fait partie du regroupement en regardant sa distance au regroupement.
-
-                if abs(point.theta - current_cluster.lastTheta) > MIN_ANGLE_RESOLUTION:
-                    # Same cluster, but too far from the last retained point of the cluster (a wide cluster should keep multiple points for accuracy)
-                    current_cluster.append(point)
-                # else:
-                    # Close enough to the last retained point of the cluster. Just drop the point.
+                current_cluster.append(point)
             
             else:
                 # Different cluster
-                current_cluster.append(lastPos)
-                clusters.append(current_cluster.build())
+                clusters.append(current_cluster)
 
                 current_cluster = ClusterBuilder(point)
 
             lastPos = point
         
-        if clusters != [] and lastPos.euclidean_distance(clusters[0].points[0]) < CLUSTER_DIST_LIM:
+        if clusters != [] and lastPos.euclidean_distance(coords[0]) < CLUSTER_DIST_LIM:
             # First and last clusters are the same
             # This can happen on 360° LiDAR, where the last angle in the list is actually close to the first one.
-            clusters[0] = clusters[0].combine(current_cluster.build())
+            clusters[0] = clusters[0].combine(current_cluster)
         else:
-            current_cluster.append(lastPos)
-            clusters.append(current_cluster.build())
+            clusters.append(current_cluster)
 
         return clusters
         
 class ClusterBuilder:
     def __init__(self, pt):
-        self._points = []
-        self._lastTheta = None
-        self._dist = None
+        self._x = 0
+        self._y = 0
+        self._len = 0
 
         self.append(pt)
 
     def append(self, pt):
-        x, y, dist, theta = pt.x, pt.y, pt.dist, pt.theta
-
-        if theta == self.lastTheta:
-            return
-
-        self._points.append((x,y))
-        self._lastTheta = theta
-        if self._dist is None or dist < self._dist:
-            self._dist = dist
-
-    def build(self):
-        return Cluster(self._points, self._dist)
-
-    @property
-    def lastTheta(self):
-        return self._lastTheta
-
-    @property
-    def dist(self):
-        return self._dist
-
-    @property
-    def points(self):
-        return self._points
-
-@dataclass(frozen=True)
-class Cluster:
-    points: list
-    dist: float
+        self._x += pt.x
+        self._y += pt.y
+        self._len += 1
 
     def combine(self, other):
-        points, dist = self.points, self.dist
-        points.extend(other.points)
-        dist = min(dist, other.dist)
+        self._x += other._x
+        self._y += other._y
+        self._len += other._len
 
-        return Cluster(points, dist)
+    def build(self):
+        return Point(self._x / self._len, self._y / self._len)
 
-class RawPoint:
-    """Before clustering"""
+class Point:
 
-    def __init__(self, x, y, dist, theta):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.dist = dist
-        self.theta = theta
 
     def euclidean_distance(self, pt2):
         """Retourne la distance entre 2 points dans un repère cartésien. Ici, le repère du robot."""

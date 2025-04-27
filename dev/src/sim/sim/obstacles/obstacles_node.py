@@ -27,9 +27,9 @@ import numpy as np
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
 
-from message.msg import ProximityMap
+from message.msg import SensorObstacleList, SensorObstacle, CircleObstacle
+from message_utils.geometry import make_relative
 from br_messages.msg import Position, Point
 
 from config import RobotConfig
@@ -42,7 +42,8 @@ from config.qos import default_profile, br_position_topic_profile
 #################################################################
 
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
-SPEED = 200 # mm/s | can be 0 for fixed obstacle
+SPEED = 300 # mm/s | can be 0 for fixed obstacle
+INIT_POS = [800., 500.]
 
 #################################################################
 #                                                               #
@@ -60,16 +61,16 @@ class SIM_ObstaclesNode(Node):
         self.get_logger().info("Initializing OBS node ...")
 
         config = RobotConfig()
-        self.robot_diag = config.robot_diagonal
+        self.robot_diag = config.robot_diagonal / 2
 
         self.robot_pos = np.array([0., 0.])
         self.robot_theta = 0
-        self.obstacle_pos = np.array([1000., 2000.])
+        self.obstacle_pos = np.array(INIT_POS)
         self.obstacle_speed = None
         
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
-        self.obs_info_pub = self.create_publisher(ProximityMap, "/sensors/obstacles", default_profile)
-        self.obs_simu_pub = self.create_publisher(Int16MultiArray, "/simu/robotObstacle", default_profile)
+        self.obs_info_pub = self.create_publisher(SensorObstacleList, "/sensors/obstaclesLidar", default_profile)
+        self.obs_simu_pub = self.create_publisher(CircleObstacle, "/simu/robotObstacle", default_profile)
         
         self.get_logger().info("OBS node initialized")
 
@@ -82,7 +83,7 @@ class SIM_ObstaclesNode(Node):
         if self.obstacle_speed is None:
             return True # Should set initial speed
 
-        if random.random() > 0.999:
+        if random.random() > 0.9999:
             return True # Randomly change speed
 
         # Stay on the table
@@ -96,16 +97,16 @@ class SIM_ObstaclesNode(Node):
             return True
 
         dist = np.linalg.norm(self.robot_pos - self.obstacle_pos)
-        if dist < self.robot_diag + OBSTACLE_RADIUS and np.dot(self.obstacle_speed, self.robot_pos-self.obstacle_pos) > 0:
-            return True
+        if dist < self.robot_diag + OBSTACLE_RADIUS + 20 and np.dot(self.obstacle_speed, self.robot_pos-self.obstacle_pos) > 0:
+            self.obstacle_speed[:] = 0
+            return random.random() > 0.999
 
-        return False
-
+        # L'obstacle ne bouge pas quand il est proche de notre robot afin de tester nos manoeuvres d'évitement/éloignement
+        return dist > self.robot_diag + OBSTACLE_RADIUS + 100 and np.linalg.norm(self.obstacle_speed) == 0
+        
     def run(self):
        
-        msg = ProximityMap()
-        msg.source = ProximityMap.SIM_OBS_NODE
-        msg.cluster = [0]
+        msg = SensorObstacleList()
 
         t = time.time()
 
@@ -132,22 +133,10 @@ class SIM_ObstaclesNode(Node):
 
             self.obstacle_pos += self.obstacle_speed * elapsed
              
-            dist = np.linalg.norm(self.robot_pos - self.obstacle_pos)
-            x_r, y_r = make_relative(self.robot_pos, self.robot_theta, self.obstacle_pos)
-
-            msg.cluster_dists = [max(0, dist-OBSTACLE_RADIUS)]
-            msg.x_r = [x_r]
-            msg.y_r = [y_r]
-
+            x_rel, y_rel = make_relative(Position(x=self.robot_pos[0], y=self.robot_pos[1], theta=self.robot_theta), Point(x=self.obstacle_pos[0], y=self.obstacle_pos[1]))
+            msg.obstacles = [SensorObstacle(x=x_rel, y=y_rel)]
             self.obs_info_pub.publish(msg)
-            self.obs_simu_pub.publish(Int16MultiArray(data=[int(self.obstacle_pos[0]), int(self.obstacle_pos[1]), OBSTACLE_RADIUS]))
-
-def make_relative(robot, robot_theta, obstacle):
-    cos = math.cos(robot_theta)
-    sin = -math.sin(robot_theta)
-
-    vector = obstacle - robot
-    return (vector[0] * cos - vector[1] * sin, vector[0] * sin + vector[1] * cos)
+            self.obs_simu_pub.publish(CircleObstacle(x=self.obstacle_pos[0], y=self.obstacle_pos[1], radius=float(OBSTACLE_RADIUS)))
 
 #######################################################################
 #																      #

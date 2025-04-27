@@ -21,7 +21,7 @@ from rclpy.node import Node
 from std_msgs.msg import Int16, Float32MultiArray, String, Empty
 
 from br_messages.msg import Position, Point, DisplacementOrder, Command
-from message.msg import ProximityMap, DisplacementRequest
+from message.msg import SensorObstacleList, DisplacementRequest
 
 from config import StratConfig, COLOR
 from config.qos import default_profile, latch_profile, br_position_topic_profile
@@ -66,8 +66,9 @@ class DisplacementNode(Node):
         self.sub_teensy = self.create_subscription(Int16,  "/br/callbacks", self.callback_teensy, default_profile) 
         self.sub_pos = self.create_subscription(Position,  "/br/currentPosition", self.callback_position, br_position_topic_profile) 
    
-        # Comm Lidar
-        self.sub_lidar = self.create_subscription(ProximityMap, "/sensors/obstacles", self.callback_sensor, default_profile)
+        # Comm Lidar/Sonar
+        self.sub_lidar = self.create_subscription(SensorObstacleList, "/sensors/obstaclesLidar", self.callback_lidar, default_profile)
+        self.sub_lidar = self.create_subscription(SensorObstacleList, "/sensors/obstaclesSonar", self.callback_sonar, default_profile)
    
         # Comm Strat
         self.pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)
@@ -127,6 +128,9 @@ class DisplacementNode(Node):
     def reportPathNotFound(self):
         self.pub_strat.publish(Int16(data=DspCallback.PATH_NOT_FOUND))
 
+    def reportBlocked(self):
+        self.pub_strat.publish(Int16(data=DspCallback.DEST_BLOCKED))
+
     def cb_color(self, msg):
         """
         Callback function from topic /game/color.
@@ -165,6 +169,7 @@ class DisplacementNode(Node):
     def callback_position(self, msg):
         """Update la position actuelle du robot.""" 
         self.manager.setRobotPosition(msg)
+        self._update_manager()
 
     def callback_end(self, msg):
         if msg.data == 1:
@@ -175,10 +180,16 @@ class DisplacementNode(Node):
         self.manager.getPathFinder().remove_obstacle(msg.data)
         self.publish_grid()
 
-    def callback_sensor(self, msg):
-        """Traitement des msg reçus du lidar/sonar etc."""
-        self.manager.reportSensorDetection(msg)
+    def callback_lidar(self, msg):
+        """Traitement des msg reçus du lidar etc."""
+        self.manager.setLidarObstacles(msg)
+
+    def callback_sonar(self, msg):
+        self.manager.setSonarObstacles(msg)
+
+    def _update_manager(self):
         self.manager.update()
+        self.publish_grid()
 
     def callback_teensy(self, msg):
         """Traitement des msg reçus de la teensy."""
@@ -204,7 +215,10 @@ class DisplacementNode(Node):
                 theta = None
             
             self.get_logger().info(f"Displacement order towards ({x}, {y})")
-            self.manager.requestDisplacementTo(Point(x=x, y=y), msg.kind & DisplacementRequest.BACKWARD_FLAG != 0, theta)
+
+            backward = msg.kind & DisplacementRequest.BACKWARD != 0
+            straight_only = msg.kind & DisplacementRequest.STRAIGHT_ONLY != 0
+            self.manager.requestDisplacementTo(Point(x=x, y=y), backward, theta, straight_only)
 
         elif msg.kind & DisplacementRequest.ORIENTATION != 0:
             self.get_logger().info(f"Orientation order towards theta={msg.theta}")

@@ -93,6 +93,10 @@ class Displacement(yasmin.State):
                 self._logger.error("Displacement result: no path found with PF.")
                 return 'fail'
 
+            if userdata["cb_depl"] == DspCallback.DEST_BLOCKED:
+                self._logger.error("Displacement result: the destination is blocked by the opponent.")
+                return 'fail'
+
             if userdata["cb_depl"] == DspCallback.NOT_RECOGNIZED:
                 self._logger.error("Displacement result: order rejected because not recognized.")
                 return 'fail'
@@ -138,7 +142,7 @@ class MoveStraight(Displacement):
             offset_x = -offset_x
             offset_y = -offset_y
 
-        userdata["next_move"] = create_displacement_request(x + offset_x, y + offset_y, theta, self.backward)
+        userdata["next_move"] = create_displacement_request(x + offset_x, y + offset_y, theta, self.backward, straight_only=True)
 
         return super().execute(userdata)
 
@@ -150,7 +154,7 @@ class MoveBackwardsStraight(MoveStraight):
     def __init__(self, node, distance):
         super().__init__(node, distance, backward=True)
 
-def create_displacement_request(x, y, theta=None, backward=False):
+def create_displacement_request(x, y, theta=None, backward=False, straight_only=False):
     msg = DisplacementRequest()
     msg.kind |= DisplacementRequest.MOVE
     msg.x = float(x)
@@ -160,7 +164,9 @@ def create_displacement_request(x, y, theta=None, backward=False):
         msg.kind |= DisplacementRequest.ORIENTATION
         msg.theta = float(theta)
     if backward:
-        msg.kind |= DisplacementRequest.BACKWARD_FLAG
+        msg.kind |= DisplacementRequest.BACKWARD
+    if straight_only:
+        msg.kind |= DisplacementRequest.STRAIGHT_ONLY
 
     return msg
 

@@ -38,5 +38,6 @@ PYBIND11_MODULE(pathfinder, m) {
         .def("getObstacle", &Map::getObstacle)
         .def("setObstacle", &Map::setObstacle)
         .def("getGrid", &Map::getGrid)
+        .def("canGoStraight", &Map::canGoStraight)
         .def("astarPath", &Map::astarPath);
 }

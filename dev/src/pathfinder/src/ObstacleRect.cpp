@@ -43,6 +43,16 @@ bool line_line_intersect(const Segment &line1, const Segment &line2) {
 }
 
 bool ObstacleRect::crosses(Segment segment) const {
+    if (contains(segment.start)) {
+        if (contains(segment.end)) {
+            return true;
+        }
+        if (Point::dot(segment.end - segment.start, getCenter() - segment.start) < 0) {
+            // Enables escape if the robot is already in the obstacle
+            return false;
+        }
+    }
+
     if (line_line_intersect(segment, Segment(m_topLeft, Point(m_bottomRight.getX(), m_topLeft.getY())))) {
         return true;
     }
@@ -58,6 +68,10 @@ bool ObstacleRect::crosses(Segment segment) const {
     return false;
 }
 
+bool ObstacleRect::contains(Point point) const {
+    return point.getX() > m_topLeft.getX() && point.getX() < m_bottomRight.getX() && point.getY() > m_topLeft.getY() &&
+           point.getY() < m_bottomRight.getY();
+}
 Point ObstacleRect::getCenter() const { return m_topLeft + (m_bottomRight - m_topLeft) / 2; }
 double ObstacleRect::getWidth() const { return (m_bottomRight.getX() - m_topLeft.getX()); }
 double ObstacleRect::getHeight() const { return (m_bottomRight.getY() - m_topLeft.getY()); }

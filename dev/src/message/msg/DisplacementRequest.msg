@@ -1,10 +1,10 @@
 int16 MOVE = 1
-# MOVE (1) | BACKWARD_FLAG (2) = 3
-int16 BACKWARD = 3
+# Must be used along with flag MOVE.
+int16 BACKWARD = 2
 int16 ORIENTATION = 4
 
-# Must be used along with flag MOVE. Use constant BACKWARD instead
-int16 BACKWARD_FLAG = 2
+# Disables path finding and BR curves.
+int16 STRAIGHT_ONLY = 8
 
 # Destination kind
 # FORWARD (1), BACKWARD (3), ORIENTATION (4) or combination (FORWARD + ORIENTATION = 5, BACKWARD + ORIENTATION = 7)

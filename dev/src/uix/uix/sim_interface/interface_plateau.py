@@ -25,12 +25,13 @@ import numpy as np
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool, Int16, Int16MultiArray, Float32MultiArray, Empty
+from std_msgs.msg import Bool, Int16, Float32MultiArray, Empty
 
 import tkinter as tk
 from PIL import Image, ImageTk
 
-from message.msg import ProximityMap
+from message.msg import SensorObstacleList, SensorObstacle, CircleObstacle
+from message_utils.geometry import make_absolute
 
 from br_trajectories import getTrajectoryCurves, Point2D, Position2D
 from br_messages.msg import Position, Point, DisplacementOrder
@@ -763,9 +764,11 @@ class InterfaceNode(Node):
         self._subRightArm = self.create_subscription(
             Int16, "/act/callback/right_arm", self.updateRobotRightArmState, default_profile)
         self._subObstacles = self.create_subscription(
-            ProximityMap, "/sensors/obstacles", self.updateObstacles, default_profile)
+            SensorObstacleList, "/sensors/obstaclesLidar", self.updateObstaclesLidar, default_profile)
+        self._subObstacles = self.create_subscription(
+            SensorObstacleList, "/sensors/obstaclesSonar", self.updateObstaclesSonar, default_profile)
         self._subRobotObstacle = self.create_subscription(
-            Int16MultiArray, "/simu/robotObstacle", self.updateRobotObstacle, default_profile)
+            CircleObstacle, "/simu/robotObstacle", self.updateRobotObstacle, default_profile)
 
         self._subOrder = self.create_subscription(
             DisplacementOrder, "/br/goTo", self.updateOrder, default_profile)
@@ -791,9 +794,9 @@ class InterfaceNode(Node):
 
             self._path.redraw(self._canvas, force=force)
 
+            self._robotObstacle.redraw(self._canvas, force=force)
             self._lidarObstacles.redraw(self._canvas, force=force)
             self._sonarObstacles.redraw(self._canvas, force=force)
-            self._robotObstacle.redraw(self._canvas, force=force)
 
             self._robot.redraw(self._canvas, force=force)
             self._clickMarker.redraw(self._canvas, force=force)
@@ -900,29 +903,27 @@ class InterfaceNode(Node):
         with self.lock:
             self._robot.setRightArmState(msg.data)
 
-    def updateObstacles(self, msg):
+    def updateObstaclesLidar(self, msg):
         with self.lock:
-            if msg.source == ProximityMap.SONAR:
-                obstacles = self._sonarObstacles
-            else:
-                obstacles = self._lidarObstacles
+            self._updateObstacles(self._lidarObstacles, msg)
+    
+    def updateObstaclesSonar(self, msg):
+        with self.lock:
+            self._updateObstacles(self._sonarObstacles, msg)
 
-            obstacles.clear()
+    def _updateObstacles(self, lst, msg): 
+        robot_pos = Position(x=self._robot.location[0], y=self._robot.location[1], theta=self._robot.rotation)
 
-            robot_pos = self._robot.location
-            for x_r, y_r in zip(msg.x_r, msg.y_r):
-                coord_abs = np.array([x_r, y_r])
-                ScaledCanvas._rotate(np.zeros(2), coord_abs, self._robot.rotation)
-                coord_abs += robot_pos
-
-                obstacles.addObstacle((coord_abs[0], coord_abs[1], 0, 0, 0))
+        lst.clear()
+        for obs in msg.obstacles:
+            x_abs, y_abs = make_absolute(robot_pos, obs)               
+            lst.addObstacle((x_abs, y_abs, 0, 0, 0))
 
     def updateRobotObstacle(self, msg):
         with self.lock:
-            x, y, r = msg.data
             self._robotObstacle.clear()
-            self._robotObstacle.addObstacle([x, y, 0, 0, 0])
-            self._robotObstacle.plot_radius = r
+            self._robotObstacle.addObstacle([msg.x, msg.y, 0, 0, 0])
+            self._robotObstacle.plot_radius = msg.radius
 
     def updateColor(self, msg):
         with self.lock:
@@ -938,7 +939,7 @@ class InterfaceNode(Node):
         with self.lock:
             for plant in self._robot.releasePlants():
                 plant.invalidate()
-                self._plants.append(plant)
+                self._plants.append(plant)   
 
     def mainloop(self, n=0):
         thread = Thread(target=lambda: rclpy.spin(self))

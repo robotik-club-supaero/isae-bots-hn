@@ -71,11 +71,12 @@ class Callback(IntEnum):
 
 
 class DspCallback(Callback):
-    UNKNOWN = -5
-    PENDING = -4
-    NOT_RECOGNIZED = -3
-    ERROR_ASSERV = -2     # Erreur de l'asserv (difficile à gérer)
-    PATH_NOT_FOUND = -1     # La recherche de chemin n'a pas abouti
+    UNKNOWN = -6
+    PENDING = -5
+    NOT_RECOGNIZED = -4
+    ERROR_ASSERV = -3     # Erreur de l'asserv (difficile à gérer)
+    PATH_NOT_FOUND = -2     # La recherche de chemin n'a pas abouti
+    DEST_BLOCKED = -1
     SUCCESS = 0      # Le robot est arrivé au point demandé
 
 class ElevatorOrder(IntEnum):

@@ -62,7 +62,7 @@ class ISBNode(Node):
         config = NaiveStratConfig()
 
         self.strat_count = len(config.strat_names)
-        self.init_pos_count = len(config.init_zones)
+        self.init_pos_count = config.init_zone_count
 
         self.current_strat = Int16(data=config.default_strat_index)
         self.current_color = Int16(data=0)

@@ -14,6 +14,7 @@
 
 
 import sys
+import time
 from enum import IntEnum
 
 import rclpy
@@ -84,6 +85,7 @@ class DisplacementNode(Node):
         # Comm Simulation            
         if SIMULATION:
             self.pub_grid = self.create_publisher(Float32MultiArray, "/simu/nodegrid", latch_profile)
+            self.last_grid_update = 0
 
         self._setup_init_pos()
 
@@ -148,7 +150,7 @@ class DisplacementNode(Node):
         """
         Callback function from topic /game/init_pos
         """
-        if msg.data not in range(len(self.config.init_zones)):
+        if msg.data not in range(self.config.init_zone_count):
             self.get_logger().error(f"Wrong value of init pos given ({msg.data})...")
             return
 
@@ -178,7 +180,6 @@ class DisplacementNode(Node):
 
     def callback_delete_obs(self, msg):
         self.manager.getPathFinder().remove_obstacle(msg.data)
-        self.publish_grid()
 
     def callback_lidar(self, msg):
         """Traitement des msg reçus du lidar etc."""
@@ -243,7 +244,9 @@ class DisplacementNode(Node):
         """Publish grid to the interfaceNode."""
 
         # If we use a regular grid instead of a visibility graph, don't re-publish the grid because it has not changed
-        if SIMULATION and (force or not USE_REGULAR_GRID):
+        if SIMULATION and (force or not USE_REGULAR_GRID) and time.time() - self.last_grid_update > 0.2:
+            self.last_grid_update = time.time()
+
             if grid is None: grid = self.manager.getPathFinder().get_grid()
             node_coords = []
             for n in range(len(grid)):
@@ -252,6 +255,7 @@ class DisplacementNode(Node):
             msg = Float32MultiArray()
             msg.data = node_coords
             self.pub_grid.publish(msg)
+            self.last_grid_update = time.time()
 
 #################################################################
 #																#

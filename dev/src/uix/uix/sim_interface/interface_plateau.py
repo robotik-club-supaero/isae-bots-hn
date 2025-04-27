@@ -35,7 +35,7 @@ from message_utils.geometry import make_absolute
 
 from br_trajectories import getTrajectoryCurves, Point2D, Position2D
 from br_messages.msg import Position, Point, DisplacementOrder
-from config import RobotConfig
+from config import RobotConfig, NaiveStratConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 from .interface_const import *
@@ -685,6 +685,15 @@ class ControlWindow(tk.Toplevel):
         self._pubIdle = node.create_publisher(Bool, "/br/idle", latch_profile)
         self._pubColor = node.create_publisher(Int16, "/game/color", latch_profile)
         self._pubStart = node.create_publisher(Int16, "/game/start", latch_profile)
+        self._pubInitPos = node.create_publisher(Int16, "/game/init_pos", latch_profile)
+        self._pubStrat = node.create_publisher(Int16, "/game/strat", latch_profile)
+
+        config = NaiveStratConfig()
+        self._num_init_pos = config.init_zone_count
+        self._num_strat = len(config.strat_names)
+
+        self._init_pos = 0
+        self._strat = 0
 
         idle_bt = tk.Button(self, text="BR idle", command=lambda: self._pubIdle.publish(Bool(data=False)))
         idle_bt.grid(column=0, row=0)
@@ -698,8 +707,22 @@ class ControlWindow(tk.Toplevel):
         away_bt = tk.Button(self, text="Color AWAY", command=lambda: self._pubColor.publish(Int16(data=1)))
         away_bt.grid(column=1, row=1)
 
+        init_pos_bt = tk.Button(self, text="Change init pos", command=self._set_init_pos)
+        init_pos_bt.grid(column=0, row=2)
+    
+        strat_bt = tk.Button(self, text="Change strat", command=self._set_strat)
+        strat_bt.grid(column=1, row=2)
+
         start_bt = tk.Button(self, text="Start match", command=lambda: self._pubStart.publish(Int16(data=1)))
-        start_bt.grid(column=0, row=2)
+        start_bt.grid(column=0, row=3)
+
+    def _set_init_pos(self):
+        self._init_pos += 1
+        self._pubInitPos.publish(Int16(data=self._init_pos % self._num_init_pos))
+
+    def _set_strat(self):
+        self._strat += 1
+        self._pubStrat.publish(Int16(data=self._strat % self._num_strat))
 
 class InterfaceNode(Node):
 

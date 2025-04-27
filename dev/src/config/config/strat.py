@@ -59,6 +59,10 @@ class NaiveStratConfig(RobotConfig):
     @property
     def delay_park(self):
         return NaiveStratConfig.DELAY_PARK
+
+    @property
+    def init_zone_count(self):
+        return len(StratConfig.INIT_ZONES)
     
 class StratConfig(NaiveStratConfig):
 

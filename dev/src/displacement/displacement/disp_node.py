@@ -27,7 +27,7 @@ from config import StratConfig, COLOR
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 from .disp_manager import DisplacementManager
-from .pathfinder import PathFinder
+from .pathfinder import PathFinder, USE_REGULAR_GRID
 from .disp_consts import BR_Callback, DspCallback
 
 SIMULATION = True
@@ -241,7 +241,9 @@ class DisplacementNode(Node):
 
     def publish_grid(self, grid=None, force=False):
         """Publish grid to the interfaceNode."""
-        if SIMULATION:
+
+        # If we use a regular grid instead of a visibility graph, don't re-publish the grid because it has not changed
+        if SIMULATION and (force or not USE_REGULAR_GRID):
             if grid is None: grid = self.manager.getPathFinder().get_grid()
             node_coords = []
             for n in range(len(grid)):

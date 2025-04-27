@@ -1,5 +1,8 @@
 from pathfinder import Map, Point
 
+USE_REGULAR_GRID = False
+GRID_INTERVAL = 50 # mm
+
 class PathNotFoundError(RuntimeError):
     pass
 
@@ -7,6 +10,11 @@ class PathFinder:
 
     def __init__(self, static_obstacles):
         self.map = Map(static_obstacles)
+        if USE_REGULAR_GRID:
+            self.map.switchToRegularGrid(0, 2000, 0, 3000, GRID_INTERVAL)
+        # else:
+            # The default is a visibility graph
+
         self.dyn_obstacles = set()
         
     def set_dynamic_obstacle(self, name, obstacle):

@@ -39,5 +39,8 @@ PYBIND11_MODULE(pathfinder, m) {
         .def("setObstacle", &Map::setObstacle)
         .def("getGrid", &Map::getGrid)
         .def("canGoStraight", &Map::canGoStraight)
+        .def("switchToVisibilityGraph", &Map::switchToVisibilityGraph)
+        .def("switchToRegularGrid", &Map::switchToRegularGrid<int>)
+        .def("switchToRegularGrid", &Map::switchToRegularGrid<double>)        
         .def("astarPath", &Map::astarPath);
 }

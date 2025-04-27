@@ -2,6 +2,7 @@
 #define _MAP_HPP_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,9 +25,15 @@ class Map {
     std::unordered_set<Point> getGrid() const;
     bool canGoStraight(Point from, Point to) const;
 
+    void switchToVisibilityGraph();
+
+    template<typename T>
+    void switchToRegularGrid(T x_start, T x_end, T y_start, T y_end, T grid_interval);
+
     operator std::string() const;
 
    private:
+    std::optional<std::unordered_set<Point>> m_grid;
     std::unordered_map<std::string, std::shared_ptr<Obstacle>> m_obstacles;
 };
 

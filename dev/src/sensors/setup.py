@@ -36,9 +36,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sensor_node = sensors.sensors_node:main',
             'lidar_node = sensors.lidar.lidar_node:main',
-            'obstacle_node = sensors.obs.obstacles_node:main',
             'sonar_node = sensors.sonar.sonar_node:main',
         ],
     },

@@ -19,19 +19,22 @@
 #                                                               #
 #################################################################
 
-import os
 import sys
+import math
 
 import rclpy
 from rclpy.node import Node
 import numpy as np
-import ast
-from sonar_lib import coord_obstacle
-from std_msgs.msg      import Int16MultiArray, MultiArrayLayout, MultiArrayDimension
+
 from geometry_msgs.msg import Point
-from br_messages import Position
+from br_messages.msg import Position
+
+from message.msg import SensorObstacleList, SensorObstacle
+from message_utils.geometry import make_absolute
 from config import SonarConfig
 from config.qos import default_profile, br_position_topic_profile
+
+from .sonar_config import *
 
 #################################################################
 #                                                               #
@@ -39,7 +42,20 @@ from config.qos import default_profile, br_position_topic_profile
 #                                                               #
 #################################################################
 
-# OBSOLETE!!!!!!!!!
+class Sonar:
+    def __init__(self, x, y, direction):
+        self.x = x
+        self.y = y
+        self.dir = direction
+        self.cos = math.cos(direction)
+        self.sin = math.sin(direction)
+
+    def get_coords(self, dist):
+        x = self.x + dist * self.cos
+        y = self.y + dist * self.sin
+
+        return x, y
+
 class SonarNode(Node):
     """
     ROS node SONAR node for sonar obstacles detection.
@@ -52,74 +68,44 @@ class SonarNode(Node):
         # Get sonars from config file of the robot
         config = SonarConfig()
         
-        self.nb_sonars = 0
-        self.sonars_lst = []     #on enregistre chaque sonar (sa position et son cap) dans cette liste
-        self.sonars_pos = []
-        
-        for sonar in config.available_sonars:
-            self.sonars_lst.append(sonar)
-            self.sonars_pos.append([0 for i in range(3)])
-            self.nb_sonars += 1
+        self.sonars_lst = [Sonar(*sonar) for sonar in config.available_sonars]     #on enregistre chaque sonar (sa position et son cap) dans cette liste
 
-        self.obs_pub = self.create_publisher(Int16MultiArray, "/sensors/obstaclesSonar", default_profile)
+        self.pos_robot = Position()
+
+        self.obs_pub = self.create_publisher(SensorObstacleList, "/sensors/obstaclesSonar", default_profile)
         self.pos_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
         self.son_sub = self.create_subscription(Point, "/ultrasonicDistances", self.recv_obstacle, default_profile)  # can change topic name ?
+        # FIXME: using type `Point` for `/ultrasonicDistances` only works if there are two sonars
+
+        self.obs_msg = SensorObstacleList()
     
     def recv_position(self, msg):
         """
         Feedback on current position /br/currentPosition topic.
         """
-        for i in range(self.nb_sonars) :
-            [x, y, dir_visee] = self.sonars_lst[i]
-            pol_dst = np.hypot(x, y)
-            pol_cap = np.arctan2(y, x)
-            dir_visee = dir_visee * np.pi/180
-            self.sonars_pos[i][0] = msg.x + pol_dst * np.cos(msg.theta + pol_cap)
-            self.sonars_pos[i][1] = msg.y + pol_dst * np.sin(msg.theta + pol_cap)
-            self.sonars_pos[i][2] = msg.theta + dir_visee
-
-        self.x_robot = msg.x
-        self.y_robot = msg.y
-        self.cap = msg.theta
+        self.pos_robot = msg
 
     def recv_obstacle(self, msg):
         """
         Feedback on obstacle info from sonars
         """
-        obs_lst = []
+        # FIXME this only works for two sonars
+
+        self.obs_msg.obstacles.clear()
         dst_lst = [msg.x, msg.y]
 
-        for i in range(self.nb_sonars):
-            dst = dst_lst[i]
-            pos = self.sonars_pos[i]
-            coord = coord_obstacle(pos, dst)
-            if coord : obs_lst.append(coord)
+        for dst, sonar in zip(dst_lst, self.sonars_lst):
+            if distance < DIST_MARGIN:
+                x, y = sonar.get_coords(dst)
 
-        info = Int16MultiArray()
-        data = [1]
-        for pos in obs_lst:
-            for coord in pos:
-                data.append((int)(coord))
-        info.data = data
-
-        layout = MultiArrayLayout()
-        layout.data_offset = 1
-
-        dims = []
-        dim1 = MultiArrayDimension()
-        dim1.label = "nbObstacles"
-        dim1.size = len(obs_lst)
-        dim1.stride = 2* len(obs_lst)
-
-        dim2 = MultiArrayDimension()
-        dim2.label = "coordinates"
-        dim2.size = 2
-        dim2.stride = 2
-
-        dims.append(dim1)
-        dims.append(dim2)
-        layout.dim = dims
-        info.layout = layout
+                if DROP_OFF_LIMITS:
+                    x_abs, y_abs = make_absolute(robot_pos, Point(x=x,y=y))
+                    if not AREA_MARGIN < y_obs < 3000-AREA_MARGIN:
+                        continue
+                    if not AREA_MARGIN < x_obs < 3000-AREA_MARGIN:
+                        continue
+                
+                self.obs_msg.obstacles.push(Obstacle(x=x,y=y,dist=dst))
 
         self.obs_pub.publish(info)
 
@@ -133,7 +119,7 @@ class SonarNode(Node):
 def main():
     rclpy.init(args=sys.argv)
 
-    node = ObstaclesNode()
+    node = SonarNode()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

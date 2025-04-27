@@ -14,7 +14,6 @@
 	<!-- traitement obstacles -->
 
 	<node name="LidarNode" pkg="sensors" exec="lidar_node"  output="screen" />
-	<node name="SensorNode" pkg="sensors" exec="sensor_node" output="screen" />
 
 	<!-- strat -->
 

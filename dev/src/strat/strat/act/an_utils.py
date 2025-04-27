@@ -126,6 +126,15 @@ class Sequence(yasmin.StateMachine):
 
         super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes() if outcome in state.get_outcomes()})
 
+    def execute(self, blackboard):
+        try:
+            return super().execute(blackboard)
+        except RuntimeError:
+            if self.is_canceled():
+                return "preempted"
+            else:
+                raise
+
     def set_start_state(self, name):
         if self.get_start_state():
             raise NotImplementedError("Cannot set start state on Sequence")

@@ -108,3 +108,4 @@ class PickupStand(Sequence): # TODO
             ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub)),
             ])
         self.etage = etage
+    

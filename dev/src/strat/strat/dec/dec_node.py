@@ -186,6 +186,8 @@ class DecisionsNode(Node):
 
     def recv_action_callback(self, msg):
         if msg.exit == ActionResult.SUCCESS:
+            
+            self.get_logger().info(f"[ dec_node Callback ] Action {self.curr_action[0]} Success.")
 
             self.action_successful = True
             self.retry_count = 0
@@ -206,7 +208,6 @@ class DecisionsNode(Node):
                 self.publishScore()
                 self.parked = True
             
-            self.get_logger().info("Last action succeeded.")
             return
 
         if msg.exit == ActionResult.NOTHING_TO_PICK_UP:
@@ -220,7 +221,7 @@ class DecisionsNode(Node):
             return
 
         if msg.exit == ActionResult.FAILURE:
-            self.get_logger().error(f"Last action failed, reason: {msg.reason}")
+            self.get_logger().error(f"Last action ({self.curr_action[0]}) failed, reason: {msg.reason}")
             return
         self.get_logger().error("Wrong value sent on /strat/done_action ...")
 

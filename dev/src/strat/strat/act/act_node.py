@@ -82,7 +82,7 @@ class ActionNode(Node):
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, default_profile)
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, default_profile)
 
-        # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
+        # SPECIFIC TO CURRENT YEAR [2025]
         self.clamp_1_sub = self.create_subscription(Int16, '/act/callback/clamp_1', self.cb_clamp_1_fct, default_profile)
         self.clamp_2_sub = self.create_subscription(Int16, '/act/callback/clamp_2', self.cb_clamp_2_fct, default_profile)
         self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, default_profile)
@@ -215,14 +215,14 @@ class ActionNode(Node):
 
     def cb_elevator_1_fct(self, msg):
         """
-        Callback of the state of the elevator (for the cakes)
+        Callback of the state of the elevator
         """
         if self.setupComplete:
             self.smData["cb_elevator_1"] = ElevatorCallback.parse(msg.data)
         
     def cb_elevator_2_fct(self, msg):
         """
-        Callback of the state of the elevator (for the cakes)
+        Callback of the state of the elevator
         """
         if self.setupComplete:
             self.smData["cb_elevator_2"] = ElevatorCallback.parse(msg.data)

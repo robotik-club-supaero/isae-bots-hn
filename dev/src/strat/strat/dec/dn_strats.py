@@ -81,6 +81,7 @@ def match_strat(node):
             cond = lambda ramaining_index: remaining[ramaining_index] > STAND_THRESHOLD
 
         x, y, _ = adapt_pos_to_color(*node.position, node.color) if relative else node.position
+        print("Remaining coeffs : ", coeffs)
         dists = [ coeffs[i] * ((x_p * x + y_p * y)**0.5) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
         dist_sorted_index = list(np.argsort(dists))
@@ -101,8 +102,10 @@ def match_strat(node):
                 node.publishAction()
                 return
 
-        # Pickup Up Stand
+        malus_deposit = np.ones(len(DEPOSIT_POS))
         malus_pickup = np.ones(len(STAND_POS))
+
+        # Pickup Up Stand
         if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):
 
             if not node.action_successful:
@@ -111,32 +114,39 @@ def match_strat(node):
             stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup)
             
             if stand_id is not None:
-                if not node.action_successful: # Continue to search for stand                
-                    node.curr_action[1] = stand_id        
-                elif node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked
-                    node.remaining_stands[node.curr_action[1]] = 0
-                    node.curr_action = [Action.PICKUP_STAND_2, stand_id]
-                elif node.curr_action[0] == Action.PICKUP_STAND_1: # bottom stand picked
+                if node.action_successful is False: # Continue to search for stand                
+                    node.curr_action[1] = stand_id
+                    node.get_logger().info(f"Next action order : Picking up Stand n°{stand_id}...")        
+                elif node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked -> Go bottom stand picking
                     node.remaining_stands[node.curr_action[1]] = 0
                     node.curr_action = [Action.PICKUP_STAND_1, stand_id]
-                
-                node.get_logger().info(f"Next action order : Pickup Stand n°{stand_id}")
-                node.publishAction()
+                    node.get_logger().info(f"Next action order : Pickup Stand n°{stand_id}")
+                elif node.curr_action[0] == Action.PICKUP_STAND_1: # bottom stand picked -> Go deposit
+                    node.remaining_stands[node.curr_action[1]] = 0
+                    deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit)
+                    if deposit_id is not None:
+                        node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
+                        node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")      
+                    else:
+                        node.get_logger().info("No deposit pos found !")
+                node.publishAction()        
                 return
             else:
                 node.get_logger().info("No stand found to pick up !")
         
         # Deposit Stand
-        malus_deposit = np.ones(len(DEPOSIT_POS))
-        if (not node.action_successful and node.curr_action[0] == Action.DEPOSIT_STAND):
-            deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit)
-            if deposit_id is not None:
-                node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
-                node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")
-                node.publishAction()        
-                return
+        if node.curr_action[0] == Action.DEPOSIT_STAND:
+            if node.action_successful:
+                node.deposit_slots[node.curr_action[1]] = 0
             else:
-                node.get_logger().info("No more free slot to deposit")
+                deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit)
+                if deposit_id is not None:
+                    node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
+                    node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}...")
+                    node.publishAction()        
+                    return
+                else:
+                    node.get_logger().info("No more free slot to deposit !")
 
         # If no other action is applicable, defaulting to picking up stand
         stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup)

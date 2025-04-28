@@ -15,9 +15,9 @@ class LCDNode(Node):
         super().__init__("ISB")
 
         self.match_started = False
-        self.color = None
-        self.strat = None
-        self.init_pos = None
+        self.color = 0
+        self.strat = 0
+        self.init_pos = 0
         self.score = 0
 
         self.lcd = lcd()

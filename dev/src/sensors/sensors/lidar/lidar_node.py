@@ -12,6 +12,7 @@
 #  |  _ < (_) | |_) | (_) | |_| |   <  | |___| | |_| | |_) |
 #  |_| \_\___/|_.__/ \___/ \__|_|_|\_\  \____|_|\__,_|_.__/ 
 
+import sys
 import math
 from dataclasses import dataclass
 
@@ -162,3 +163,25 @@ class Point:
         """Retourne la distance entre 2 points dans un repère cartésien. Ici, le repère du robot."""
         return math.sqrt((self.x - pt2.x)**2 + (self.y - pt2.y)**2)
     
+
+#################################################################
+#                                                               #
+#                             MAIN                              #
+#                                                               #
+#################################################################
+
+def main():
+    rclpy.init(args=sys.argv)
+
+    node = LidarNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().warning("Node forced to terminate")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

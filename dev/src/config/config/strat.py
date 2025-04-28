@@ -77,7 +77,7 @@ class StratConfig(NaiveStratConfig):
     INIT_ZONES = [
         DynamicPos(2000 - 1825, 375, 0), # 0
         DynamicPos(2000 - 175, 1225  , 3.14),    # 1
-        DynamicPos(2000 - 875, 2875, -1.57), # 2
+        DynamicPos(2000 - 875, 2775, -1.57), # 2
     ]
 
     PICKUP_STAND_POS = [

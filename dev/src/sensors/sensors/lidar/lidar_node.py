@@ -54,9 +54,10 @@ class LidarNode(Node):
 
         self.obstacle_msg.obstacles.clear()
 
-        for cluster in enumerate(clusters):
-            point = cluster.build()
-            self.obstacle_msg.obstacles.append(SensorObstacle(x=point.x, y=point.y))
+        for cluster in clusters:
+            if cluster.num_of_points >= DETECTION_THRESHOLD:
+                point = cluster.build()
+                self.obstacle_msg.obstacles.append(SensorObstacle(x=point.x, y=point.y))
 
         self.pub_obstacles.publish(self.obstacle_msg)
         
@@ -66,8 +67,8 @@ class LidarNode(Node):
         angle_min = msg.angle_min
         angle_max = msg.angle_max
         angle_inc = msg.angle_increment
-        range_min = max(MIN_RANGE, msg.range_min)
-        range_max = min(MAX_RANGE, msg.range_max)
+        range_min = max(MIN_RANGE, 1000*msg.range_min)
+        range_max = min(MAX_RANGE, 1000*msg.range_max)
 
         if DROP_OFF_LIMITS:
             x_r = self.robot_pos.x
@@ -78,18 +79,19 @@ class LidarNode(Node):
         obstList = [] 
         for dist in ranges:
             # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
-            if range_min<dist<range_max:
+            dist_mm = dist * 1000
+            if range_min<dist_mm<range_max:
                 if DROP_OFF_LIMITS:
                     # Calcul des coords absolue sur la table
-                    x_abs = x_r + 1000*dist*math.cos(theta_r + theta)
-                    y_abs = y_r + 1000*dist*math.sin(theta_r + theta)
+                    x_abs = x_r + dist_mm*math.cos(theta_r + theta)
+                    y_abs = y_r + dist_mm*math.sin(theta_r + theta)
                     # On supprime les points en dehors de la table.
                     if not ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):
                         continue
             
                 # Conversion de (d, theta) en (x_r, y_r)
-                x_rel = 1000*dist*math.cos(theta)
-                y_rel = 1000*dist*math.sin(theta)
+                x_rel = dist_mm*math.cos(theta)
+                y_rel = dist_mm*math.sin(theta)
                 obstList.append(Point(x_rel, y_rel))
                 
             theta += angle_inc
@@ -126,7 +128,7 @@ class LidarNode(Node):
         if clusters != [] and lastPos.euclidean_distance(coords[0]) < CLUSTER_DIST_LIM:
             # First and last clusters are the same
             # This can happen on 360° LiDAR, where the last angle in the list is actually close to the first one.
-            clusters[0] = clusters[0].combine(current_cluster)
+            clusters[0].combine(current_cluster)
         else:
             clusters.append(current_cluster)
 
@@ -152,6 +154,10 @@ class ClusterBuilder:
 
     def build(self):
         return Point(self._x / self._len, self._y / self._len)
+
+    @property
+    def num_of_points(self):
+        return self._len
 
 class Point:
 

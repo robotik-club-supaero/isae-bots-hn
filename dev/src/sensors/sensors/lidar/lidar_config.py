@@ -14,3 +14,5 @@ MAX_RANGE = 3000 # mm
 
 # Whether to ignore points outside the table
 DROP_OFF_LIMITS = True
+
+DETECTION_THRESHOLD = 10

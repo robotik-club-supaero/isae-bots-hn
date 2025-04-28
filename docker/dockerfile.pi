@@ -134,4 +134,4 @@ COPY ./service/match.service /etc/systemd/system/match.service
 # Setup the work directory and entrypoint
 COPY ./docker/autosetup.sh /app/autosetup.sh
 
-ENTRYPOINT [ "/autosetup.sh" ]
+ENTRYPOINT [ "/app/autosetup.sh" ]

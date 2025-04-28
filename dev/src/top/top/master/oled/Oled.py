@@ -13,6 +13,7 @@ class OledScreen:
 
     WIDTH = 128
     HEIGHT = 64
+    TOP_BORDER = 13 # Top of screen is degraded
 
     def __init__(self, addr=0x3d, oled_reset=None):
         if oled_reset is not None:
@@ -22,8 +23,8 @@ class OledScreen:
         self._oled = adafruit_ssd1306.SSD1306_I2C(OledScreen.WIDTH, OledScreen.HEIGHT, i2c, addr=addr, reset=oled_reset)
 
         self._image = Image.new("1", (self._oled.width, self._oled.height))
-        self._draw = ImageDraw.Draw(image)
-        self._font = ImageFont.load_default()
+        self._draw = ImageDraw.Draw(self._image)
+        self._font = ImageFont.load_default(size=9)
 
         self._oled.fill(0)
         self._oled.show()
@@ -32,12 +33,13 @@ class OledScreen:
 
     def _show(self, image=None):
         if image is None: image = self._image
+
+        self._oled.fill(0)
         self._oled.image(image)
         self._oled.show()
 
     def _clear_image(self):
         oled = self._oled
-
         # Draw a black background
         self._draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
 
@@ -51,10 +53,8 @@ class OledScreen:
         oled = self._oled
 
         # Draw Some Text
-        bbox = self._font.getbbox(text)
-        (font_width, font_height) = bbox[2] - bbox[0], bbox[3] - bbox[1]
         self._draw.text(
-            (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
+            (0, OledScreen.TOP_BORDER),
             text,
             font=self._font,
             fill=255,
@@ -66,7 +66,7 @@ class OledScreen:
         self.display_string("\n".join(lines))
 
     def display_image(self, img_name):
-        filePath = IMAGES_PATH + fileName
+        filePath = IMAGES_PATH + img_name
         image = Image.open(filePath).convert('1')
 
         self._show(image)

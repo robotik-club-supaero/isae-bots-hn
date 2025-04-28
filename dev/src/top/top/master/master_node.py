@@ -143,9 +143,12 @@ class MasterNode(Node):
             self._launchMatch.__exit__(*args)
                     
     def run(self):
-        while rclpy.ok(): 
-            rclpy.spin_once(self, timeout_sec=0.01)
-            self.update_state()
+        try:
+            while rclpy.ok(): 
+                rclpy.spin_once(self, timeout_sec=0.01)
+                self.update_state()
+        finally:
+            self._oled.display_string("-- EXITED --")
 
 #################################################################
 #                                                               #

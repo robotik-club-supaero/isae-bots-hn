@@ -78,22 +78,22 @@ class LidarNode(Node):
         theta = angle_min
         obstList = [] 
         for dist in ranges:
-            # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
             dist_mm = dist * 1000
+
+            # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
             if range_min<dist_mm<range_max:
                 if DROP_OFF_LIMITS:
                     # Calcul des coords absolue sur la table
                     x_abs = x_r + dist_mm*math.cos(theta_r + theta)
                     y_abs = y_r + dist_mm*math.sin(theta_r + theta)
-                    # On supprime les points en dehors de la table.
-                    if not ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):
-                        continue
-            
-                # Conversion de (d, theta) en (x_r, y_r)
-                x_rel = dist_mm*math.cos(theta)
-                y_rel = dist_mm*math.sin(theta)
-                obstList.append(Point(x_rel, y_rel))
                 
+                # On supprime les points en dehors de la table. 
+                if not DROP_OFF_LIMITS or ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):
+                    # Conversion de (d, theta) en (x_r, y_r)
+                    x_rel = dist_mm*math.cos(theta)
+                    y_rel = dist_mm*math.sin(theta)
+                    obstList.append(Point(x_rel, y_rel))
+
             theta += angle_inc
 
         return obstList
@@ -159,11 +159,10 @@ class ClusterBuilder:
     def num_of_points(self):
         return self._len
 
+@dataclass(frozen=True)
 class Point:
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    x: float
+    y: float
 
     def euclidean_distance(self, pt2):
         """Retourne la distance entre 2 points dans un repère cartésien. Ici, le repère du robot."""

@@ -582,7 +582,7 @@ class Path(Drawable):
         super().__init__()
         self._startPos = np.zeros(3)
         self._path = []
-        self._finalCap = 0
+        self._finalCap = None
         self._allowCurve = True
 
     def replace(self, new_path, finalCap, allowCurve):
@@ -616,7 +616,7 @@ class Path(Drawable):
      
         if self._allowCurve:
             startPos = Position2D(Point2D(*self._startPos[:2]) / 1000., self._startPos[2])
-            curves = getTrajectoryCurves(startPos, [Point2D(point.x, point.y) / 1000. for point in path])
+            curves = getTrajectoryCurves(startPos, self._finalCap, [Point2D(point.x, point.y) / 1000. for point in path])
             for curve in curves:
                 self._create_path_curve(canvas, curve)
         else:
@@ -630,7 +630,8 @@ class Path(Drawable):
                 node1[:] = node2    
 
         # fleche du dernier cap
-        self._create_path_arrow(canvas, path[-1], self._finalCap)
+        if self._finalCap is not None:
+            self._create_path_arrow(canvas, path[-1], self._finalCap)
 
     def _create_path_circle(self, canvas, node):
         canvas.draw_oval(node, PATHCIRCLEWIDTH / canvas.scale,
@@ -907,7 +908,9 @@ class InterfaceNode(Node):
                 self._orderMarker.show()
                  
             self._path.setStartPos(self._robot.location, self._robot.rotation)
-            self._path.replace(msg.path, msg.theta, msg.kind & DisplacementOrder.ALLOW_CURVE != 0)
+
+            final_cap = msg.theta if msg.kind & DisplacementOrder.FINAL_ORIENTATION != 0 else None
+            self._path.replace(msg.path, final_cap, msg.kind & DisplacementOrder.ALLOW_CURVE != 0)
 
     def updateRobotPosition(self, msg):
         '''Se fait appeler par un subscriber si c'est avec la simulation 1 robot'''

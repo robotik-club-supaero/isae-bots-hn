@@ -133,14 +133,14 @@ class ObstacleWalls(_ObstacleFilter):
                 y_vertex = self.robot_pos.y + i * self.robot_width * sin + j * self.robot_length * cos
 
                 if x_vertex < self.detection_range:
-                    yield self._makeObstacle(x_vertex, y_vertex, dist=x_vertex)
+                    yield self._makeObstacle(0, y_vertex, dist=x_vertex)
                 if 2000 - x_vertex < self.detection_range:
-                    yield self._makeObstacle(x_vertex, y_vertex, dist=2000 - x_vertex)
+                    yield self._makeObstacle(2000, y_vertex, dist=2000 - x_vertex)
 
                 if y_vertex < self.detection_range:
-                    yield self._makeObstacle(x_vertex, y_vertex, dist=y_vertex)
+                    yield self._makeObstacle(x_vertex, 0, dist=y_vertex)
                 if 3000 - y_vertex < self.detection_range:
-                    yield self._makeObstacle(x_vertex, y_vertex, dist=3000 - y_vertex)
+                    yield self._makeObstacle(x_vertex, 3000, dist=3000 - y_vertex)
  
     def _makeObstacle(self, x_vertex, y_vertex, dist):
         x_r, y_r = make_relative(self.robot_pos, Point(x=x_vertex, y=y_vertex))

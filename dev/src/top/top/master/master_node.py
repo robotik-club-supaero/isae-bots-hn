@@ -7,13 +7,15 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int16
 
-from .button import ButtonState, DummyButton, DummyLed, LedState
+from .button import ButtonState, GpioButton, DummyLed, LedState
 from .optional import Optional
 from .oled import OledScreen
 from .speaker import Speaker
 from .log_reader import ProcessLogReader
 
 from config.qos import default_profile
+
+BUTTON_PIN = 15
 
 class Status(IntEnum):
     INVALID = -1
@@ -40,7 +42,7 @@ class MasterNode(Node):
 
         logger.info("Initializing Master node ...")
 
-        self._button = DummyButton()
+        self._button = GpioButton(BUTTON_PIN)
         self._buttonState = self._button.getButtonState()
         self._led = DummyLed()
 

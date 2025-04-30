@@ -1,6 +1,8 @@
 import time
 from enum import IntEnum
 
+import RPi.GPIO as GPIO
+
 DUMMY_BUTTON_TRIGGER_ON_TIMEOUT = 10
 DUMMY_BUTTON_TRIGGER_OFF_TIMEOUT = 15
 
@@ -9,6 +11,21 @@ class ButtonState(IntEnum):
     ON = 1
 
 LedState = ButtonState
+
+class GpioButton:
+    def __init__(self, pin):
+        self.pin = pin
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pin, GPIO.IN)
+
+    def getButtonState(self):
+        state = GPIO.input(self.pin)
+        if state == 1:
+            return ButtonState.ON
+        else:
+            return ButtonState.OFF
+
 
 class DummyButton:
     def __init__(self):

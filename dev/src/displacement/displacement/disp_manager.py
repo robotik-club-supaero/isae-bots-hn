@@ -32,14 +32,11 @@ STOP_RANGE = 50 # mm
 # Distance critique en dessous de laquelle le contournement n'est pas possible.
 # Des manoeuvres d'éloignement lentes peuvent toujours être tentées.
 
-MANOEUVER_ESCAPE_THRESHOLD = 150 # mm
+MANOEUVER_ESCAPE_THRESHOLD= 150 # mm
 # Distance à partir de laquelle une manoeuvre d'éloignement est considérée comme terminée
 
 MIN_SPEED = 0.4 # percentage of max speed of BR
 MANOEUVER_SPEED = 0.05 # percentage of max speed of BR
-
-FAST_MANOEUVER_SPEED = 0.7 # percentage of max speed of BR
-# Vitesse de manoeuvre quand le robot est uniquement à proximité d'obstacles statiques (par ex. les murs)
 
 BYPASS_OBSTACLE_NAME = "_dyn_bypass"
 
@@ -66,7 +63,6 @@ class DisplacementManager:
         self._wait_start = None
         self._bypassing = False
         self._blocked = False
-        self._fastManoeuver = False
         self._manoeuverBlocked = False
 
         self._robot_pos = Position()
@@ -107,7 +103,6 @@ class DisplacementManager:
         self._destination_theta = None
         self._bypassing = False
         self._blocked = False
-        self._fastManoeuver = False
         self._manoeuverBlocked = False 
 
     def cancelDisplacement(self):
@@ -196,11 +191,8 @@ class DisplacementManager:
             self.map.set_dynamic_obstacle(BYPASS_OBSTACLE_NAME, ObstacleCircle(Point_pf(x_abs, y_abs), self.robot_diag + self.obstacle_radius + STOP_RANGE))
 
     def _startManoeuver(self):
-        obs_forward = self._findNearestObstacle(backward=False, check_sides=False, manoeuver=True, verbose=True)
-        obs_backward = self._findNearestObstacle(backward=True, check_sides=False, manoeuver=True, verbose=True)
-
-        dist_forward = obs_forward.min_dist
-        dist_backward = obs_backward.min_dist
+        _, dist_forward = self._findNearestObstacle(backward=False, check_sides=False, manoeuver=True)
+        _, dist_backward = self._findNearestObstacle(backward=True, check_sides=False, manoeuver=True)
 
         if dist_forward < dist_backward:
             if dist_backward > STOP_RANGE:
@@ -213,18 +205,14 @@ class DisplacementManager:
             else:
                 return False
         
-        self._fastManoeuver = obs_forward.min_dist_dyn > BYPASS_RANGE and obs_backward.min_dist_dyn > BYPASS_RANGE
-        self._updateManoeuver()
-        return True
-
-    def _updateManoeuver(self):        
-        speed = 255. * (FAST_MANOEUVER_SPEED if self._fastManoeuver else MANOEUVER_SPEED)
+        speed = 255. * MANOEUVER_SPEED
         if self._manoeuverBackward:
             speed = -speed
 
         self._status = DisplacementStatus.AVOIDANCE_MANOEUVER
         self.logger.info("Obstacle too close for bypass. Starting avoidance manoeuver.")
         self.communicator.sendSpeedCommand(speed, 0.)
+        return True
 
     def update(self):
         if self._status == DisplacementStatus.MOVING:
@@ -283,21 +271,19 @@ class DisplacementManager:
                 self._resume_move()
 
         elif self._status == DisplacementStatus.AVOIDANCE_MANOEUVER:
-            _, dist = self._findNearestObstacle(self._backward)
+            obs, dist = self._findNearestObstacle(self._backward)
             if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
                 self._updateObstacleToBypass()
                 self.logger.info("Manoeuver complete: resuming displacement")
+                self._stopAndWait()
                 self._bypassing = True
                 self._resume_move()
 
             else:
-                obs = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True, verbose=True)
-                if obs.min_dist < STOP_RANGE:
+                _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
+                if dist < STOP_RANGE:
                     self.logger.info("Obstacle detected too close: aborting manoeuver")
                     self._stopAndWait()
-                elif self._fastManoeuver and obs.min_dist_dyn < BYPASS_RANGE:
-                    self._fastManoeuver = False
-                    self._updateManoeuver()
 
     def _obstacleSources(self):
         yield self.obstacles_non_bypassable
@@ -305,39 +291,18 @@ class DisplacementManager:
         if self._enable_wall_detection:
             yield self.obstacles_wall
 
-    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, manoeuver=False, verbose=False, low_limit=STOP_RANGE):
-        results = NearbyObstacles(verbose)
+    def _findNearestObstacle(self, backward, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE):
+        nearest, min_dist = None, float("inf")
         
         for source in self._obstacleSources():
             obs, dist = source.findNearestObstacle(backward, any_dir, check_sides, low_limit)
             if source.allowUnsafeApproach and (manoeuver or self._straight_only) and dist > 0:
                 dist = max(dist, STOP_RANGE)
 
-            results.report(obs, dist)
             if dist < low_limit:
-                return results.finish()
-                
-        return results.finish()
+                return obs, dist
+            if nearest is None or dist < min_dist:
+                nearest = obs
+                min_dist = dist
 
-class NearbyObstacles:
-    def __init__(self, verbose):
-        self.nearest = None
-        self.min_dist = float('inf')
-        self.verbose = verbose
-        if verbose:
-            self.nearest_dyn = None # Nearest obstacle excluding the walls (and possibly other static obstacles)
-            self.min_dist_dyn = float('inf') # Distance of the nearest obstacle excluding the walls (and possibly other static obstacles)
-
-    def report(self, obs, dist):
-        if self.nearest is None or dist < self.min_dist:            
-            self.nearest = obs
-            self.min_dist = dist
-        if self.verbose and obs is not None and not obs.static and (self.nearest_dyn is None or dist < self.min_dist_dyn):
-            self.nearest_dyn = obs
-            self.min_dist_dyn = dist
-
-    def finish(self):
-        if self.verbose:
-            return self
-        else:
-            return self.nearest, self.min_dist
+        return nearest, min_dist

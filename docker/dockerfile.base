@@ -28,7 +28,10 @@ RUN apt-get install -y libsfml-dev
 
 # Install pyqtgraph
 RUN pip install pyqtgraph==0.10.0 --break-system-packages
+
 # Install pyastar2d (path finder)
+# NB: pyastar2d was replaced by our own implementation (see package pathfinder), but was not removed yet
+# TODO: remove when you're sure you won't revert to pyastar2d
 RUN pip install pyastar2d --break-system-packages
 
 # Install and compile third-party dependencies

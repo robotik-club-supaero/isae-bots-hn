@@ -38,6 +38,7 @@ setup(
         'console_scripts': [
             'lidar_node = sensors.lidar.lidar_node:main',
             'sonar_node = sensors.sonar.sonar_node:main',
+            'camera_node = sensors.camera.camera_node:main'
         ],
     },
 )

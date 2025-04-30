@@ -16,9 +16,11 @@ find_package(std_msgs REQUIRED)
 ################################################
 
 set(msg_files
+  "msg/CameraObstacleList.msg"
   "msg/CircleObstacle.msg"
   "msg/DisplacementRequest.msg"
   "msg/EndOfActionMsg.msg"
+  "msg/RectObstacle.msg"
   "msg/SensorObstacle.msg"
   "msg/SensorObstacleList.msg"
 )

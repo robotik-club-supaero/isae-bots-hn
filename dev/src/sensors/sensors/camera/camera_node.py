@@ -20,8 +20,10 @@ class CameraNode(Node):
         self._lora = LoraReceiver(self.get_logger(), LORA_ADDRESS, INTERRUPT_PIN)
         self._lora.setCallback(self.recv_message)
 
-        self.pub_obstacles = self.create_publisher(Empty, "/sensors/obstaclesCamera", latch_profile)
+        self.pub_obstacles = self.create_publisher(CameraObstacleList, "/sensors/obstaclesCamera", latch_profile)
         self.msg = CameraObstacleList()
+
+        self.get_logger().info("Camera node initialized")
 
     def recv_message(self, obstacles):
         msg = self.msg

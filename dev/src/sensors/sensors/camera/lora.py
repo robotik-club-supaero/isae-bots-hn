@@ -5,8 +5,6 @@ import traceback
 
 from raspi_lora import LoRa, ModemConfig
 
-from message.msg import RectObstacle, CameraObstacleList
-
 BYTE_ORDER = "!"
 
 class LoraReceiver:
@@ -15,7 +13,7 @@ class LoraReceiver:
     def __init__(self, logger, address, interrupt, spi_channel=0):
         self.logger = logger
 
-        self._lora = LoRa(spi_channel, interrupt, address, ack=False)
+        self._lora = LoRa(channel=spi_channel, interrupt=interrupt, this_address=address, acks=False)
         self._lora.on_recv = self._on_recv
         self._lora.set_mode_rx()
 
@@ -59,7 +57,7 @@ class LoraReceiver:
 @dataclass(frozen=True)
 class ObstacleBB:
     FORMAT = BYTE_ORDER + "5i"
-    BYTE_SIZE = struct.calcsize(ObstacleBB.FORMAT)
+    BYTE_SIZE = struct.calcsize(FORMAT)
 
     _ARUCO_SUPERSTAR = 1
     _ARUCO_GROUPIE = 2
@@ -91,3 +89,7 @@ class ObstacleBB:
             id_ = ObstacleBB.ID_OTHER
 
         return ObstacleBB(id_, top_x, top_y, width, height)
+
+if __name__ == "__main__":
+    import logging
+    LoraReceiver(logging.getLogger(), 2, 7)

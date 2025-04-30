@@ -116,13 +116,16 @@ RUN pip install pyserial --break-system-packages
 # Install smbus for isb and lcd
 RUN apt install -y python3-smbus
 
-# Install lib Pillow, Adafruit-SSD1306 and RPi.GPIO for oled screen
+# Install lib Pillow and Adafruit-SSD1306 for oled screen
 RUN apt install -y python3-pil
 RUN pip install adafruit-circuitpython-ssd1306 --break-system-packages
-RUN apt install -y python3-rpi.gpio
 
 # Install raspi-lora to communicate with the remote camera
 RUN pip install raspi-lora --break-system-packages
+
+# Replace obsolete lib RPi.GPIO with LPGIO (RPi.GPIO is not compatible with raspi-lora)
+RUN apt autoremove -y python3-rpi.gpio
+RUN apt install -y python3-rpi-lgpio
 
 # Install alsa-utils for sound, pciutils to have the debug command lspci
 RUN apt install alsa-utils pciutils -y

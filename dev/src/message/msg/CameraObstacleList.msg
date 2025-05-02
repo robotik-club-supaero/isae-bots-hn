@@ -2,6 +2,6 @@
 # WIP!
 
 bool opponent_detected
-RectObstacle opponent_robot
+RectObstacle opponent
 RectObstacle[] pamis
 RectObstacle[] other_obstacles

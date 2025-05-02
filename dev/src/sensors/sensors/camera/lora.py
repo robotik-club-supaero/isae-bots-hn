@@ -3,93 +3,60 @@ from typing import List
 import struct
 import traceback
 
-from raspi_lora import LoRa, ModemConfig
+import RPi.GPIO as GPIO
+import board
+import busio
+from digitalio import DigitalInOut 
+import adafruit_rfm9x
 
-BYTE_ORDER = "!"
+class Lora:
 
-class LoraReceiver:
-    INT_FMT = BYTE_ORDER + "i"
-
-    def __init__(self, logger, address, interrupt, spi_channel=0):
+    def __init__(self, logger, cs=board.CE0, reset=board.D17, interrupt=None, spi_channel=0, frequency=868.0, **kwargs):
         self.logger = logger
 
-        self._lora = LoRa(channel=spi_channel, interrupt=interrupt, this_address=address, acks=False)
-        self._lora.on_recv = self._on_recv
-        self._lora.set_mode_rx()
+        sck = board.SCK1 if spi_channel == 1 else board.SCK
+        cs = DigitalInOut(cs)
+        rst = DigitalInOut(reset)        
+        spi = busio.SPI(sck, MOSI=board.MOSI, MISO=board.MISO)
+
+        self._lora = adafruit_rfm9x.RFM9x(spi, cs, rst, frequency, **kwargs)
+        self._lora.spreading_factor = 11 # Increase noise resistance
+        self._lora.receive_timeout = 0.0
+
+        self._supports_interrupts = interrupt is not None
+        if interrupt is not None:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(interrupt, GPIO.IN, pull_up_down=GPIO.DOWN)
+            GPIO.add_event_detect(interrupt, GPIO.RISING)
+            GPIO.add_event_callback(interrupt, self._handle_interrupt)
 
     def setCallback(self, callback):
-        self._process_obstacles = callback
+        if not self._supports_interrupts:
+            self.logger.error("LORA: setCallback called but no pin was specified to handle interrupts. The callback will never be called.")
+        self._on_recv = callback
+    
+    def _on_recv(self, message):
+        pass
+
+    def _handle_interrupt(self):
+        if self._lora.rx_done():
+            message = self.receive()
+            if message is not None:
+                self._on_recv(message)
+
+    def receive(self, **kwargs):
+        message = self._lora.receive(**kwargs)
+        if message is not None:
+            self.logger.debug(f"Received LoRa message: {message}")
+            rssi = self._lora.last_rssi
+            snr = self._lora.last_snr
+            
+            if rssi <= -120 or snr <= -13: # todo check if lib uses db
+                self.logger.warn(f"Bad radio link metrics for received message: RSSI: {rssi}, SNR: {snr}")
+        return message
+
+    def send(self, message, **kwargs):
+        return self._lora.send(message, **kwargs)
 
     def close(self):
-        self._lora.close()
-
-    def _process_obstacles(self, obstacles):
-        pass
-    
-    def _on_recv(self, payload):
-        self.logger.debug(f"Received LoRa message from {payload.header_from}: {payload.message}")
-        if payload.rssi <= -120 or payload.snr <= -13: # todo check if raspi_lora uses db
-            self.logger.warn(f"Bad radio link metrics for received message: RSSI: {payload.rssi}, SNR: {payloar.snr}")
-
-        try:
-            count, = struct.unpack(LoraReceiver.INT_FMT, message[:4])
-            if count != (len(message) - 4) / ObstacleBB.BYTE_SIZE:
-                raise ValueError("invalid size")
-
-            message = payload.message
-            
-            obstacles = []
-            pos = 4
-            for i in range(count):
-                obs = ObstacleBB.parse(message[pos:pos+ObstacleBB.BYTE_SIZE])
-                pos += ObstacleBB.BYTE_SIZE
-
-                if obs is not None:
-                    obstacles.append(obs)
-
-            self._process_obstacles(obstacles)
-
-        except Exception as e:
-            traceback.print_exc()
-            self.logger.error(f"Could not parse LoRa message from the camera: {e}")
-
-
-@dataclass(frozen=True)
-class ObstacleBB:
-    FORMAT = BYTE_ORDER + "5i"
-    BYTE_SIZE = struct.calcsize(FORMAT)
-
-    _ARUCO_SUPERSTAR = 1
-    _ARUCO_GROUPIE = 2
-    _ARUCO_ROBOT = 3
-    _ARUCO_OPPONENT = 51
-
-    ID_OTHER = 0
-    ID_PAMI = 1
-    ID_OPPONENT = 2
-
-    id: int
-    top_x: float
-    top_y: float
-    width: float
-    height: float
-
-    @staticmethod
-    def parse(self, payload):
-        tag, top_x, top_y, width, height = struct.unpack(ObstacleBB.FORMAT, payload)
-        
-        if tag == ObstacleBB._ARUCO_ROBOT:
-            return None # Ignore our position; the camera is not accurate enough (let alone fast enough) to beat the BR encoders
-
-        if tag in (ObstacleBB._ARUCO_SUPERSTAR, ObstacleBB._ARUCO_GROUPIE):
-            id_ = ObstacleBB.ID_PAMI
-        elif tag == ObstacleBB._ARUCO_OPPONENT:
-            id_ = ObstacleBB.ID_OPPONENT
-        else:
-            id_ = ObstacleBB.ID_OTHER
-
-        return ObstacleBB(id_, top_x, top_y, width, height)
-
-if __name__ == "__main__":
-    import logging
-    LoraReceiver(logging.getLogger(), 2, 7)
+        self._lora.sleep()

@@ -7,17 +7,15 @@ from rclpy.executors import ExternalShutdownException
 from config.qos import latch_profile
 from message.msg import RectObstacle, CameraObstacleList
 
-from .lora import LoraReceiver, ObstacleBB
-
-LORA_ADDRESS = 2
-INTERRUPT_PIN = 17
+from .lora import Lora
+from .parser import ObstacleBB
 
 class CameraNode(Node):
 
     def __init__(self):
         super().__init__("CAM")
 
-        self._lora = LoraReceiver(self.get_logger(), LORA_ADDRESS, INTERRUPT_PIN)
+        self._lora = LoraReceiver(self.get_logger())
         self._lora.setCallback(self.recv_message)
 
         self.pub_obstacles = self.create_publisher(CameraObstacleList, "/sensors/obstaclesCamera", latch_profile)
@@ -26,22 +24,28 @@ class CameraNode(Node):
         self.get_logger().info("Camera node initialized")
 
     def recv_message(self, obstacles):
-        msg = self.msg
-        msg.opponent_detected = False
-        msg.pamis.clear()
-        msg.other_obstacles.clear()
+        try:
+            obstacles = ObstacleBB.parseList(obstacles)
+        except Exception as e:
+            self.get_logger().warn(f"Cannot parse obstacles from LoRa message: {e}")
+        
+        else:
+            msg = self.msg
+            msg.opponent_detected = False
+            msg.pamis.clear()
+            msg.other_obstacles.clear()
 
-        for obs in obstacles:
-            obs_rect = RectObstacle(x=obs.top_x, y=y.top_y, width=obs.width)
-            if obs.id == ObstacleBB.ID_OPPONENT:
-                msg.opponent_detected = True
-                msg.opponent = obs_rect
-            elif obs.id == ObstacleBB.ID_PAMI:
-                msg.pamis.append(obs_rect)
-            else:
-                msg.other_obstacles.append(obs_rect)
+            for obs in obstacles:
+                obs_rect = RectObstacle(x=obs.top_x, y=y.top_y, width=obs.width)
+                if obs.id == ObstacleBB.ID_OPPONENT:
+                    msg.opponent_detected = True
+                    msg.opponent = obs_rect
+                elif obs.id == ObstacleBB.ID_PAMI:
+                    msg.pamis.append(obs_rect)
+                else:
+                    msg.other_obstacles.append(obs_rect)
 
-        self.pub_obstacles.publish(msg)
+            self.pub_obstacles.publish(msg)
 
     def close(self):
         self._lora.close()

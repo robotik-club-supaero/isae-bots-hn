@@ -120,10 +120,13 @@ RUN apt install -y python3-smbus
 RUN apt install -y python3-pil
 RUN pip install adafruit-circuitpython-ssd1306 --break-system-packages
 
+# Install lib Adafruit-RFM9X for LoRa
+RUN pip install adafruit-circuitpython-rfm9x --break-system-packages
+
 # Install raspi-lora to communicate with the remote camera
 RUN pip install raspi-lora --break-system-packages
 
-# Replace obsolete lib RPi.GPIO with LPGIO (RPi.GPIO is not compatible with raspi-lora)
+# Replace obsolete lib RPi.GPIO with LPGIO
 RUN apt autoremove -y python3-rpi.gpio
 RUN apt install -y python3-rpi-lgpio
 

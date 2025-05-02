@@ -22,6 +22,7 @@ from rclpy.executors import ExternalShutdownException
 from sensor_msgs.msg import LaserScan
 
 from br_messages.msg import Position
+from message_utils.geometry import make_absolute
 from message.msg import SensorObstacleList, SensorObstacle
 from config.qos import default_profile, br_position_topic_profile
 
@@ -63,7 +64,7 @@ class LidarNode(Node):
         self.pub_obstacles.publish(self.obstacle_msg)
         
     def _get_coords(self, msg):
-        # See https://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/LaserScan.html
+        # See https://docs.ros2.org/foxy/api/sensor_msgs/msg/LaserScan.html
         ranges = msg.ranges
         angle_min = msg.angle_min
         angle_max = msg.angle_max
@@ -72,9 +73,8 @@ class LidarNode(Node):
         range_max = min(MAX_RANGE, 1000*msg.range_max)
 
         if DROP_OFF_LIMITS:
-            x_r = self.robot_pos.x
-            y_r = self.robot_pos.y
-            theta_r = self.robot_pos.theta
+            cos = math.cos(self.robot_pos.theta)
+            sin = math.sin(self.robot_pos.theta)
         
         theta = angle_min
         obstList = [] 
@@ -83,17 +83,17 @@ class LidarNode(Node):
 
             # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
             if range_min<dist_mm<range_max:
+                # Conversion de (d, theta) en (x_rel, y_rel)
+                x_rel = dist_mm*math.cos(theta) + LIDAR_OFFSET_X
+                y_rel = dist_mm*math.sin(theta) + LIDAR_OFFSET_Y
+                obstacle = Point(x_rel, y_rel)
+
                 if DROP_OFF_LIMITS:
-                    # Calcul des coords absolue sur la table
-                    x_abs = x_r + dist_mm*math.cos(theta_r + theta)
-                    y_abs = y_r + dist_mm*math.sin(theta_r + theta)
-                
+                    x_abs, y_abs = make_absolute(self.robot_pos, obstacle, cos=cos, sin=sin)
+
                 # On supprime les points en dehors de la table. 
-                if not DROP_OFF_LIMITS or ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):
-                    # Conversion de (d, theta) en (x_r, y_r)
-                    x_rel = dist_mm*math.cos(theta)
-                    y_rel = dist_mm*math.sin(theta)
-                    obstList.append(Point(x_rel, y_rel))
+                if not DROP_OFF_LIMITS or ((0 < y_abs < TABLE_H) and (0 < x_abs < TABLE_W)):                    
+                    obstList.append(obstacle)
 
             theta += angle_inc
 

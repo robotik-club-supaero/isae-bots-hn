@@ -31,7 +31,6 @@ from br_messages.msg import Position
 
 from message.msg import SensorObstacleList, SensorObstacle
 from message_utils.geometry import make_absolute
-from config import SonarConfig
 from config.qos import default_profile, br_position_topic_profile
 
 from .sonar_config import *
@@ -65,10 +64,7 @@ class SonarNode(Node):
         super().__init__("SON")
         self.get_logger().info("Initializing SonarNode ...")
         
-        # Get sonars from config file of the robot
-        config = SonarConfig()
-        
-        self.sonars_lst = [Sonar(*sonar) for sonar in config.available_sonars]     #on enregistre chaque sonar (sa position et son cap) dans cette liste
+        self.sonars_lst = [Sonar(*sonar) for sonar in SONARS]     #on enregistre chaque sonar (sa position et son cap) dans cette liste
 
         self.pos_robot = Position()
 
@@ -89,10 +85,9 @@ class SonarNode(Node):
         """
         Feedback on obstacle info from sonars
         """
-        # FIXME this only works for two sonars
 
         self.obs_msg.obstacles.clear()
-        dst_lst = [msg.x, msg.y]
+        dst_lst = [msg.x, msg.y] # FIXME this only works for two sonars
 
         for dst, sonar in zip(dst_lst, self.sonars_lst):
             if distance < DIST_MARGIN:

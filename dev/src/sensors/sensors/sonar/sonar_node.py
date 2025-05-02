@@ -24,6 +24,7 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 import numpy as np
 
 from geometry_msgs.msg import Point
@@ -31,6 +32,7 @@ from br_messages.msg import Position
 
 from message.msg import SensorObstacleList, SensorObstacle
 from message_utils.geometry import make_absolute
+from config import SonarConfig
 from config.qos import default_profile, br_position_topic_profile
 
 from .sonar_config import *
@@ -64,7 +66,10 @@ class SonarNode(Node):
         super().__init__("SON")
         self.get_logger().info("Initializing SonarNode ...")
         
-        self.sonars_lst = [Sonar(*sonar) for sonar in SONARS]     #on enregistre chaque sonar (sa position et son cap) dans cette liste
+        # Get sonars from config file of the robot
+        config = SonarConfig()
+        
+        self.sonars_lst = [Sonar(*sonar) for sonar in config.available_sonars]     #on enregistre chaque sonar (sa position et son cap) dans cette liste
 
         self.pos_robot = Position()
 
@@ -113,15 +118,15 @@ class SonarNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-
+    
     node = SonarNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

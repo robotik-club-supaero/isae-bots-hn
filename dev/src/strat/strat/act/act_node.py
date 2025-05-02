@@ -27,6 +27,7 @@ import threading
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 from yasmin import Blackboard
 from yasmin_viewer import YasminViewerPub
@@ -102,7 +103,7 @@ class ActionNode(Node):
         self._sm_thread.start()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.sm.cancel_state()
         self._sm_thread.join()
         self.get_logger().info('Exiting state machine.')
@@ -264,16 +265,15 @@ def main():
 
     rclpy.init(args=sys.argv)
     
-    node = ActionNode()
-  
     try:
-        with node:
-            rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().warning("Node forced to terminate")
+        with ActionNode() as node:
+            try:
+                rclpy.spin(node)
+            except (ExternalShutdownException, KeyboardInterrupt):
+                node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

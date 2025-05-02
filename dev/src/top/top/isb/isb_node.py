@@ -24,6 +24,7 @@ from enum import IntEnum, Enum
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 from std_msgs.msg import Int16, Bool
 
@@ -90,6 +91,8 @@ class ISBNode(Node):
         self.pub_init_pos = self.create_publisher(Int16, '/game/init_pos', latch_profile)
         self.pub_idle = self.create_publisher(Bool, '/br/idle', latch_profile)
 
+        self.update_timer = self.create_timer(0.01, self.update)
+
         self.get_logger().info("ISB node initialized")
 
     def display_idle(self, msg):
@@ -131,32 +134,28 @@ class ISBNode(Node):
 
         self.manager.setLedState(LED_PINS[TRIGGER_LED_ID], LedState.ON)
 
-    def run(self):
-        while True:
-            rclpy.spin_once(self, timeout_sec=0)
-            self.manager.do_blink()
+    def update(self):
+        self.manager.do_blink()
 
-            if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
-                self.start_match()
-                
-            for pin in self.manager.check_buttons():
-                if pin == TRIGGER_PIN:
-                    if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
-                        self.start_match()
-                elif pin == BUTTONS_PINS[STRAT_BUTTON_ID]:
-                    self.update_strat()
-
-                elif pin == BUTTONS_PINS[COLOR_BUTTON_ID]:
-                    self.update_color()
-                
-                elif pin == BUTTONS_PINS[INIT_POS_BUTTON_ID]:
-                    self.update_init_pos()
-
-                elif pin == BUTTONS_PINS[BR_IDLE_BUTTON_ID]:
-                    self.update_idle()
+        if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
+            self.start_match()
             
-            time.sleep(0.01)
-    
+        for pin in self.manager.check_buttons():
+            if pin == TRIGGER_PIN:
+                if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
+                    self.start_match()
+            elif pin == BUTTONS_PINS[STRAT_BUTTON_ID]:
+                self.update_strat()
+
+            elif pin == BUTTONS_PINS[COLOR_BUTTON_ID]:
+                self.update_color()
+            
+            elif pin == BUTTONS_PINS[INIT_POS_BUTTON_ID]:
+                self.update_init_pos()
+
+            elif pin == BUTTONS_PINS[BR_IDLE_BUTTON_ID]:
+                self.update_idle()
+   
     def destroy_node(self):
         self.manager.setLedState(LED_PINS[STATUS_LED_ID], LedState.OFF)
         super().destroy_node()
@@ -169,13 +168,15 @@ class ISBNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-
+    
     node = ISBNode()
     try:
-        node.run()
+        rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
+        node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

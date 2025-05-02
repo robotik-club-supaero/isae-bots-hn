@@ -53,7 +53,7 @@ class LogReader(Thread):
         self.start()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.interrupt()
 
 class ProcessLogReader(subprocess.Popen, LogReader):
@@ -70,12 +70,12 @@ class ProcessLogReader(subprocess.Popen, LogReader):
         subprocess.Popen.__enter__(self)
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.terminate()
-        subprocess.Popen.__exit__(self, *args)
+        subprocess.Popen.__exit__(self, exc_type, exc_value, traceback)
         self.wait()
 
-        LogReader.__exit__(self, *args)
+        LogReader.__exit__(self, exc_type, exc_value, traceback)
 
 if __name__ == "__main__":
     # TEST

@@ -5,6 +5,7 @@ from enum import IntEnum
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Int16
 
 from .button import ButtonState, GpioButton, DummyLed, LedState
@@ -58,6 +59,8 @@ class MasterNode(Node):
 
         ### Subscriptions ###
         self.start_sub = self.create_subscription(Int16, '/game/start', self.cb_start, default_profile)
+
+        self.update_timer = self.create_timer(0.01, self.update_state)
 
         logger.info("Master node initialized")
 
@@ -135,23 +138,13 @@ class MasterNode(Node):
             if self._stopTime is not None and time.time() - self._stopTime > MasterNode.OLED_CLEAR_TIMEOUT:
                 self._stopTime = None
                 self._oled.display_image('SRC_OledLogo2.ppm')
-    
-    def __enter__(self):
-        return self
 
-    def __exit__(self, *args):
+    def destroy_node(self):
+        self._oled.display_string("-- EXITED --")
         self.status = Status.STOPPING
         if self._launchMatch is not None:
-            self._launchMatch.__exit__(*args)
-                    
-    def run(self):
-        try:
-            while rclpy.ok(): 
-                rclpy.spin_once(self, timeout_sec=0.01)
-                self.update_state()
-        finally:
-            self._oled.display_string("-- EXITED --")
-
+            self._launchMatch.__exit__(exc_type, exc_value, traceback)
+      
 #################################################################
 #                                                               #
 #                             Main                              #
@@ -160,14 +153,15 @@ class MasterNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-
+    
     node = MasterNode()
     try:
-        with node:
-            node.run()
+        rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
+        node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

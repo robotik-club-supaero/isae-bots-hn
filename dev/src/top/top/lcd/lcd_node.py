@@ -2,6 +2,7 @@ import sys
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Int16
 
 from config import COLOR
@@ -62,11 +63,9 @@ class LCDNode(Node):
             self.lcd.lcd_display_string("STRAT: " + str(self.strat), line=1)
             self.lcd.lcd_display_string(COLOR[self.color % 2] + f" (ZONE {self.init_pos})", line=2)
 
-    def run(self):     
-        try:
-            rclpy.spin(self)
-        finally:
-            self.lcd.lcd_clear()
+    def destroy_node(self):
+        self.lcd.lcd_clear()
+        super().destroy_node()
 
 #################################################################
 #                                                               #
@@ -76,13 +75,15 @@ class LCDNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-
+    
     node = LCDNode()
     try:
-        node.run()
+        rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
+        node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

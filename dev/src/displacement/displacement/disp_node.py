@@ -19,6 +19,7 @@ from enum import IntEnum
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Int16, Float32MultiArray, String, Empty
 
 from br_messages.msg import Position, Point, DisplacementOrder, Command
@@ -29,9 +30,7 @@ from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 from .disp_manager import DisplacementManager
 from .pathfinder import PathFinder, USE_REGULAR_GRID
-from .disp_consts import BR_Callback, DspCallback
-
-SIMULATION = True
+from .disp_consts import BR_Callback, DspCallback, SIMULATION, AVOIDANCE_UPDATE_INTERVAL, PUBLISH_GRID_INTERVAL
 
 class DisplacementNode(Node):
 
@@ -42,6 +41,7 @@ class DisplacementNode(Node):
 
         self.match_ended = False
         
+        self._last_update = 0
         self.manager = DisplacementManager(self, self.get_logger())
 
         self._setup_config()
@@ -89,6 +89,8 @@ class DisplacementNode(Node):
 
         self._setup_init_pos()
 
+        self.get_logger().info("Displacement node initialized")
+
     def sendPathCommand(self, path, backward, final_theta, allow_curve=True):        
         msg = self.msg_go_to
 
@@ -132,6 +134,9 @@ class DisplacementNode(Node):
 
     def reportBlocked(self):
         self.pub_strat.publish(Int16(data=DspCallback.DEST_BLOCKED))
+
+    def exit(self):
+        self.manager.cancelDisplacement()
 
     def cb_color(self, msg):
         """
@@ -184,13 +189,17 @@ class DisplacementNode(Node):
     def callback_lidar(self, msg):
         """Traitement des msg reçus du lidar etc."""
         self.manager.setLidarObstacles(msg)
+        self._update_manager()
 
     def callback_sonar(self, msg):
         self.manager.setSonarObstacles(msg)
+        self._update_manager()
 
-    def _update_manager(self):
-        self.manager.update()
-        self.publish_grid()
+    def _update_manager(self, force=False):
+        if force or time.time() - self._last_update > AVOIDANCE_UPDATE_INTERVAL:
+            self._last_update = time.time()
+            self.manager.update()
+            self.publish_grid()
 
     def callback_teensy(self, msg):
         """Traitement des msg reçus de la teensy."""
@@ -244,7 +253,7 @@ class DisplacementNode(Node):
         """Publish grid to the interfaceNode."""
 
         # If we use a regular grid instead of a visibility graph, don't re-publish the grid because it has not changed
-        if SIMULATION and (force or not USE_REGULAR_GRID) and time.time() - self.last_grid_update > 0.2:
+        if SIMULATION and (force or not USE_REGULAR_GRID) and time.time() - self.last_grid_update > PUBLISH_GRID_INTERVAL:
             self.last_grid_update = time.time()
 
             if grid is None: grid = self.manager.getPathFinder().get_grid()
@@ -257,6 +266,10 @@ class DisplacementNode(Node):
             self.pub_grid.publish(msg)
             self.last_grid_update = time.time()
 
+    def destroy_node(self):
+        self.manager.cancelDisplacement()
+        super().destroy_node()
+
 #################################################################
 #																#
 # 							MAIN PROG 							#
@@ -265,18 +278,15 @@ class DisplacementNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    
     node = DisplacementNode()
-
-    node.get_logger().info("Waiting for match to start")
-
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
+
 
 #################################################################
 if __name__ == '__main__':

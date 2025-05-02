@@ -21,6 +21,7 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 import sys
 import time
@@ -101,6 +102,8 @@ class DecisionsNode(Node):
         self.remaining_stands = [1 for _ in range(len(self.config.pickup_stand_pos))]
         self.deposit_slots = [1 for _ in range(len(self.config.deposit_pos))]
         self.nb_actions = 0
+
+        self.get_logger().info("Decision node initialized")
 
     def publishScore(self):
         score = Int16()
@@ -280,16 +283,13 @@ def main():
     rclpy.init(args=sys.argv)
     
     node = DecisionsNode()
-
-    node.get_logger().info("Waiting for match to start")
-
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

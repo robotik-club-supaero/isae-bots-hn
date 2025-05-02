@@ -27,6 +27,7 @@ import time
 from time import perf_counter
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 import cwiid
 from enum import IntEnum, Enum
 from std_msgs.msg      import  Bool
@@ -87,6 +88,7 @@ class WiiControlNode(Node):
         
         self.command_pub = self.create_publisher(Command, "/br/command", default_profile)
         self.idle_pub = self.create_publisher(Bool, "/br/idle", default_profile)
+        self.update_timer = self.create_timer(0.05, self.unitstep)
 
         # -- Connection to Wiimote
         self.wiimote = None
@@ -230,21 +232,6 @@ class WiiControlNode(Node):
         """
         self.get_logger().error(msg)
 
-
-    def mainloop(self):
-        """
-        ROS node mainloop
-        """
-        begin = perf_counter()
-        while rclpy.ok():
-            # Refreshing rate of 20Hz with 1000Hz resolution
-            while perf_counter() - begin < 0.1:
-                time.sleep(0.001)
-            begin = perf_counter()
-
-            self.unitstep()
-            rclpy.spin_once(self, timeout_sec=0)
-
 #################################################################
 #                                                               #
 #                             MAIN                              #
@@ -253,13 +240,14 @@ class WiiControlNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-
     node = WiiControlNode()
     try:
-        node.mainloop()
+        rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
+        node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

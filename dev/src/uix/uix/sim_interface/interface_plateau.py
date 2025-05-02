@@ -15,6 +15,7 @@
 
 import os
 import sys
+import threading
 from threading import RLock, Thread
 import time
 import random
@@ -25,6 +26,7 @@ import numpy as np
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Bool, Int16, Float32MultiArray, Empty
 
 import tkinter as tk
@@ -967,8 +969,14 @@ class InterfaceNode(Node):
                 plant.invalidate()
                 self._plants.append(plant)   
 
+    def _spin(self):
+        try:
+            rclpy.spin(self)
+        except (ExternalShutdownException, KeyboardInterrupt):
+            self.get_logger().warning("Node forced to terminate")
+
     def mainloop(self, n=0):
-        thread = Thread(target=lambda: rclpy.spin(self))
+        thread = Thread(target=self._spin)
         try:
             thread.start()
             self._fenetre.mainloop(n)           
@@ -977,12 +985,15 @@ class InterfaceNode(Node):
 
 def main():
     rclpy.init(args=sys.argv)
-    node = InterfaceNode()    
+    
+    node = InterfaceNode()
     try:
         node.mainloop()
+    except (ExternalShutdownException, KeyboardInterrupt):
+        pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from sensor_msgs.msg import LaserScan
 
 from br_messages.msg import Position
@@ -177,16 +178,14 @@ class Point:
 
 def main():
     rclpy.init(args=sys.argv)
-
     node = LidarNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
-
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

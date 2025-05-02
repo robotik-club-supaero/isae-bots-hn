@@ -25,6 +25,7 @@ from time import sleep
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 import random
 from std_msgs.msg      import Int16, Empty
@@ -170,15 +171,15 @@ class ActuatorNode(Node):
 #################################################################
 def main():
     rclpy.init(args=sys.argv)
-
+    
     node = ActuatorNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

@@ -27,6 +27,7 @@ import numpy as np
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 from message.msg import SensorObstacleList, SensorObstacle, CircleObstacle
 from message_utils.geometry import make_relative
@@ -42,7 +43,7 @@ from config.qos import default_profile, br_position_topic_profile
 #################################################################
 
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
-SPEED = 0 # mm/s | can be 0 for fixed obstacle
+SPEED = 500 # mm/s | can be 0 for fixed obstacle
 INIT_POS = [500., 1300.]
 
 #################################################################
@@ -67,10 +68,14 @@ class SIM_ObstaclesNode(Node):
         self.robot_theta = 0
         self.obstacle_pos = np.array(INIT_POS)
         self.obstacle_speed = None
+        self.last_update = None
         
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
         self.obs_info_pub = self.create_publisher(SensorObstacleList, "/sensors/obstaclesLidar", default_profile)
         self.obs_simu_pub = self.create_publisher(CircleObstacle, "/simu/robotObstacle", default_profile)
+        self.update_timer = self.create_timer(0.01, self.update_pos)
+
+        self.msg = SensorObstacleList()
         
         self.get_logger().info("OBS node initialized")
 
@@ -104,40 +109,34 @@ class SIM_ObstaclesNode(Node):
         # L'obstacle ne bouge pas quand il est proche de notre robot afin de tester nos manoeuvres d'évitement/éloignement
         return SPEED > 0 and dist > self.robot_diag + OBSTACLE_RADIUS + 100 and np.linalg.norm(self.obstacle_speed) == 0
         
-    def run(self):
-       
-        msg = SensorObstacleList()
+    def update_pos(self):
+        if self.last_update is None: self.last_update = time.time()
+      
+        dist = np.linalg.norm(self.robot_pos - self.obstacle_pos)
 
-        t = time.time()
+        n = time.time()
+        elapsed = n - self.last_update
+        self.last_update = n
+        
+        while self._shouldChangeSpeed():
+            # Change speed randomly or to avoid opponent                        
+            speed_vec = np.random.rand(2) * 2 * SPEED - SPEED
+            speed = np.linalg.norm(speed_vec)
 
-        while rclpy.ok():
-            rclpy.spin_once(self, timeout_sec=0.1)
+            if speed > SPEED:
+                speed_vec *= SPEED / speed
+            elif speed < SPEED * 0.8:
+                speed_vec *= SPEED / speed * 0.8
 
-            dist = np.linalg.norm(self.robot_pos - self.obstacle_pos)
+            self.obstacle_speed = speed_vec
 
-            n = time.time()
-            elapsed = n - t
-            t = n
+        self.obstacle_pos += self.obstacle_speed * elapsed
             
-            while self._shouldChangeSpeed():
-                # Change speed randomly or to avoid opponent                        
-                speed_vec = np.random.rand(2) * 2 * SPEED - SPEED
-                speed = np.linalg.norm(speed_vec)
+        x_rel, y_rel = make_relative(Position(x=self.robot_pos[0], y=self.robot_pos[1], theta=self.robot_theta), Point(x=self.obstacle_pos[0], y=self.obstacle_pos[1]))
 
-                if speed > SPEED:
-                    speed_vec *= SPEED / speed
-                elif speed < SPEED * 0.8:
-                    speed_vec *= SPEED / speed * 0.8
-
-                self.obstacle_speed = speed_vec
-
-            self.obstacle_pos += self.obstacle_speed * elapsed
-             
-            x_rel, y_rel = make_relative(Position(x=self.robot_pos[0], y=self.robot_pos[1], theta=self.robot_theta), Point(x=self.obstacle_pos[0], y=self.obstacle_pos[1]))
-
-            msg.obstacles = [SensorObstacle(x=x_rel, y=y_rel)]
-            self.obs_info_pub.publish(msg)
-            self.obs_simu_pub.publish(CircleObstacle(x=self.obstacle_pos[0], y=self.obstacle_pos[1], radius=float(OBSTACLE_RADIUS)))
+        self.msg.obstacles = [SensorObstacle(x=x_rel, y=y_rel)]
+        self.obs_info_pub.publish(self.msg)
+        self.obs_simu_pub.publish(CircleObstacle(x=self.obstacle_pos[0], y=self.obstacle_pos[1], radius=float(OBSTACLE_RADIUS)))
 
 #######################################################################
 #																      #
@@ -150,12 +149,12 @@ def main():
     
     node = SIM_ObstaclesNode()
     try:
-        node.run()
-    except KeyboardInterrupt:
+        rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
         node.get_logger().warning("Node forced to terminate")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

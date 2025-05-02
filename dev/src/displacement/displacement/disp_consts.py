@@ -5,3 +5,9 @@ class BR_Callback(IntEnum):
     OK_ORDER = 7
     ERROR_ASSERV = 0
     # Non exhaustive (see source code of BR)
+
+SIMULATION = True # Whether to publish the grid to the interface
+
+PUBLISH_GRID_INTERVAL = 0.2 # s # Only read if SIMULATION == True 
+
+AVOIDANCE_UPDATE_INTERVAL = 0.05 # s

@@ -1,3 +1,6 @@
+# Displacement request from act_node to disp_node.
+# This is NOT what is sent to the BR. See br_messages/DisplacementOrder.
+
 int16 MOVE = 1
 # Must be used along with flag MOVE.
 int16 BACKWARD = 2

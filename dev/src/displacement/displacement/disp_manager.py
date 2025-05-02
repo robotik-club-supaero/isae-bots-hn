@@ -249,7 +249,7 @@ class DisplacementManager:
         elif self._status == DisplacementStatus.WAITING:
             obs, dist = self._findNearestObstacle(self._backward)
 
-            if dist < STOP_RANGE and (obs.static or time.time() - self._wait_start > STAND_BEFORE_BYPASS):
+            if dist < STOP_RANGE and time.time() - self._wait_start > STAND_BEFORE_BYPASS:
                 if self._manoeuverBlocked:
                     self.logger.warn(f"Displacement aborted because the robot is blocked.")
                     self.cancelDisplacement()
@@ -271,19 +271,18 @@ class DisplacementManager:
                 self._resume_move()
 
         elif self._status == DisplacementStatus.AVOIDANCE_MANOEUVER:
-            obs, dist = self._findNearestObstacle(self._backward)
-            if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
-                self._updateObstacleToBypass()
-                self.logger.info("Manoeuver complete: resuming displacement")
+            _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
+            if dist < STOP_RANGE:
+                self.logger.info("Obstacle detected too close: aborting manoeuver")
                 self._stopAndWait()
-                self._bypassing = True
-                self._resume_move()
-
             else:
-                _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
-                if dist < STOP_RANGE:
-                    self.logger.info("Obstacle detected too close: aborting manoeuver")
+                _obs, dist = self._findNearestObstacle(self._backward, lateral_margin=MANOEUVER_ESCAPE_THRESHOLD)
+                if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
+                    self._updateObstacleToBypass()
+                    self.logger.info("Manoeuver complete: resuming displacement")
                     self._stopAndWait()
+                    self._bypassing = True
+                    self._resume_move()
 
     def _obstacleSources(self):
         yield self.obstacles_non_bypassable
@@ -291,12 +290,12 @@ class DisplacementManager:
         if self._enable_wall_detection:
             yield self.obstacles_wall
 
-    def _findNearestObstacle(self, backward, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE):
+    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE, lateral_margin=STOP_RANGE):
         nearest, min_dist = None, float("inf")
         
         for source in self._obstacleSources():
-            obs, dist = source.findNearestObstacle(backward, any_dir, check_sides, low_limit)
-            if source.allowUnsafeApproach and (manoeuver or self._straight_only) and dist > 0:
+            obs, dist = source.findNearestObstacle(backward, any_dir=any_dir, check_sides=check_sides, low_limit=low_limit, lateral_margin=lateral_margin)
+            if source.allowUnsafeApproach and self._straight_only and dist > 0:
                 dist = max(dist, STOP_RANGE)
 
             if dist < low_limit:

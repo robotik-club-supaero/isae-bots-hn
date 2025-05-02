@@ -12,7 +12,6 @@ from message_utils.geometry import make_relative
 class Obstacle:
     x: float
     y: float
-    static: bool
 
 class RobotSide(IntEnum):
     FRONT = 0
@@ -32,42 +31,34 @@ class _ObstacleFilter(ABC):
         self.robot_diag = config.robot_diagonal / 2
         self.logger = logger
 
-    def _isRelevant(self, x_r, y_r, backward, any_dir, check_sides=True):
-        return any_dir or (not backward and x_r > 0) or (backward and x_r < 0) or \
-                (check_sides and abs(x_r) < self.robot_width and abs(y_r) < self.robot_diag) or \
-                (check_sides and abs(x_r) < self.robot_diag and abs(y_r) < self.robot_length)
+    def _isRelevant(self, obs, backward, *, any_dir, check_sides=True, lateral_margin=0):
+        x_r, y_r = obs.x, obs.y
 
-    def _computeDistance(self, obs):
-        return NotImplementedError("This sensor should have set field `dist`.")
+        return any_dir or (not backward and x_r > 0) or (backward and x_r < 0) or \
+                (check_sides and x_r*x_r+y_r*y_r < (self.robot_diag+lateral_margin)**2) or \
+                (check_sides and isinstance(self, ObstacleBypassable) and x_r*x_r+y_r*y_r < (2*self.robot_diag+lateral_margin)**2)
 
     @abstractmethod
     def _getObstacles(self):
-        pass
-
-    @property
-    @abstractmethod
-    def _isStatic(self):
         pass
 
     def _getObstacleDistance(self, obs):
         if obs.dist >= 0:
             return obs.dist
         else:
-            try:
-                return self._computeDistance(obs)
-            except NotImplementedError:
-                return max(0, math.sqrt(obs.x*obs.x + obs.y*obs.y) - self.robot_diag)
+            self.logger.error("Obstacle distance not specified by " + type(self).__name__)
+            return max(0, math.sqrt(obs.x*obs.x + obs.y*obs.y) - self.robot_diag)
 
-    def findObstacles(self, backward, any_dir=False, check_sides=True):
+    def findObstacles(self, backward, *, any_dir=False, check_sides=True, lateral_margin=0):
         for obs in self._getObstacles():
-            if self._isRelevant(obs.x, obs.y, backward, any_dir, check_sides):
+            if self._isRelevant(obs, backward, any_dir=any_dir, check_sides=check_sides, lateral_margin=lateral_margin):
                 d = self._getObstacleDistance(obs)
-                yield Obstacle(obs.x, obs.y, self._isStatic), d
+                yield Obstacle(obs.x, obs.y), d
 
-    def findNearestObstacle(self, backward, any_dir=False, check_sides=True, low_limit=0):
+    def findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, low_limit=0, lateral_margin=0):
         nearest = None
         min_dist = float("inf")
-        for obs, dist in self.findObstacles(backward, any_dir, check_sides):
+        for obs, dist in self.findObstacles(backward, any_dir=any_dir, check_sides=check_sides, lateral_margin=lateral_margin):
             if dist < min_dist:
                 nearest = obs
                 min_dist = dist
@@ -102,10 +93,6 @@ class ObstacleWalls(_ObstacleFilter):
 
     def setRobotPosition(self, position):
         self.robot_pos = position
-
-    @property
-    def _isStatic(self):
-        return True
 
     def _getObstacles(self):
         #TOP RIGHT VERTEX:
@@ -165,10 +152,6 @@ class ObstacleNonBypassable(_ObstacleFilter):
     def setObstaclesSonar(self, obstacles):
         self.obstacles_sonar = obstacles.obstacles
 
-    @property
-    def _isStatic(self):
-        return False
-
     def _getObstacles(self):
         return iter(self.obstacles_sonar)
 
@@ -188,14 +171,14 @@ class ObstacleBypassable(_ObstacleFilter):
     def setObstaclesLidar(self, obstacles):
         self.obstacles_lidar = obstacles.obstacles
 
-    @property
-    def _isStatic(self):
-        return False
+    def _makeObstacle(self, obs):
+        if obs.dist >= 0:
+            # Distance already computed
+            return obs
 
-    def _computeDistance(self, obs):
         x_r, y_r = obs.x, obs.y
 
-        # TODO: if we know the orientation of the opponent (thanks to the camera) we can have a better margin
+        # TODO: the camera could help determine the shell-to-shell distance
         obstacle_margin = self.obstacle_radius
 
         # Première estimation, souvent pessimiste (correspond au pire cas, atteint si les robots sont coin-à-coin)
@@ -230,16 +213,19 @@ class ObstacleBypassable(_ObstacleFilter):
             # Le robot est devant ou derrière (selon X dans le repère local)
             estimation_2 = abs(x_r) - self.robot_width - obstacle_margin
         else:
-            # Le robot est à gauche ou à drotie (selon Y dans le repère local)
+            # Le robot est à gauche ou à droite (selon Y dans le repère local)
             estimation_2 = abs(y_r) - self.robot_length - obstacle_margin
 
         # Les deux estimations sont pessimistes, donc on prend la plus grande des deux
         # L'estimation 1 a tendance à être plus précise quand les robots sont coin-à-coin (en diagonale),
         # et l'estimation 2 a tendance à être plus précise quand les robots sont côte-à-côte.
-        return max(0, estimation_1, estimation_2)
+        obs.dist = max(0, estimation_1, estimation_2)
+
+        return obs
 
     def _getObstacles(self):
-        return iter(self.obstacles_lidar)
+        return (self._makeObstacle(obs) for obs in self.obstacles_lidar)
 
 def cross_product_sign(x1, y1, x2, y2):
     return x1*y2-y1*x2
+

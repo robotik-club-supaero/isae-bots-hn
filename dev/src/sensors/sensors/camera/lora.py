@@ -11,10 +11,9 @@ import adafruit_rfm9x
 
 class Lora:
 
-    def __init__(self, logger, cs=board.CE0, reset=board.D17, interrupt=None, spi_channel=0, frequency=868.0, **kwargs):
+    def __init__(self, logger, cs=board.CE1, reset=board.D25, interrupt=None, sck=board.SCK, frequency=868.0, **kwargs):
         self.logger = logger
 
-        sck = board.SCK1 if spi_channel == 1 else board.SCK
         cs = DigitalInOut(cs)
         rst = DigitalInOut(reset)        
         spi = busio.SPI(sck, MOSI=board.MOSI, MISO=board.MISO)

@@ -1,5 +1,6 @@
 import time
 from enum import IntEnum
+from abc import ABC, abstractmethod
 
 import RPi.GPIO as GPIO
 
@@ -26,7 +27,6 @@ class GpioButton:
         else:
             return ButtonState.OFF
 
-
 class DummyButton:
     def __init__(self):
         self._init = time.time()
@@ -42,7 +42,8 @@ class DummyButton:
         
         return self._state
 
-class DummyLed:
+class BaseLed(ABC):
+    """Base class for a Led with a blinking logic"""
     def __init__(self):
         self._setLedState(LedState.OFF)
         self._lastBlink = 0
@@ -60,6 +61,11 @@ class DummyLed:
 
     def _setLedState(self, state):
         self._state = state
+        self._onChange()
+
+    @abstractmethod
+    def _onChange(self):
+        pass
 
     def update(self):
         if self._blinking:
@@ -69,3 +75,23 @@ class DummyLed:
                     self._setLedState(LedState.OFF)
                 else:
                     self._setLedState(LedState.ON)
+
+    @property
+    def state(self):
+        return self._state
+
+class DummyLed(BaseLed):
+    def _onChange(self):
+        pass
+
+class GpioLed(BaseLed):
+    def __init__(self, pin):
+        super().__init__()
+
+        self.pin = pin
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pin, GPIO.OUT)
+
+    def _onChange(self):
+        GPIO.output(self.pin, self.state == LedState.ON)

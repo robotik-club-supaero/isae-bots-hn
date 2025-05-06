@@ -29,12 +29,12 @@ class Status(IntEnum):
 class MasterNode(Node):
 
     LOG_LINES = 3
-    LOG_STRIP_PATTERN = r'(\[[A-Z]{3}\]|\/[A-Z]{3})[:\s]*' 
+    LOG_MATCH_PATTERN = r'\[\w+\]: [\w\W]+'
     LOG_WRAP_LEN = 21
 
     LED_BLINK_INTERVAL = 0.25 # s
 
-    OLED_CLEAR_TIMEOUT = 2 # s
+    OLED_CLEAR_TIMEOUT = 1 # s
 
     def __init__(self):
         super().__init__("master_node")
@@ -94,7 +94,8 @@ class MasterNode(Node):
                 self.status = Status.STARTING
                 self._launchMatch = ProcessLogReader(
                     cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"'],
-                    max_log_lines=MasterNode.LOG_LINES
+                    max_log_lines=MasterNode.LOG_LINES,
+                    transform=MasterNode._transform_logs
                 )
                 self._startTime = time.time()
                 self._led.setLedBlinking(MasterNode.LED_BLINK_INTERVAL)
@@ -124,20 +125,24 @@ class MasterNode(Node):
         
         if self._launchMatch is not None and self._launchMatch.is_dirty:
             logs = self._launchMatch.get_logs()
-
-            transformedLogs = []
-            for log in logs:
-                # Remove log header (only keep message)
-                output_line = re.split(MasterNode.LOG_STRIP_PATTERN, log)[-1]
-                transformedLogs.append(output_line[:MasterNode.LOG_WRAP_LEN])
-                transformedLogs.append(output_line[MasterNode.LOG_WRAP_LEN:])
- 
-            self._oled.display_lines(transformedLogs)
+            self._oled.display_lines(logs)
         
         if self.status == Status.INACTIVE and self._buttonState == ButtonState.OFF:
             if self._stopTime is not None and time.time() - self._stopTime > MasterNode.OLED_CLEAR_TIMEOUT:
                 self._stopTime = None
                 self._oled.display_image('SRC_OledLogo2.ppm')
+
+    @staticmethod
+    def _transform_logs(line):
+        matches = re.findall(MasterNode.LOG_MATCH_PATTERN, line)
+        if len(matches) == 0:
+            return ()
+
+        output_line = matches[0]
+        if len(output_line) > MasterNode.LOG_WRAP_LEN:
+            return output_line[:MasterNode.LOG_WRAP_LEN], output_line[MasterNode.LOG_WRAP_LEN:]
+        else:
+            return output_line, 
 
     def destroy_node(self):
         self._oled.display_string("-- EXITED --")

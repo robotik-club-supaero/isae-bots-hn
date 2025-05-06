@@ -6,17 +6,18 @@ import signal
 
 class LogReader(Thread):
 
-    def __init__(self, stream, depth):
+    def __init__(self, stream, depth, transform=None):
         assert depth > 0
         super().__init__()
         self._stream = stream
+        self._transform = transform
         self._lines = deque(maxlen=depth)
         self._dirty = False
         self.mutex = Lock()
         self.interrupted = Event()
 
     def run(self):
-        while True:
+        while not self.interrupted.is_set():
             try:
                 readable, _, _ = select.select([self._stream], [], [], 1)
                 if self.interrupted.is_set():
@@ -27,12 +28,21 @@ class LogReader(Thread):
                 line = self._stream.readline()
                 if not line or self.interrupted.is_set():
                     break
+                line = line.decode().strip()
+
             except:
                 # Stream closed (process ended)
                 break
 
+            if self._transform is not None:
+                line = self._transform(line)
+                if not line: continue
+
+            if isinstance(line, str): line = (line,)
+
             with self.mutex:
-                self._lines.append(line.decode().strip())
+                for line_ in line:
+                    self._lines.append(line_)
                 self._dirty = True
 
     @property
@@ -58,9 +68,9 @@ class LogReader(Thread):
 
 class ProcessLogReader(subprocess.Popen, LogReader):
 
-    def __init__(self, cmd, max_log_lines):
+    def __init__(self, cmd, max_log_lines, transform=None):
         subprocess.Popen.__init__(self, cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
-        LogReader.__init__(self, self.stdout, depth=max_log_lines)
+        LogReader.__init__(self, self.stdout, depth=max_log_lines, transform=transform)
         LogReader.start(self)
 
     def terminate(self):
@@ -82,7 +92,9 @@ if __name__ == "__main__":
     import time
     import re
 
-    with ProcessLogReader(["ros2", "launch", "scripts/simulator.launch"], 1) as process:
+    LOG_MATCH_PATTERN = r'\[\w+\]: [\w\W]+'
+    
+    with ProcessLogReader(["ros2", "launch", "scripts/simulator.launch"], 1, lambda line: [*re.findall(LOG_MATCH_PATTERN, line),""][0]) as process:
         while process.poll() is None:
             if process.is_dirty:
                 print(process.get_logs())

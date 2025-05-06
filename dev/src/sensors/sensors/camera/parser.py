@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+import struct
+
 @dataclass(frozen=True)
 class ObstacleBB:
 

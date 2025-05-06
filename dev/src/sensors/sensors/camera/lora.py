@@ -1,7 +1,4 @@
-from dataclasses import dataclass
 from typing import List
-import struct
-import traceback
 
 import RPi.GPIO as GPIO
 import board

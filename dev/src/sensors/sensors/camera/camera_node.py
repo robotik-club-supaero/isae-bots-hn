@@ -15,7 +15,7 @@ class CameraNode(Node):
     def __init__(self):
         super().__init__("CAM")
 
-        self._lora = LoraReceiver(self.get_logger())
+        self._lora = Lora(self.get_logger())
         self._lora.setCallback(self.recv_message)
 
         self.pub_obstacles = self.create_publisher(CameraObstacleList, "/sensors/obstaclesCamera", latch_profile)

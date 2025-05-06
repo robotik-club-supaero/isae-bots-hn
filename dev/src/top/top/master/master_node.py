@@ -28,7 +28,7 @@ class Status(IntEnum):
 
 class MasterNode(Node):
 
-    LOG_LINES = 3
+    LOG_LINES = 6
     LOG_MATCH_PATTERN = r'\[\w+\]: [\w\W]+'
     LOG_WRAP_LEN = 21
 

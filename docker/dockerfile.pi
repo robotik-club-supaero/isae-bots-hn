@@ -119,12 +119,11 @@ RUN apt install -y python3-smbus
 # Install lib Pillow and Adafruit-SSD1306 for oled screen
 RUN apt install -y python3-pil
 RUN pip install adafruit-circuitpython-ssd1306 --break-system-packages
+# Download font for oled screen
+RUN wget -P /app https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/refs/heads/main/examples/font5x8.bin
 
 # Install lib Adafruit-RFM9X for LoRa
 RUN pip install adafruit-circuitpython-rfm9x --break-system-packages
-
-# Install raspi-lora to communicate with the remote camera
-RUN pip install raspi-lora --break-system-packages
 
 # Replace obsolete lib RPi.GPIO with LPGIO
 RUN apt autoremove -y python3-rpi.gpio

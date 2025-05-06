@@ -1,18 +1,17 @@
 <!--
-Launch script for GR (sim for now)
+Strat + simulation nodes
 -->
-
 
 <launch>  
 
 	<!-- strat nodes -->
-	<node name="DEC" pkg="strat" exec="dec_node" output="screen"/>
-	<node name="ACT" pkg="strat" exec="act_node" output="screen"/>
-	<node name="DSP" pkg="displacement" exec="disp_node" output="screen"/>
-	<node name="ACN" pkg="sim" exec="actuator_node" output="screen"/>
+	<include file="scripts/strat.launch" />
 
-	<!-- sim nodes -->
-	<node name="OBS" pkg="sim" exec="obstacle_node" output="screen"/>
-	<node name="BRN" pkg="br_simu" exec="simulation_br" output="screen"/>
+	<!-- sim nodes (actuators and BR) -->
+	<node name="ACN" pkg="sim" exec="actuator_node" output="both"/>
+	<node name="BRN" pkg="br_simu" exec="simulation_br" output="both"/>
+
+	<!-- simulates a fake moving obstacle -->
+	<node name="OBS" pkg="sim" exec="obstacle_node" output="both"/>
 
 </launch>

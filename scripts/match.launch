@@ -1,27 +1,41 @@
-<launch>  
+<!-- Strat + serial + HMI nodes. Can only be launched on the real robot, not on a computer. -->
+
+<launch> 
+	<!-- Serial ports-->
 	<arg name='BR' default="/dev/ttyBR" />
 	<arg name='ACT' default="/dev/ttyACT" />
 
+	<!-- true to simulate the actuators -->
+	<arg name="NO_ACT" default="false" />
+	<!-- true to disable the lidar -->
+	<arg name="NO_LIDAR" default="false" />
+	<!-- true to disable human-machine interface nodes -->
+	<arg name="NO_HMI" default="false" />
+
 	<!-- micro_ros -->
+	<!-- 'output="both' was removed because micro_ros is way too verbose,
+		and the Teensy_s already have a blinking led to report that micro_ros is working -->
+	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var BR)" />
+	<node name="SerialNodeACT" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var ACT)" unless="$(var NO_ACT)" />
+	
+	<!-- Simulate the actuators if not present -->
+	<node name="ACN" pkg="sim" exec="actuator_node" output="both" if="$(var NO_ACT)"/>
 
-	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var BR)" />
-	<node name="SerialNodeACT" pkg="micro_ros_agent" exec="micro_ros_agent" output="screen" args="serial --dev $(var ACT)" />
-
-	<!-- driver_lidar -->
-
-	<include file="$(find-pkg-share urg_node2)/launch/urg_node2.launch.py" />
+	<!-- Hokuyo driver for the Lidar -->
+	<include file="$(find-pkg-share urg_node2)/launch/urg_node2.launch.py" unless="$(var NO_LIDAR)" />
 	
 	<!-- traitement obstacles -->
-
-	<node name="LidarNode" pkg="sensors" exec="lidar_node"  output="screen" />
+	<node name="LID" pkg="sensors" exec="lidar_node" output="both" />
+	<!-- <node name="SON" pkg="sensors" exec="sonar_node" output="both" /> -->
+	<!-- <node name="LORA" pkg="sensors" exec="camera_node" output="both" /> -->
 
 	<!-- strat -->
+	<include file="scripts/strat.launch" />
 
-	<node name="DEC" pkg="strat" exec="dec_node" output="screen" />
-	<node name="ACT" pkg="strat" exec="act_node" output="screen" />
-	<node name="DSP" pkg="displacement" exec="disp_node" output="screen" />
-
-	<node name="ISB" pkg="top"  exec="isb_node" output="screen" />
-	<node name="LCD" pkg="top"  exec="lcd_node" output="screen" />
+	<!-- Human-machine interface nodes -->
+	<group unless="$(var NO_HMI)">
+		<node name="ISB" pkg="top" exec="isb_node" output="both" />
+		<node name="LCD" pkg="top" exec="lcd_node" output="both" />
+	</group>
 	
 </launch>

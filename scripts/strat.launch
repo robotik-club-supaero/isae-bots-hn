@@ -1,0 +1,10 @@
+<!--
+    Only the strat. You will need either the simulation or the micro_ros nodes as well.
+    In general, you'll want to launch `simulator.launch` or `match.launch` instead.
+-->
+
+<launch>  
+	<node name="DEC" pkg="strat" exec="dec_node" output="both" />
+	<node name="ACT" pkg="strat" exec="act_node" output="both" />
+	<node name="DSP" pkg="displacement" exec="disp_node" output="both" />
+</launch>

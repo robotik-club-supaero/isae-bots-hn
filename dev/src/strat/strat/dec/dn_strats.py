@@ -81,10 +81,10 @@ def match_strat(node):
         x, y, _ = node.position
 
         if pos_type == 'stand':
-            dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
+            dists = [ coeffs[stand_id] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
         else:
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
-
+        
         dist_sorted_index = list(np.argsort(dists))
         #print(coeffs, dists, dist_sorted_index)
         for index in dist_sorted_index:

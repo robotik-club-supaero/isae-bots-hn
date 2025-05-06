@@ -81,7 +81,7 @@ def match_strat(node):
         x, y, _ = node.position
 
         if pos_type == 'stand':
-            dists = [ coeffs[stand_id - 1] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
+            dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
         else:
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
@@ -90,7 +90,7 @@ def match_strat(node):
         for index in dist_sorted_index:
             true_index = positions[index][1] if pos_type == 'stand' else index
             if cond(true_index):
-                return true_index
+                return index
             
         return None
 
@@ -109,7 +109,7 @@ def match_strat(node):
         DEPOSIT_POS = node.config.deposit_pos
 
         malus_deposit = np.ones(len(DEPOSIT_POS))
-        malus_pickup = np.ones(9)
+        malus_pickup = np.ones(len(STAND_POS))
 
         # Pickup Up Stand
         if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):

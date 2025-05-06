@@ -51,12 +51,12 @@ class CalcPositionningStand(yasmin.State): # TODO
     def execute(self, userdata):    
         STAND_POS = StratConfig(userdata["color"]).pickup_stand_pos
 
-        stand_id = self._node.get_pickup_id("stand", userdata) % len(STAND_POS)
+        stand_pos_id = self._node.get_pickup_id("stand", userdata) % len(STAND_POS)
 
-        self._msg.data = f"stand{stand_id}"
+        self._msg.data = f"stand{stand_pos_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        xp, yp, tp = STAND_POS[stand_id]
+        ((xp, yp, tp), stand_id) = STAND_POS[stand_pos_id]
         userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
              
         return 'success'

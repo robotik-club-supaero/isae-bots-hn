@@ -88,7 +88,7 @@ def match_strat(node):
         dist_sorted_index = list(np.argsort(dists))
         #print(coeffs, dists, dist_sorted_index)
         for index in dist_sorted_index:
-            true_index = positions[input][1] if pos_type == 'stand' else index
+            true_index = positions[index][1] if pos_type == 'stand' else index
             if cond(true_index):
                 return true_index
             
@@ -105,11 +105,11 @@ def match_strat(node):
                 return
 
         # Pickup Up Stand
-        STAND_POS = np.array(node.config.pickup_stand_pos)
-        DEPOSIT_POS = np.array(node.config.deposit_pos)
+        STAND_POS = node.config.pickup_stand_pos
+        DEPOSIT_POS = node.config.deposit_pos
 
         malus_deposit = np.ones(len(DEPOSIT_POS))
-        malus_pickup = np.ones(len(STAND_POS))
+        malus_pickup = np.ones(9)
 
         # Pickup Up Stand
         if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):

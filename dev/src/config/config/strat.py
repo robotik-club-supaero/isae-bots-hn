@@ -156,4 +156,4 @@ class StratConfig(NaiveStratConfig):
         if isinstance(pos, list):
             return [(p.resolve(self.color), stand_id) for p, stand_id in pos]
         else:
-            return pos[0].resolve(self.color), pos[1]
+            return [(pos[0].resolve(self.color), pos[1])]

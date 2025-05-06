@@ -104,10 +104,9 @@ class SIM_ObstaclesNode(Node):
         dist = np.linalg.norm(self.robot_pos - self.obstacle_pos)
         if dist < self.robot_diag + OBSTACLE_RADIUS + 20 and np.dot(self.obstacle_speed, self.robot_pos-self.obstacle_pos) > 0:
             self.obstacle_speed[:] = 0
-            return random.random() > 0.999
 
         # L'obstacle ne bouge pas quand il est proche de notre robot afin de tester nos manoeuvres d'évitement/éloignement
-        return SPEED > 0 and dist > self.robot_diag + OBSTACLE_RADIUS + 100 and np.linalg.norm(self.obstacle_speed) == 0
+        return SPEED > 0 and (dist > self.robot_diag + OBSTACLE_RADIUS + 100 or random.random() > 0.99) and np.linalg.norm(self.obstacle_speed) == 0
         
     def update_pos(self):
         if self.last_update is None: self.last_update = time.time()

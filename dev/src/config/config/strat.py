@@ -82,14 +82,14 @@ class StratConfig(NaiveStratConfig):
 
     PICKUP_STAND_POS = [
         # Protected pickup zone :
-        DynamicPos(2000 - 1500, 825, 3.14), 
+        (DynamicPos(2000 - 1500, 825, 3.14), 1), 
         # Side Pickup zones :
-        StaticPos(2000 - 400, 300, -1.57), StaticPos(2000 - 1325, 300, -1.57),
-        StaticPos(2000 - 400, 2700, 1.57), StaticPos(2000 - 1325, 2700, 1.57),
-        StaticPos(2000 - 500, 775, 0), StaticPos(2000 - 500, 2225, 0),
+        (StaticPos(2000 - 400, 300, -1.57), 2), (StaticPos(2000 - 1325, 300, -1.57), 3),
+        (StaticPos(2000 - 400, 2700, 1.57), 4), (StaticPos(2000 - 1325, 2700, 1.57), 5),
+        (StaticPos(2000 - 500, 775, 0), 6), (StaticPos(2000 - 500, 2225, 0), 7),
         # Middle Pickup zones :
-        StaticPos(2000 - 700, 1100, 3.14), StaticPos(2000 - 700, 1900, 3.14) # For start from 0
-        #[2000 - 1200, 1100, 0], [2000 - 1200, 1900, 0] # For start from 1, 2
+        (StaticPos(2000 - 700, 1100, 3.14), 8), (StaticPos(2000 - 1200, 1100, 0), 8), 
+        (StaticPos(2000 - 700, 1900, 3.14), 9), (StaticPos(2000 - 1200, 1900, 0), 9) 
     ]
 
     DEPOSIT_POS = [

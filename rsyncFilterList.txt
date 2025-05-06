@@ -5,6 +5,7 @@
 + docker/***
 + scripts/***
 + service/***
++ install/***
 + /Makefile
 
 - *

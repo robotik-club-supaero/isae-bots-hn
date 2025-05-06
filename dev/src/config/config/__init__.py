@@ -1,7 +1,7 @@
 from .robot import RobotConfig
 from .strat import StratConfig, NaiveStratConfig
 
-COLOR = ["HOME", "AWAY"]
+COLOR = ["YELLOW", "BLUE"]
 
 __all__ = ["COLOR", "RobotConfig", "StratConfig", "NaiveStratConfig"]
 # Here, we make sure that `from config import *` will not import modules `qos`, `robot` and `strat` into the root namespace

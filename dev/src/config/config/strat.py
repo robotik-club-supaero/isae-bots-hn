@@ -112,7 +112,7 @@ class StratConfig(NaiveStratConfig):
 
     @property
     def pickup_stand_pos(self):
-        return self._resolve_pos(StratConfig.PICKUP_STAND_POS)
+        return self._resolve_stand_pos(StratConfig.PICKUP_STAND_POS)
 
     @property
     def deposit_pos(self):
@@ -151,3 +151,9 @@ class StratConfig(NaiveStratConfig):
             return [p.resolve(self.color) for p in pos]
         else:
             return pos.resolve(self.color)
+
+    def _resolve_stand_pos(self, pos):
+        if isinstance(pos, list):
+            return [(p.resolve(self.color), stand_id) for p, stand_id in pos]
+        else:
+            return pos[0].resolve(self.color), pos[1]

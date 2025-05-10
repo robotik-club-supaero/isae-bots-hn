@@ -101,6 +101,7 @@ def match_strat(node):
         # Retry
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
             if node.retry_count < 3:
+                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")        
                 node.publishAction()
                 return
 

@@ -111,7 +111,7 @@ class DecisionsNode(Node):
         self.score_pub.publish(score)
 
     def publishAction(self):
-        self.get_logger().info(str(self.curr_action))
+        self.get_logger().info(f"Publish Action : {str(self.curr_action)}")
         self.action_successful = False
         self.retry_count += 1
 
@@ -196,7 +196,7 @@ class DecisionsNode(Node):
     def recv_action_callback(self, msg):
         if msg.exit == ActionResult.SUCCESS:
             
-            self.get_logger().info(f"[ dec_node Callback ] Action {self.curr_action[0]} Success.")
+            self.get_logger().info(f"[ dec_node Callback ] Action {str(self.curr_action)} Success.")
 
             self.action_successful = True
             self.retry_count = 0
@@ -204,10 +204,9 @@ class DecisionsNode(Node):
             # FIXME: where should this code be?
             # TODO: how to estimate score of "coccinelles"?
             if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
-                self.remaining_stands[self.curr_action[1]] = 0
+                pass
             
             if self.curr_action[0] == Action.DEPOSIT_STAND:
-                self.deposit_slots[self.curr_action[1]] = 0
                 self.score += ActionScore.SCORE_DEPOSIT_STAND.value
                 self.publishScore()
             
@@ -216,10 +215,7 @@ class DecisionsNode(Node):
                 self.score += ActionScore.SCORE_COCCINELLE.value
                 self.publishScore()
                 self.parked = True
-            
-            return
-
-        if msg.exit == ActionResult.NOTHING_TO_PICK_UP:
+        elif msg.exit == ActionResult.NOTHING_TO_PICK_UP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
             if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
                 self.remaining_stands[self.curr_action[1]] = 0
@@ -227,12 +223,10 @@ class DecisionsNode(Node):
                 self.remaining_stands[self.curr_action[1]] = 0
             else:
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
-            return
-
-        if msg.exit == ActionResult.FAILURE:
+        elif msg.exit == ActionResult.FAILURE:
             self.get_logger().error(f"Last action ({self.curr_action[0]}) failed, reason: {msg.reason}")
-            return
-        self.get_logger().error("Wrong value sent on /strat/done_action ...")
+        else:
+            self.get_logger().error("Wrong value sent on /strat/done_action ...")
 
 
     def send_action_next(self, msg):

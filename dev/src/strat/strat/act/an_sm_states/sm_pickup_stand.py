@@ -32,7 +32,7 @@ from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendEl
 from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
-from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, approach
+from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, create_displacement_request
 from .sm_waiting import ObsWaitingOnce
 
 #################################################################
@@ -58,7 +58,7 @@ class CalcPositionningStand(yasmin.State): # TODO
         
         ((xp, yp, tp), stand_id) = STAND_POS[stand_pos_id]
 
-        userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
 
         return 'success'
  

@@ -187,7 +187,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
         self.add_submachine('PARK', Park(node),
                         transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
         
-
+    
     def add_submachine(self, name, machine, transitions):
         self.add_state(name, machine, transitions)
         self._viewers.append(YasminViewerPub(name, machine, node=self._node))

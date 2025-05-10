@@ -29,7 +29,7 @@ from ..an_const import DspCallback, R_APPROACH_STAND
 from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurrence
 
 from strat.strat_utils import create_end_of_action_msg
-from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, DISP_TIMEOUT
+from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
 
 #################################################################
 #                                                               #
@@ -48,7 +48,7 @@ class CalcPositionningStand(yasmin.State):
         pots_id = self._get_pickup_id("deposit pots", userdata)
 
         xp, yp, thetap = StratConfig(userdata["color"]).deposit_pos[pots_id]
-        userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
 
         return 'success'
 

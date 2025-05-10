@@ -88,7 +88,7 @@ class _PickupStandSequence(Sequence): # TODO
                 Concurrence(CLAMP_2 = OpenClamp(node, etage=etage),
                             ELEV_2 = DescendElevator(node, etage=etage))
             ),
-            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 10)),
+            ('DEPL_TAKE_STAND', MoveForwardStraight(node, 50)),
             ('CLOSE_CLAMP', CloseClamp(node, etage=etage)),
             ('RISE_ELEVATOR', RiseElevator(node, etage=etage)),
         ]

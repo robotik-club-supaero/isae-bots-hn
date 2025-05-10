@@ -57,7 +57,7 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
         ((xp, yp, tp), stand_id) = STAND_POS[stand_pos_id]
-        self._node.get_logger().info(f"\n Stand Position : {xp}, {yp}, {tp}  \n ")
+        
         userdata["next_move"] = approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
         return 'success'
  

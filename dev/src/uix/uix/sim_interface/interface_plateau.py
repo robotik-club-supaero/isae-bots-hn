@@ -904,6 +904,7 @@ class InterfaceNode(Node):
         self._pubOrder.publish(msg)
 
     def updateOrder(self, msg):
+        self.get_logger().info(f"Received : {msg} -> {msg.path}, {msg.kind}, {msg.theta}")
         with self.lock:
             if len(msg.path) > 0:
                 self._orderMarker.location = [msg.path[-1].x, msg.path[-1].y]

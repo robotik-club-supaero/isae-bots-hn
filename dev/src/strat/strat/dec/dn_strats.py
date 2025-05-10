@@ -112,15 +112,15 @@ def match_strat(node):
         malus_pickup = np.ones(len(STAND_POS))
 
         # Pickup Up Stand
-        if (node.curr_action[0] == Action.PICKUP_STAND_1 or node.curr_action[0] == Action.PICKUP_STAND_2):
+        if (node.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2)):
 
             if not node.action_successful:
-                malus_pickup[node.curr_action[1]] = 999 # penalise
+                malus_pickup[node.curr_action[1]] = float('inf') # penalise
             
             stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
             
             if stand_id is not None:
-                if node.action_successful is False: # Continue to search for stand                
+                if not node.action_successful: # Continue to search for stand                
                     node.curr_action[1] = stand_id
                     node.get_logger().info(f"Next action order : Picking up Stand n°{stand_id}...")        
                 elif node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked -> Go bottom stand picking
@@ -155,10 +155,10 @@ def match_strat(node):
                     node.get_logger().info("No more free slot to deposit !")
 
         # If no other action is applicable, defaulting to picking up stand
+        node.get_logger().warning("Out of Normal Loop : switching to Pickup Stand 2")
         stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
         if stand_id is not None:
             node.curr_action = [Action.PICKUP_STAND_2, stand_id]
-            node.get_logger().info("Next action order : Pickup Stand")
             node.publishAction()
             return
         else:

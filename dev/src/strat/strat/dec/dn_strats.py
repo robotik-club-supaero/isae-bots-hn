@@ -117,15 +117,14 @@ def match_strat(node):
 
             if not node.action_successful:
                 malus_pickup[node.curr_action[1]] = float('inf') # penalise
-            
-            stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
-            
+                        
             if stand_id is not None:
                 if not node.action_successful: # Continue to search for stand                
                     node.curr_action[1] = stand_id
                     node.get_logger().info(f"Continue action order : Picking up Stand n°{stand_id}...")        
                 elif node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked -> Go bottom stand picking
                     node.remaining_stands[node.curr_action[1]] = 0
+                    stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
                     node.curr_action = [Action.PICKUP_STAND_1, stand_id]
                     node.get_logger().info(f"Next action order : Etage 1 (Bas) -> Pickup Stand n°{stand_id}")
                     node.publishAction()    

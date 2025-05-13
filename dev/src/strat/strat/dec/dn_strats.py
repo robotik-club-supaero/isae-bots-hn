@@ -90,8 +90,8 @@ def match_strat(node):
         for index in dist_sorted_index:
             true_index = positions[index][1] if pos_type == 'stand' else index
             if cond(true_index):
-                return index
-            
+                return true_index
+        
         return None
 
     time.sleep(0.01)

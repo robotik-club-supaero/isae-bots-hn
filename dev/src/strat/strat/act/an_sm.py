@@ -78,7 +78,7 @@ class Setup(yasmin.State):
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
         userdata["next_move"] = create_displacement_request(x=-1, y=-1)
 
-        userdata["action_result"] = ActionResult.SUCCESS
+        userdata["action_result"] = ActionResult.NOTHING
 
         time.sleep(0.01)
         self._node.setupComplete = True
@@ -114,8 +114,8 @@ class Repartitor(yasmin.State): # TO UPDATE
 
     def execute(self, userdata):
         self._logger.info('[Repartitor] Requesting next action ...')
-        self._repartitor_pub.publish(EndOfActionMsg(userdata["action_result"])) # demande nextAction au DN
-        
+        self._repartitor_pub.publish(EndOfActionMsg(exit=userdata["action_result"])) # demande nextAction au DN
+
         userdata["next_action"][0] = Action.PENDING # reset variable prochaine action
         while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
             if self.is_canceled():

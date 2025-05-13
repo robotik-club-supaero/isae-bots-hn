@@ -28,6 +28,8 @@ from .sm_displacement import Displacement, approach, Approach
 
 from strat.strat_utils import create_end_of_action_msg
 
+from ..an_sm import ActionResult
+
 #################################################################
 #                                                               #
 #                          SUBSTATES                            #
@@ -62,9 +64,8 @@ class BanderolleEnd(yasmin.State):
     """
     SM PARK : Observer state
     """
-    def __init__(self, callback_action_pub):
+    def __init__(self):
         super().__init__(outcomes=['preempted','success','fail'])
-        self._callback_action_pub = callback_action_pub
 
     def execute(self, userdata):
         if self.is_canceled():
@@ -73,8 +74,7 @@ class BanderolleEnd(yasmin.State):
         #TODO actions before exiting the state machine
 
         #TODO check that the action was actually successful
-        self._callback_action_pub.publish(create_end_of_action_msg(exit=1, reason='success'))
-
+        userdata['action_result'] = ActionResult.SUCCESS
         return 'success'
 
 
@@ -95,6 +95,6 @@ class LaunchBanderolle(yasmin.StateMachine):
                         Displacement(node), 
                         transitions={'preempted':'preempted','success':'BANDEROLLE_END','fail':'fail'})
         self.add_state('BANDEROLLE_END', 
-                        BanderolleEnd(node.callback_action_pub), 
+                        BanderolleEnd(node), 
                         transitions={'preempted':'preempted','success':'success','fail':'fail'})
 

@@ -35,6 +35,8 @@ from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, create_displacement_request
 from .sm_waiting import ObsWaitingOnce
 
+from ..an_sm import ActionResult
+
 #################################################################
 #                                                               #
 #                          SUBSTATES                            #
@@ -64,14 +66,12 @@ class CalcPositionningStand(yasmin.State): # TODO
  
 class PickupStandEnd(yasmin.State): # TODO
     
-    def __init__(self, callback_action_pub):
+    def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
-        self._callback_action_pub = callback_action_pub
         
     def execute(self, userdata):
         #TODO check that the action was actually successful
-        userdata['success'] = True
-        self._callback_action_pub.publish(create_end_of_action_msg(exit=ActionResult.SUCCESS, reason='success'))   
+        userdata['action_result'] = ActionResult.SUCCESS
         return 'success'
     
 #################################################################
@@ -97,7 +97,7 @@ class PickupStand(Sequence):
         super().__init__(states=[
             ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
             ('PICKUP_STAND_CONC', _PickupStandSequence(node, etage)),
-            ('PICKUP_STAND_END', PickupStandEnd(node.callback_action_pub)),
+            ('PICKUP_STAND_END', PickupStandEnd(node)),
             ])
         self.etage = etage
     

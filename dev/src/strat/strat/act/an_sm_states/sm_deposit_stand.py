@@ -31,6 +31,8 @@ from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurr
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
 
+from ..an_sm import ActionResult
+
 #################################################################
 #                                                               #
 #                          SUBSTATES                            #
@@ -65,14 +67,11 @@ class ReportDeposit(yasmin.State): # DEPRECATED TODO
 
 class DepositStandEnd(yasmin.State): # DEPRECATED TODO
 
-    def __init__(self, callback_action_pub):
+    def __init__(self, node):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
-        self._callback_action_pub = callback_action_pub
-
     def execute(self, userdata):
         # TODO check that the action was actually successful
-        self._callback_action_pub.publish(create_end_of_action_msg(exit=1, reason='success'))
-
+        userdata['action_result'] = ActionResult.SUCCESS
         return 'success'
 
 #################################################################
@@ -96,5 +95,5 @@ class DepositStand(Sequence):
             )), 
             ('DEPL_MOVEBACK_DEPOSIT', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now
             ('REPORT_TO_INTERFACE', ReportDeposit(node.deposit_pub)),
-            ('DEPOSIT_POTS_END',  DepositStandEnd(node.callback_action_pub)),
+            ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
         ])

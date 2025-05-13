@@ -35,8 +35,6 @@ from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, create_displacement_request
 from .sm_waiting import ObsWaitingOnce
 
-from ..an_sm import ActionResult
-
 #################################################################
 #                                                               #
 #                          SUBSTATES                            #

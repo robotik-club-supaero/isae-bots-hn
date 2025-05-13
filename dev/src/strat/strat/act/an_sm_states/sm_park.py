@@ -30,7 +30,7 @@ from ..an_const import *
 from .sm_displacement import Displacement, approach, Approach
 from strat.strat_utils import create_end_of_action_msg
 
-from ..an_sm import ActionResult
+from strat.strat_const import ActionResult
 
 #################################################################
 #                                                               #

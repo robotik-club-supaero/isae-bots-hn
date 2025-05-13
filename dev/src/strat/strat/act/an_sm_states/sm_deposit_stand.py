@@ -31,7 +31,7 @@ from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurr
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
 
-from ..an_sm import ActionResult
+from strat.strat_const import ActionResult
 
 #################################################################
 #                                                               #

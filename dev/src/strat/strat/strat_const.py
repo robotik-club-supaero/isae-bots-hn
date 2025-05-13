@@ -19,6 +19,7 @@ class ActionResult(IntEnum):
     SUCCESS = 1
     NOTHING_TO_PICK_UP = 5
     FAILURE = -1
+    NOTHING = -2
 
 class Action(IntEnum):
     PENDING = -2

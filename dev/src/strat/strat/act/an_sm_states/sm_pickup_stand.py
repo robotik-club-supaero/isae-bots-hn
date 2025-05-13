@@ -70,7 +70,6 @@ class PickupStandEnd(yasmin.State): # TODO
         
     def execute(self, userdata):
         #TODO check that the action was actually successful
-        # TODO check whether the robot actually carries pots
         self._callback_action_pub.publish(create_end_of_action_msg(exit=ActionResult.SUCCESS, reason='success'))   
         return 'success'
     

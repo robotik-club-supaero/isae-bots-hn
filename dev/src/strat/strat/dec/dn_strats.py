@@ -128,6 +128,7 @@ def match_strat(node):
                     node.remaining_stands[node.curr_action[1]] = 0
                     node.curr_action = [Action.PICKUP_STAND_1, stand_id]
                     node.get_logger().info(f"Next action order : Etage 1 (Bas) -> Pickup Stand n°{stand_id}")
+                    node.publishAction()    
                 elif node.curr_action[0] == Action.PICKUP_STAND_1: # bottom stand picked -> Go deposit
                     node.remaining_stands[node.curr_action[1]] = 0
                     deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit, pos_type='deposit')
@@ -136,7 +137,7 @@ def match_strat(node):
                         node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")      
                     else:
                         node.get_logger().info("No deposit pos found !")
-                node.publishAction()        
+                    node.publishAction()
                 return
             else:
                 node.get_logger().info("No stand found to pick up !")

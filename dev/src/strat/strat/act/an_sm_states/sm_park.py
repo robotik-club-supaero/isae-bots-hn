@@ -62,7 +62,7 @@ class ParkEnd(yasmin.State):
     """
     SM PARK : Observer state
     """
-    def __init__(self):
+    def __init__(self, node):
         super().__init__(outcomes=['preempted','success','fail'])
 
     def execute(self, userdata):

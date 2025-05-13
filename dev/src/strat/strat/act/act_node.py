@@ -53,12 +53,11 @@ class ActionNode(Node):
         self.setupComplete = False
       
         """
-        Initialize all publishers of AN
+        Initialize all publishers of /strat/action/request
         """
         # GENERAL PUBS
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
-        self.repartitor_pub = self.create_publisher(Empty, '/strat/action/request', latch_profile)
-        self.callback_action_pub = self.create_publisher(EndOfActionMsg, '/strat/action/callback', latch_profile)
+        self.repartitor_pub = self.create_publisher(EndOfActionMsg, '/strat/action/request', latch_profile)
         self.disp_pub = self.create_publisher(DisplacementRequest, '/dsp/order/next_move', latch_profile)
         self.stop_teensy_pub = self.create_publisher(Empty, '/br/stop', latch_profile)
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)

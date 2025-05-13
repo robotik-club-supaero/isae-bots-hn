@@ -34,9 +34,11 @@ from .an_sm_states.sm_banderolle import LaunchBanderolle
 from .an_sm_states.sm_waiting import waiting
 from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
+from message.msg import EndOfActionMsg
+
 from .an_const import *
 
-from ..strat_const import ACTIONS_OUTCOMES, ACTION_TRANSITIONS, ActionScore, Action
+from ..strat_const import ACTIONS_OUTCOMES, ACTION_TRANSITIONS, ActionScore, Action, ActionResult
 
 #################################################################
 #                                                               #
@@ -76,6 +78,8 @@ class Setup(yasmin.State):
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
         userdata["next_move"] = create_displacement_request(x=-1, y=-1)
 
+        userdata["action_result"] = ActionResult.SUCCESS
+
         time.sleep(0.01)
         self._node.setupComplete = True
 
@@ -110,8 +114,8 @@ class Repartitor(yasmin.State): # TO UPDATE
 
     def execute(self, userdata):
         self._logger.info('[Repartitor] Requesting next action ...')
-        self._repartitor_pub.publish(Empty()) # demande nextAction au DN
-
+        self._repartitor_pub.publish(EndOfActionMsg(userdata["action_result"])) # demande nextAction au DN
+        
         userdata["next_action"][0] = Action.PENDING # reset variable prochaine action
         while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
             if self.is_canceled():

@@ -60,8 +60,7 @@ class DecisionsNode(Node):
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
 
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
-        self.next_action_sub = self.create_subscription(Empty, "/strat/action/request", self.send_action_next, default_profile)
-        self.done_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/callback", self.recv_action_callback, default_profile)
+        self.next_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/request", self.send_action_next, default_profile)
 
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
@@ -192,8 +191,11 @@ class DecisionsNode(Node):
 
         self.position = [msg.x, msg.y, msg.theta]
 
-
-    def recv_action_callback(self, msg):
+    def send_action_next(self, msg):
+        """
+        Send back the next action when triggered.
+        """
+        
         if msg.exit == ActionResult.SUCCESS:
             
             self.get_logger().info(f"[ dec_node Callback ] Action {str(self.curr_action)} Success.")
@@ -225,14 +227,11 @@ class DecisionsNode(Node):
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
         elif msg.exit == ActionResult.FAILURE:
             self.get_logger().error(f"Last action ({self.curr_action[0]}) failed, reason: {msg.reason}")
+        elif msg.exit == ActionResult.NOTHING:
+            pass
         else:
             self.get_logger().error("Wrong value sent on /strat/done_action ...")
 
-
-    def send_action_next(self, msg):
-        """
-        Send back the next action when triggered.
-        """
         self.get_logger().info(f"Next action requested by AN")
         self.strat_functions[self.strat](self)
         

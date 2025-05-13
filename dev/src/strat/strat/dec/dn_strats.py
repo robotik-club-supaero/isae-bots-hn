@@ -86,7 +86,7 @@ def match_strat(node):
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
         dist_sorted_index = list(np.argsort(dists))
-        #print(coeffs, dists, dist_sorted_index)
+        print("\n\n" + str(positions) + "\n" + str(remaining) + "\n\n")
         for index in dist_sorted_index:
             true_index = positions[index][1] if pos_type == 'stand' else index
             if cond(true_index):
@@ -116,11 +116,12 @@ def match_strat(node):
         if (node.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2)):
                         
             if not node.action_successful: # Continue to search for stand
-                malus_pickup[node.curr_action[1]] = float('inf') # penalise
+                #malus_pickup[node.curr_action[1]] = float('inf') # penalise
                 #stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
                 #node.curr_action[1] = stand_id
                 node.get_logger().info(f"Continue action order : Picking up Stand n°{node.curr_action[1]}...")        
-            else:
+                node.publishAction()
+            else: # -> Stand Picked ! 
                 if node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked -> Go bottom stand picking
                     node.remaining_stands[node.curr_action[1]] = 0
                     stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')

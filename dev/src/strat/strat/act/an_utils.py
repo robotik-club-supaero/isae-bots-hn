@@ -111,7 +111,7 @@ class CloseClamp(HardwareOrder):
 
 class LaunchBanderolle(HardwareOrder):
     
-    def __init__(self, node, etage):
+    def __init__(self, node):
         super().__init__(node.get_logger(), node.banderolle_pub, f"cb_banderolle", BanderolleOrder.LAUNCH, BanderolleCallback.PENDING, BanderolleCallback.LAUNCHED)
         self._debug_print = node.debug_print
         self.etage = etage

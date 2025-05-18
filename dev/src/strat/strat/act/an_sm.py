@@ -30,7 +30,7 @@ from br_messages.msg import Position
 from .an_sm_states.sm_park import Park
 from .an_sm_states.sm_pickup_stand import PickupStand
 from .an_sm_states.sm_deposit_stand import DepositStand
-from .an_sm_states.sm_banderolle import LaunchBanderolle
+from .an_sm_states.sm_banderolle import Banderolle
 from .an_sm_states.sm_waiting import waiting
 from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
@@ -186,7 +186,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         self.add_submachine('PICKUP_STAND_2', PickupStand(node, 2),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('DEPOSIT_BANDEROLLE', LaunchBanderolle(node),
+        self.add_submachine('DEPOSIT_BANDEROLLE', Banderolle(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Other States

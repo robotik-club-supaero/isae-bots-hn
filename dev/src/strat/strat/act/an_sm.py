@@ -116,9 +116,12 @@ class Repartitor(yasmin.State): # TO UPDATE
 
     def execute(self, userdata):
         self._logger.info('[Repartitor] Requesting next action ...')
+
         self._repartitor_pub.publish(EndOfActionMsg(exit=userdata["action_result"])) # demande nextAction au DN
 
+        userdata["action_result"] = ActionResult.NOTHING # Reset pour la prochaine action
         userdata["next_action"][0] = Action.PENDING # reset variable prochaine action
+
         while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
             if self.is_canceled():
                 if userdata["next_action"][0] == Action.PENDING:

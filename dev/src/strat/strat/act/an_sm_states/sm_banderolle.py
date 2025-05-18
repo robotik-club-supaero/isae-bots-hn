@@ -28,7 +28,7 @@ from std_msgs.msg import Empty
 from config import StratConfig
 
 from ..an_const import *
-from ..an_utils import LaunchBanderolle
+from ..an_utils import LaunchBanderolle, Sequence
 from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveForwardStraight, create_displacement_request
 
 from strat.strat_utils import create_end_of_action_msg
@@ -86,7 +86,7 @@ class BanderolleEnd(yasmin.State):
 #                                                               #
 #################################################################
 
-class Banderolle(yasmin.StateMachine):
+class Banderolle(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),

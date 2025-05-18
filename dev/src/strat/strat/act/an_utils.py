@@ -114,7 +114,6 @@ class LaunchBanderolle(HardwareOrder):
     def __init__(self, node):
         super().__init__(node.get_logger(), node.banderolle_pub, f"cb_banderolle", BanderolleOrder.LAUNCH, BanderolleCallback.PENDING, BanderolleCallback.LAUNCHED)
         self._debug_print = node.debug_print
-        self.etage = etage
     
     def execute(self, userdata):        
         self._debug_print('c', f"Request to launch banderolle")

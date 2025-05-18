@@ -65,6 +65,7 @@ class Setup(yasmin.State):
         userdata["start"] = False
         userdata["color"] = 0
         userdata["park"] = 0
+        userdata["launch_banderolle"] = 1
         
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
@@ -73,6 +74,7 @@ class Setup(yasmin.State):
         userdata["cb_clamp_2"] = ClampCallback.PENDING # state of the clamp
         userdata["cb_elevator_1"] = ElevatorCallback.PENDING # state of the elevator
         userdata["cb_elevator_2"] = ElevatorCallback.PENDING # state of the elevator
+        userdata["cb_banderolle"] = ElevatorCallback.PENDING # state of the banderolle
         
         ## Game infos variables
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)

@@ -98,6 +98,12 @@ def match_strat(node):
 
     if not node.go_park:
         
+        if node.launch_banderolle and not node.banderolle_launched:
+            node.curr_action = [Action.DEPOSIT_BANDEROLLE]
+            node.get_logger().info(f"Deposit Banderolle Launched !")        
+            node.publishAction()
+            return
+
         # Retry
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
             if node.retry_count < 3:

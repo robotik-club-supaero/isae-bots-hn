@@ -35,7 +35,8 @@ class NaiveStratConfig(RobotConfig):
     STATIC_OBSTACLES = True # DOIT ETRE 1 EN MATCH REEL
 
     MATCH_TIME = 100 # s
-    DELAY_PARK = 13 # s
+    DELAY_PARK = 10 # s
+    DELAY_BANDEROLLE = 25 # s
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -59,6 +60,10 @@ class NaiveStratConfig(RobotConfig):
     @property
     def delay_park(self):
         return NaiveStratConfig.DELAY_PARK
+    
+    @property
+    def delay_banderolle(self):
+        return NaiveStratConfig.DELAY_BANDEROLLE
 
     @property
     def init_zone_count(self):
@@ -73,7 +78,8 @@ class StratConfig(NaiveStratConfig):
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-
+    BANDEROLLE_ZONE = DynamicPos(2000 - 200, 400, 3.14)
+    
     INIT_ZONES = [
         DynamicPos(2000 - 1825, 375, 0), # 0
         DynamicPos(2000 - 175, 1225  , 3.14),    # 1

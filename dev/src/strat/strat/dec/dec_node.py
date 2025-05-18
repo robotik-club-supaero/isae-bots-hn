@@ -65,6 +65,7 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
+        self.launch_banderolle_pub = self.create_publisher(Int16, '/launch_banderolle', latch_profile)
 
         self.config = None
 
@@ -74,7 +75,10 @@ class DecisionsNode(Node):
 
         self.start_time = 0
         self.match_time = self.config.match_time
+        self.delay_banderolle = self.config.delay_banderolle
         self.delay_park = self.config.delay_park
+        self.launch_banderolle = False
+        self.banderolle_launched = False
         self.go_park = False
         self.parked = False
         
@@ -140,6 +144,7 @@ class DecisionsNode(Node):
 
             self.match_started = True
             self.start_time = time.time()
+            threading.Timer(self.match_time - self.delay_banderolle, self.banderolle_IT).start()
             threading.Timer(self.match_time - self.delay_park, self.park_IT).start()
             threading.Timer(self.match_time, self.stop_IT).start()
 
@@ -193,7 +198,7 @@ class DecisionsNode(Node):
 
     def send_action_next(self, msg):
         """
-        Send back the next action when triggered.
+        Send back the next action when triggered by the repartitor.
         """
         
         if msg.exit == ActionResult.SUCCESS:
@@ -203,8 +208,7 @@ class DecisionsNode(Node):
             self.action_successful = True
             self.retry_count = 0
             
-            # FIXME: where should this code be?
-            # TODO: how to estimate score of "coccinelles"?
+            # Count points
             if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
                 pass
             
@@ -212,11 +216,17 @@ class DecisionsNode(Node):
                 self.score += ActionScore.SCORE_DEPOSIT_STAND.value
                 self.publishScore()
             
+            if self.curr_action[0] == Action.DEPOSIT_BANDEROLLE:
+                self.score += ActionScore.SCORE_DEPOSIT_BANDEROLLE.value
+                self.publishScore()
+                self.banderolle_launched = True
+            
             if self.curr_action[0] == Action.PARK:
                 self.score += ActionScore.SCORE_PARK.value
-                self.score += ActionScore.SCORE_COCCINELLE.value
+                self.score += ActionScore.SCORE_COCCINELLE.value # Hope that all coccinelle have done correctly
                 self.publishScore()
                 self.parked = True
+            
         elif msg.exit == ActionResult.NOTHING_TO_PICK_UP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
             if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
@@ -230,10 +240,10 @@ class DecisionsNode(Node):
         elif msg.exit == ActionResult.NOTHING:
             pass
         else:
-            self.get_logger().error("Wrong value sent on /strat/done_action ...")
+            self.get_logger().error("Wrong value sent on /strat/action/request ...")
 
         self.get_logger().info(f"Next action requested by AN")
-        self.strat_functions[self.strat](self)
+        self.strat_functions[self.strat](self) # Appelle la stratégie (dn_strats)
         
 
     #################################################################
@@ -252,7 +262,17 @@ class DecisionsNode(Node):
         msg = Int16()
         msg.data = 1
         self.park_pub.publish(msg)
+    
+    def banderolle_IT(self):
+        """
+        Interrupt : time to launch banderolle
+        """
+        self.get_logger().info('\033[1m\033[36m' + "#"*19 + " Banderolle interrupt " + "#"*18 + '\033[0m')
+        self.launch_banderolle = True
 
+        msg = Int16()
+        msg.data = 1
+        self.launch_banderolle_pub.publish(msg)
 
     def stop_IT(self):
         """

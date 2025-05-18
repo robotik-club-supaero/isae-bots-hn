@@ -6,7 +6,7 @@ from threading import Thread, Lock
 
 from std_msgs.msg import Int16
 
-from .an_const import ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, WAIT_TIME
+from .an_const import ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, BanderolleOrder, BanderolleCallback, WAIT_TIME
 
 #################################################################
 # Colors gestion												#
@@ -107,6 +107,17 @@ class CloseClamp(HardwareOrder):
     
     def execute(self, userdata):        
         self._debug_print('c', f"Request to close clamp n°{self.etage}")
+        return super().execute(userdata)
+
+class LaunchBanderolle(HardwareOrder):
+    
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.banderolle_pub, f"cb_banderolle", BanderolleOrder.LAUNCH, BanderolleCallback.PENDING, BanderolleCallback.LAUNCHED)
+        self._debug_print = node.debug_print
+        self.etage = etage
+    
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to launch banderolle")
         return super().execute(userdata)
 
 class Sequence(yasmin.StateMachine):

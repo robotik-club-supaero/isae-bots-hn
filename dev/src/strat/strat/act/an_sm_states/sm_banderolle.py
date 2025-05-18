@@ -23,8 +23,13 @@ import sys
 import time
 import yasmin
 import math
+
+from std_msgs.msg import Empty
+from config import StratConfig
+
 from ..an_const import *
-from .sm_displacement import Displacement, approach, Approach
+from ..an_utils import LaunchBanderolle
+from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveStraight, create_displacement_request
 
 from strat.strat_utils import create_end_of_action_msg
 
@@ -36,30 +41,27 @@ from strat.strat_const import ActionResult
 #                                                               #
 #################################################################
 
-class CalcLaunchPos(yasmin.State):
-    """
-    SM LAUNCH : Observer state
-    """
+class CalcPosition(yasmin.State):
+
     def __init__(self, node):
-        super().__init__(outcomes=['preempted','success','fail'])			                   
-        self._node = node
+        super().__init__(outcomes=['fail', 'success', 'preempted'])
 
     def execute(self, userdata):
-        if self.is_canceled():
-            return 'preempted'
 
-        """
-        ## Move to parking position
-        park_id = self._node.get_pickup_id("parking zone", userdata)
-        x_dest, y_dest, theta = StratConfig(userdata["color"].park_zone[park_id]
-        # Modif pour la strat du dernier match 
+        xp, yp, thetap = StratConfig(userdata["color"]).banderolle_pos
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
 
-        userdata["next_move"] = approach(user_data["robot_pos"], x_dest, y_dest, 0, Approach.INITIAL)
-        """
-        
         return 'success'
     
-    
+class ReportBanderolle(yasmin.State): # DEPRECATED TODO
+    def __init__(self, deposit_pub):
+        super().__init__(outcomes=['success'])
+        self._banderolle_pub = deposit_pub
+
+    def execute(self, userdata):
+        self._banderolle_pub.publish(Empty())
+        return 'success'
+
 class BanderolleEnd(yasmin.State):
     """
     SM PARK : Observer state
@@ -86,15 +88,12 @@ class BanderolleEnd(yasmin.State):
 
 class LaunchBanderolle(yasmin.StateMachine):
     def __init__(self, node):
-        super().__init__(outcomes=['preempted', 'success', 'fail'])
-                
-        self.add_state('CALC_BANDEROLLE_POS', 
-                        CalcLaunchPos(node), 
-                        transitions={'preempted':'preempted','success':'DEPL_BANDEROLLE','fail':'fail'})
-        self.add_state('DEPL_BANDEROLLE', 
-                        Displacement(node), 
-                        transitions={'preempted':'preempted','success':'BANDEROLLE_END','fail':'fail'})
-        self.add_state('BANDEROLLE_END', 
-                        BanderolleEnd(node), 
-                        transitions={'preempted':'preempted','success':'success','fail':'fail'})
+        super().__init__(states=[
+            ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
+            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now (move toward the wall)
+            ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
+            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveStraight(node, 200))), # TODO 200 = 20 cm for now (move away from the wall)
+            ('REPORT_TO_INTERFACE', ReportBanderolle(node.banderolle_pub)),
+            ('BANDEROLLE_END',  BanderolleEnd(node)),
+        ])
 

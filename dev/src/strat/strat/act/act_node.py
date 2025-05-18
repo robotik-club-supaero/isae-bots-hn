@@ -62,12 +62,12 @@ class ActionNode(Node):
         self.stop_teensy_pub = self.create_publisher(Empty, '/br/stop', latch_profile)
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)
         
-        # SPECIFIC TO CURRENT YEAR [2025] [TODO obsolete]
+        # SPECIFIC TO CURRENT YEAR [2025]
         self.clamp_1_pub = self.create_publisher(Int16, '/act/order/clamp_1', latch_profile)
         self.clamp_2_pub = self.create_publisher(Int16, '/act/order/clamp_2', latch_profile)
         self.elevator_1_pub = self.create_publisher(Int16, '/act/order/elevator_1', latch_profile)
         self.elevator_2_pub = self.create_publisher(Int16, '/act/order/elevator_2', latch_profile)
-        self.banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
+        self.banderolle_pub = self.create_publisher(Int16, '/simu/banderolle_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
         self.deposit_pub = self.create_publisher(Empty, '/simu/deposit_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
         """
         Initialize all subscribers of AN
@@ -79,6 +79,7 @@ class ActionNode(Node):
         self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, default_profile)
         self.position_sub = self.create_subscription(Position, '/br/currentPosition', self.cb_position_fct, br_position_topic_profile)
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, default_profile)
+        self.launch_banderolle_sub = self.create_subscription(Int16, '/launch_banderolle', self.cb_launch_banderolle_fct, default_profile)
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, default_profile)
 
         # SPECIFIC TO CURRENT YEAR [2025]
@@ -232,12 +233,23 @@ class ActionNode(Node):
     
     def cb_park_fct(self, msg):
         """
-        Callback function to update sm variable XXXXX.
+        Callback function to update sm variable "park".
 
         <copy> this template for your update / callback functions.
         """
         if self.setupComplete:
             self.smData["park"] = msg.data
+            if msg.data != 0:
+                self.sm.cancel_state()
+    
+    def cb_launch_banderolle_fct(self, msg):
+        """
+        Callback function to update sm variable "launch_banderolle".
+
+        <copy> this template for your update / callback functions.
+        """
+        if self.setupComplete:
+            self.smData["launch_banderolle"] = msg.data
             if msg.data != 0:
                 self.sm.cancel_state()
 

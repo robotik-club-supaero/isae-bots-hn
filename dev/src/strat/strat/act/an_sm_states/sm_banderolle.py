@@ -29,7 +29,7 @@ from config import StratConfig
 
 from ..an_const import *
 from ..an_utils import LaunchBanderolle
-from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveStraight, create_displacement_request
+from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveForwardStraight, create_displacement_request
 
 from strat.strat_utils import create_end_of_action_msg
 
@@ -92,7 +92,7 @@ class Banderolle(yasmin.StateMachine):
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
             ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now (move toward the wall)
             ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
-            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveStraight(node, 200))), # TODO 200 = 20 cm for now (move away from the wall)
+            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveForwardStraight(node, 200))), # TODO 200 = 20 cm for now (move away from the wall)
             ('REPORT_TO_INTERFACE', ReportBanderolle(node.banderolle_pub)),
             ('BANDEROLLE_END',  BanderolleEnd(node)),
         ])

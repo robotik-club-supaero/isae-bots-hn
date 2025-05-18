@@ -49,7 +49,7 @@ class CalcPositionningStand(yasmin.State):
     def execute(self, userdata):
         pots_id = self._get_pickup_id("deposit pots", userdata)
 
-        xp, yp, thetap = StratConfig(userdata["color"]).deposit_pos()[pots_id]
+        xp, yp, thetap = StratConfig(userdata["color"]).deposit_pos[pots_id]
         userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
 
         return 'success'

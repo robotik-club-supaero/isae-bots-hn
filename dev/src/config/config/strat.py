@@ -78,8 +78,8 @@ class StratConfig(NaiveStratConfig):
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-    BANDEROLLE_POS = DynamicPos(2000 - 200, 400, 3.14)
-
+    BANDEROLLE_POS = DynamicPos(2000 - 200, 400, -1.57)
+    
     INIT_ZONES = [
         DynamicPos(2000 - 1825, 375, 0), # 0
         DynamicPos(2000 - 175, 1225  , 3.14),    # 1

@@ -65,8 +65,8 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-        self.launch_banderolle_pub = self.create_publisher(Int16, '/launch_banderolle', latch_profile)
-
+        self.launch_banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
+        
         self.config = None
 
         self.match_started = False

@@ -57,4 +57,5 @@ class ActionScore(IntEnum): #TODO update
     SCORE_INIT = 0
     SCORE_PARK = 10
     SCORE_DEPOSIT_STAND = 12
+    SCORE_DEPOSIT_BANDEROLLE = 12
     SCORE_COCCINELLE = 5

@@ -48,21 +48,9 @@ class CalcPosition(yasmin.State):
 
     def execute(self, userdata):
 
-        xp, yp, _ = StratConfig(userdata["color"]).banderolle_pos
-        userdata["next_move"] = create_displacement_request(xp, yp)
-
-        return 'success'
-    
-class CalcOrientation(yasmin.State):
-
-    def __init__(self, node):
-        super().__init__(outcomes=['fail', 'success', 'preempted'])
-
-    def execute(self, userdata):
-
         xp, yp, thetap = StratConfig(userdata["color"]).banderolle_pos
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap)
-        
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True)
+
         return 'success'
     
 class ReportBanderolle(yasmin.State): # DEPRECATED TODO
@@ -102,7 +90,6 @@ class Banderolle(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
-            ('DEPL_ORIENTATION_BANDEROLLE', MoveTo(node, CalcOrientation(node))),
             ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 250))), # TODO 200 = 20 cm for now (move toward the wall)
             ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
             ('DEPL_MOVEFORWARD_BANDEROLLE', MoveTo(node, MoveForwardStraight(node, 250))), # TODO 200 = 20 cm for now (move away from the wall)

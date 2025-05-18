@@ -86,7 +86,7 @@ class BanderolleEnd(yasmin.State):
 #                                                               #
 #################################################################
 
-class LaunchBanderolle(yasmin.StateMachine):
+class Banderolle(yasmin.StateMachine):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),

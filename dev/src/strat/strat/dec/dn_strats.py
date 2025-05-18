@@ -94,7 +94,7 @@ def match_strat(node):
         
         return None
 
-    time.sleep(0.01)
+    time.sleep(0.01) # is it really necessary ?
 
     if not node.go_park:
 
@@ -113,16 +113,16 @@ def match_strat(node):
         malus_pickup = np.ones(len(STAND_POS))
 
         if node.launch_banderolle:
-            if node.action_successful and (not node.banderolle_launched):
+            if not node.banderolle_launched:
                 node.curr_action = [Action.DEPOSIT_BANDEROLLE]
                 node.get_logger().info(f"Deposit Banderolle Launched !")        
-                node.banderolle_launched = True
-                node.launch_banderolle = False
                 node.publishAction()
                 return
-            else:
+            else: # Banderolle Launched
                 node.curr_action = [Action.DEPOSIT_BANDEROLLE]
                 node.get_logger().info(f"Deposit Banderolle...")  
+                node.banderolle_launched = True
+                node.launch_banderolle = False # Stop banderolle launching
                 node.publishAction()
                 return
 

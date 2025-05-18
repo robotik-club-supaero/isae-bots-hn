@@ -37,7 +37,7 @@ from ..an_utils import Sequence
 #                                                               #
 #################################################################
 
-DISP_TIMEOUT = 30    #[s]
+DISP_TIMEOUT = 20    #[s]
 ACCURACY_MARGIN = 10 # [mm]
 
 class Approach(IntEnum):

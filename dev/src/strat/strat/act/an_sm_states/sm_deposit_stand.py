@@ -94,6 +94,5 @@ class DepositStand(Sequence):
                     CLAMP_2 = OpenClamp(node, 2)
             )), 
             ('DEPL_MOVEBACK_DEPOSIT', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now
-            ('REPORT_TO_INTERFACE', ReportDeposit(node.deposit_pub)),
             ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
         ])

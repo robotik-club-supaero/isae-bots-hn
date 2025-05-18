@@ -36,7 +36,7 @@ class NaiveStratConfig(RobotConfig):
 
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
-    DELAY_BANDEROLLE = 80 # s
+    DELAY_BANDEROLLE = 90 # s
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -78,7 +78,7 @@ class StratConfig(NaiveStratConfig):
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-    BANDEROLLE_POS = DynamicPos(2000 - 400, 200, 1.57)
+    BANDEROLLE_POS = DynamicPos(2000 - 400, 300, 1.57)
 
     INIT_ZONES = [
         DynamicPos(2000 - 1825, 375, 0), # 0

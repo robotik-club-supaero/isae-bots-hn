@@ -29,7 +29,7 @@ from config import StratConfig
 
 from ..an_const import *
 from ..an_utils import LaunchBanderolle, Sequence
-from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveForwardStraight, create_displacement_request
+from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveForwardStraight, approach, create_displacement_request
 
 from strat.strat_utils import create_end_of_action_msg
 
@@ -49,7 +49,7 @@ class CalcPosition(yasmin.State):
     def execute(self, userdata):
 
         xp, yp, thetap = StratConfig(userdata["color"]).banderolle_pos
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap)
 
         return 'success'
     
@@ -88,7 +88,8 @@ class BanderolleEnd(yasmin.State):
 
 class Banderolle(Sequence):
     def __init__(self, node):
-        super().__init__(states=[('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
+        super().__init__(states=[
+            ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
             ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now (move toward the wall)
             ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
             ('DEPL_MOVEFORWARD_BANDEROLLE', MoveTo(node, MoveForwardStraight(node, 200))), # TODO 200 = 20 cm for now (move away from the wall)

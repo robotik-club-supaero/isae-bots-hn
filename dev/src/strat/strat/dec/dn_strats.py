@@ -97,12 +97,6 @@ def match_strat(node):
     time.sleep(0.01)
 
     if not node.go_park:
-        
-        if node.launch_banderolle and not node.banderolle_launched:
-            node.curr_action = [Action.DEPOSIT_BANDEROLLE]
-            node.get_logger().info(f"Deposit Banderolle Launched !")        
-            node.publishAction()
-            return
 
         # Retry
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
@@ -118,13 +112,24 @@ def match_strat(node):
         malus_deposit = np.ones(len(DEPOSIT_POS))
         malus_pickup = np.ones(len(STAND_POS))
 
+        if node.launch_banderolle:
+            if node.action_successful and (not node.banderolle_launched):
+                node.curr_action = [Action.DEPOSIT_BANDEROLLE]
+                node.get_logger().info(f"Deposit Banderolle Launched !")        
+                node.banderolle_launched = True
+                node.launch_banderolle = False
+                node.publishAction()
+                return
+            else:
+                node.curr_action = [Action.DEPOSIT_BANDEROLLE]
+                node.get_logger().info(f"Deposit Banderolle...")  
+                node.publishAction()
+                return
+
         # Pickup Up Stand
         if (node.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2)):
                         
             if not node.action_successful: # Continue to search for stand
-                #malus_pickup[node.curr_action[1]] = float('inf') # penalise
-                #stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
-                #node.curr_action[1] = stand_id
                 node.get_logger().info(f"Continue action order : Picking up Stand n°{node.curr_action[1]}...")        
                 node.publishAction()
             else: # -> Stand Picked ! 

@@ -60,9 +60,9 @@ class CalcOrientation(yasmin.State):
 
     def execute(self, userdata):
 
-        _, _, thetap = StratConfig(userdata["color"]).banderolle_pos
-        userdata["next_move"] = create_orientation_request(thetap)
-
+        xp, yp, thetap = StratConfig(userdata["color"]).banderolle_pos
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap)
+        
         return 'success'
     
 class ReportBanderolle(yasmin.State): # DEPRECATED TODO

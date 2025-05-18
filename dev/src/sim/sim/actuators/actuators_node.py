@@ -48,8 +48,9 @@ from config.qos import default_profile, latch_profile, br_position_topic_profile
 #################################################################
 
 ## Constants GR
-ELEVATOR_TIME = 0.200
-CLAMP_TIME = 0.100
+ELEVATOR_TIME = 2.
+CLAMP_TIME = 1.
+BANDEROLLE_TIME = 0.500
 
 #############################
 

@@ -98,20 +98,6 @@ def match_strat(node):
 
     if not node.go_park:
 
-        # Retry
-        if node.curr_action[0] != Action.PENDING and not node.action_successful:
-            if node.retry_count < 3:
-                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")        
-                node.publishAction()
-                return
-
-        # Pickup Up Stand
-        STAND_POS = node.config.pickup_stand_pos
-        DEPOSIT_POS = node.config.deposit_pos
-
-        malus_deposit = np.ones(len(DEPOSIT_POS))
-        malus_pickup = np.ones(len(STAND_POS))
-
         if node.launch_banderolle:
             if not node.banderolle_launched:
                 node.curr_action = [Action.DEPOSIT_BANDEROLLE]
@@ -125,6 +111,20 @@ def match_strat(node):
                 node.launch_banderolle = False # Stop banderolle launching
                 node.publishAction()
                 return
+
+        # Retry
+        if node.curr_action[0] != Action.PENDING and not node.action_successful:
+            if node.retry_count < 3:
+                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")        
+                node.publishAction()
+                return
+
+        # Pickup Up Stand
+        STAND_POS = node.config.pickup_stand_pos
+        DEPOSIT_POS = node.config.deposit_pos
+
+        malus_deposit = np.ones(len(DEPOSIT_POS))
+        malus_pickup = np.ones(len(STAND_POS))
 
         # Pickup Up Stand
         if (node.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2)):

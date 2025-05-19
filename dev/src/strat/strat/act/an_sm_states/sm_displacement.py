@@ -102,9 +102,7 @@ class Displacement(yasmin.State):
                 return 'fail'
 
             if userdata["cb_depl"] == DspCallback.SUCCESS:
-
-                # FIXME: this fixes a bug (is it?) when the displacement node sometimes reports a success when the robot is blocked by an obstacle
-                if math.sqrt((dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2) > ACCURACY_MARGIN:
+                if (dest.kind & DisplacementRequest.MOVE) != 0 and (dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2 > ACCURACY_MARGIN**2:
                     self._logger.error('Displacement result: Too far away from target')
                     if retried:
                         return 'fail'

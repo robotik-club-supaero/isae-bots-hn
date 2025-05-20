@@ -152,11 +152,12 @@ class StratConfig(NaiveStratConfig):
         # TODO
 
         # Stand
-        obstacles["stand_7"] = ObstacleRect(1000-margin, 1100+margin, 900-margin, 1300+margin)
-        obstacles["stand_8"] = ObstacleRect(1000-margin, 1100+margin, 1700-margin, 2100+margin)
+        stand_margin = margin / 2
+        obstacles["stand_7"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 900-stand_margin, 1300+stand_margin)
+        obstacles["stand_8"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 1700-stand_margin, 2100+stand_margin)
 
-        obstacles["stand_5"] = ObstacleRect(1700-margin, 1800+margin, 575-margin, 975+margin)
-        obstacles["stand_6"] = ObstacleRect(1700-margin, 1800+margin, 2025-margin, 2425+margin)
+        obstacles["stand_5"] = ObstacleRect(1700-stand_margin, 1800+stand_margin, 575-stand_margin, 975+stand_margin)
+        obstacles["stand_6"] = ObstacleRect(1700-stand_margin, 1800+stand_margin, 2025-stand_margin, 2425+stand_margin)
         
         return obstacles
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pathfinder import ObstacleRect
+from pathfinder import ObstacleRect, ObstacleCircle
 
 from .robot import RobotConfig
 
@@ -37,7 +37,7 @@ class NaiveStratConfig(RobotConfig):
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
     DELAY_BANDEROLLE = 20 # s
-    
+
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
 
@@ -151,9 +151,13 @@ class StratConfig(NaiveStratConfig):
         # Protected/reserved zones
         # TODO
 
-        # Cans
-        # TODO
+        # Stand
+        obstacles["stand_7"] = ObstacleRect(1000-margin, 1100+margin, 900-margin, 1300+margin)
+        obstacles["stand_8"] = ObstacleRect(1000-margin, 1100+margin, 1700-margin, 2100+margin)
 
+        obstacles["stand_5"] = ObstacleRect(1700-margin, 1800+margin, 575-margin, 975+margin)
+        obstacles["stand_6"] = ObstacleRect(1700-margin, 1800+margin, 2025-margin, 2425+margin)
+        
         return obstacles
 
     def _resolve_pos(self, pos):

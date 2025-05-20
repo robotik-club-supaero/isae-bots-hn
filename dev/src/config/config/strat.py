@@ -78,8 +78,8 @@ class StratConfig(NaiveStratConfig):
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-    BANDEROLLE_POS = DynamicPos(2000 - 400, 300, 1.57)
-
+    BANDEROLLE_POS = DynamicPos(2000 - 300, 350, 3.14)
+    
     INIT_ZONES = [
         DynamicPos(2000 - 1825, 375, 0), # 0
         DynamicPos(2000 - 175, 1225  , 3.14),    # 1
@@ -152,7 +152,7 @@ class StratConfig(NaiveStratConfig):
         # TODO
 
         # Stand
-        stand_margin = margin / 4
+        stand_margin = margin / 2
         obstacles["stand_7"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 900-stand_margin, 1300+stand_margin)
         obstacles["stand_8"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 1700-stand_margin, 2100+stand_margin)
 

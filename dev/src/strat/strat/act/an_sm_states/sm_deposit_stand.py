@@ -84,7 +84,7 @@ class DepositStandEnd(yasmin.State): # DEPRECATED TODO
 class DepositStand(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('DEPL_POSITIONING_DEPOSIT', MoveTo(node, CalcPositionningStand(node.get_pickup_id))),
+            ('DEPL_POSITIONING_DEPOSIT', CalcPositionningStand(node.get_pickup_id)),
             ('DESCEND_ELEVATORS', Concurrence(
                     ELEVATOR_1 = DescendElevator(node, 1),
                     ELEVATOR_2 = DescendElevator(node, 2)
@@ -93,6 +93,6 @@ class DepositStand(Sequence):
                     CLAMP_1 = OpenClamp(node, 1),
                     CLAMP_2 = OpenClamp(node, 2)
             )), 
-            ('DEPL_MOVEBACK_DEPOSIT', MoveTo(node, MoveBackwardsStraight(node, 200))), # TODO 200 = 20 cm for now
+            ('DEPL_MOVEBACK_DEPOSIT', MoveBackwardsStraight(node, 200)), # TODO 200 = 20 cm for now
             ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
         ])

@@ -30,12 +30,12 @@ bool line_line_intersect(const Segment &line1, const Segment &line2) {
 
     Point c = line2.start - line1.start;
     float t = (c.getX() * d.getY() - c.getY() * d.getX()) / bDotDPerp;
-    if (t < 0 || t > 1) {
+    if (t <= 0 || t >= 1) {
         return false;
     }
 
     float u = (c.getX() * b.getY() - c.getY() * b.getX()) / bDotDPerp;
-    if (u < 0 || u > 1) {
+    if (u <= 0 || u >= 1) {
         return false;
     }
 

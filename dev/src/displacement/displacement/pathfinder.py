@@ -1,6 +1,6 @@
 from pathfinder import Map, Point
 
-USE_REGULAR_GRID = False
+USE_REGULAR_GRID = True
 GRID_INTERVAL = 50 # mm
 
 class PathNotFoundError(RuntimeError):

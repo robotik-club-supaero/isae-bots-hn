@@ -36,8 +36,8 @@ class NaiveStratConfig(RobotConfig):
 
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
-    DELAY_BANDEROLLE = 90 # s
-
+    DELAY_BANDEROLLE = 20 # s
+    
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
 

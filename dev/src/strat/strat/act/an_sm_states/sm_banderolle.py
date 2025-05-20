@@ -90,9 +90,9 @@ class Banderolle(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
-            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 150))), # TODO 200 = 20 cm for now (move toward the wall)
+            ('DEPL_MOVEBACK_BANDEROLLE', MoveTo(node, MoveBackwardsStraight(node, 180))), # TODO 200 = 20 cm for now (move toward the wall)
             ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
-            ('DEPL_MOVEFORWARD_BANDEROLLE', MoveTo(node, MoveForwardStraight(node, 150))), # TODO 200 = 20 cm for now (move away from the wall)
+            ('DEPL_MOVEFORWARD_BANDEROLLE', MoveTo(node, MoveForwardStraight(node, 180))), # TODO 200 = 20 cm for now (move away from the wall)
             ('REPORT_TO_INTERFACE', ReportBanderolle(node.banderolle_pub)),
             ('BANDEROLLE_END',  BanderolleEnd(node)),
         ])

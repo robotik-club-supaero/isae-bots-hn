@@ -144,7 +144,8 @@ class DecisionsNode(Node):
 
             self.match_started = True
             self.start_time = time.time()
-            threading.Timer(self.match_time - self.delay_banderolle, self.banderolle_IT).start()
+            if self.config.deposit_banderolle:
+                threading.Timer(self.match_time - self.delay_banderolle, self.banderolle_IT).start()
             threading.Timer(self.match_time - self.delay_park, self.park_IT).start()
             threading.Timer(self.match_time, self.stop_IT).start()
 

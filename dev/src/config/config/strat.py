@@ -37,6 +37,7 @@ class NaiveStratConfig(RobotConfig):
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
     DELAY_BANDEROLLE = 20 # s
+    DEPORSIT_BANDEROLLE = True
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -64,7 +65,10 @@ class NaiveStratConfig(RobotConfig):
     @property
     def delay_banderolle(self):
         return NaiveStratConfig.DELAY_BANDEROLLE
-
+    @property
+    def deposit_banderolle(self):
+        return NaiveStratConfig.DEPORSIT_BANDEROLLE
+    
     @property
     def init_zone_count(self):
         return len(StratConfig.INIT_ZONES)

@@ -81,10 +81,6 @@ class PickupStandEnd(yasmin.State): # TODO
 class _PickupStandSequence(Sequence):
     def __init__(self, node, etage):
         super().__init__(states=[
-        ('CLAMP_DOWN_&_OPEN',
-            Concurrence(CLAMP_2 = OpenClamp(node, etage=etage),
-                        ELEV_2 = DescendElevator(node, etage=etage))
-        ),
         ('DEPL_TAKE_STAND', MoveForwardStraight(node, 100)),
         ('CLOSE_CLAMP', CloseClamp(node, etage=etage)),
         ('RISE_ELEVATOR', RiseElevator(node, etage=etage)),
@@ -93,8 +89,12 @@ class _PickupStandSequence(Sequence):
 class PickupStand(Sequence):
     def __init__(self, node, etage):
         super().__init__(states=[
-            ('DEPL_POSITIONING_STAND', MoveTo(node, CalcPositionningStand(node))),
-            ('PICKUP_STAND_CONC', _PickupStandSequence(node, etage)),
+            ('MOVE_CLAMP_DOWN_&_OPEN',
+            Concurrence(MOVE =  MoveTo(node, CalcPositionningStand(node)),
+                        CLAMP_2 = OpenClamp(node, etage=etage),
+                        ELEV_2 = DescendElevator(node, etage=etage))
+            ),
+            ('PICKUP_STAND_SEQ', _PickupStandSequence(node, etage)),
             ('PICKUP_STAND_END', PickupStandEnd(node)),
             ])
         self.etage = etage

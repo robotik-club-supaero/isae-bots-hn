@@ -20,12 +20,14 @@ class GpioButton:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.IN)
 
+        self._initState = GPIO.input(self.pin)
+
     def getButtonState(self):
         state = GPIO.input(self.pin)
-        if state == 1:
-            return ButtonState.ON
-        else:
+        if state == self._initState:
             return ButtonState.OFF
+        else:
+            return ButtonState.ON
 
 class DummyButton:
     def __init__(self):

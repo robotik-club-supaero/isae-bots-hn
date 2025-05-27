@@ -6,7 +6,7 @@ import signal
 
 class LogReader(Thread):
 
-    def __init__(self, stream, depth, transform=None):
+    def __init__(self, stream, depth, transform=None, dup=None):
         assert depth > 0
         super().__init__()
         self._stream = stream
@@ -15,35 +15,43 @@ class LogReader(Thread):
         self._dirty = False
         self.mutex = Lock()
         self.interrupted = Event()
+        self.dup = dup
 
     def run(self):
-        while not self.interrupted.is_set():
-            try:
-                readable, _, _ = select.select([self._stream], [], [], 1)
-                if self.interrupted.is_set():
+        dup = open(self.dup, "w") if self.dup is not None else None
+        try:
+            while not self.interrupted.is_set():
+                try:
+                    readable, _, _ = select.select([self._stream], [], [], 1)
+                    if self.interrupted.is_set():
+                        break
+                    if readable == []:
+                        continue
+
+                    line = self._stream.readline()
+                    if not line or self.interrupted.is_set():
+                        break
+                    line = line.decode().strip()
+                    if dup is not None:
+                        print(line, file=dup)
+
+                except:
+                    # Stream closed (process ended)
                     break
-                if readable == []:
-                    continue
 
-                line = self._stream.readline()
-                if not line or self.interrupted.is_set():
-                    break
-                line = line.decode().strip()
+                if self._transform is not None:
+                    line = self._transform(line)
+                    if not line: continue
 
-            except:
-                # Stream closed (process ended)
-                break
+                if isinstance(line, str): line = (line,)
 
-            if self._transform is not None:
-                line = self._transform(line)
-                if not line: continue
-
-            if isinstance(line, str): line = (line,)
-
-            with self.mutex:
-                for line_ in line:
-                    self._lines.append(line_)
-                self._dirty = True
+                with self.mutex:
+                    for line_ in line:
+                        self._lines.append(line_)
+                    self._dirty = True
+        finally:
+            if dup is not None:
+                dup.close()
 
     @property
     def is_dirty(self):
@@ -68,9 +76,9 @@ class LogReader(Thread):
 
 class ProcessLogReader(subprocess.Popen, LogReader):
 
-    def __init__(self, cmd, max_log_lines, transform=None):
+    def __init__(self, cmd, max_log_lines, transform=None, dup=None):
         subprocess.Popen.__init__(self, cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
-        LogReader.__init__(self, self.stdout, depth=max_log_lines, transform=transform)
+        LogReader.__init__(self, self.stdout, depth=max_log_lines, transform=transform, dup=dup)
         LogReader.start(self)
 
     def terminate(self):

@@ -1,4 +1,5 @@
 import time
+time.sleep(0.5) # FIXME The program crashes if it starts too soon after the container (why?)
 import sys
 import re
 from enum import IntEnum
@@ -95,7 +96,8 @@ class MasterNode(Node):
                 self._launchMatch = ProcessLogReader(
                     cmd=["ros2", "launch", "scripts/match.launch", 'BR:="/dev/ttyBR"', 'ACT:="/dev/ttyACT"'],
                     max_log_lines=MasterNode.LOG_LINES,
-                    transform=MasterNode._transform_logs
+                    transform=MasterNode._transform_logs,
+                    dup="/tmp/match.log"
                 )
                 self._startTime = time.time()
                 self._led.setLedBlinking(MasterNode.LED_BLINK_INTERVAL)

@@ -8,7 +8,7 @@
 	<!-- true to simulate the actuators -->
 	<arg name="NO_ACT" default="false" />
 	<!-- true to disable the lidar -->
-	<arg name="NO_LIDAR" default="true" />
+	<arg name="NO_LIDAR" default="false" />
 	<!-- true to disable human-machine interface nodes -->
 	<arg name="NO_HMI" default="false" />
 

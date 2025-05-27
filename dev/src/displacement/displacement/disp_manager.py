@@ -35,6 +35,10 @@ STOP_RANGE = 50 # mm
 MANOEUVER_ESCAPE_THRESHOLD= 150 # mm
 # Distance à partir de laquelle une manoeuvre d'éloignement est considérée comme terminée
 
+FORCE_REVERSE_THRESHOLD = 150 # mm
+# Si le robot a dû faire une manoeuvre d'éloignement qui l'a conduit à dépasser sa destination d'une distance
+# inférieure au seuil, on l'autorise à y retourner en marche arrière au lieu de faire demi-tour.
+
 MIN_SPEED = 0.4 # percentage of max speed of BR
 MANOEUVER_SPEED = 0.05 # percentage of max speed of BR
 
@@ -136,9 +140,12 @@ class DisplacementManager:
                     path = self._getPathToDest()
                     self.logger.debug("Found path: " + str(path))
 
+                force_reverse = self._bypassing and self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
+                                    (self._robot_pos.x-self._destination_pos.x)**2 + (self._robot_pos.y-self._destination_pos.y)**2 < FORCE_REVERSE_THRESHOLD
+
                 self._blocked = False
                 self._manoeuverBlocked = False
-                self.communicator.sendPathCommand(path, self._backward, self._destination_theta , allow_curve=not self._straight_only)
+                self.communicator.sendPathCommand(path, self._backward or force_reverse, self._destination_theta , allow_curve=not self._straight_only)
                 self._status = DisplacementStatus.MOVING
 
             except PathNotFoundError:

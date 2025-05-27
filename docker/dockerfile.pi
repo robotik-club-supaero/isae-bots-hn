@@ -123,6 +123,7 @@ RUN pip install adafruit-circuitpython-ssd1306 --break-system-packages
 RUN wget -P /app https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/refs/heads/main/examples/font5x8.bin
 
 # Install lib Adafruit-RFM9X for LoRa
+RUN pip install --upgrade adafruit-blinka --break-system-package
 RUN pip install adafruit-circuitpython-rfm9x --break-system-packages
 
 # Replace obsolete lib RPi.GPIO with LPGIO

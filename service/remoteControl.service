@@ -1,3 +1,5 @@
+# Copy to /etc/systemd/system/remoteControl.service
+
 [Unit]
 Description=WiiMote Remote Control Service
 After=docker.service

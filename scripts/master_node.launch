@@ -1,0 +1,15 @@
+<!-- Strat + serial + HMI nodes. Can only be launched on the real robot, not on a computer. -->
+
+<launch> 
+	<!-- Serial ports-->
+	<arg name='BR' default="/dev/ttyBR" />
+	<arg name='ACT' default="/dev/ttyACT" />
+
+    <!-- FIXME: why can't the nodes be launched from Python (match.launch)? -->
+	<!-- micro_ros -->
+	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var BR)" output="both" />
+	<node name="SerialNodeACT" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var ACT)" output="both" />
+	
+    <!-- master node -->
+	<node name="MASTER" pkg="top" exec="master_node" output="both" />
+</launch>

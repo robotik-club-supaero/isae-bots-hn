@@ -1,3 +1,5 @@
+# Copy to /etc/systemd/system/match.service
+
 [Unit]
 Description=Start match service
 After=network.target

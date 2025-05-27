@@ -1,7 +1,7 @@
 import logging
 import time
 
-from .lora import Lora
+from lora import Lora
 
 if __name__ == "__main__":
     lora = Lora(logging.getLogger())

@@ -8,7 +8,7 @@ import adafruit_rfm9x
 
 class Lora:
 
-    def __init__(self, logger, cs=board.CE1, reset=board.D25, interrupt=None, sck=board.SCK, frequency=868.0, **kwargs):
+    def __init__(self, logger, cs=board.CE1, reset=board.D17, interrupt=None, sck=board.SCK, frequency=915.0, **kwargs):
         self.logger = logger
 
         cs = DigitalInOut(cs)
@@ -17,7 +17,6 @@ class Lora:
 
         self._lora = adafruit_rfm9x.RFM9x(spi, cs, rst, frequency, **kwargs)
         self._lora.spreading_factor = 11 # Increase noise resistance
-        self._lora.receive_timeout = 0.0
 
         self._supports_interrupts = interrupt is not None
         if interrupt is not None:

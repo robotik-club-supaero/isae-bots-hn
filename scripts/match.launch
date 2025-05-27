@@ -8,16 +8,13 @@
 	<!-- true to simulate the actuators -->
 	<arg name="NO_ACT" default="false" />
 	<!-- true to disable the lidar -->
-	<arg name="NO_LIDAR" default="false" />
+	<arg name="NO_LIDAR" default="true" />
 	<!-- true to disable human-machine interface nodes -->
 	<arg name="NO_HMI" default="false" />
 
-	<!-- micro_ros -->
-	<!-- 'output="both' was removed because micro_ros is way too verbose,
-		and the Teensy_s already have a blinking led to report that micro_ros is working -->
-	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var BR)" />
-	<node name="SerialNodeACT" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var ACT)" unless="$(var NO_ACT)" />
-	
+	<!-- FIXME: micro_ros nodes moved to master_node.launch because they can't be launched from Python (why?)
+			and this script is launched by the master_node -->
+
 	<!-- Simulate the actuators if not present -->
 	<node name="ACN" pkg="sim" exec="actuator_node" output="both" if="$(var NO_ACT)"/>
 

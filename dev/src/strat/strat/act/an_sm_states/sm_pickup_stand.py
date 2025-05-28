@@ -91,8 +91,8 @@ class PickupStand(Sequence):
         super().__init__(states=[
             ('MOVE_CLAMP_DOWN_&_OPEN',
             Concurrence(MOVE =  MoveTo(node, CalcPositionningStand(node)),
-                        CLAMP_2 = OpenClamp(node, etage=etage),
-                        ELEV_2 = DescendElevator(node, etage=etage))
+                        CLAMP = OpenClamp(node, etage=etage),
+                        ELEV = DescendElevator(node, etage=etage))
             ),
             ('PICKUP_STAND_SEQ', _PickupStandSequence(node, etage)),
             ('PICKUP_STAND_END', PickupStandEnd(node)),

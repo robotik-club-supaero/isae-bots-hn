@@ -26,7 +26,7 @@ from std_msgs.msg import Empty
 from config import StratConfig
 
 from ..an_const import DspCallback, R_APPROACH_STAND
-from ..an_utils import Sequence, DescendElevator, OpenClamp, CloseClamp, Concurrence
+from ..an_utils import Sequence, DescendElevator, MoveElevatorToMiddle, RiseElevator, OpenClamp, CloseClamp, Concurrence
 
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
@@ -85,14 +85,14 @@ class DepositStand(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_DEPOSIT', MoveTo(node, CalcPositionningStand(node.get_pickup_id))),
-            ('DESCEND_ELEVATORS', Concurrence(
-                    ELEVATOR_1 = DescendElevator(node, 1),
-                    ELEVATOR_2 = DescendElevator(node, 2)
-            )),
             ('OPEN_CLAMPS', Concurrence(
                     CLAMP_1 = OpenClamp(node, 1),
                     CLAMP_2 = OpenClamp(node, 2)
-            )), 
+            )),
+            ('DESCEND_MIDDLE_ELEV_1', MoveElevatorToMiddle(node, 1)),
+            ('DESCEND_MIDDLE_ELEV_1', MoveElevatorToMiddle(node, 2)),
             ('DEPL_MOVEBACK_DEPOSIT', MoveBackwardsStraight(node, 200)), # TODO 200 = 20 cm for now
+            ('DESCEND_ELEV_1', DescendElevator(node, 1)),
+            ('DESCEND_ELEV_1', DescendElevator(node, 2)),
             ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
         ])

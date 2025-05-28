@@ -26,15 +26,15 @@ class _ObstacleFilter(ABC):
 
     def __init__(self, logger, config):
         
-        self.robot_width = config.robot_width / 2 # Size along X
-        self.robot_length = config.robot_length / 2 # Size along Y
+        self.robot_length = config.robot_length / 2 # Size along X
+        self.robot_width = config.robot_width / 2 # Size along Y
         self.robot_diag = config.robot_diagonal / 2
         self.logger = logger
 
     def _isRelevant(self, obs, backward, *, any_dir, check_sides=True, lateral_margin=0):
         x_r, y_r = obs.x, obs.y
 
-        return any_dir or (not backward and x_r > self.robot_width) or (backward and x_r < -self.robot_width) or \
+        return any_dir or (not backward and x_r > self.robot_length) or (backward and x_r < -self.robot_length) or \
                 (check_sides and x_r*x_r+y_r*y_r < (self.robot_diag+lateral_margin)**2) or \
                 (check_sides and isinstance(self, ObstacleBypassable) and x_r*x_r+y_r*y_r < (2*self.robot_diag+lateral_margin)**2)
 
@@ -116,8 +116,8 @@ class ObstacleWalls(_ObstacleFilter):
 
         for i in [1, -1]:
             for j in [1, -1]:
-                x_vertex = self.robot_pos.x + i * self.robot_width * cos - j * self.robot_length * sin
-                y_vertex = self.robot_pos.y + i * self.robot_width * sin + j * self.robot_length * cos
+                x_vertex = self.robot_pos.x + i * self.robot_length * cos - j * self.robot_width * sin
+                y_vertex = self.robot_pos.y + i * self.robot_length * sin + j * self.robot_width * cos
 
                 if x_vertex < self.detection_range:
                     yield self._makeObstacle(0, y_vertex, dist=x_vertex)
@@ -188,33 +188,33 @@ class ObstacleBypassable(_ObstacleFilter):
         # Pour cela, on détermine le côté du robot qui intersecte la droite qui relie le centre des deux robots
         if x_r > 0:
             if y_r > 0:
-                if cross_product_sign(x_r, y_r, self.robot_width, self.robot_length) > 0:
+                if cross_product_sign(x_r, y_r, self.robot_length, self.robot_width) > 0:
                     side = RobotSide.FRONT
                 else:
                     side = RobotSide.LEFT
             else:
-                if cross_product_sign(x_r, y_r, self.robot_width, -self.robot_length) > 0:
+                if cross_product_sign(x_r, y_r, self.robot_length, -self.robot_width) > 0:
                     side = RobotSide.RIGHT
                 else:
                     side = RobotSide.FRONT
         else:
             if y_r > 0:
-                if cross_product_sign(x_r, y_r, -self.robot_width, self.robot_length) > 0:
+                if cross_product_sign(x_r, y_r, -self.robot_length, self.robot_width) > 0:
                     side = RobotSide.LEFT
                 else:
                     side = RobotSide.BACK
             else:
-                if cross_product_sign(x_r, y_r, -self.robot_width, -self.robot_length) > 0:
+                if cross_product_sign(x_r, y_r, -self.robot_length, -self.robot_width) > 0:
                     side = RobotSide.BACK
                 else:
                     side = RobotSide.RIGHT
 
         if side == RobotSide.FRONT or side == RobotSide.BACK:
             # Le robot est devant ou derrière (selon X dans le repère local)
-            estimation_2 = abs(x_r) - self.robot_width - obstacle_margin
+            estimation_2 = abs(x_r) - self.robot_length - obstacle_margin
         else:
             # Le robot est à gauche ou à droite (selon Y dans le repère local)
-            estimation_2 = abs(y_r) - self.robot_length - obstacle_margin
+            estimation_2 = abs(y_r) - self.robot_width - obstacle_margin
 
         # Les deux estimations sont pessimistes, donc on prend la plus grande des deux
         # L'estimation 1 a tendance à être plus précise quand les robots sont coin-à-coin (en diagonale),

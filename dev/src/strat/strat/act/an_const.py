@@ -22,17 +22,7 @@ import os
 
 from enum import IntEnum
 
-from config import RobotConfig, COLOR
-
-#################################################################
-#                                                               #
-#                          CONSTANTS                            #
-#                                                               #
-#################################################################
-
-## Config
-
-CONFIG = RobotConfig()
+from config import COLOR
 
 #################################################################
 #                                                               #
@@ -42,10 +32,6 @@ CONFIG = RobotConfig()
 
 MAX_X = 2000
 MAX_Y = 3000
-
-ROBOT_LARG = CONFIG.robot_width
-ROBOT_LONG = CONFIG.robot_length
-ROBOT_DIAG = CONFIG.robot_diagonal
 
 ########## CONSTANTES 2024 ##########
 WAIT_TIME = 5

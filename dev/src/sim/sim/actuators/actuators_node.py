@@ -38,7 +38,7 @@ from strat.act.an_const import ElevatorCallback, ElevatorOrder, \
                                     DspCallback, ClampOrder, ClampCallback, \
                                     BanderolleCallback, BanderolleOrder
 
-from config import COLOR
+from config import COLOR, RobotConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################
@@ -90,7 +90,8 @@ class ActuatorNode(Node):
         self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.banderolle_response, default_profile)
         self.banderolle_pub = self.create_publisher(Int16, "/act/callback/banderolle", latch_profile)  
 
-    
+        self.bumpers_pub = self.create_publisher(Int16, "/act/bumpers", latch_profile)
+      
         #### Variables ####
 
         self.color = 0  							# par défaut
@@ -99,6 +100,7 @@ class ActuatorNode(Node):
         self.info_square = [-1] * 7  				# init undefined
         self.curr_square = 0
 
+        self.update_timer = self.create_timer(0.05, self.update_bumpers)
 
         self.get_logger().info("Actuator node initialized")
 
@@ -164,6 +166,17 @@ class ActuatorNode(Node):
         rsp.data = BanderolleCallback.LAUNCHED
         self.banderolle_pub.publish(rsp)
 
+    def update_bumpers(self):
+        config = RobotConfig()
+        if (self.curr_pos.x <= config.robot_length and math.cos(self.curr_pos.theta) > 0.5) or \
+                (self.curr_pos.x >= 2000 - config.robot_length and math.cos(self.curr_pos.theta) < -0.5) or \
+                (self.curr_pos.y <= config.robot_width and math.sin(self.curr_pos.theta) > 0.5) or \
+                (self.curr_pos.y >= 3000 - config.robot_width and math.sin(self.curr_pos.theta) < -0.5):
+
+            self.bumpers_pub.publish(Int16(data=3))
+
+        else:
+            self.bumpers_pub.publish(Int16(data=0))
 
 #################################################################
 #																#

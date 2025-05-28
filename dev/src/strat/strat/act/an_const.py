@@ -80,14 +80,16 @@ class DspCallback(Callback):
     SUCCESS = 0      # Le robot est arrivé au point demandé
 
 class ElevatorOrder(IntEnum):
-    MOVE_UP = 1
+    MOVE_UP = 2
+    MOVE_MIDDLE = 1
     MOVE_DOWN = 0
         
 class ElevatorCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 0
-    UP = 1
+    MIDDLE = 1
+    UP = 2
 
 class ClampOrder(IntEnum):
     OPEN = 0
@@ -107,6 +109,10 @@ class BanderolleCallback(Callback):
     PENDING = -1
     STORED = 1
     LAUNCHED = 2
+
+class BumperState(IntEnum):
+    RELEASED = 0
+    PRESSED = 1
 
 ## I/O keys for states of the sm
 USERDATA_VAR_LIST = [ #TODO update

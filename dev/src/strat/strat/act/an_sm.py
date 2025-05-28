@@ -75,6 +75,7 @@ class Setup(yasmin.State):
         userdata["cb_elevator_1"] = ElevatorCallback.PENDING # state of the elevator
         userdata["cb_elevator_2"] = ElevatorCallback.PENDING # state of the elevator
         userdata["cb_banderolle"] = ElevatorCallback.PENDING # state of the banderolle
+        userdata["bumper_state"] = BumperState.RELEASED
         
         ## Game infos variables
         userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
@@ -82,6 +83,7 @@ class Setup(yasmin.State):
 
         userdata["action_result"] = ActionResult.NOTHING
 
+        self._node.reset_act_pub.publish(Empty())
         time.sleep(0.01)
         self._node.setupComplete = True
 

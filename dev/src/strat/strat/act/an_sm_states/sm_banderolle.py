@@ -52,6 +52,25 @@ class CalcPosition(yasmin.State):
         userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True)
 
         return 'success'
+
+class WaitForBumpers(yasmin.State):
+    def __init__(self, timeout=WAIT_TIME):
+        super().__init__(outcomes=['fail', 'success', 'preempted'])
+        self._timeout = timeout
+
+    def execute(self, userdata):
+        self._logger.info(f"Waiting for the robot to touch the wall before deploying the banner")
+
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < self._timeout:
+            if self.is_canceled():
+                return 'preempted'   
+            if userdata["bumper_state"] == BumperState.PRESSED:
+                return "success"
+        
+        self._logger.warning(f"Timeout while waiting for the bumpers")        
+        return "fail"
+
     
 class ReportBanderolle(yasmin.State): # DEPRECATED TODO
     def __init__(self, deposit_pub):

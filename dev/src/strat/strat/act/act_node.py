@@ -36,7 +36,7 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from br_messages.msg import Position
 
-from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, COLOR
+from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, BumperState, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
@@ -56,6 +56,7 @@ class ActionNode(Node):
         Initialize all publishers of /strat/action/request
         """
         # GENERAL PUBS
+        self.reset_act_pub = self.create_publisher(Empty, "/act/reset", latch_profile) # Used in state machine "Setup"
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.repartitor_pub = self.create_publisher(EndOfActionMsg, '/strat/action/request', latch_profile)
         self.disp_pub = self.create_publisher(DisplacementRequest, '/dsp/order/next_move', latch_profile)
@@ -87,6 +88,7 @@ class ActionNode(Node):
         self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, default_profile)
         self.elevator_2_sub = self.create_subscription(Int16, '/act/callback/elevator_2', self.cb_elevator_2_fct, default_profile)
         self.banderolle_sub = self.create_subscription(Int16, '/act/callback/banderolle', self.cb_banderolle_fct, default_profile)
+        self.bumper_sub = self.create_subscription(Int16, '/act/bumpers', self.cb_bumper_fct, default_profile)
 
         self._blackboard = Blackboard()
 
@@ -231,6 +233,17 @@ class ActionNode(Node):
             self.smData["launch_banderolle"] = msg.data
             if msg.data != 0:
                 self.sm.cancel_state()
+
+    def cb_bumper_fct(self, msg):
+        if self.setupComplete:
+            # 3 = 0b10 | 0b01
+            # msg.data & 0b01 is the state of the first bumper
+            # msg.data & 0b10 is the state of the second bumper
+            # (msg.data & 3) == 3 means the two bumpers are pressed
+            if (msg.data & 3) == 3:
+                self.smData["bumper_state"] = BumperState.PRESSED
+            else:
+                self.smData["bumper_state"] = BumperState.RELEASED
     
     def cb_park_fct(self, msg):
         """

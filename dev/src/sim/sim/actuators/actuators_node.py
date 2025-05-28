@@ -127,6 +127,9 @@ class ActuatorNode(Node):
         if msg.data == ElevatorOrder.MOVE_UP:
             rsp.data = ElevatorCallback.UP
             self.log_info(f"Réponse simulée : Ascenseur {etage} haut")
+        elif msg.data == ElevatorOrder.MOVE_MIDDLE:
+            rsp.data = ElevatorCallback.MIDDLE
+            self.log_info(f"Réponse simulée : Ascenseur {etage} milieu")
         else:
             rsp.data = ElevatorCallback.DOWN
             self.log_info(f"Réponse simulée : Ascenseur {etage} bas")

@@ -62,10 +62,12 @@ class DecisionsNode(Node):
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
         self.next_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/request", self.send_action_next, default_profile)
 
+        # Publish on this topic to interrupt the current action for another reason than "park" or "end"
+        self.interrupt_pub = self.create_publisher(Empty, '/strat/interrupt', latch_profile)
+
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-        self.launch_banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
         
         self.config = None
 
@@ -270,10 +272,7 @@ class DecisionsNode(Node):
         """
         self.get_logger().info('\033[1m\033[36m' + "#"*19 + " Banderolle interrupt " + "#"*18 + '\033[0m')
         self.launch_banderolle = True
-
-        msg = Int16()
-        msg.data = 1
-        self.launch_banderolle_pub.publish(msg)
+        self.interrupt_pub.publish(Empty())
 
     def stop_IT(self):
         """

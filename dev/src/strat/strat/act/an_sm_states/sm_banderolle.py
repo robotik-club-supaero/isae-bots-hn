@@ -29,7 +29,8 @@ from config import StratConfig
 
 from ..an_const import *
 from ..an_utils import LaunchBanderolle, Sequence
-from .sm_displacement import MoveTo, MoveBackwardsStraight, MoveForwardStraight, approach, create_displacement_request, create_orientation_request
+from .sm_displacement import MoveTo, MoveForwardStraight, MoveWithSpeed, StopRobot, approach, \
+                             create_displacement_request, create_orientation_request
 
 from strat.strat_utils import create_end_of_action_msg
 
@@ -54,9 +55,10 @@ class CalcPosition(yasmin.State):
         return 'success'
 
 class WaitForBumpers(yasmin.State):
-    def __init__(self, timeout=WAIT_TIME):
+    def __init__(self, logger, timeout=WAIT_TIME):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
         self._timeout = timeout
+        self._logger = logger
 
     def execute(self, userdata):
         self._logger.info(f"Waiting for the robot to touch the wall before deploying the banner")
@@ -70,16 +72,6 @@ class WaitForBumpers(yasmin.State):
         
         self._logger.warning(f"Timeout while waiting for the bumpers")        
         return "fail"
-
-    
-class ReportBanderolle(yasmin.State): # DEPRECATED TODO
-    def __init__(self, deposit_pub):
-        super().__init__(outcomes=['success'])
-        self._banderolle_pub = deposit_pub
-
-    def execute(self, userdata):
-        self._banderolle_pub.publish(Empty())
-        return 'success'
 
 class BanderolleEnd(yasmin.State):
     """
@@ -109,10 +101,11 @@ class Banderolle(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
-            ('DEPL_MOVEBACK_BANDEROLLE', MoveBackwardsStraight(node, 180)), # TODO 200 = 20 cm for now (move toward the wall)
+            ('DEPL_MOVEBACK_BANDEROLLE', MoveWithSpeed(node, -0.1, 0.)),
+            ('WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
+            ('STOP_ROBOT', StopRobot(node)),
             ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
             ('DEPL_MOVEFORWARD_BANDEROLLE', MoveForwardStraight(node, 180)), # TODO 200 = 20 cm for now (move away from the wall)
-            ('REPORT_TO_INTERFACE', ReportBanderolle(node.banderolle_pub)),
             ('BANDEROLLE_END',  BanderolleEnd(node)),
         ])
 

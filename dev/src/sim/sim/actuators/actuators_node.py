@@ -165,13 +165,14 @@ class ActuatorNode(Node):
         rsp = Int16()
         rsp.data = BanderolleCallback.LAUNCHED
         self.banderolle_pub.publish(rsp)
+        self.log_info(f"Réponse simulée : Banderolle déployée")
 
     def update_bumpers(self):
         config = RobotConfig()
-        if (self.curr_pos.x <= config.robot_length and math.cos(self.curr_pos.theta) > 0.5) or \
-                (self.curr_pos.x >= 2000 - config.robot_length and math.cos(self.curr_pos.theta) < -0.5) or \
-                (self.curr_pos.y <= config.robot_width and math.sin(self.curr_pos.theta) > 0.5) or \
-                (self.curr_pos.y >= 3000 - config.robot_width and math.sin(self.curr_pos.theta) < -0.5):
+        if (self.curr_pos.x <= config.robot_length/2 and math.cos(self.curr_pos.theta) > 0.5) or \
+                (self.curr_pos.x >= 2000 - config.robot_length/2 and math.cos(self.curr_pos.theta) < -0.5) or \
+                (self.curr_pos.y <= config.robot_width/2 and math.sin(self.curr_pos.theta) > 0.5) or \
+                (self.curr_pos.y >= 3000 - config.robot_width/2 and math.sin(self.curr_pos.theta) < -0.5):
 
             self.bumpers_pub.publish(Int16(data=3))
 

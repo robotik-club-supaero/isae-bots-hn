@@ -152,6 +152,28 @@ class MoveBackwardsStraight(MoveStraight):
     def __init__(self, node, distance):
         super().__init__(node, distance, backward=True)
 
+
+class MoveWithSpeed(yasmin.State):
+    """ WARNING: This returns immediately (always with "success"); the robot will move until it is stopped"""
+    def __init__(self, node, linear, angular):
+        super().__init__(outcomes=['success', 'fail', 'preempted'])
+        self._node = node
+        self._linear = linear
+        self._angular = angular
+
+    def execute(self, userdata):        
+        self._node.disp_pub.publish(create_speed_control_request(self._linear, self._angular))
+        return "success"
+
+class StopRobot(yasmin.State):
+    def __init__(self, node):
+        super().__init__(outcomes=['success', 'fail', 'preempted'])
+        self._node = node
+
+    def execute(self, userdata):        
+        self._node.disp_pub.publish(create_stop_BR_request())
+        return "success"
+
 def create_displacement_request(x, y, theta=None, backward=False, straight_only=False):
     msg = DisplacementRequest()
     msg.kind |= DisplacementRequest.MOVE
@@ -174,6 +196,16 @@ def create_orientation_request(theta):
     msg.theta = float(theta)
 
     return msg
+
+
+def create_speed_control_request(linear, angular):
+    msg = DisplacementRequest()
+    msg.kind = DisplacementRequest.SPEED_CONTROL
+    msg.x = linear
+    msg.y = angular
+
+    return msg
+
 
 def create_stop_BR_request():
     return DisplacementRequest() # Empty msg = STOP

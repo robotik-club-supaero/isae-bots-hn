@@ -60,6 +60,7 @@ class DisplacementManager:
 
         self._destination_pos = None
         self._destination_theta = None
+        self._destination_speed = None
         self._backward = False
         self._straight_only = False
 
@@ -107,6 +108,7 @@ class DisplacementManager:
         self._status = DisplacementStatus.IDLE
         self._destination_pos = None
         self._destination_theta = None
+        self._destination_speed = None
         self._bypassing = False
         self._blocked = False
         self._manoeuverBlocked = False 
@@ -127,6 +129,12 @@ class DisplacementManager:
         self._clearState()
         self._destination_pos = None
         self._destination_theta = theta
+        self._resume_move()
+
+    def requestSpeedControl(self, linear, angular):
+        self._clearState()
+        self._destination_speed = (255. * max(-1., min(1., linear)), 255. * max(-1., min(1., angular)))
+        self._straight_only = True # disables detection of walls
         self._resume_move()
 
     def _resume_move(self):
@@ -167,6 +175,9 @@ class DisplacementManager:
 
         elif self._destination_theta is not None:
             self.communicator.sendOrientationCommand(self._destination_theta)
+
+        elif self._destination_speed is not None:
+            self.communicator.sendSpeedCommand(*self._destination_speed)
         
         else:
             self.logger.error(f"No destination is set or destination kind is not recognized.")

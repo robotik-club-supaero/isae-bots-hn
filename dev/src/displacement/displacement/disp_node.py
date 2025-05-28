@@ -216,6 +216,11 @@ class DisplacementNode(Node):
         """Traitement des commandes de la strat."""
         if msg.kind == 0:
             self.manager.cancelDisplacement()
+
+        elif msg.kind == DisplacementRequest.SPEED_CONTROL:
+            linear, angular = msg.x, msg.y
+            self.get_logger().info(f"Displacement order with speed: ({linear}, {angular})")
+            self.manager.requestSpeedControl(linear, angular)
         
         elif msg.kind & DisplacementRequest.MOVE != 0:
             x, y = msg.x, msg.y

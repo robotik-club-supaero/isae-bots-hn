@@ -65,7 +65,6 @@ class Setup(yasmin.State):
         userdata["start"] = False
         userdata["color"] = 0
         userdata["park"] = 0
-        userdata["launch_banderolle"] = 0
         
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl

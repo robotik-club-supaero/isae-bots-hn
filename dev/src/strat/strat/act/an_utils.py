@@ -76,6 +76,17 @@ class RiseElevator(HardwareOrder):
         self._debug_print('c', f"Request to move elevator n°{self.etage} up")
         return super().execute(userdata)
  
+class MoveElevatorToMiddle(HardwareOrder):
+    
+    def __init__(self, node, etage):
+        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_MIDDLE, ElevatorCallback.PENDING, ElevatorCallback.MIDDLE)
+        self._debug_print = node.debug_print
+        self.etage = etage
+    
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to move elevator n°{self.etage} to middle")
+        return super().execute(userdata)
+
 class DescendElevator(HardwareOrder):
     
     def __init__(self, node, etage):

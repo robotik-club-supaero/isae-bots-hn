@@ -77,6 +77,7 @@ class ActionNode(Node):
         self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, default_profile)
         self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, default_profile)
         self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, default_profile)
+        self.strat_interrupt_sub = self.create_subscription(Empty, '/strat/interrupt', self.cb_interrupt_fct, default_profile)
         self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, default_profile)
         self.position_sub = self.create_subscription(Position, '/br/currentPosition', self.cb_position_fct, br_position_topic_profile)
         self.park_sub = self.create_subscription(Int16, '/park', self.cb_park_fct, default_profile)
@@ -108,6 +109,8 @@ class ActionNode(Node):
         self.sm.cancel_state()
         self._sm_thread.join()
         self.get_logger().info('Exiting state machine.')
+
+        self.destroy_node()
 
     # Debug print function
     def debug_print(self, format, *msgs):
@@ -230,9 +233,7 @@ class ActionNode(Node):
         Callback of the state of banderolle
         """
         if self.setupComplete:
-            self.smData["launch_banderolle"] = msg.data
-            if msg.data != 0:
-                self.sm.cancel_state()
+            self.smData["cb_banderolle"] = BanderolleCallback.parse(msg.data)
 
     def cb_bumper_fct(self, msg):
         if self.setupComplete:
@@ -255,6 +256,10 @@ class ActionNode(Node):
             self.smData["park"] = msg.data
             if msg.data != 0:
                 self.sm.cancel_state()
+
+    def cb_interrupt_fct(self, msg):
+        """Interrupt requested by the decision node (other than 'park' or 'end')"""
+        self.sm.cancel_state()
 
     def cb_end_fct(self, msg):
         self.sm.cancel_state()
@@ -286,7 +291,6 @@ def main():
             except (ExternalShutdownException, KeyboardInterrupt):
                 node.get_logger().warning("Node forced to terminate")
     finally:
-        node.destroy_node()
         rclpy.try_shutdown()
 
 if __name__ == '__main__':

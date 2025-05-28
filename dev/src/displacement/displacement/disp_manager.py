@@ -25,12 +25,14 @@ DYNAMIC_VISIBILITY = 500 # mm
 # Distance au-delà de laquelle les obstacles dynamiques sont ignorés par le PF
 # Leur position actuelle ne sera probablement plus valide d'ici là.
 
-BYPASS_RANGE = 300 # mm
+BYPASS_RANGE = 200 # mm
 # Distance en dessous de laquelle le robot va s'arrêter et recalculer un chemin de contournement
 
 STOP_RANGE = 50 # mm
 # Distance critique en dessous de laquelle le contournement n'est pas possible.
 # Des manoeuvres d'éloignement lentes peuvent toujours être tentées.
+
+LATERAL_MARGIN = 10 # mm
 
 MANOEUVER_ESCAPE_THRESHOLD= 150 # mm
 # Distance à partir de laquelle une manoeuvre d'éloignement est considérée comme terminée
@@ -140,7 +142,7 @@ class DisplacementManager:
                     path = self._getPathToDest()
                     self.logger.debug("Found path: " + str(path))
 
-                force_reverse = self._bypassing and self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
+                force_reverse = self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
                                     (self._robot_pos.x-self._destination_pos.x)**2 + (self._robot_pos.y-self._destination_pos.y)**2 < FORCE_REVERSE_THRESHOLD
 
                 self._blocked = False
@@ -297,12 +299,12 @@ class DisplacementManager:
         if self._enable_wall_detection:
             yield self.obstacles_wall
 
-    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE, lateral_margin=STOP_RANGE):
+    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE, lateral_margin=LATERAL_MARGIN):
         nearest, min_dist = None, float("inf")
         
         for source in self._obstacleSources():
             obs, dist = source.findNearestObstacle(backward, any_dir=any_dir, check_sides=check_sides, low_limit=low_limit, lateral_margin=lateral_margin)
-            if source.allowUnsafeApproach and self._straight_only and dist > 0:
+            if source.allowUnsafeApproach and self._straight_only:
                 dist = max(dist, STOP_RANGE)
 
             if dist < low_limit:

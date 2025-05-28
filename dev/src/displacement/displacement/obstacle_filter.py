@@ -34,7 +34,7 @@ class _ObstacleFilter(ABC):
     def _isRelevant(self, obs, backward, *, any_dir, check_sides=True, lateral_margin=0):
         x_r, y_r = obs.x, obs.y
 
-        return any_dir or (not backward and x_r > 0) or (backward and x_r < 0) or \
+        return any_dir or (not backward and x_r > self.robot_width) or (backward and x_r < -self.robot_width) or \
                 (check_sides and x_r*x_r+y_r*y_r < (self.robot_diag+lateral_margin)**2) or \
                 (check_sides and isinstance(self, ObstacleBypassable) and x_r*x_r+y_r*y_r < (2*self.robot_diag+lateral_margin)**2)
 

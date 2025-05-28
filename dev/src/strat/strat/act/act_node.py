@@ -262,6 +262,7 @@ class ActionNode(Node):
         self.sm.cancel_state()
 
     def cb_end_fct(self, msg):
+        self.smData["end"] = True
         self.sm.cancel_state()
 
     def get_pickup_id(self, what, userdata):

@@ -63,6 +63,7 @@ class Setup(yasmin.State):
         
         ## Game param variables
         userdata["start"] = False
+        userdata["end"] = False
         userdata["color"] = 0
         userdata["park"] = 0
         
@@ -116,6 +117,9 @@ class Repartitor(yasmin.State): # TO UPDATE
         self._repartitor_pub = repartitor_pub
 
     def execute(self, userdata):
+        if userdata["end"]:
+            return "end"
+            
         self._logger.info('[Repartitor] Requesting next action ...')
 
         self._repartitor_pub.publish(EndOfActionMsg(exit=userdata["action_result"])) # demande nextAction au DN
@@ -177,11 +181,11 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
         # Primary States
         self.add_state('SETUP', Setup(node), transitions={'preempted':'END','start':'REPARTITOR'})
         self.add_state('REPARTITOR', Repartitor(node.get_logger(), node.repartitor_pub),
-                        transitions=dict(ACTION_TRANSITIONS, **{'preempted':'END'}))
+                        transitions=dict(ACTION_TRANSITIONS, **{'preempted':'REPARTITOR'}))
         self.add_state('END', End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
                         transitions={'end':'exit all','preempted':'exit preempted'})
         self.add_state('WAITING', waiting,
-                        transitions={'preempted':'END','success':'REPARTITOR'})
+                        transitions={'preempted':'REPARTITOR','success':'REPARTITOR'})
 
         # Specific Action States
         self.add_submachine('DEPOSIT_STAND', DepositStand(node),
@@ -195,7 +199,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
         
         # Other States
         self.add_submachine('PARK', Park(node),
-                        transitions={'preempted':'END','end':'REPARTITOR','fail':'REPARTITOR'})
+                        transitions={'preempted':'REPARTITOR','end':'REPARTITOR','fail':'REPARTITOR'})
         
     
     def add_submachine(self, name, machine, transitions):

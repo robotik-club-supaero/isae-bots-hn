@@ -63,7 +63,8 @@ class DisplacementManager:
         self._destination_speed = None
         self._backward = False
         self._straight_only = False
-
+        self._currentPath = []
+        
         self._manoeuverBackward = False
 
         self._speed = 1.
@@ -109,6 +110,7 @@ class DisplacementManager:
         self._destination_pos = None
         self._destination_theta = None
         self._destination_speed = None
+        self._currentPath.clear()
         self._bypassing = False
         self._blocked = False
         self._manoeuverBlocked = False 
@@ -150,6 +152,8 @@ class DisplacementManager:
                     path = self._getPathToDest()
                     self.logger.debug("Found path: " + str(path))
 
+                self._currentPath = path
+
                 force_reverse = self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
                                     (self._robot_pos.x-self._destination_pos.x)**2 + (self._robot_pos.y-self._destination_pos.y)**2 < FORCE_REVERSE_THRESHOLD
 
@@ -185,6 +189,10 @@ class DisplacementManager:
     def _getPathToDest(self):
         return self.map.get_path([self._robot_pos.x, self._robot_pos.y], [self._destination_pos.x, self._destination_pos.y])
 
+    def _estimatePathLength(self, path):
+        path = [self._robot_pos] + path
+        return sum(math.sqrt((path[i].x-path[i+1].x)**2+(path[i].y-path[i+1].y)**2) for i in range(len(path)-1))
+
     def _stop(self):
         self.communicator.sendStopCommand()
 
@@ -211,8 +219,8 @@ class DisplacementManager:
             self.map.set_dynamic_obstacle(BYPASS_OBSTACLE_NAME, ObstacleCircle(Point_pf(x_abs, y_abs), self.robot_diag + self.obstacle_radius + STOP_RANGE))
 
     def _startManoeuver(self):
-        _, dist_forward = self._findNearestObstacle(backward=False, check_sides=False, manoeuver=True)
-        _, dist_backward = self._findNearestObstacle(backward=True, check_sides=False, manoeuver=True)
+        _, dist_forward = self._findNearestObstacle(backward=False, check_sides=False)
+        _, dist_backward = self._findNearestObstacle(backward=True, check_sides=False)
 
         if dist_forward < dist_backward:
             if dist_backward > STOP_RANGE:
@@ -242,26 +250,37 @@ class DisplacementManager:
                 self.logger.warn("Obstacle detected too close: need to wait")
                 self._stopAndWait()
             else:
-                if not self._bypassing and not self._straight_only and dist < BYPASS_RANGE:
-                    try:
-                        # Check if the opponent is on the way and is a "bypassable" obstacle:
-                        # - compute the path without the obstacle
-                        # - add the obstacle (if it is a bypassable obstacle)
-                        # - check if the path is still valid
+                if not self._straight_only:
+                    if not self._bypassing and dist < BYPASS_RANGE:
+                        try:
+                            # Check if the opponent is on the way and is a "bypassable" obstacle:
+                            # - compute the path without the obstacle
+                            # - add the obstacle (if it is a bypassable obstacle)
+                            # - check if the path is still valid
 
-                        self._clearObstacleToBypass()
-                        path = self._getPathToDest()
+                            self._clearObstacleToBypass()
+                            path = self._getPathToDest()
+                            self._updateObstacleToBypass()
+                            if not self.map.can_go_straight([self._robot_pos.x, self._robot_pos.y], [path[0].x, path[0].y]):
+                                # Opponent effectively blocking the way
+                                self.logger.warn("Obstacle detected on the way: need to wait")
+                                self._stopAndWait()
+                                return
+                        except:
+                            # Should not happen because we could compute the path the first time
+                            self.logger.error("Unexpected error when recomputing the path")
+                            pass
+
+                    elif self._bypassing:
+                        # Check if the path computed is still optimal
                         self._updateObstacleToBypass()
-                        if not self.map.can_go_straight([self._robot_pos.x, self._robot_pos.y], [path[0].x, path[0].y]):
-                            # Opponent effectively blocking the way
-                            self.logger.warn("Obstacle detected on the way: need to wait")
-                            self._stopAndWait()
-                            return
-                    except:
-                        # Should not happen because we could compute the path the first time
-                        self.logger.error("Unexpected error when recomputing the path")
-                        pass
+                        try:
+                            if not self._bypassing or self._estimatePathLength(self._currentPath) > self._estimatePathLength(self._getPathToDest()) + 50:
+                                self._resume_move()
+                        except PathNotFoundError:
+                            pass
                 
+                _, dist = self._findNearestObstacle(self._backward, enable_walls=False)
                 low_bound = STOP_RANGE if self._bypassing or self._straight_only else BYPASS_RANGE
                 speed = max(MIN_SPEED, min(1, (dist-low_bound)/(SLOWDOWN_RANGE-low_bound)))
                 self._setSpeed(speed)
@@ -291,29 +310,30 @@ class DisplacementManager:
                 self._resume_move()
 
         elif self._status == DisplacementStatus.AVOIDANCE_MANOEUVER:
-            _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False, manoeuver=True)
+            _obs, dist = self._findNearestObstacle(self._manoeuverBackward, check_sides=False)
             if dist < STOP_RANGE:
                 self.logger.info("Obstacle detected too close: aborting manoeuver")
                 self._stopAndWait()
             else:
-                _obs, dist = self._findNearestObstacle(self._backward, lateral_margin=MANOEUVER_ESCAPE_THRESHOLD)
-                if dist > MANOEUVER_ESCAPE_THRESHOLD:                    
+                obs, dist = self._findNearestObstacle(self._backward, lateral_margin=MANOEUVER_ESCAPE_THRESHOLD)
+                if dist > MANOEUVER_ESCAPE_THRESHOLD or obs.x < 0 == self._manoeuverBackward:
                     self._updateObstacleToBypass()
                     self.logger.info("Manoeuver complete: resuming displacement")
                     self._stopAndWait()
                     self._bypassing = True
                     self._resume_move()
 
-    def _obstacleSources(self):
+
+    def _obstacleSources(self, enable_walls=True):
         yield self.obstacles_non_bypassable
         yield self.obstacles_bypassable
-        if self._enable_wall_detection:
+        if enable_walls and self._enable_wall_detection:
             yield self.obstacles_wall
 
-    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, manoeuver=False, low_limit=STOP_RANGE, lateral_margin=LATERAL_MARGIN):
+    def _findNearestObstacle(self, backward, *, any_dir=False, check_sides=True, low_limit=STOP_RANGE, lateral_margin=LATERAL_MARGIN, enable_walls=True):
         nearest, min_dist = None, float("inf")
         
-        for source in self._obstacleSources():
+        for source in self._obstacleSources(enable_walls=enable_walls):
             obs, dist = source.findNearestObstacle(backward, any_dir=any_dir, check_sides=check_sides, low_limit=low_limit, lateral_margin=lateral_margin)
             if source.allowUnsafeApproach and self._straight_only:
                 dist = max(dist, STOP_RANGE)

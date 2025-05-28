@@ -90,9 +90,9 @@ class DepositStand(Sequence):
                     CLAMP_2 = OpenClamp(node, 2)
             )),
             ('DESCEND_MIDDLE_ELEV_1', MoveElevatorToMiddle(node, 1)),
-            ('DESCEND_MIDDLE_ELEV_1', MoveElevatorToMiddle(node, 2)),
+            ('DESCEND_MIDDLE_ELEV_2', MoveElevatorToMiddle(node, 2)),
             ('DEPL_MOVEBACK_DEPOSIT', MoveBackwardsStraight(node, 200)), # TODO 200 = 20 cm for now
             ('DESCEND_ELEV_1', DescendElevator(node, 1)),
-            ('DESCEND_ELEV_1', DescendElevator(node, 2)),
+            ('DESCEND_ELEV_2', DescendElevator(node, 2)),
             ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
         ])

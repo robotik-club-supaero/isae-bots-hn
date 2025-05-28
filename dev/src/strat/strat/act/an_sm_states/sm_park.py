@@ -27,7 +27,9 @@ import math
 from config import StratConfig
 
 from ..an_const import *
-from .sm_displacement import Displacement, approach, Approach
+from ..an_utils import Sequence
+
+from .sm_displacement import MoveTo, approach, Approach
 from strat.strat_utils import create_end_of_action_msg
 
 from strat.strat_const import ActionResult
@@ -42,9 +44,8 @@ class CalcParkPos(yasmin.State):
     """
     SM PARK : Observer state
     """
-    def __init__(self, node):
+    def __init__(self):
         super().__init__(outcomes=['preempted','success','fail'])			                   
-        self._node = node
 
     def execute(self, userdata):
         if self.is_canceled():
@@ -82,17 +83,14 @@ class ParkEnd(yasmin.State):
 #                                                               #
 #################################################################
 
-class Park(yasmin.StateMachine):
+class Park(Sequence):
     def __init__(self, node):
-        super().__init__(outcomes=['preempted', 'end', 'fail'])
-                
-        self.add_state('CALC_PARK_POS', 
-                        CalcParkPos(node), 
-                        transitions={'preempted':'preempted','success':'DEPL_PARK','fail':'fail'})
-        self.add_state('DEPL_PARK', 
-                        Displacement(node), 
-                        transitions={'preempted':'preempted','success':'PARK_END','fail':'fail'})
-        self.add_state('PARK_END', 
-                        ParkEnd(node), 
-                        transitions={'preempted':'preempted','success':'end','fail':'fail'})
+        super().__init__(
+            outcomes=['preempted', 'end', 'fail'],
+            success_outcome="end",
+            states=[
+                ('CALC_PARK_POS', MoveTo(node, CalcParkPos())),
+                ('PARK_END', ParkEnd(node), "end")
+            ]
+        )
 

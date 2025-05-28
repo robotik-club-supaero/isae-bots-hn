@@ -131,10 +131,12 @@ class LaunchBanderolle(HardwareOrder):
         return super().execute(userdata)
 
 class Sequence(yasmin.StateMachine):
-    def __init__(self, outcomes = ["success", "fail", "preempted"], states = []):
+    def __init__(self, outcomes = ["success", "fail", "preempted"], states = [], success_outcome="success"):
         super().__init__(outcomes)
         self._last_state = None
         self._connector = None
+        self._success_outcome = success_outcome
+
         for state in states:
             self.add_state(state[0], state[1], connector=state[2] if len(state) > 2 else "success")
 
@@ -149,7 +151,11 @@ class Sequence(yasmin.StateMachine):
 
     def execute(self, blackboard):
         try:
-            return super().execute(blackboard)
+            outcome = super().execute(blackboard)
+            if outcome == self._connector:
+                return self._success_outcome
+            else:
+                return outcome
         except RuntimeError:
             if self.is_canceled():
                 return "preempted"

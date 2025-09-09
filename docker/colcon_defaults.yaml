@@ -1,0 +1,6 @@
+{
+  "build": {
+    "symlink-install": true,
+    "cmake-args": ["-DBUILD_HEADLESS=__HEADLESS__"]
+  }
+}

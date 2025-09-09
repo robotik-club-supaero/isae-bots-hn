@@ -48,5 +48,5 @@ La BR doit être recompilée à chaque fois qu'elle est modifiée.
 
 Pour recompiler :
 ```
-make main CMD="colcon build --symlink-install"
+make main CMD="colcon build"
 ```

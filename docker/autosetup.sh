@@ -23,14 +23,11 @@ sed -i -e 's/ether/serial/g' /app/dev/lib/urg_node2/launch/urg_node2.launch.py
 if cat /proc/cpuinfo | grep -iq "Raspberry"; then
 # Use ttyLIDAR instead of ttyACM0 on Raspberry
 sed -i -e 's/ACM0/LIDAR/g' /app/dev/lib/urg_node2/config/params_serial.yaml;
-
-# Don't build simulation_br on Raspberry
-touch /app/dev/lib/br/TeensyBRpio/br_controller/COLCON_IGNORE
 fi
 
 # Why is this necessary?
 rm -rf /app/build/micro_ros_msgs/ament_cmake_python/micro_ros_msgs/micro_ros_msgs
-colcon build --symlink-install
+colcon build
 source "/app/install/setup.bash"
 
 # Setup environment variables

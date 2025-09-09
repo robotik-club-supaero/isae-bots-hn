@@ -40,18 +40,20 @@ DOCKER_VOLUMES = \
 DOCKER_VOLUMES_PI = \
 	${DOCKER_VOLUMES_COMMON}
 
-DOCKER_ENV_VAR = \
+DOCKER_ENV_VAR_COMMON = \
 	-e DISPLAY=${DISPLAY} \
 	--env="WDIR=dev"
+
+DOCKER_ENV_VAR = \
+	${DOCKER_ENV_VAR_COMMON}
+
+DOCKER_ENV_VAR_PI = \
+	${DOCKER_ENV_VAR_COMMON} \
+	--env="PULSE_SERVER=tcp:${docker_ip}:34567"
 
 # commande pour obtenir l'adresse du conteneur docker, le double dollar permet d'escape un dollar
 # utilisée pour donner l'accès au son dans le docker
 docker_ip = $(shell ip -4 -o a| grep docker0 | awk '{print $$4}' | cut -d/ -f1)
-
-DOCKER_ENV_VAR_PI = \
-	-e DISPLAY=${DISPLAY} \
-	--env="WDIR=dev" \
-	--env="PULSE_SERVER=tcp:${docker_ip}:34567"
 
 # --env PULSE_SERVER=tcp:172.17.0.1:34567 fait marcher pulseaudio dans le docker sur la pi pour avoir du son en TCP
 # ref du tuto : https://github.com/mviereck/x11docker/wiki/Container-sound:-ALSA-or-Pulseaudio

@@ -30,7 +30,7 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 import cwiid
 from enum import IntEnum, Enum
-from std_msgs.msg      import  Bool
+from std_msgs.msg      import  Bool, Empty
 from br_messages.msg import Command
 from config.qos import default_profile
 
@@ -87,6 +87,7 @@ class WiiControlNode(Node):
         # -- Publishers & subscribers
         
         self.command_pub = self.create_publisher(Command, "/br/command", default_profile)
+        self.stop_pub = self.create_publisher(Empty, '/br/stop', default_profile)
         self.idle_pub = self.create_publisher(Bool, "/br/idle", default_profile)
         self.update_timer = self.create_timer(0.05, self.unitstep)
 
@@ -135,8 +136,8 @@ class WiiControlNode(Node):
             hori = self.wiimote.state['nunchuk']['stick'][0]
             corr_vert = nunchuk(vert, nunchuk_v_consts)
             corr_hori = nunchuk(hori, nunchuk_h_consts)
-            speed = (corr_vert - 50)*2 / (5-self.coeff_speed) * max_speed / 100
-            angle = (corr_hori - 50)*2 / (5-self.coeff_speed) * max_speed / 100 / 2
+            speed = (corr_vert - STICK_SCALE.MID) * 2 / (5 - self.coeff_speed) * max_speed / 100
+            angle = (corr_hori - STICK_SCALE.MID) * 2 / (5 - self.coeff_speed) * max_speed / 100 / 2
         else:
             speed = angle = 0
         self.msg_pos.linear = float(min(max(speed, -max_speed), max_speed))
@@ -148,8 +149,11 @@ class WiiControlNode(Node):
         if abs(self.msg_pos.angular) < 10:
             self.msg_pos.angular = 0.
 
-        self.command_pub.publish(self.msg_pos)
-
+        if self.msg_pos.linear == 0. and self.msg_pos.angular == 0.:
+            self.stop_pub.publish(Empty()) # Stop if no command (remove the slow speed decreasing)
+        else:
+            self.command_pub.publish(self.msg_pos)
+        
         time.sleep(0.01)
 
         # --- Check for buttons events | to change as actions change

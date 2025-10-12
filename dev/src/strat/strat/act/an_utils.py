@@ -1,6 +1,7 @@
 import yasmin
-from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR
+from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR # State machine manager library
 yasmin.YASMIN_LOG_DEBUG = lambda text: None # Yasmin is very verbose and would flood the terminal
+
 import time
 from threading import Thread, Lock
 

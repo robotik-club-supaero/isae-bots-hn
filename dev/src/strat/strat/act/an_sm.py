@@ -70,11 +70,9 @@ class Setup(yasmin.State):
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
         userdata["robot_pos"] = Position(x=-1, y=-1, theta=-1)  # current position of the robot
-        userdata["cb_clamp_1"] = ClampCallback.PENDING # state of the clamp
-        userdata["cb_clamp_2"] = ClampCallback.PENDING # state of the clamp
-        userdata["cb_elevator_1"] = ElevatorCallback.PENDING # state of the elevator
-        userdata["cb_elevator_2"] = ElevatorCallback.PENDING # state of the elevator
-        userdata["cb_banderolle"] = ElevatorCallback.PENDING # state of the banderolle
+        userdata["cb_drawbridge"] = DrawbridgeCallback.PENDING # state of the clamp
+        userdata["cb_cursor_stick"] = CursorCallback.PENDING # state of the elevator
+        userdata["cb_pumps"] = PumpsCallback.PENDING # state of the banderolle
         userdata["bumper_state"] = BumperState.RELEASED
         
         ## Game infos variables
@@ -186,7 +184,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'end':'exit all','preempted':'exit preempted'})
         self.add_state('WAITING', waiting,
                         transitions={'preempted':'REPARTITOR','success':'REPARTITOR'})
-
+        
         # Specific Action States
         self.add_submachine('DEPOSIT_STAND', DepositStand(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})

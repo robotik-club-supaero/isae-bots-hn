@@ -17,37 +17,34 @@ from enum import IntEnum
 
 class ActionResult(IntEnum):
     SUCCESS = 1
-    NOTHING_TO_PICK_UP = 5
+    NOTHING_TO_PICKUP = 5
     FAILURE = -1
     NOTHING = -2
 
 class Action(IntEnum):
     PENDING = -2
     NONE         = -1
-    PICKUP_STAND_1 = 0
-    PICKUP_STAND_2 = 1
-    DEPOSIT_STAND = 2
-    DEPOSIT_BANDEROLLE = 3
-    PARK         = 4
-    WAIT         = 5
-    END          = 6
+    PICKUP = 0
+    DEPOSIT = 1
+    PUSH_CURSOR = 2
+    PARK         = 3
+    WAIT         = 4
+    END          = 5
 
 
 ACTIONS_OUTCOMES = {
-    Action.PICKUP_STAND_1: 'pickupStand_1',
-    Action.PICKUP_STAND_2: 'pickupStand_2',
-    Action.DEPOSIT_STAND: 'depositStand',
-    Action.DEPOSIT_BANDEROLLE: 'depositBanderolle',
+    Action.PICKUP: 'pickup',
+    Action.DEPOSIT: 'deposit',
+    Action.PUSH_CURSOR: 'push_cursor',
     Action.PARK: 'park',
     Action.END: 'end',
     Action.WAIT: 'waiting',
 }
 
 ACTION_TRANSITIONS = {
-    'pickupStand_1': 'PICKUP_STAND_1',
-    'pickupStand_2':'PICKUP_STAND_2',
-    'depositStand': 'DEPOSIT_STAND',
-    'depositBanderolle': 'DEPOSIT_BANDEROLLE',
+    'pickup': 'PICKUP',
+    'deposit': 'DEPOSIT',
+    'push_cursor': 'PUSH_CURSOR',
     'park':'PARK',
     'end':'END',
     'waiting':'WAITING',
@@ -56,6 +53,6 @@ ACTION_TRANSITIONS = {
 class ActionScore(IntEnum): #TODO update
     SCORE_INIT = 0
     SCORE_PARK = 10
-    SCORE_DEPOSIT_STAND = 12
-    SCORE_DEPOSIT_BANDEROLLE = 12
-    SCORE_COCCINELLE = 5
+    SCORE_DEPOSIT = 4
+    SCORE_PUSH_CURSOR = 10
+    SCORE_PAMIS = 10

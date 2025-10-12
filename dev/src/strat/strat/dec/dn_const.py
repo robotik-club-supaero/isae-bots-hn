@@ -21,8 +21,6 @@
 import os
 from enum import IntEnum, Enum
 
-STAND_CAPACITE = 2
-
 class Color():
     BLACK = '\033[30m'
     RED = '\033[31m'

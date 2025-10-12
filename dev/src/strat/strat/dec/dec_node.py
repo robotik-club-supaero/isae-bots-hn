@@ -69,31 +69,29 @@ class DecisionsNode(Node):
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
         
-        self.config = None
 
         self.match_started = False
-        self._setColor(0)
+        
+        # Color
+        self.config = None # Depend of the color
+        self.color = 0 # 0 = yellow | 1 = blue
+        self.setDefaultColor(0) # Just for initialization -> modified by self.color_sub
+
         self.score = ActionScore.SCORE_INIT.value
 
+        # Timings
         self.start_time = 0
         self.match_time = self.config.match_time
         self.delay_banderolle = self.config.delay_banderolle
         self.delay_park = self.config.delay_park
+
+        # States
         self.launch_banderolle = False
         self.banderolle_launched = False
         self.go_park = False
         self.parked = False
-        
-        self.strat = self.config.default_strat_index
-        self.strategies = self.config.strat_names
-        
-        self.strat_functions = []
-        for stratName in self.strategies:
-            try:
-                self.strat_functions.append(getattr(dn_strats, stratName))
-            except AttributeError:
-                self.get_logger().fatal(f"Strategy function name {stratName} doesn't have a function")
 
+        # Actions
         self.park_action = False
         self.kill_action = False
         self.curr_action = [Action.PENDING]  # of type Action
@@ -102,11 +100,22 @@ class DecisionsNode(Node):
         self.action_successful = False
         self.retry_count = 0
 
-        self.position = [0,0,0]  # TODO utilser un objet Pose2D
-
-        self.remaining_stands = [1 for _ in range(len(self.config.pickup_stand_pos))]
+        self.remaining_stands = [1 for _ in range(len(self.config.pickup_pos))]
         self.deposit_slots = [1 for _ in range(len(self.config.deposit_pos))]
         self.nb_actions = 0
+        
+        # Strats
+        self.strat = self.config.default_strat_index
+        self.strategies = self.config.strat_names
+        
+        self.strat_functions = [] # the function(s) of  strategies -> ex : homologation(node) / match_strat(node) (define in dn_strat.py)
+        for stratName in self.strategies:
+            try:
+                self.strat_functions.append(getattr(dn_strats, stratName))
+            except AttributeError:
+                self.get_logger().fatal(f"Strategy function name '{stratName}' doesn't exist in dn_strat.py")        
+
+        self.position = [0,0,0]
 
         self.get_logger().info("Decision node initialized")
 
@@ -124,9 +133,9 @@ class DecisionsNode(Node):
         action_msg.data = [self.curr_action[0].value] + self.curr_action[1:]
         self.next_action_pub.publish(action_msg)
     
-    def _setColor(self, color):
+    def setDefaultColor(self, color):
         self.color = color
-        self.config = StratConfig(color)
+        self.config = StratConfig(self.color)
 
     #################################################################
     #                                                               #
@@ -139,14 +148,14 @@ class DecisionsNode(Node):
         Feedback on start signal /game/start
         """
 
-        if self.match_started: return
+        if self.match_started: return # Si déjà commencé
 
         if msg.data == 1:
             self.get_logger().info('\033[1m\033[36m' + "#"*20 + " Start match " + "#"*20 + '\033[0m')
 
             self.match_started = True
             self.start_time = time.time()
-            if self.config.deposit_banderolle:
+            if self.config.does_push_cursor:
                 threading.Timer(self.match_time - self.delay_banderolle, self.banderolle_IT).start()
             threading.Timer(self.match_time - self.delay_park, self.park_IT).start()
             threading.Timer(self.match_time, self.stop_IT).start()
@@ -226,11 +235,11 @@ class DecisionsNode(Node):
             
             if self.curr_action[0] == Action.PARK:
                 self.score += ActionScore.SCORE_PARK.value
-                self.score += ActionScore.SCORE_COCCINELLE.value # Hope that all coccinelle have done correctly
+                self.score += ActionScore.SCORE_PAMIS.value # Hope that all coccinelle have done correctly
                 self.publishScore()
                 self.parked = True
             
-        elif msg.exit == ActionResult.NOTHING_TO_PICK_UP:
+        elif msg.exit == ActionResult.NOTHING_TO_PICKUP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
             if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
                 self.remaining_stands[self.curr_action[1]] = 0

@@ -85,10 +85,10 @@ def match_strat(node):
         else:
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
-        dist_sorted_index = list(np.argsort(dists))
+        dist_sorted_index = list(np.argsort(dists)) # Tri les distance du plus petit au plus grand et renvoi la liste trié des indexes de dists
         print("\n\n" + str(positions) + "\n" + str(remaining) + "\n\n")
         for index in dist_sorted_index:
-            true_index = positions[index][1] if pos_type == 'stand' else index
+            true_index = positions[index][1] if pos_type == 'stand' else index # If stand -> different position pour un même stand
             if cond(true_index):
                 return true_index
         

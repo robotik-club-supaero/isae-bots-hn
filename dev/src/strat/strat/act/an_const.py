@@ -30,13 +30,12 @@ from config import COLOR
 #                                                               #
 #################################################################
 
-MAX_X = 2000
-MAX_Y = 3000
 
-########## CONSTANTES 2024 ##########
-WAIT_TIME = 5
-R_APPROACH_STAND = 0
-R_TAKE_STAND = 0
+
+########## CONSTANTES 2025 ##########
+MAX_X = 2000 # Arena
+MAX_Y = 3000 # Arena
+WAIT_TIME = 5 # Timeout for action
 
 
 #################################################################
@@ -59,42 +58,43 @@ class Callback(IntEnum):
 class DspCallback(Callback):
     UNKNOWN = -6
     PENDING = -5
-    NOT_RECOGNIZED = -4
+    NOT_RECOGNIZED = -4 # ?
     ERROR_ASSERV = -3     # Erreur de l'asserv (difficile à gérer)
     PATH_NOT_FOUND = -2     # La recherche de chemin n'a pas abouti
-    DEST_BLOCKED = -1
+    DEST_BLOCKED = -1  # Obstacle
     SUCCESS = 0      # Le robot est arrivé au point demandé
 
-class ElevatorOrder(IntEnum):
-    MOVE_UP = 2
-    MOVE_MIDDLE = 1
-    MOVE_DOWN = 0
-        
-class ElevatorCallback(Callback):
-    UNKNOWN = -2
-    PENDING = -1
-    DOWN = 0
-    MIDDLE = 1
-    UP = 2
-
-class ClampOrder(IntEnum):
+class Drawbridge(IntEnum):
     OPEN = 0
     CLOSE = 1
 
-class ClampCallback(Callback):
+class DrawbridgeCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
-    OPEN = 0
+    OPENED = 0
     CLOSED = 1
 
-class BanderolleOrder(IntEnum):
-    LAUNCH = 1
+class Pumps(IntEnum):
+    ON = 1
+    OFF = 0
 
-class BanderolleCallback(Callback):
+class PumpsCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
-    STORED = 1
-    LAUNCHED = 2
+    ON = 1
+    OFF = 0
+
+class CursorOrder(IntEnum):
+    DOWN = 0
+    PUSH = 1
+    UP = 2
+
+class CursorCallback(IntEnum):
+    UNKNOWN = -2
+    PENDING = -1
+    DOWN = 2
+    PUSHED = 1
+    UP = 2
 
 class BumperState(IntEnum):
     RELEASED = 0
@@ -105,10 +105,9 @@ USERDATA_VAR_LIST = [ #TODO update
     'start',
     'color',
     'cb_depl',
-    'cb_elevator_1',
-    'cb_elevator_2'
-    'cb_clamp_1',
-    'cb_clamp_2',
+    'cb_drawbridge',
+    'cb_pumps',
+    'cb_cursor_stick',
     'robot_pos',
     'depositArea',
     'next_action',

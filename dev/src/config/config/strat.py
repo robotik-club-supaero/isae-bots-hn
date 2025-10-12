@@ -82,15 +82,11 @@ class StratConfig(NaiveStratConfig):
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-    BANDEROLLE_POS = DynamicPos(2000 - 300, 350, 3.14)
+    CURSOR_POS = DynamicPos(2000 - 300, 350, 3.14)
     
-    INIT_ZONES = [
-        DynamicPos(2000 - 1825, 375, 0), # 0
-        DynamicPos(2000 - 175, 1225  , 3.14),    # 1
-        DynamicPos(2000 - 875, 2775, -1.57), # 2
-    ]
+    INIT_ZONES = [PARK_ZONE] # Il peut y avoir plusieurs zone de départ -> on peu choisir sur le master node au démarrage
 
-    PICKUP_STAND_POS = [
+    PICKUP_POS = [
         # Protected pickup zone :
         (DynamicPos(2000 - 1450, 825, 3.14), 0), 
         # Side Pickup zones :
@@ -122,7 +118,7 @@ class StratConfig(NaiveStratConfig):
 
     @property
     def pickup_stand_pos(self):
-        return self._resolve_stand_pos(StratConfig.PICKUP_STAND_POS)
+        return self._resolve_stand_pos(StratConfig.PICKUP_POS)
 
     @property
     def deposit_pos(self):
@@ -130,7 +126,7 @@ class StratConfig(NaiveStratConfig):
 
     @property
     def banderolle_pos(self):
-        return self._resolve_pos(StratConfig.BANDEROLLE_POS)
+        return self._resolve_pos(StratConfig.CURSOR_POS)
 
     @property
     def park_pos(self):
@@ -153,15 +149,15 @@ class StratConfig(NaiveStratConfig):
         obstacles["wallWest"] = ObstacleRect(0, 2000, 3000-margin, 3000)
 
         # Protected/reserved zones
-        # TODO
+        # None
 
-        # Stand
-        stand_margin = margin / 2
-        obstacles["stand_7"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 900-stand_margin, 1300+stand_margin)
-        obstacles["stand_8"] = ObstacleRect(1000-stand_margin, 1100+stand_margin, 1700-stand_margin, 2100+stand_margin)
+        # elements
+        elements_margin = margin / 2
+        obstacles["stand_7"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 900-elements_margin, 1300+elements_margin)
+        obstacles["stand_8"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 1700-elements_margin, 2100+elements_margin)
 
-        obstacles["stand_5"] = ObstacleRect(1700-stand_margin, 1800+stand_margin, 575-stand_margin, 975+stand_margin)
-        obstacles["stand_6"] = ObstacleRect(1700-stand_margin, 1800+stand_margin, 2025-stand_margin, 2425+stand_margin)
+        obstacles["stand_5"] = ObstacleRect(1700-elements_margin, 1800+elements_margin, 575-elements_margin, 975+elements_margin)
+        obstacles["stand_6"] = ObstacleRect(1700-elements_margin, 1800+elements_margin, 2025-elements_margin, 2425+elements_margin)
         
         return obstacles
 

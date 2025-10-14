@@ -28,8 +28,8 @@ from std_msgs.msg import Empty
 from config import StratConfig
 
 from ..an_const import *
-from ..an_utils import LaunchBanderolle, Sequence
-from .sm_displacement import MoveTo, MoveForwardStraight, MoveWithSpeed, StopRobot, approach, \
+from ..an_utils import CursorStickDOWN, CursorStickUP, Sequence
+from .sm_displacement import MoveTo, MoveForwardStraight, MoveWithSpeed, StopRobot, PosRealign, approach, \
                              create_displacement_request, create_orientation_request
 
 from strat.strat_utils import create_end_of_action_msg
@@ -49,7 +49,7 @@ class CalcPosition(yasmin.State):
 
     def execute(self, userdata):
 
-        xp, yp, thetap = StratConfig(userdata["color"]).banderolle_pos
+        xp, yp, thetap = StratConfig(userdata["color"]).cursor_pos
         userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True)
 
         return 'success'
@@ -73,9 +73,9 @@ class WaitForBumpers(yasmin.State):
         self._logger.warning(f"Timeout while waiting for the bumpers")        
         return "fail"
 
-class BanderolleEnd(yasmin.State):
+class CursorEnd(yasmin.State):
     """
-    SM PARK : Observer state
+    SM CURSOR : Observer state
     """
     def __init__(self, node):
         super().__init__(outcomes=['preempted','success','fail'])
@@ -97,15 +97,17 @@ class BanderolleEnd(yasmin.State):
 #                                                               #
 #################################################################
 
-class Banderolle(Sequence):
+class CursorSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('DEPL_POSITIONING_BANDEROLLE', MoveTo(node, CalcPosition(node))),
-            ('DEPL_MOVEBACK_BANDEROLLE', MoveWithSpeed(node, -0.1, 0.)),
+            ('DEPL_POSITIONING_CURSOR', MoveTo(node, CalcPosition(node))),
+            ('DEPL_MOVEBACK_CORSOR', MoveWithSpeed(node, -0.1, 0.)),
             ('WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
             ('STOP_ROBOT', StopRobot(node)),
-            ('LAUNCH_BANDEROLLE', LaunchBanderolle(node)),
-            ('DEPL_MOVEFORWARD_BANDEROLLE', MoveForwardStraight(node, 180)), # TODO 200 = 20 cm for now (move away from the wall)
-            ('BANDEROLLE_END',  BanderolleEnd(node)),
+            ('REALIGN_ROBOT_POS', PosRealign(node)), # NOT TESTED !
+            ('CURSOR_STICK_DOWN', CursorStickDOWN(node)),
+            ('DEPL_MOVEFORWARD_CURSOR', MoveForwardStraight(node, 500)), # TODO 500 = 50 cm for now TO BE DETERMINED
+            ('CURSOR_STICK_UP', CursorStickUP(node)),
+            ('CURSOR_END',  CursorEnd(node)),
         ])
 

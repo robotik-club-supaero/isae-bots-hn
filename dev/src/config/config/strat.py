@@ -36,8 +36,7 @@ class NaiveStratConfig(RobotConfig):
 
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
-    DELAY_BANDEROLLE = 20 # s
-    DEPORSIT_BANDEROLLE = True
+    MOVE_CURSOR = True
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -117,11 +116,11 @@ class StratConfig(NaiveStratConfig):
         return StratConfig.DEFAULT_INIT_ZONE
 
     @property
-    def pickup_stand_pos(self):
+    def pickup_box_pos(self):
         return self._resolve_stand_pos(StratConfig.PICKUP_POS)
 
     @property
-    def deposit_pos(self):
+    def deposit_zones_pos(self):
         return self._resolve_pos(StratConfig.DEPOSIT_POS)
 
     @property

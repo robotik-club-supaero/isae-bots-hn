@@ -21,7 +21,7 @@
 import time
 import numpy as np
 
-from ..strat_const import Action, ActionScore
+from ..strat_const import Action, ActionScore, ActionResult
 
 #################################################################
 #                                                               #
@@ -58,9 +58,16 @@ def homologation(node):
         -
         -
     """
-    node.curr_action = [Action.PICKUP_STAND_1, 3]
+    last_action = node.curr_action[0]
+    outcome = node.action_successful
+
+    if last_action == Action.PICKUP and outcome == ActionResult.SUCCESS :
+        node.curr_action = [Action.PARK] # just go park 
+    else:
+        node.curr_action = [Action.PICKUP, 1] # just go pickup box id n°1
 
     node.publishAction()
+    return
 
 
 def match_strat(node):
@@ -73,14 +80,14 @@ def match_strat(node):
         -
     """
     
-    def find_closest(node, positions, remaining, cond=None, coeffs=1, pos_type='stand'):
+    def find_closest(node, positions, remaining, cond=None, coeffs=1, pos_type='boxes'):
 
         if cond is None: 
             cond = lambda remaining_index: remaining[remaining_index] > STAND_THRESHOLD
 
         x, y, _ = node.position
 
-        if pos_type == 'stand':
+        if pos_type == 'boxes':
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
         else:
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
@@ -88,7 +95,7 @@ def match_strat(node):
         dist_sorted_index = list(np.argsort(dists)) # Tri les distance du plus petit au plus grand et renvoi la liste trié des indexes de dists
         print("\n\n" + str(positions) + "\n" + str(remaining) + "\n\n")
         for index in dist_sorted_index:
-            true_index = positions[index][1] if pos_type == 'stand' else index # If stand -> different position pour un même stand
+            true_index = positions[index][1] if pos_type == 'boxes' else index # If pos_type=box -> differentes positions pour une même box
             if cond(true_index):
                 return true_index
         
@@ -115,7 +122,8 @@ def match_strat(node):
         # Retry
         if node.curr_action[0] != Action.PENDING and not node.action_successful:
             if node.retry_count < 3:
-                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")        
+                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")   
+                node.retry_count += 1 # reset in dec_node when action success
                 node.publishAction()
                 return
 

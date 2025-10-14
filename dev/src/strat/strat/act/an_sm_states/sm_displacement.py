@@ -28,7 +28,7 @@ from numpy.linalg import norm
 
 from message.msg import DisplacementRequest
 
-from ..an_const import DspCallback
+from ..an_const import DspCallback, MAX_X, MAX_Y, RobotConfig
 from ..an_utils import Sequence
 
 #################################################################
@@ -124,6 +124,37 @@ class MoveTo(Sequence):
         super().__init__(states=[('COMPUTE_DEST', destination), 
                                  ('DEPL', Displacement(node))])
 
+
+class PosRealign(Displacement): # Take the closest coordinate to the wall and set it to the minimal possible
+    """ NOT TESTED !! """
+    def __init__(self, node):
+        super().__init__(node)
+
+    def execute(self, userdata):
+        x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+
+        direction = {'UP': abs(y), 'DOWN': abs(MAX_Y - y), 'LEFT': abs(x), 'RIGHT': abs(MAX_X - x)}
+        dir_min = min(direction.keys(), lambda x: direction[x])
+
+        # After : robot_pos = pos_measured - robot_pos_realignement
+        # Ex: 
+        # si userdata["robot_pos_realignement"].y = y + RobotConfig.ROBOT_LARG/2 
+        # => robot_pos = y - (y + RobotConfig.ROBOT_LARG/2) = RobotConfig.ROBOT_LARG/2 = le minimum possible -> recalé au bord haut
+        if dir_min == 'UP': 
+            userdata["robot_pos_realignement"].y = y + RobotConfig.ROBOT_LARG/2
+        if dir_min == 'DOWN': 
+            userdata["robot_pos_realignement"].y = MAX_Y - y - RobotConfig.ROBOT_LARG/2
+        if dir_min == 'LEFT': 
+            userdata["robot_pos_realignement"].x = x + RobotConfig.ROBOT_LARG/2 # ce n'est pas RobotConfig.ROBOT_LONG car on fait le recalage en marche arrière, pas de 'coté'
+        if dir_min == 'RIGHT': 
+            userdata["robot_pos_realignement"].x = MAX_X - x - RobotConfig.ROBOT_LARG/2  # Pareil
+        
+        userdata["robot_pos"].x -= userdata["robot_pos_realignement"].x
+        userdata["robot_pos"].y -= userdata["robot_pos_realignement"].y
+
+        return 'success'
+
+
 class MoveStraight(Displacement):
     def __init__(self, node, distance, backward):
         super().__init__(node)
@@ -151,7 +182,6 @@ class MoveForwardStraight(MoveStraight):
 class MoveBackwardsStraight(MoveStraight):
     def __init__(self, node, distance):
         super().__init__(node, distance, backward=True)
-
 
 class MoveWithSpeed(yasmin.State):
     """ WARNING: This returns immediately (always with "success"); the robot will move until it is stopped"""

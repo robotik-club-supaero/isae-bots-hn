@@ -26,7 +26,7 @@ class Action(IntEnum):
     NONE         = -1
     PICKUP = 0
     DEPOSIT = 1
-    PUSH_CURSOR = 2
+    CURSOR = 2
     PARK         = 3
     WAIT         = 4
     END          = 5
@@ -35,7 +35,7 @@ class Action(IntEnum):
 ACTIONS_OUTCOMES = {
     Action.PICKUP: 'pickup',
     Action.DEPOSIT: 'deposit',
-    Action.PUSH_CURSOR: 'push_cursor',
+    Action.CURSOR: 'cursor',
     Action.PARK: 'park',
     Action.END: 'end',
     Action.WAIT: 'waiting',
@@ -44,7 +44,7 @@ ACTIONS_OUTCOMES = {
 ACTION_TRANSITIONS = {
     'pickup': 'PICKUP',
     'deposit': 'DEPOSIT',
-    'push_cursor': 'PUSH_CURSOR',
+    'cursor': 'CURSOR',
     'park':'PARK',
     'end':'END',
     'waiting':'WAITING',
@@ -54,5 +54,5 @@ class ActionScore(IntEnum): #TODO update
     SCORE_INIT = 0
     SCORE_PARK = 10
     SCORE_DEPOSIT = 4
-    SCORE_PUSH_CURSOR = 10
+    SCORE_CURSOR = 10
     SCORE_PAMIS = 10

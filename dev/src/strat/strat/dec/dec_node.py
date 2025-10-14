@@ -68,7 +68,6 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
-        
 
         self.match_started = False
         
@@ -82,12 +81,10 @@ class DecisionsNode(Node):
         # Timings
         self.start_time = 0
         self.match_time = self.config.match_time
-        self.delay_banderolle = self.config.delay_banderolle
         self.delay_park = self.config.delay_park
 
         # States
-        self.launch_banderolle = False
-        self.banderolle_launched = False
+        self.cursor_pushed = False
         self.go_park = False
         self.parked = False
 
@@ -125,9 +122,7 @@ class DecisionsNode(Node):
         self.score_pub.publish(score)
 
     def publishAction(self):
-        self.get_logger().info(f"Publish Action : {str(self.curr_action)}")
-        self.action_successful = False
-        self.retry_count += 1
+        self.get_logger().info(f"DN has Published Action : {str(self.curr_action)}")
 
         action_msg = Int16MultiArray()
         action_msg.data = [self.curr_action[0].value] + self.curr_action[1:]
@@ -155,8 +150,6 @@ class DecisionsNode(Node):
 
             self.match_started = True
             self.start_time = time.time()
-            if self.config.does_push_cursor:
-                threading.Timer(self.match_time - self.delay_banderolle, self.banderolle_IT).start()
             threading.Timer(self.match_time - self.delay_park, self.park_IT).start()
             threading.Timer(self.match_time, self.stop_IT).start()
 
@@ -212,26 +205,27 @@ class DecisionsNode(Node):
         """
         Send back the next action when triggered by the repartitor.
         """
-        
+        self.action_successful = False # reset
+
         if msg.exit == ActionResult.SUCCESS:
             
             self.get_logger().info(f"[ dec_node Callback ] Action {str(self.curr_action)} Success.")
-
             self.action_successful = True
+
             self.retry_count = 0
             
             # Count points
-            if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
+            if self.curr_action[0] in (Action.PICKUP,):
                 pass
             
-            if self.curr_action[0] == Action.DEPOSIT_STAND:
-                self.score += ActionScore.SCORE_DEPOSIT_STAND.value
+            if self.curr_action[0] == Action.DEPOSIT:
+                self.score += ActionScore.SCORE_DEPOSIT.value
                 self.publishScore()
             
-            if self.curr_action[0] == Action.DEPOSIT_BANDEROLLE:
-                self.score += ActionScore.SCORE_DEPOSIT_BANDEROLLE.value
+            if self.curr_action[0] == Action.CURSOR:
+                self.score += ActionScore.SCORE_CURSOR.value
                 self.publishScore()
-                self.banderolle_launched = True
+                self.cursor_pushed = True
             
             if self.curr_action[0] == Action.PARK:
                 self.score += ActionScore.SCORE_PARK.value
@@ -241,9 +235,7 @@ class DecisionsNode(Node):
             
         elif msg.exit == ActionResult.NOTHING_TO_PICKUP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
-            if self.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2):
-                self.remaining_stands[self.curr_action[1]] = 0
-            elif self.curr_action[0] == Action.PICKUP_POT:
+            if self.curr_action[0] in (Action.PICKUP,):
                 self.remaining_stands[self.curr_action[1]] = 0
             else:
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
@@ -253,9 +245,10 @@ class DecisionsNode(Node):
             pass
         else:
             self.get_logger().error("Wrong value sent on /strat/action/request ...")
-
-        self.get_logger().info(f"Next action requested by AN")
-        self.strat_functions[self.strat](self) # Appelle la stratégie (dn_strats)
+        
+        # ----- Appel la stratégie pour définir la prochaine action à faire ------ #
+        self.get_logger().info(f"Next action requested to DN by AN (after '{self.curr_action[0]}' -> '{msg.exit}')")
+        self.strat_functions[self.strat](self)
         
 
     #################################################################
@@ -274,14 +267,6 @@ class DecisionsNode(Node):
         msg = Int16()
         msg.data = 1
         self.park_pub.publish(msg)
-    
-    def banderolle_IT(self):
-        """
-        Interrupt : time to launch banderolle
-        """
-        self.get_logger().info('\033[1m\033[36m' + "#"*19 + " Banderolle interrupt " + "#"*18 + '\033[0m')
-        self.launch_banderolle = True
-        self.interrupt_pub.publish(Empty())
 
     def stop_IT(self):
         """

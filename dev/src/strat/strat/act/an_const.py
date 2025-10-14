@@ -36,6 +36,7 @@ from config import COLOR
 MAX_X = 2000 # Arena
 MAX_Y = 3000 # Arena
 WAIT_TIME = 5 # Timeout for action
+from config import RobotConfig
 
 
 #################################################################
@@ -64,17 +65,17 @@ class DspCallback(Callback):
     DEST_BLOCKED = -1  # Obstacle
     SUCCESS = 0      # Le robot est arrivé au point demandé
 
-class Drawbridge(IntEnum):
-    OPEN = 0
-    CLOSE = 1
+class DrawbridgeOrder(IntEnum):
+    UP = 0
+    DOWN = 1
 
 class DrawbridgeCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
-    OPENED = 0
-    CLOSED = 1
+    UP = 0
+    DOWN = 1
 
-class Pumps(IntEnum):
+class PumpsOrder(IntEnum):
     ON = 1
     OFF = 0
 
@@ -109,6 +110,7 @@ USERDATA_VAR_LIST = [ #TODO update
     'cb_pumps',
     'cb_cursor_stick',
     'robot_pos',
+    'robot_pos_realignment',
     'depositArea',
     'next_action',
     'next_move',

@@ -26,8 +26,7 @@ from std_msgs.msg import String
 
 from config import StratConfig
 
-from ..an_const import R_APPROACH_STAND, R_TAKE_STAND
-from ..an_utils import Sequence, Concurrence, OpenClamp, RiseElevator, DescendElevator, CloseClamp
+from ..an_utils import Sequence, Concurrence, DrawbridgeUP, DrawbridgeDOWN, PumpsON
 
 from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
@@ -41,7 +40,7 @@ from .sm_waiting import ObsWaitingOnce
 #                                                               #
 #################################################################
 
-class CalcPositionningStand(yasmin.State): # TODO
+class CalcPositionBox(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -49,20 +48,20 @@ class CalcPositionningStand(yasmin.State): # TODO
         self._msg = String()
     
     def execute(self, userdata):    
-        STAND_POS = StratConfig(userdata["color"]).pickup_stand_pos
+        BOX_POS = StratConfig(userdata["color"]).pickup_box_pos
 
-        stand_pos_id = self._node.get_pickup_id("stand", userdata) % len(STAND_POS)
+        box_pos_id = self._node.get_pickup_id("boxes", userdata) % len(BOX_POS)
 
-        self._msg.data = f"stand_{stand_pos_id}"
+        self._msg.data = f"stand_{box_pos_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        ((xp, yp, tp), stand_id) = STAND_POS[stand_pos_id]
+        ((xp, yp, tp), stand_id) = BOX_POS[box_pos_id]
 
         userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
 
         return 'success'
  
-class PickupStandEnd(yasmin.State): # TODO
+class PickupBoxEnd(yasmin.State): # TODO
     
     def __init__(self, node):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -78,24 +77,19 @@ class PickupStandEnd(yasmin.State): # TODO
 #                                                               #
 #################################################################
 
-class _PickupStandSequence(Sequence):
-    def __init__(self, node, etage):
+class _DrawbridgeSequence(Sequence):
+    def __init__(self, node):
         super().__init__(states=[
-        ('DEPL_TAKE_STAND', MoveForwardStraight(node, 100)),
-        ('CLOSE_CLAMP', CloseClamp(node, etage=etage)),
-        ('RISE_ELEVATOR', RiseElevator(node, etage=etage)),
+        ('PUMPS_TURN_ON', (node, PumpsON(node))),
+        ('DRAW_BRIDGE_DOWN', (node, DrawbridgeDOWN(node))), # The BN manage the bumpers to stop the down / up
+        ('DRAW_BRIDGE_UP', (node, DrawbridgeUP(node))),
         ])
 
-class PickupStand(Sequence):
-    def __init__(self, node, etage):
+class PickupBoxesSequence(Sequence):
+    def __init__(self, node):
         super().__init__(states=[
-            ('MOVE_CLAMP_DOWN_&_OPEN',
-            Concurrence(MOVE =  MoveTo(node, CalcPositionningStand(node)),
-                        CLAMP = OpenClamp(node, etage=etage),
-                        ELEV = DescendElevator(node, etage=etage))
-            ),
-            ('PICKUP_STAND_SEQ', _PickupStandSequence(node, etage)),
-            ('PICKUP_STAND_END', PickupStandEnd(node)),
+            ('MOVE_TO_PICKUP_ZONE', MoveTo(node, CalcPositionBox(node))),
+            ('PICKUP_STAND_SEQ', _DrawbridgeSequence(node)),
+            ('PICKUP_BOX_END', PickupBoxEnd(node)),
             ])
-        self.etage = etage
     

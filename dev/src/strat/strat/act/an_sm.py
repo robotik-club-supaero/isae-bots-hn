@@ -28,9 +28,9 @@ from br_messages.msg import Position
 
 # import les states de la SM
 from .an_sm_states.sm_park import Park
-from .an_sm_states.sm_pickup_stand import PickupStand
-from .an_sm_states.sm_deposit_stand import DepositStand
-from .an_sm_states.sm_banderolle import Banderolle
+from .an_sm_states.sm_cursor import CursorSequence
+from .an_sm_states.sm_deposit_box import DepositBoxesSequence
+from .an_sm_states.sm_pickup_boxes import PickupBoxesSequence
 from .an_sm_states.sm_waiting import waiting
 from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
@@ -70,6 +70,7 @@ class Setup(yasmin.State):
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
         userdata["robot_pos"] = Position(x=-1, y=-1, theta=-1)  # current position of the robot
+        userdata["robot_pos_realignement"] = Position(x=0, y=0, theta=0)  # current position realignement of the robot
         userdata["cb_drawbridge"] = DrawbridgeCallback.PENDING # state of the clamp
         userdata["cb_cursor_stick"] = CursorCallback.PENDING # state of the elevator
         userdata["cb_pumps"] = PumpsCallback.PENDING # state of the banderolle
@@ -186,13 +187,11 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'preempted':'REPARTITOR','success':'REPARTITOR'})
         
         # Specific Action States
-        self.add_submachine('DEPOSIT_STAND', DepositStand(node),
+        self.add_submachine('DEPOSIT_BOX', DepositBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('PICKUP_STAND_1', PickupStand(node, 1),
+        self.add_submachine('PICKUP_BOX', PickupBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('PICKUP_STAND_2', PickupStand(node, 2),
-                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('DEPOSIT_BANDEROLLE', Banderolle(node),
+        self.add_submachine('CURSOR', CursorSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Other States

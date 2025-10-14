@@ -25,8 +25,8 @@ from std_msgs.msg import Empty
 
 from config import StratConfig
 
-from ..an_const import DspCallback, R_APPROACH_STAND
-from ..an_utils import Sequence, DescendElevator, MoveElevatorToMiddle, RiseElevator, OpenClamp, CloseClamp, Concurrence
+from ..an_const import DspCallback
+from ..an_utils import Sequence, Concurrence, DrawbridgeUP, DrawbridgeDOWN, PumpsOFF
 
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
@@ -40,18 +40,17 @@ from strat.strat_const import ActionResult
 #################################################################
 
 
-class CalcPositionningStand(yasmin.State):
+class CalcPositionDepositBox(yasmin.State):
 
     def __init__(self, get_pickup_id):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
         self._get_pickup_id = get_pickup_id
 
     def execute(self, userdata):
-        pots_id = self._get_pickup_id("deposit pots", userdata)
-
-        xp, yp, thetap = StratConfig(userdata["color"]).deposit_pos[pots_id]
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=thetap)
-
+        zone_id = self._get_pickup_id("deposit_zones", userdata)
+        
+        xp, yp, thetap = StratConfig(userdata["color"]).deposit_zones_pos[zone_id]
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, backward=False)
         return 'success'
 
 
@@ -65,7 +64,7 @@ class ReportDeposit(yasmin.State): # DEPRECATED TODO
         return 'success'
 
 
-class DepositStandEnd(yasmin.State): # DEPRECATED TODO
+class DepositBoxEnd(yasmin.State): # DEPRECATED TODO
 
     def __init__(self, node):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
@@ -80,18 +79,18 @@ class DepositStandEnd(yasmin.State): # DEPRECATED TODO
 #                                                               #
 #################################################################
 
-class DepositStand(Sequence):
+class _DrawbridgeSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('DEPL_POSITIONING_DEPOSIT', MoveTo(node, CalcPositionningStand(node.get_pickup_id))),
-            ('DESCEND_MIDDLE_ELEV_1', MoveElevatorToMiddle(node, 1)),
-            ('DESCEND_MIDDLE_ELEV_2', MoveElevatorToMiddle(node, 2)),
-            ('OPEN_CLAMPS', Concurrence(
-                    CLAMP_1 = OpenClamp(node, 1),
-                    CLAMP_2 = OpenClamp(node, 2)
-            )),
-            ('DEPL_MOVEBACK_DEPOSIT', MoveBackwardsStraight(node, 200)), # TODO 200 = 20 cm for now
-            ('DESCEND_ELEV_1', DescendElevator(node, 1)),
-            ('DESCEND_ELEV_2', DescendElevator(node, 2)),
-            ('DEPOSIT_POTS_END',  DepositStandEnd(node)),
+        ('DRAW_BRIDGE_DOWN', (node, DrawbridgeDOWN(node))),
+        ('PUMPS_TURN_OFF', (node, PumpsOFF(node))),
+        ('DRAW_BRIDGE_UP', (node, DrawbridgeUP(node))),
         ])
+
+class DepositBoxesSequence(Sequence):
+    def __init__(self, node):
+        super().__init__(states=[
+            ('MOVE_TO_PICKUP_ZONE', MoveTo(node, CalcPositionDepositBox(node))),
+            ('PICKUP_BOX_SEQUENCE', _DrawbridgeSequence(node)),
+            ('PICKUP_BOX_END', DepositBoxEnd(node)),
+            ])

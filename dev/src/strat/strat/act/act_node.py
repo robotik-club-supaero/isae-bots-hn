@@ -36,7 +36,7 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from br_messages.msg import Position
 
-from .an_const import  ElevatorCallback, DspCallback, ClampCallback, BanderolleCallback, BumperState, COLOR
+from .an_const import  ElevatorCallback, DspCallback, DrawbridgeCallback, PumpsCallback, CursorCallback, BumperState, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
@@ -64,11 +64,9 @@ class ActionNode(Node):
         self.remove_obs = self.create_publisher(String, '/removeObs', latch_profile)
         
         # SPECIFIC TO CURRENT YEAR [2025]
-        self.clamp_1_pub = self.create_publisher(Int16, '/act/order/clamp_1', latch_profile)
-        self.clamp_2_pub = self.create_publisher(Int16, '/act/order/clamp_2', latch_profile)
-        self.elevator_1_pub = self.create_publisher(Int16, '/act/order/elevator_1', latch_profile)
-        self.elevator_2_pub = self.create_publisher(Int16, '/act/order/elevator_2', latch_profile)
-        self.banderolle_pub = self.create_publisher(Int16, '/act/order/banderolle', latch_profile)
+        self.drawbridge_pub = self.create_publisher(Int16, '/act/order/drawbridge', latch_profile)
+        self.pumps_pub = self.create_publisher(Int16, '/act/order/pumps', latch_profile)
+        self.cursor_stick_pub = self.create_publisher(Int16, '/act/order/cursor_stick', latch_profile)
         self.deposit_pub = self.create_publisher(Empty, '/simu/deposit_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
         """
         Initialize all subscribers of AN
@@ -84,11 +82,9 @@ class ActionNode(Node):
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, default_profile)
 
         # SPECIFIC TO CURRENT YEAR [2025]
-        self.clamp_1_sub = self.create_subscription(Int16, '/act/callback/clamp_1', self.cb_clamp_1_fct, default_profile)
-        self.clamp_2_sub = self.create_subscription(Int16, '/act/callback/clamp_2', self.cb_clamp_2_fct, default_profile)
-        self.elevator_1_sub = self.create_subscription(Int16, '/act/callback/elevator_1', self.cb_elevator_1_fct, default_profile)
-        self.elevator_2_sub = self.create_subscription(Int16, '/act/callback/elevator_2', self.cb_elevator_2_fct, default_profile)
-        self.banderolle_sub = self.create_subscription(Int16, '/act/callback/banderolle', self.cb_banderolle_fct, default_profile)
+        self.drawbridge_sub = self.create_subscription(Int16, '/act/callback/drawbridge', self.cb_drawbridge_fct, default_profile)
+        self.pumps_sub = self.create_subscription(Int16, '/act/callback/pumps', self.cb_pumps_fct, default_profile)
+        self.cursor_stick_sub = self.create_subscription(Int16, '/act/callback/cursor_stick', self.cb_cursor_stick_fct, default_profile)
         self.bumper_sub = self.create_subscription(Int16, '/act/bumpers', self.cb_bumper_fct, default_profile)
 
         self._blackboard = Blackboard()
@@ -201,39 +197,32 @@ class ActionNode(Node):
         
     def cb_position_fct(self, msg):
         """
-        Callback of current position of the robot.
+        REALIGNEMENT MODIFICATION TO TEST ! Callback of current position of the robot.
         """
         if self.setupComplete:
-            self.smData["robot_pos"] = msg
+            self.smData["robot_pos"].x = msg.x - self.smData["robot_pos_realignement"].x
+            self.smData["robot_pos"].x = msg.y - self.smData["robot_pos_realignement"].y
 
-    def cb_clamp_1_fct(self, msg):
+    def cb_drawbridge_fct(self, msg):
+        """
+        Callback of the state of the drawbridge
+        """
         if self.setupComplete:
-            self.smData["cb_clamp_1"] = ClampCallback.parse(msg.data)
-    
-    def cb_clamp_2_fct(self, msg):
-        if self.setupComplete:
-            self.smData["cb_clamp_2"] = ClampCallback.parse(msg.data)
+            self.smData["drawbridge"] = DrawbridgeCallback.parse(msg.data)
 
-    def cb_elevator_1_fct(self, msg):
+    def cb_pumps_fct(self, msg):
         """
-        Callback of the state of the elevator
-        """
-        if self.setupComplete:
-            self.smData["cb_elevator_1"] = ElevatorCallback.parse(msg.data)
-        
-    def cb_elevator_2_fct(self, msg):
-        """
-        Callback of the state of the elevator
+        Callback of the state of the pumps
         """
         if self.setupComplete:
-            self.smData["cb_elevator_2"] = ElevatorCallback.parse(msg.data)
+            self.smData["cb_elevator_1"] = PumpsCallback.parse(msg.data)
     
-    def cb_banderolle_fct(self, msg):
+    def cb_cursor_stick_fct(self, msg):
         """
-        Callback of the state of banderolle
+        Callback of the state of cursor stick to push the cursor
         """
         if self.setupComplete:
-            self.smData["cb_banderolle"] = BanderolleCallback.parse(msg.data)
+            self.smData["cursor_stick"] = CursorCallback.parse(msg.data)
 
     def cb_bumper_fct(self, msg):
         if self.setupComplete:
@@ -241,7 +230,7 @@ class ActionNode(Node):
             # msg.data & 0b01 is the state of the first bumper
             # msg.data & 0b10 is the state of the second bumper
             # (msg.data & 3) == 3 means the two bumpers are pressed
-            if (msg.data & 3) == 3:
+            if (msg.data & 3) == 3: # Black magic ??
                 self.smData["bumper_state"] = BumperState.PRESSED
             else:
                 self.smData["bumper_state"] = BumperState.RELEASED

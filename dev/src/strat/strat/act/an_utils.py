@@ -1,13 +1,13 @@
-import yasmin
-from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR # State machine manager library
+import yasmin # type: ignore
+from yasmin import YASMIN_LOG_INFO, YASMIN_LOG_ERROR # type: ignore # State machine manager library
 yasmin.YASMIN_LOG_DEBUG = lambda text: None # Yasmin is very verbose and would flood the terminal
 
 import time
 from threading import Thread, Lock
 
-from std_msgs.msg import Int16
+from std_msgs.msg import Int16 # type: ignore
 
-from .an_const import ElevatorOrder, ElevatorCallback, ClampOrder, ClampCallback, BanderolleOrder, BanderolleCallback, WAIT_TIME
+from .an_const import DrawbridgeOrder, DrawbridgeCallback, CursorOrder, CursorCallback, PumpsOrder, PumpsCallback, WAIT_TIME
 
 #################################################################
 # Colors gestion												#
@@ -29,7 +29,7 @@ class Color():
 color_dict = {'n':Color.BLACK, 'r':Color.RED, 'g':Color.GREEN, 'y':Color.YELLOW, 'b':Color.BLUE, 
              'm':Color.MAGENTA, 'c':Color.CYAN, 'w':Color.WHITE}
 
-class HardwareOrder(yasmin.State):
+class HardwareOrder(yasmin.State): # Should not be modified (unless you should)
 
     def __init__(self, logger, publisher, cb_key, order, pending, expected, timeout=WAIT_TIME):
         super().__init__(outcomes=['fail','success','preempted'])
@@ -65,73 +65,74 @@ class HardwareOrder(yasmin.State):
         # timeout
         self._logger.warning(f"Timeout while waiting for response from hardware for order {self._order}")        
         return 'fail' 
-   
-class RiseElevator(HardwareOrder):
-    
-    def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_UP, ElevatorCallback.PENDING, ElevatorCallback.UP)
-        self._debug_print = node.debug_print
-        self.etage = etage
-        
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to move elevator n°{self.etage} up")
-        return super().execute(userdata)
- 
-class MoveElevatorToMiddle(HardwareOrder):
-    
-    def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_MIDDLE, ElevatorCallback.PENDING, ElevatorCallback.MIDDLE)
-        self._debug_print = node.debug_print
-        self.etage = etage
-    
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to move elevator n°{self.etage} to middle")
-        return super().execute(userdata)
 
-class DescendElevator(HardwareOrder):
-    
-    def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.elevator_1_pub if (etage == 1) else node.elevator_2_pub, f"cb_elevator_{etage}", ElevatorOrder.MOVE_DOWN, ElevatorCallback.PENDING, ElevatorCallback.DOWN)
-        self._debug_print = node.debug_print
-        self.etage = etage
-    
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to move elevator n°{self.etage} down")
-        return super().execute(userdata)
+# -------- Order to be sent to the Action BN specific of the year ---------- #
 
-class OpenClamp(HardwareOrder):
-    
-    def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.clamp_1_pub if (etage == 1) else node.clamp_2_pub, f"cb_clamp_{etage}", ClampOrder.OPEN, ClampCallback.PENDING, ClampCallback.OPEN)
-        self._debug_print = node.debug_print
-        self.etage = etage
-    
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to open clamp n°{self.etage}")
-        return super().execute(userdata)
-       
-class CloseClamp(HardwareOrder):
-    
-    def __init__(self, node, etage):
-        super().__init__(node.get_logger(), node.clamp_1_pub if (etage == 1) else node.clamp_2_pub, f"cb_clamp_{etage}", ClampOrder.CLOSE, ClampCallback.PENDING, ClampCallback.CLOSED)
-        self._debug_print = node.debug_print
-        self.etage = etage
-    
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to close clamp n°{self.etage}")
-        return super().execute(userdata)
-
-class LaunchBanderolle(HardwareOrder):
+class DrawbridgeUP(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.banderolle_pub, f"cb_banderolle", BanderolleOrder.LAUNCH, BanderolleCallback.PENDING, BanderolleCallback.LAUNCHED)
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.UP, DrawbridgeCallback.PENDING, DrawbridgeCallback.UP)
         self._debug_print = node.debug_print
-    
+        
     def execute(self, userdata):        
-        self._debug_print('c', f"Request to launch banderolle")
+        self._debug_print('c', f"Request to set DRAWBRIDGE in UP position..")
         return super().execute(userdata)
 
-class Sequence(yasmin.StateMachine):
+class DrawbridgeDOWN(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.DOWN, DrawbridgeCallback.PENDING, DrawbridgeCallback.DOWN)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set DRAWBRIDGE in DOWN position..")
+        return super().execute(userdata)
+
+class PumpsON(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.pumps_pub, f"cb_pumps", PumpsOrder.ON, PumpsCallback.PENDING, PumpsCallback.ON)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set PUMPS in ON position..")
+        return super().execute(userdata)
+
+class PumpsOFF(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.pumps_pub, f"cb_pumps", PumpsOrder.OFF, PumpsCallback.PENDING, PumpsCallback.OFF)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set PUMPS in OFF position..")
+        return super().execute(userdata)
+
+
+class CursorStickDOWN(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.pumps_pub, f"cb_cursor_stick", CursorOrder.DOWN, PumpsCallback.PENDING, CursorCallback.DOWN)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set CURSOR_STICK in DOWN position..")
+        return super().execute(userdata)
+
+class CursorStickUP(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.pumps_pub, f"cb_cursor_stick", CursorOrder.UP, PumpsCallback.PENDING, CursorCallback.UP)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set CURSOR_STICK in UP position..")
+        return super().execute(userdata)
+
+# ------------------------------------------------------------------ #
+
+# To make a sequence of action (used in the states machines)
+class Sequence(yasmin.StateMachine): # Should not be modified (unless you should)
     def __init__(self, outcomes = ["success", "fail", "preempted"], states = [], success_outcome="success"):
         super().__init__(outcomes)
         self._last_state = None

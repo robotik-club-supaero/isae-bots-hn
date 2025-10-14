@@ -2,3 +2,7 @@
 	path = dev/lib/br
 	url = https://github.com/robotik-club-supaero/isae-bots-bn-2025.git
 	branch = br
+[submodule "dev/lib/br"]
+	path = dev/lib/br
+	url = ../isae-bots-bn-2025
+	branch = br

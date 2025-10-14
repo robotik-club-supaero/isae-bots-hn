@@ -21,21 +21,22 @@ PS_ID = null
 CMD = bash --login
 # To run not interactively (eg. for services) add INTERACTIVE="" to the makefile command
 INTERACTIVE = -it
-CORE_DOCKERFILE = ${PWD}/docker/dockerfile.core
-BASE_DOCKERFILE = ${PWD}/docker/dockerfile.base
-PI_DOCKERFILE = ${PWD}/docker/dockerfile.pi
+CORE_DOCKERFILE = ${CURDIR}/docker/dockerfile.core
+BASE_DOCKERFILE = ${CURDIR}/docker/dockerfile.base
+PI_DOCKERFILE = ${CURDIR}/docker/dockerfile.pi
 PI_PLATFORM = linux/arm64/v8
 
 # Setup Docker volumes and env variables
 DOCKER_VOLUMES_COMMON = \
-	--volume="${PWD}/dev/src":"/app/dev/src" \
-	--volume="${PWD}/dev/lib/br":"/app/dev/lib/br" \
+	--volume="${CURDIR}/dev/src":"/app/dev/src" \
+	--volume="${CURDIR}/dev/lib/br":"/app/dev/lib/br" \
 	--volume="/dev":"/dev" \
-	--volume="${PWD}/scripts":"/app/scripts"
+	--volume="${CURDIR}/scripts":"/app/scripts" \
 	
 DOCKER_VOLUMES = \
 	${DOCKER_VOLUMES_COMMON} \
-	--volume="/tmp/.X11-unix":"/tmp/.X11-unix"
+	--volume="/mnt/wslg/.X11-unix":"/tmp/.X11-unix" 
+#	Ligne initiale : --volume="/tmp/.X11-unix":"/tmp/.X11-unix", dépends de la config de l'ordi ! Remplacer celle du dessus si besoin
 
 DOCKER_VOLUMES_PI = \
 	${DOCKER_VOLUMES_COMMON}

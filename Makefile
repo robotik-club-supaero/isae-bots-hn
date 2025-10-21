@@ -31,11 +31,12 @@ DOCKER_VOLUMES_COMMON = \
 	--volume="${CURDIR}/dev/src":"/app/dev/src" \
 	--volume="${CURDIR}/dev/lib/br":"/app/dev/lib/br" \
 	--volume="/dev":"/dev" \
-	--volume="${CURDIR}/scripts":"/app/scripts"
+	--volume="${CURDIR}/scripts":"/app/scripts" \
 	
 DOCKER_VOLUMES = \
 	${DOCKER_VOLUMES_COMMON} \
 	--volume="/mnt/wslg/.X11-unix":"/tmp/.X11-unix" 
+#	Ligne initiale : --volume="/tmp/.X11-unix":"/tmp/.X11-unix", dépends de la config de l'ordi ! Remplacer celle du dessus si besoin
 
 DOCKER_VOLUMES_PI = \
 	${DOCKER_VOLUMES_COMMON}

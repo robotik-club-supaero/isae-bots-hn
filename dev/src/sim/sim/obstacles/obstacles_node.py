@@ -42,6 +42,7 @@ from config.qos import default_profile, br_position_topic_profile
 #                                                               #
 #################################################################
 
+OBSTACLE_MODE = False
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
 SPEED = 500 # mm/s | can be 0 for fixed obstacle
 INIT_POS = [500., 1300.]
@@ -144,6 +145,10 @@ class SIM_ObstaclesNode(Node):
 #######################################################################	
 
 def main():
+
+    if not OBSTACLE_MODE:
+        return
+
     rclpy.init(args=sys.argv)
     
     node = SIM_ObstaclesNode()

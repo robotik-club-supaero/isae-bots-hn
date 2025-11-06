@@ -100,13 +100,13 @@ class CursorEnd(yasmin.State):
 class CursorSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('DEPL_POSITIONING_CURSOR', MoveTo(node, CalcPosition(node))),
-            ('DEPL_MOVEBACK_CORSOR', MoveWithSpeed(node, -0.1, 0.)),
-            ('WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
-            ('STOP_ROBOT', StopRobot(node)),
-            ('REALIGN_ROBOT_POS', PosRealign(node)), # NOT TESTED !
+            ('CURSOR_DEPL_POSITIONING', MoveTo(node, CalcPosition(node))),
+            ('CURSOR_DEPL_MOVEBACK', MoveWithSpeed(node, -0.1, 0.)),
+            ('CURSOR_WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
+            ('CURSOR_STOP_ROBOT', StopRobot(node)),
+            ('CURSOR_REALIGN_ROBOT_POS', PosRealign(node)), # NOT TESTED !
             ('CURSOR_STICK_DOWN', CursorStickDOWN(node)),
-            ('DEPL_MOVEFORWARD_CURSOR', MoveForwardStraight(node, 500)), # TODO 500 = 50 cm for now TO BE DETERMINED
+            ('CURSOR_DEPL_MOVEFORWARD', MoveForwardStraight(node, 500)), # TODO 500 = 50 cm for now TO BE DETERMINED
             ('CURSOR_STICK_UP', CursorStickUP(node)),
             ('CURSOR_END',  CursorEnd(node)),
         ])

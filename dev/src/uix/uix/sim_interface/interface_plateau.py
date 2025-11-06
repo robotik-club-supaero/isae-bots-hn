@@ -688,6 +688,7 @@ class ControlWindow(tk.Toplevel):
         self._pubIdle = node.create_publisher(Bool, "/br/idle", latch_profile)
         self._pubColor = node.create_publisher(Int16, "/game/color", latch_profile)
         self._pubStart = node.create_publisher(Int16, "/game/start", latch_profile)
+        self._pubDebug = node.create_publisher(Int16, "/debug", latch_profile)
         self._pubInitPos = node.create_publisher(Int16, "/game/init_pos", latch_profile)
         self._pubStrat = node.create_publisher(Int16, "/game/strat", latch_profile)
 
@@ -718,6 +719,9 @@ class ControlWindow(tk.Toplevel):
 
         start_bt = tk.Button(self, text="Start match", command=lambda: self._pubStart.publish(Int16(data=1)))
         start_bt.grid(column=0, row=3)
+
+        debug_bt = tk.Button(self, text="Debug Trigger", command=lambda: self._pubDebug.publish(Int16(data=1)))
+        debug_bt.grid(column=1, row=3)
 
     def _set_init_pos(self):
         self._init_pos += 1
@@ -762,16 +766,7 @@ class InterfaceNode(Node):
         self._grid = Grid()
 
         self._plants = []
-        for cluster in [[698.5,1001.5], [1298.5,1001.5], [698.5,2001.5], [1298.5,2001.5], [498.5,1503], [1498.5,1503]]:            
-            x, y = cluster
-            for i in range(6):
-                dx = (CLUSTER_RADIUS - PLANT_RADIUS) * cos(2*np.pi*i/6)
-                dy = (CLUSTER_RADIUS - PLANT_RADIUS) * sin(2*np.pi*i/6)
-                self._plants.append(Plant(len(self._plants), [x+dx, y+dy]))
-        
         self._pots = []
-        for cluster in [[ 612.5, 35], [1387.5, 35], [1965, 1000], [612.5, 2965], [1387.5, 2965], [1965, 2000]]:
-            self._pots.append(Pot(len(self._pots), cluster))
 
         self.lock = RLock()
 
@@ -783,12 +778,6 @@ class InterfaceNode(Node):
 
         self._subPos = self.create_subscription(
             Position, "/br/currentPosition", self.updateRobotPosition, br_position_topic_profile)
-        self._subDoors = self.create_subscription(
-            Int16, "/act/callback/doors", self.updateRobotDoorState, default_profile)
-        self._subLeftArm = self.create_subscription(
-            Int16, "/act/callback/left_arm", self.updateRobotLeftArmState, default_profile)
-        self._subRightArm = self.create_subscription(
-            Int16, "/act/callback/right_arm", self.updateRobotRightArmState, default_profile)
         self._subObstacles = self.create_subscription(
             SensorObstacleList, "/sensors/obstaclesLidar", self.updateObstaclesLidar, default_profile)
         self._subObstacles = self.create_subscription(
@@ -798,8 +787,6 @@ class InterfaceNode(Node):
 
         self._subOrder = self.create_subscription(
             DisplacementOrder, "/br/goTo", self.updateOrder, default_profile)
-
-        self._deposit_sub = self.create_subscription(Empty, '/simu/deposit_end', self.potsDepositEnd, default_profile)
 
         self._pubOrder = self.create_publisher(DisplacementOrder, "/br/goTo", default_profile)
 
@@ -962,13 +949,7 @@ class InterfaceNode(Node):
 
     def updateGrid(self, msg):
         with self.lock:
-            self._grid.setGrid(msg.data)
-
-    def potsDepositEnd(self, _msg):
-        with self.lock:
-            for plant in self._robot.releasePlants():
-                plant.invalidate()
-                self._plants.append(plant)   
+            self._grid.setGrid(msg.data) 
 
     def _spin(self):
         try:

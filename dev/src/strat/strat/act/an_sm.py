@@ -22,6 +22,7 @@ import time
 import yasmin
 from yasmin_viewer import YasminViewerPub
 import rclpy
+import threading
 
 from std_msgs.msg      import Empty
 from br_messages.msg import Position
@@ -35,6 +36,8 @@ from .an_sm_states.sm_waiting import waiting
 from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
 from message.msg import EndOfActionMsg
+from std_msgs.msg import Int16MultiArray
+from config.qos import default_profile
 
 from .an_const import *
 
@@ -77,7 +80,7 @@ class Setup(yasmin.State):
         userdata["bumper_state"] = BumperState.RELEASED
         
         ## Game infos variables
-        userdata["next_action"] = [Action.PENDING]  # action en cours (avec arguments eventuels)
+        userdata["next_action"] = [Action.PICKUP, 2]  # action en cours (avec arguments eventuels)
         userdata["next_move"] = create_displacement_request(x=-1, y=-1)
 
         userdata["action_result"] = ActionResult.NOTHING
@@ -124,16 +127,19 @@ class Repartitor(yasmin.State): # TO UPDATE
         self._repartitor_pub.publish(EndOfActionMsg(exit=userdata["action_result"])) # demande nextAction au DN
 
         userdata["action_result"] = ActionResult.NOTHING # Reset pour la prochaine action
-        userdata["next_action"][0] = Action.PENDING # reset variable prochaine action
-
+        userdata["next_action"] = [Action.PENDING] # reset variable prochaine action
+        
         while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
             if self.is_canceled():
                 if userdata["next_action"][0] == Action.PENDING:
                     return 'preempted'
                 break
-            time.sleep(0.01)
+            time.sleep(0.5)
+            self._logger.info(f"DEBUG REPARTITOR : {userdata["next_action"]}")
 
-        return ACTIONS_OUTCOMES[userdata["next_action"][0]]   # lancement prochaine action  
+        self._logger.info(f'[Repartitor] Repartitor has received the next action : {userdata["next_action"]}')
+
+        return ACTIONS_OUTCOMES[userdata["next_action"][0]]   # lancement prochaine action
         
 #################################################################
 #                                                               #
@@ -187,9 +193,9 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'preempted':'REPARTITOR','success':'REPARTITOR'})
         
         # Specific Action States
-        self.add_submachine('DEPOSIT_BOX', DepositBoxesSequence(node),
+        self.add_submachine('DEPOSIT', DepositBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
-        self.add_submachine('PICKUP_BOX', PickupBoxesSequence(node),
+        self.add_submachine('PICKUP', PickupBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         self.add_submachine('CURSOR', CursorSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})

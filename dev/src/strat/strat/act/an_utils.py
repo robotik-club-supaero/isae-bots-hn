@@ -64,7 +64,7 @@ class HardwareOrder(yasmin.State): # Should not be modified (unless you should)
         
         # timeout
         self._logger.warning(f"Timeout while waiting for response from hardware for order {self._order}")        
-        return 'fail' 
+        return 'fail'
 
 # -------- Order to be sent to the Action BN specific of the year ---------- #
 
@@ -112,7 +112,7 @@ class PumpsOFF(HardwareOrder):
 class CursorStickDOWN(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.pumps_pub, f"cb_cursor_stick", CursorOrder.DOWN, PumpsCallback.PENDING, CursorCallback.DOWN)
+        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.DOWN, PumpsCallback.PENDING, CursorCallback.DOWN)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -122,7 +122,7 @@ class CursorStickDOWN(HardwareOrder):
 class CursorStickUP(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.pumps_pub, f"cb_cursor_stick", CursorOrder.UP, PumpsCallback.PENDING, CursorCallback.UP)
+        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.UP, PumpsCallback.PENDING, CursorCallback.UP)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        

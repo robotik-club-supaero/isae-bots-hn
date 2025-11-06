@@ -36,7 +36,7 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from br_messages.msg import Position
 
-from .an_const import  ElevatorCallback, DspCallback, DrawbridgeCallback, PumpsCallback, CursorCallback, BumperState, COLOR
+from .an_const import DspCallback, DrawbridgeCallback, PumpsCallback, CursorCallback, BumperState, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
@@ -67,13 +67,14 @@ class ActionNode(Node):
         self.drawbridge_pub = self.create_publisher(Int16, '/act/order/drawbridge', latch_profile)
         self.pumps_pub = self.create_publisher(Int16, '/act/order/pumps', latch_profile)
         self.cursor_stick_pub = self.create_publisher(Int16, '/act/order/cursor_stick', latch_profile)
-        self.deposit_pub = self.create_publisher(Empty, '/simu/deposit_end', latch_profile) # ONLY USED BY SIMU INTERFACE # TODO: use to compute score as well?
         """
         Initialize all subscribers of AN
         """
+        
         # GENERAL SUBS
         self.start_sub = self.create_subscription(Int16, '/game/start', self.setup_start, default_profile)
         self.color_sub = self.create_subscription(Int16, '/game/color', self.setup_color, default_profile)
+
         self.repartitor_sub = self.create_subscription(Int16MultiArray, '/strat/action/order', self.cb_next_action, default_profile)
         self.strat_interrupt_sub = self.create_subscription(Empty, '/strat/interrupt', self.cb_interrupt_fct, default_profile)
         self.disp_sub = self.create_subscription(Int16, '/dsp/callback/next_move', self.cb_depl_fct, default_profile)
@@ -86,6 +87,11 @@ class ActionNode(Node):
         self.pumps_sub = self.create_subscription(Int16, '/act/callback/pumps', self.cb_pumps_fct, default_profile)
         self.cursor_stick_sub = self.create_subscription(Int16, '/act/callback/cursor_stick', self.cb_cursor_stick_fct, default_profile)
         self.bumper_sub = self.create_subscription(Int16, '/act/bumpers', self.cb_bumper_fct, default_profile)
+
+        # DEBUG 
+        self.trigger_debug_sub = self.create_subscription(Int16, '/debug', self.trigger_debug, default_profile)
+        self.debug_pub = self.create_publisher(Int16MultiArray, '/debug/order', latch_profile)
+        self.debug_sub = self.create_subscription(Int16MultiArray, '/debug/order', self.cb_debug, default_profile)
 
         self._blackboard = Blackboard()
 
@@ -169,13 +175,26 @@ class ActionNode(Node):
             self.smData["color"] = msg.data
             self.get_logger().info("Received color : {}".format(COLOR[self.smData["color"]]))
 
+    def trigger_debug(self, msg):
+        self.get_logger().info(f"DEBUG TRIGGERED")
+        action_msg = Int16MultiArray()
+        action_msg.data = [Action.PICKUP, 2]
+        self.debug_pub.publish(action_msg)
+
+    def cb_debug(self, msg):
+        self.get_logger().info(f"CB_DEBUG déclenchée avec : {msg.data}")
+        return
+
     def cb_next_action(self, msg):
         """
         Callback for next action (DN -> Repartitor)
         """
+        self.get_logger().info(f"Next Action déclenchée avec : {msg.data}")
+
         if not self.setupComplete: return
-        
+
         self.smData["next_action"] = [Action(msg.data[0])] + list(msg.data[1:])
+
         if msg.data[0] == Action.PARK:
             self.sm.cancel_state()
             self.get_logger().info("Received stop signal (initiate parking)")
@@ -200,29 +219,31 @@ class ActionNode(Node):
         REALIGNEMENT MODIFICATION TO TEST ! Callback of current position of the robot.
         """
         if self.setupComplete:
-            self.smData["robot_pos"].x = msg.x - self.smData["robot_pos_realignement"].x
-            self.smData["robot_pos"].x = msg.y - self.smData["robot_pos_realignement"].y
+            self.smData["robot_pos"].x = msg.x #- self.smData["robot_pos_realignement"].x
+            self.smData["robot_pos"].y = msg.y #- self.smData["robot_pos_realignement"].y
+            self.smData["robot_pos"].theta = msg.theta
+    
+    def cb_pumps_fct(self, msg):
+        """
+        Callback of the state of the pumps
+        """
+        self.get_logger().error(f"Pumps Callback received : {msg.data} -> {PumpsCallback(msg.data)}")
+        if self.setupComplete:
+            self.smData["cb_pumps"] = PumpsCallback(msg.data)
 
     def cb_drawbridge_fct(self, msg):
         """
         Callback of the state of the drawbridge
         """
         if self.setupComplete:
-            self.smData["drawbridge"] = DrawbridgeCallback.parse(msg.data)
+            self.smData["cb_drawbridge"] = DrawbridgeCallback(msg.data)
 
-    def cb_pumps_fct(self, msg):
-        """
-        Callback of the state of the pumps
-        """
-        if self.setupComplete:
-            self.smData["cb_elevator_1"] = PumpsCallback.parse(msg.data)
-    
     def cb_cursor_stick_fct(self, msg):
         """
         Callback of the state of cursor stick to push the cursor
         """
         if self.setupComplete:
-            self.smData["cursor_stick"] = CursorCallback.parse(msg.data)
+            self.smData["cb_cursor_stick"] = CursorCallback(msg.data.value)
 
     def cb_bumper_fct(self, msg):
         if self.setupComplete:

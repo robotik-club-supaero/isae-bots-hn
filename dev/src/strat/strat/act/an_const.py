@@ -87,14 +87,12 @@ class PumpsCallback(IntEnum):
 
 class CursorOrder(IntEnum):
     DOWN = 0
-    PUSH = 1
     UP = 2
 
 class CursorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
     DOWN = 2
-    PUSHED = 1
     UP = 2
 
 class BumperState(IntEnum):

@@ -59,9 +59,10 @@ class DecisionsNode(Node):
         self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, default_profile)
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
 
-        self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", latch_profile)
+        #self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", test_pub_profile)
+        self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", default_profile)
         self.next_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/request", self.send_action_next, default_profile)
-
+        
         # Publish on this topic to interrupt the current action for another reason than "park" or "end"
         self.interrupt_pub = self.create_publisher(Empty, '/strat/interrupt', latch_profile)
 
@@ -84,22 +85,20 @@ class DecisionsNode(Node):
         self.delay_park = self.config.delay_park
 
         # States
+        self.action_step_index = 0 # counter for the strat to know at what action it is
         self.cursor_pushed = False
         self.go_park = False
         self.parked = False
 
         # Actions
-        self.park_action = False
-        self.kill_action = False
-        self.curr_action = [Action.PENDING]  # of type Action
-
+        self.curr_action = [Action.INIT]  # of type Action
+        
         self.last_action = self.curr_action
         self.action_successful = False
         self.retry_count = 0
 
-        self.remaining_stands = [1 for _ in range(len(self.config.pickup_pos))]
-        self.deposit_slots = [1 for _ in range(len(self.config.deposit_pos))]
-        self.nb_actions = 0
+        self.remaining_boxes_areas = [1 for _ in range(len(self.config.pickup_boxes_pos))]
+        self.remaining_deposits_slots = [1 for _ in range(len(self.config.deposit_zones_pos))]
         
         # Strats
         self.strat = self.config.default_strat_index
@@ -122,11 +121,10 @@ class DecisionsNode(Node):
         self.score_pub.publish(score)
 
     def publishAction(self):
-        self.get_logger().info(f"DN has Published Action : {str(self.curr_action)}")
-
         action_msg = Int16MultiArray()
         action_msg.data = [self.curr_action[0].value] + self.curr_action[1:]
         self.next_action_pub.publish(action_msg)
+        self.get_logger().info(f"DN has Published Action : {action_msg}")
     
     def setDefaultColor(self, color):
         self.color = color
@@ -171,7 +169,6 @@ class DecisionsNode(Node):
         """
         Feedback on strategy chosen /game/strat.*
         """
-
         if msg.data not in range(len(self.strategies)):
             self.get_logger().error(f"Wrong value of strat given ({msg.data})...")
             return
@@ -215,7 +212,7 @@ class DecisionsNode(Node):
             self.retry_count = 0
             
             # Count points
-            if self.curr_action[0] in (Action.PICKUP,):
+            if self.curr_action[0] == Action.PICKUP:
                 pass
             
             if self.curr_action[0] == Action.DEPOSIT:
@@ -235,8 +232,8 @@ class DecisionsNode(Node):
             
         elif msg.exit == ActionResult.NOTHING_TO_PICKUP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
-            if self.curr_action[0] in (Action.PICKUP,):
-                self.remaining_stands[self.curr_action[1]] = 0
+            if self.curr_action[0] == Action.PICKUP:
+                self.remaining_boxes_areas[self.curr_action[1]] = 0
             else:
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
         elif msg.exit == ActionResult.FAILURE:
@@ -247,7 +244,7 @@ class DecisionsNode(Node):
             self.get_logger().error("Wrong value sent on /strat/action/request ...")
         
         # ----- Appel la stratégie pour définir la prochaine action à faire ------ #
-        self.get_logger().info(f"Next action requested to DN by AN (after '{self.curr_action[0]}' -> '{msg.exit}')")
+        self.get_logger().info(f"AN requested next action to DN (after '{str(self.curr_action[0])}' -> '{str(msg.exit)}')")
         self.strat_functions[self.strat](self)
         
 

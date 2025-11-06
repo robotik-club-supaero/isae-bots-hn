@@ -103,7 +103,7 @@ class Displacement(yasmin.State):
 
             if userdata["cb_depl"] == DspCallback.SUCCESS:
                 if (dest.kind & DisplacementRequest.MOVE) != 0 and (dest.x - userdata["robot_pos"].x) ** 2 + (dest.y - userdata["robot_pos"].y) ** 2 > ACCURACY_MARGIN**2:
-                    self._logger.error('Displacement result: Too far away from target')
+                    self._logger.error(f"Displacement result: Too far away from target (target=({dest.x}, {dest.y}), position=({userdata['robot_pos'].x}, {userdata['robot_pos']}))")
                     if retried:
                         return 'fail'
                     else:

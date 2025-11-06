@@ -28,7 +28,7 @@ class DynamicPos:
         if color == 0:
             return StaticPos(self.x, self.y, self.theta).resolve()
         else:
-            return StaticPos(self.x, 3000-self.y, -self.theta if self.theta is not None else None).resolve()
+            return StaticPos(self.x, 3000-self.y, ((self.theta + 3.14) % (2*3.14)) if self.theta is not None else None).resolve()
 
 class NaiveStratConfig(RobotConfig):
 
@@ -52,7 +52,15 @@ class NaiveStratConfig(RobotConfig):
     @property
     def default_strat_index(self):
         return NaiveStratConfig.DEFAULT_STRAT_INDEX
-
+    
+    @property
+    def cursor_pos(self):
+        return StratConfig.CURSOR_POS
+    
+    @property
+    def init_zone_count(self):
+        return len(StratConfig.INIT_ZONES)
+    
     @property
     def match_time(self):
         return NaiveStratConfig.MATCH_TIME
@@ -60,17 +68,6 @@ class NaiveStratConfig(RobotConfig):
     @property
     def delay_park(self):
         return NaiveStratConfig.DELAY_PARK
-    
-    @property
-    def delay_banderolle(self):
-        return NaiveStratConfig.DELAY_BANDEROLLE
-    @property
-    def deposit_banderolle(self):
-        return NaiveStratConfig.DEPORSIT_BANDEROLLE
-    
-    @property
-    def init_zone_count(self):
-        return len(StratConfig.INIT_ZONES)
     
 class StratConfig(NaiveStratConfig):
 
@@ -80,8 +77,9 @@ class StratConfig(NaiveStratConfig):
     # Sur le plan des règles (origine en bas à gauche) : (x, y, theta)
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
-    PARK_ZONE = DynamicPos(2000 - 1775, 375, 3.14)
-    CURSOR_POS = DynamicPos(2000 - 300, 350, 3.14)
+    PARK_ZONE = DynamicPos(2000 - 1775, 375, 0)
+    PARK_ZONE_BLUE = DynamicPos(2000 - 1775, 375, 3.14)
+    CURSOR_POS = DynamicPos(2000 - 300, 350, 3.14) # To Set
     
     INIT_ZONES = [PARK_ZONE] # Il peut y avoir plusieurs zone de départ -> on peu choisir sur le master node au démarrage
 
@@ -116,15 +114,15 @@ class StratConfig(NaiveStratConfig):
         return StratConfig.DEFAULT_INIT_ZONE
 
     @property
-    def pickup_box_pos(self):
-        return self._resolve_stand_pos(StratConfig.PICKUP_POS)
+    def pickup_boxes_pos(self):
+        return self._resolve_boxes_pos(StratConfig.PICKUP_POS)
 
     @property
     def deposit_zones_pos(self):
         return self._resolve_pos(StratConfig.DEPOSIT_POS)
 
     @property
-    def banderolle_pos(self):
+    def cursor_pos(self):
         return self._resolve_pos(StratConfig.CURSOR_POS)
 
     @property
@@ -152,12 +150,8 @@ class StratConfig(NaiveStratConfig):
 
         # elements
         elements_margin = margin / 2
-        obstacles["stand_7"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 900-elements_margin, 1300+elements_margin)
-        obstacles["stand_8"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 1700-elements_margin, 2100+elements_margin)
+        obstacles["box_1"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 900-elements_margin, 1300+elements_margin)
 
-        obstacles["stand_5"] = ObstacleRect(1700-elements_margin, 1800+elements_margin, 575-elements_margin, 975+elements_margin)
-        obstacles["stand_6"] = ObstacleRect(1700-elements_margin, 1800+elements_margin, 2025-elements_margin, 2425+elements_margin)
-        
         return obstacles
 
     def _resolve_pos(self, pos):
@@ -166,8 +160,8 @@ class StratConfig(NaiveStratConfig):
         else:
             return pos.resolve(self.color)
 
-    def _resolve_stand_pos(self, pos):
+    def _resolve_boxes_pos(self, pos):
         if isinstance(pos, list):
-            return [(p.resolve(self.color), stand_id) for p, stand_id in pos]
+            return [(p.resolve(self.color), box_id) for p, box_id in pos]
         else:
             return [(pos[0].resolve(self.color), pos[1])]

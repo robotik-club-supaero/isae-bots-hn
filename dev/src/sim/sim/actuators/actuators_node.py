@@ -34,9 +34,7 @@ from enum import Enum
 
 from enum import IntEnum
 
-from strat.act.an_const import ElevatorCallback, ElevatorOrder, \
-                                    DspCallback, ClampOrder, ClampCallback, \
-                                    BanderolleCallback, BanderolleOrder
+from strat.act.an_const import DspCallback, DrawbridgeOrder, DrawbridgeCallback, PumpsOrder, PumpsCallback, CursorOrder, CursorOrder, BumperState
 
 from config import COLOR, RobotConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
@@ -47,10 +45,10 @@ from config.qos import default_profile, latch_profile, br_position_topic_profile
 #                                                               #
 #################################################################
 
-## Constants GR
-ELEVATOR_TIME = 2.
-CLAMP_TIME = 1.
-BANDEROLLE_TIME = 0.500
+## Constants Pour simuler le temps pris par certains actionneurs
+PUMP_TIME = 0.1
+DRAWBRIDGE_TIME = 3.
+CURSOR_TIME = 1.
 
 #############################
 
@@ -71,24 +69,17 @@ class ActuatorNode(Node):
         # Sub a /color pour s'initialiser au set de la couleur
         self.sub_color = self.create_subscription(Int16, "/game/color", self.update_color, default_profile)
         self.sub_pos = self.create_subscription(Position,"/br/currentPosition", self.update_position, br_position_topic_profile)
-    
 
-        # Simule la reponse du BN sur l'ascenseur
-        self.elevator_1_sub = self.create_subscription(Int16, '/act/order/elevator_1', self.elevator_1_response, default_profile)
-        self.elevator_1_pub = self.create_publisher(Int16, "/act/callback/elevator_1", latch_profile)  
-       
-        self.elevator_2_sub = self.create_subscription(Int16, '/act/order/elevator_2', self.elevator_2_response, default_profile)
-        self.elevator_2_pub = self.create_publisher(Int16, "/act/callback/elevator_2", latch_profile)  
-        
-        # Simule la reponse du BN sur la clamp
-        self.clamp_1_sub = self.create_subscription(Int16, '/act/order/clamp_1', self.clamp_1_response, default_profile)
-        self.clamp_1_pub = self.create_publisher(Int16, "/act/callback/clamp_1", latch_profile)
+        # Simule la reponse du BN sur le pont levis
+        self.drawbridge_sub = self.create_subscription(Int16, '/act/order/drawbridge', self.drawbridge_response, default_profile)
+        self.drawbridge_callback_pub = self.create_publisher(Int16, "/act/callback/drawbridge", latch_profile)  
 
-        self.clamp_2_sub = self.create_subscription(Int16, '/act/order/clamp_2', self.clamp_2_response, default_profile)
-        self.clamp_2_pub = self.create_publisher(Int16, "/act/callback/clamp_2", latch_profile)  
+        # Simule la reponse du BN sur les pompes
+        self.pumps_sub = self.create_subscription(Int16, '/act/order/pumps', self.pumps_response, default_profile)
+        self.pumps_callback_pub = self.create_publisher(Int16, "/act/callback/pumps", latch_profile)
 
-        self.banderolle_sub = self.create_subscription(Int16, '/act/order/banderolle', self.banderolle_response, default_profile)
-        self.banderolle_pub = self.create_publisher(Int16, "/act/callback/banderolle", latch_profile)  
+        self.cursor_sub = self.create_subscription(Int16, '/act/order/cursor_stick', self.cursor_response, default_profile)
+        self.cursor_callback_pub = self.create_publisher(Int16, "/act/callback/cursor_stick", latch_profile)  
 
         self.bumpers_pub = self.create_publisher(Int16, "/act/bumpers", latch_profile)
       
@@ -120,55 +111,44 @@ class ActuatorNode(Node):
         """Callback de position."""
         self.curr_pos = msg
 
-    def elevator_response(self, etage, msg):
-        sleep(ELEVATOR_TIME)
+    def drawbridge_response(self, msg):
+        sleep(DRAWBRIDGE_TIME)
         rsp = Int16()
 
-        if msg.data == ElevatorOrder.MOVE_UP:
-            rsp.data = ElevatorCallback.UP
-            self.log_info(f"Réponse simulée : Ascenseur {etage} haut")
-        elif msg.data == ElevatorOrder.MOVE_MIDDLE:
-            rsp.data = ElevatorCallback.MIDDLE
-            self.log_info(f"Réponse simulée : Ascenseur {etage} milieu")
+        if msg.data == DrawbridgeOrder.UP:
+            rsp.data = DrawbridgeCallback.UP
+            self.log_info(f"Réponse simulée : Drawbridge HAUT")
         else:
-            rsp.data = ElevatorCallback.DOWN
-            self.log_info(f"Réponse simulée : Ascenseur {etage} bas")
+            rsp.data = DrawbridgeCallback.DOWN
+            self.log_info(f"Réponse simulée : Drawbridge BAS")
 
-        publisher = self.elevator_1_pub if etage == 1 else self.elevator_2_pub
-        publisher.publish(rsp)
+        self.drawbridge_callback_pub.publish(rsp)
 
-    def elevator_1_response(self, msg):
-        self.elevator_response(1, msg)
-
-    def elevator_2_response(self, msg):
-        self.elevator_response(2, msg)
-
-    def clamp_response(self, etage, msg):
-        sleep(CLAMP_TIME)
+    def pumps_response(self, msg):
+        sleep(PUMP_TIME)
         rsp = Int16()
 
-        if msg.data == ClampOrder.OPEN:
-            rsp.data = ClampCallback.OPEN
-            self.log_info(f"Réponse simulée : Pince {etage} ouverte")
+        if msg.data == PumpsOrder.ON:
+            rsp.data = PumpsCallback.ON
+            self.log_info(f"Réponse simulée : Pompes ON")
         else:
-            rsp.data = ClampCallback.CLOSED
-            self.log_info(f"Réponse simulée : Pince {etage} fermée")
+            rsp.data = PumpsCallback.OFF
+            self.log_info(f"Réponse simulée : Pompes OFF")
 
-        publisher = self.clamp_1_pub if etage == 1 else self.clamp_2_pub
-        publisher.publish(rsp)
-
-    def clamp_1_response(self, msg):
-        self.clamp_response(1, msg)
-
-    def clamp_2_response(self, msg):
-        self.clamp_response(2, msg)
-
-    def banderolle_response(self, msg):
-        sleep(BANDEROLLE_TIME)
+        self.pumps_callback_pub.publish(rsp)
+    
+    def cursor_response(self, msg):
+        sleep(CURSOR_TIME)
         rsp = Int16()
-        rsp.data = BanderolleCallback.LAUNCHED
-        self.banderolle_pub.publish(rsp)
-        self.log_info(f"Réponse simulée : Banderolle déployée")
+
+        if msg.data == CursorOrder.DOWN:
+            rsp.data = CursorCallback.DOWN
+            self.log_info(f"Réponse simulée : Cursor Stick BAS")
+        else:
+            rsp.data = CursorCallback.UP
+            self.log_info(f"Réponse simulée : Cursor Stick HAUT")
+
+        self.cursor_callback_pub.publish(rsp)
 
     def update_bumpers(self):
         config = RobotConfig()

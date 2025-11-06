@@ -22,6 +22,7 @@ class ActionResult(IntEnum):
     NOTHING = -2
 
 class Action(IntEnum):
+    INIT         = -3
     PENDING = -2
     NONE         = -1
     PICKUP = 0

@@ -29,7 +29,6 @@ from ..strat_const import Action, ActionScore, ActionResult
 #                                                               #
 #################################################################
 
-STAND_THRESHOLD = 0
 
 #################################################################
 #                                                               #
@@ -47,7 +46,10 @@ def test_strat(node):
         -
         -
     """
-    pass
+    node.curr_action = [Action.PICKUP, 2]
+    node.publishAction()
+    node.get_logger().info(f"Next action order : Pick Up -> Box n°{2}")
+    return
 
 def homologation(node):
     """
@@ -79,127 +81,162 @@ def match_strat(node):
         -
         -
     """
-    
-    def find_closest(node, positions, remaining, cond=None, coeffs=1, pos_type='boxes'):
 
+    action_order = [Action.PICKUP, Action.DEPOSIT, Action.CURSOR, Action.PARK]
+    
+    def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
+
+        if coeffs is None:
+            coeffs = [1 for _ in range(len(positions))]
+        
         if cond is None: 
-            cond = lambda remaining_index: remaining[remaining_index] > STAND_THRESHOLD
+            cond = lambda remaining_index: remaining[remaining_index] > 0
 
         x, y, _ = node.position
 
         if pos_type == 'boxes':
-            dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), stand_id) in enumerate(positions)]
+            dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, ((x_p, y_p, t_p), box_id) in enumerate(positions)]
         else:
             dists = [ coeffs[i] * ((x_p - x)**2 + (y_p - y)**2) for i, (x_p, y_p, t_p) in enumerate(positions)]
 
         dist_sorted_index = list(np.argsort(dists)) # Tri les distance du plus petit au plus grand et renvoi la liste trié des indexes de dists
-        print("\n\n" + str(positions) + "\n" + str(remaining) + "\n\n")
+        #print("\n\n" + str(positions) + "\n" + str(remaining) + "\n\n")
         for index in dist_sorted_index:
-            true_index = positions[index][1] if pos_type == 'boxes' else index # If pos_type=box -> differentes positions pour une même box
-            if cond(true_index):
-                return true_index
+            element_id = positions[index][1] if pos_type == 'boxes' else index # If pos_type=box -> differentes positions pour une même box
+            if cond(element_id):
+                return element_id
         
         return None
-
+    
+    last_action = node.curr_action[0]
     time.sleep(0.01) # is it really necessary ?
 
-    if not node.go_park:
+    def deposit_closest():
+        DEPOSIT_POS = node.config.deposit_zones_pos
+        malus_deposit = np.ones(len(DEPOSIT_POS))   
+        deposit_id = find_closest(node, DEPOSIT_POS, node.remaining_deposits_slots, coeffs=malus_deposit, pos_type='deposit')
+        if deposit_id is not None:
+            return True, deposit_id
+        return False, None
+    
+    def pickup_closest():
+        BOXES_POS = node.config.pickup_boxes_pos
+        malus_pickup = np.ones(len(BOXES_POS))
+        box_id = find_closest(node, BOXES_POS, node.remaining_boxes_areas, coeffs=malus_pickup, pos_type='boxes')
+        if box_id is not None:
+            return True, box_id
+        return False, None
 
-        if node.launch_banderolle:
-            if not node.banderolle_launched:
-                node.curr_action = [Action.DEPOSIT_BANDEROLLE]
-                node.get_logger().info(f"Deposit Banderolle Launched !")        
-                node.publishAction()
-                return
-            else: # Banderolle Launched
-                node.curr_action = [Action.DEPOSIT_BANDEROLLE]
-                node.get_logger().info(f"Deposit Banderolle...")  
-                node.banderolle_launched = True
-                node.launch_banderolle = False # Stop banderolle launching
-                node.publishAction()
-                return
+    def set_next_action():
+        next_action = action_order[node.action_step_index]
 
-        # Retry
-        if node.curr_action[0] != Action.PENDING and not node.action_successful:
-            if node.retry_count < 3:
-                node.get_logger().info(f"Retry action order : {node.curr_action[0]}")   
-                node.retry_count += 1 # reset in dec_node when action success
-                node.publishAction()
-                return
-
-        # Pickup Up Stand
-        STAND_POS = node.config.pickup_stand_pos
-        DEPOSIT_POS = node.config.deposit_pos
-
-        malus_deposit = np.ones(len(DEPOSIT_POS))
-        malus_pickup = np.ones(len(STAND_POS))
-
-        # Pickup Up Stand
-        if (node.curr_action[0] in (Action.PICKUP_STAND_1, Action.PICKUP_STAND_2)):
-                        
-            if not node.action_successful: # Continue to search for stand
-                node.get_logger().info(f"Continue action order : Picking up Stand n°{node.curr_action[1]}...")        
-                node.publishAction()
-                return
-            else: # -> Stand Picked ! 
-                if node.curr_action[0] == Action.PICKUP_STAND_2: # top stand picked -> Go bottom stand picking
-                    node.remaining_stands[node.curr_action[1]] = 0
-                    stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
-                    node.curr_action = [Action.PICKUP_STAND_1, stand_id]
-                    node.get_logger().info(f"Next action order : Etage 1 (Bas) -> Pickup Stand n°{stand_id}")
-                    node.publishAction()    
-                elif node.curr_action[0] == Action.PICKUP_STAND_1: # bottom stand picked -> Go deposit
-                    node.remaining_stands[node.curr_action[1]] = 0
-                    deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit, pos_type='deposit')
-                    if deposit_id is not None:
-                        node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
-                        node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}")      
-                    else:
-                        node.get_logger().info("No deposit pos found !")
-                    node.publishAction()
-                return
+        if next_action == Action.PARK:
+            node.curr_action = [Action.PARK]
+            node.get_logger().info("Next action order : Park")
+            return True
         
-        # Deposit Stand
-        if node.curr_action[0] == Action.DEPOSIT_STAND:
-            if node.action_successful:
-                node.deposit_slots[node.curr_action[1]] = 0
+        if next_action == Action.WAIT:
+            node.curr_action = [Action.WAIT]
+            node.get_logger().info(f"Next action order : Wait")        
+            return True
 
-                stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
-                if stand_id is not None:
-                    node.curr_action = [Action.PICKUP_STAND_2, stand_id]
-                    node.get_logger().info(f"Next action order : Etage 2 (Haut) -> Pickup Stand n°{stand_id}")
-                    node.publishAction()
-                    return
-                else:
-                    node.get_logger().info("No more stand to pick up")
-
+        if next_action == Action.CURSOR:
+            node.curr_action = [Action.CURSOR]
+            node.get_logger().info(f"Next action order : Push Cursor")        
+            return True
+        
+        if next_action == Action.PICKUP:
+            can_pickup, box_id = pickup_closest()
+            if can_pickup:
+                node.curr_action = [Action.PICKUP, box_id]
+                node.get_logger().info(f"Next action order : Pick Up -> Box n°{box_id}")
+                return True
             else:
-                deposit_id = find_closest(node, DEPOSIT_POS, node.deposit_slots, coeffs=malus_deposit, pos_type='deposit')
-                if deposit_id is not None:
-                    node.curr_action = [Action.DEPOSIT_STAND, deposit_id]
-                    node.get_logger().info(f"Next action order : Deposit Stand at n°{deposit_id}...")
-                    node.publishAction()        
-                    return
-                else:
-                    node.get_logger().info("No more free slot to deposit !")
+                node.get_logger().info("No more box to pick up")      
+        
+        if next_action == Action.DEPOSIT:
+            can_deposit, deposit_id = deposit_closest()
+            if can_deposit:
+                node.curr_action = [Action.DEPOSIT, deposit_id]
+                node.get_logger().info(f"Next action order : Deposit -> Area n°{deposit_id}")
+                return True
+            else:
+                node.get_logger().info("No more slot to deposit.")
 
-        # If no other action is applicable, defaulting to picking up stand
-        node.get_logger().info("Out of Normal Loop : switching to Pickup Stand 2")
-        stand_id = find_closest(node, STAND_POS, node.remaining_stands, coeffs=malus_pickup, pos_type='stand')
-        if stand_id is not None:
-            node.curr_action = [Action.PICKUP_STAND_2, stand_id]
-            node.get_logger().info(f"Next action order : Etage 2 (Haut) -> Pickup Stand n°{stand_id}")
+        return False
+
+    # Init
+    if last_action == Action.INIT:
+        node.action_step_index = 0 # Initialise to first action
+        success = set_next_action()
+        if success:
+            node.get_logger().info(f"Next action order : Beginning of the startegy -> {node.curr_action}")
             node.publishAction()
             return
         else:
-            node.get_logger().info("No more stand to pick up")
+            node.get_logger().info(f"Next Action : First Action not recognised. -> {action_order[node.action_step_index]}")
 
+    # Pending
+    if last_action == Action.PENDING:
+        node.get_logger().info(f"Action PENDING.. waiting for trigger.")
+        node.publishAction()
+        return
+
+    # Retry
+    if not node.action_successful:
+        if node.retry_count < 2: # retry une fois
+            node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")
+            node.retry_count += 1 # reset in dec_node when action success
+            success = set_next_action()
+            if success:
+                node.publishAction()
+                return
+            else:
+                node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
+
+    
+    if not node.go_park:
+
+        # If failed + retry failed too -> Debug Print
+        if not node.action_successful:
+            node.get_logger().info(f"ACTION '{last_action}' FAILED and RETRY FAILED. Skipping to next action.")
+
+        node.action_step_index += 1 # Go to next action
+        if (node.action_step_index) >= len(action_order):
+            node.get_logger().info(f"End of Action Order defined by Strategy. -> STOP")   
+            node.get_logger().info("End of strategy : MATCH")
+            node.stop_IT() 
+            return
+
+        success = set_next_action()
+        if success:
+            node.publishAction()
+            return
+        else:
+            node.get_logger().info(f"Next Action : Action not recognised. ({action_order[node.action_step_index]})")
+            node.get_logger().info("Out of Normal Loop : switching to Pickup")
+            can_pickup, pickup_id = pickup_closest()
+            if can_pickup:
+                node.get_logger().info(f"Next action order : Picking Up -> Box n°{pickup_id}")
+                node.publishAction()
+                return
+            else:
+                node.get_logger().info("No more box to pick up")
+        
+        # Go to park
+        node.get_logger().info(f"Strategy could not find any solution after : action={str(node.curr_action)}, success={node.action_successful}")
+        node.curr_action = [Action.PARK]
+        node.get_logger().info("Next action order : Park")
+        node.publishAction()
+        return
+
+    # End of Match
     if node.parked:
         node.get_logger().info("End of strategy : MATCH")
-        node.stop_IT()
+        node.stop_IT() # Stop robot
         return
     
-    # If no other action is applicable, go to park
+    # Go to park
     node.curr_action = [Action.PARK]
     node.get_logger().info("Next action order : Park")
     node.publishAction()

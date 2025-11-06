@@ -48,16 +48,16 @@ class CalcPositionBox(yasmin.State): # TODO
         self._msg = String()
     
     def execute(self, userdata):    
-        BOX_POS = StratConfig(userdata["color"]).pickup_box_pos
+        BOX_POS = StratConfig(userdata["color"]).pickup_boxes_pos
 
         box_pos_id = self._node.get_pickup_id("boxes", userdata) % len(BOX_POS)
-
-        self._msg.data = f"stand_{box_pos_id}"
+        
+        self._msg.data = f"box_{box_pos_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
-        ((xp, yp, tp), stand_id) = BOX_POS[box_pos_id]
+        ((xp, yp, tp), box_id) = BOX_POS[box_pos_id]
 
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH_STAND, theta_final=tp)
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH, theta_final=tp)
 
         return 'success'
  
@@ -73,23 +73,23 @@ class PickupBoxEnd(yasmin.State): # TODO
     
 #################################################################
 #                                                               #
-#                        SM STATE : PICKUP_STAND                #
+#                        SM STATE : DRAWBRIDGE                  #
 #                                                               #
 #################################################################
 
 class _DrawbridgeSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-        ('PUMPS_TURN_ON', (node, PumpsON(node))),
-        ('DRAW_BRIDGE_DOWN', (node, DrawbridgeDOWN(node))), # The BN manage the bumpers to stop the down / up
-        ('DRAW_BRIDGE_UP', (node, DrawbridgeUP(node))),
+        ('PICKUP_PUMPS_TURN_ON', PumpsON(node)),
+        ('PICKUP_DRAW_BRIDGE_DOWN', DrawbridgeDOWN(node)), # The BN manage the bumpers to stop the down / up
+        ('PICKUP_DRAW_BRIDGE_UP', DrawbridgeUP(node)),
         ])
 
 class PickupBoxesSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
-            ('MOVE_TO_PICKUP_ZONE', MoveTo(node, CalcPositionBox(node))),
-            ('PICKUP_STAND_SEQ', _DrawbridgeSequence(node)),
+            ('PICKUP_MOVE_TO_ZONE', MoveTo(node, CalcPositionBox(node))),
+            ('PICKUP_BOX_SEQ', _DrawbridgeSequence(node)),
             ('PICKUP_BOX_END', PickupBoxEnd(node)),
             ])
     

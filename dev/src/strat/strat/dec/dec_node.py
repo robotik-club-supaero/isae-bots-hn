@@ -58,8 +58,7 @@ class DecisionsNode(Node):
         self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, default_profile)
         self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, default_profile)
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
-
-        #self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", test_pub_profile)
+        
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", default_profile)
         self.next_action_sub = self.create_subscription(EndOfActionMsg, "/strat/action/request", self.send_action_next, default_profile)
         

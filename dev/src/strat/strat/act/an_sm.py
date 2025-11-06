@@ -76,7 +76,7 @@ class Setup(yasmin.State):
         userdata["robot_pos_realignement"] = Position(x=0, y=0, theta=0)  # current position realignement of the robot
         userdata["cb_drawbridge"] = DrawbridgeCallback.PENDING # state of the clamp
         userdata["cb_cursor_stick"] = CursorCallback.PENDING # state of the elevator
-        userdata["cb_pumps"] = PumpsCallback.PENDING # state of the banderolle
+        userdata["cb_pumps"] = PumpsCallback.PENDING # state of the pumps
         userdata["bumper_state"] = BumperState.RELEASED
         
         ## Game infos variables

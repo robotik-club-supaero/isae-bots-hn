@@ -134,8 +134,9 @@ class PosRealign(Displacement): # Take the closest coordinate to the wall and se
         x,y,theta = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
 
         direction = {'UP': abs(y), 'DOWN': abs(MAX_Y - y), 'LEFT': abs(x), 'RIGHT': abs(MAX_X - x)}
-        dir_min = min(direction.keys(), lambda x: direction[x])
+        
 
+        dir_min =  min(direction, key=lambda x: direction[x])
         # After : robot_pos = pos_measured - robot_pos_realignement
         # Ex: 
         # si userdata["robot_pos_realignement"].y = y + RobotConfig.ROBOT_LARG/2 

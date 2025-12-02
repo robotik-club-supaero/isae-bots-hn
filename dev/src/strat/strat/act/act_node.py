@@ -243,7 +243,7 @@ class ActionNode(Node):
         Callback of the state of cursor stick to push the cursor
         """
         if self.setupComplete:
-            self.smData["cb_cursor_stick"] = CursorCallback(msg.data.value)
+            self.smData["cb_cursor_stick"] = CursorCallback(msg.data)
 
     def cb_bumper_fct(self, msg):
         if self.setupComplete:

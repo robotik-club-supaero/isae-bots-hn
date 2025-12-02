@@ -34,7 +34,7 @@ from enum import Enum
 
 from enum import IntEnum
 
-from strat.act.an_const import DspCallback, DrawbridgeOrder, DrawbridgeCallback, PumpsOrder, PumpsCallback, CursorOrder, CursorOrder, BumperState
+from strat.act.an_const import DspCallback, DrawbridgeOrder, DrawbridgeCallback, PumpsOrder, PumpsCallback, CursorOrder, CursorCallback, BumperState
 
 from config import COLOR, RobotConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile

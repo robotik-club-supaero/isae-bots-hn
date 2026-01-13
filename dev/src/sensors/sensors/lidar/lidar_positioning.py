@@ -45,9 +45,9 @@ class LidarPositioningNode(Node):
         self.dist_13 = self.mark_1.euclidean_distance(self.mark_3)
         self.dist_23 = self.mark_2.euclidean_distance(self.mark_3)
 
-        self.mark_1_pos_rel = Point(x=0., y=0.)
-        self.mark_2_pos_rel = Point(x=0., y=0.)
-        self.mark_3_pos_rel = Point(x=0., y=0.)
+        self.mark_1_pos_rel = Point(x=MARK_1_X, y=MARK_1_Y)
+        self.mark_2_pos_rel = Point(x=MARK_2_X, y=MARK_2_Y)
+        self.mark_3_pos_rel = Point(x=MARK_3_X, y=MARK_3_Y)
 
         # initialisation des publishers
         self.pub_obstacles = self.create_publisher(SensorObstacleList, "/sensors/obstaclesLidar", default_profile)
@@ -92,13 +92,15 @@ class LidarPositioningNode(Node):
     def _get_marks(self, clusters):
         """ 
         Parmi les clusters, on cherche les trois points qui correspondent à la position des repères
-	        Si deux sets ou plus fonctionnent, on prend celui le plus proche des repères précédents
+            Si un seul set convient, on le retourne
+	        Si deux sets ou plus conviennent, on prend celui le plus proche des repères précédents
 	        Si aucun set ne convient, on test avec seulement deux points. De même que précédemment si plusieurs sets conviennent
 	        Si aucun set de deux points ne convient non plus, on log une erreur et on attend le prochain scan 
         """
         
         valid_marks = []
 
+        #On cherche tous les sets de trois points
         for i in range(len(clusters)-1):
             for j in range(i+1, len(clusters)):
                 if (abs(clusters[i].euclidean_distance(clusters[j]) - self.dist_12) < EPS ):
@@ -109,28 +111,42 @@ class LidarPositioningNode(Node):
                             if (((abs(dist_ik - self.dist_13) < EPS) & (abs(dist_jk - self.dist_23) < EPS)) \
                                         | ((abs(dist_ik - self.dist_23) < EPS) & (abs(dist_jk - self.dist_13) < EPS))):
                                 valid_marks.append([clusters[i], clusters[j], clusters[k]])
-                        
+
+        #Si un seul convient, on le retourne   
         if (len(valid_marks == 1)):
             return valid_marks[0]
+        
+        #Si deux sets ou plus conviennent, on renvoie celui le plus proche du set à l'itération précédente
         elif (len(valid_marks) > 1):
-            i_min = 0
-            min_dist = 10000000
-            for j in range(len(valid_marks)):
-                marks = valid_marks[j]
-                dist_old_marks = min(marks[0].euclidean_distance(self.mark_1_pos_rel) + marks[1].euclidean_distance(self.mark_2_pos_rel) + marks[2].euclidean_distance(self.mark_3_pos_rel), \
-                                     marks[0].euclidean_distance(self.mark_1_pos_rel) + marks[2].euclidean_distance(self.mark_2_pos_rel) + marks[1].euclidean_distance(self.mark_3_pos_rel), \
-                                     marks[1].euclidean_distance(self.mark_1_pos_rel) + marks[0].euclidean_distance(self.mark_2_pos_rel) + marks[2].euclidean_distance(self.mark_3_pos_rel), \
-                                     marks[1].euclidean_distance(self.mark_1_pos_rel) + marks[2].euclidean_distance(self.mark_2_pos_rel) + marks[0].euclidean_distance(self.mark_3_pos_rel), \
-                                     marks[2].euclidean_distance(self.mark_1_pos_rel) + marks[0].euclidean_distance(self.mark_2_pos_rel) + marks[1].euclidean_distance(self.mark_3_pos_rel), \
-                                     marks[2].euclidean_distance(self.mark_1_pos_rel) + marks[1].euclidean_distance(self.mark_2_pos_rel) + marks[0].euclidean_distance(self.mark_3_pos_rel), \
-                )
-                if (dist_old_marks < min_dist):
-                    i_min = j
-                    min_dist = dist_old_marks
-            return valid_marks[i_min]
+            return self._get_dist_set_min(valid_marks)
+
+
+
+
 
 
         return valid_marks
+
+    def _get_dist_set_min(self, sets):
+        i_min = 0
+        min_dist = 10000000
+
+        mark_1 = self.mark_1_pos_rel
+        mark_2 = self.mark_2_pos_rel
+        mark_3 = self.mark_3_pos_rel
+
+        for j in range(len(sets)):
+                marks = sets[j]
+                dist_old_marks = min(marks[0].euclidean_distance(mark_1) + marks[1].euclidean_distance(mark_2) + marks[2].euclidean_distance(mark_3), \
+                                     marks[0].euclidean_distance(mark_1) + marks[2].euclidean_distance(mark_2) + marks[1].euclidean_distance(mark_3), \
+                                     marks[1].euclidean_distance(mark_1) + marks[0].euclidean_distance(mark_2) + marks[2].euclidean_distance(mark_3), \
+                                     marks[1].euclidean_distance(mark_1) + marks[2].euclidean_distance(mark_2) + marks[0].euclidean_distance(mark_3), \
+                                     marks[2].euclidean_distance(mark_1) + marks[0].euclidean_distance(mark_2) + marks[1].euclidean_distance(mark_3), \
+                                     marks[2].euclidean_distance(mark_1) + marks[1].euclidean_distance(mark_2) + marks[0].euclidean_distance(mark_3)  )
+                if (dist_old_marks < min_dist):
+                    i_min = j
+                    min_dist = dist_old_marks
+        return sets[i_min]
 
     def _get_coords(self, msg):
         # See https://docs.ros2.org/foxy/api/sensor_msgs/msg/LaserScan.html

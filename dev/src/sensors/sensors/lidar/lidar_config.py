@@ -6,6 +6,7 @@ TABLE_W = 2000          # largeur de table (selon x)
 # Offset with respect to the center of the robot (if the lidar is not centered)
 LIDAR_OFFSET_X = 0
 LIDAR_OFFSET_Y = 0
+LIDAR_ANGLE = 90 # Degrés
 
 # Max distance between two *successive* measurements for them to belong to the same cluster
 CLUSTER_DIST_LIM = 100 # mm

@@ -96,7 +96,7 @@ class ActionNode(Node):
         self._blackboard = Blackboard()
 
         self.sm = ActionStateMachine(self)
-        self.sis = YasminViewerPub('SM_ROOT', self.sm, node=self)
+        #self.sis = YasminViewerPub('SM_ROOT', self.sm, node=self)
         self._sm_thread = threading.Thread(target=self.sm, args=(self._blackboard,))
         
     @property

@@ -207,7 +207,7 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
     
     def add_submachine(self, name, machine, transitions):
         self.add_state(name, machine, transitions)
-        self._viewers.append(YasminViewerPub(name, machine, node=self._node))
+        #self._viewers.append(YasminViewerPub(name, machine, node=self._node))
 
     def cancel_state(self):
         # Only cancels the current submachine (i.e. the current action)

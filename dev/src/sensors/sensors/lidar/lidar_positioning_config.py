@@ -1,6 +1,6 @@
 import math
 
-TABLE_H = 3000          # hauteur de table (selon y)
+TABLE_H = 3000          # hauteur de table (selon y) (en vrai c'est inversé mais pas envie de casser la simu)
 TABLE_W = 2000          # largeur de table (selon x)
 
 # Offset with respect to the center of the robot (if the lidar is not centered)
@@ -20,14 +20,14 @@ MAX_RANGE = 3000 # mm
 DETECTION_THRESHOLD = 10
 
 # Coordinates of the three marks
-MARK_1_X = 1
-MARK_1_Y = 1
+MARK_1_X = 50
+MARK_1_Y = -50
 
-MARK_2_X = 1
-MARK_2_Y = 1
+MARK_2_X = 1950
+MARK_2_Y = -50
 
-MARK_3_X = 1
-MARK_3_Y = 1
+MARK_3_X = 1000
+MARK_3_Y = 3050
 
 # Uncertainty on the distance between the marks
-EPS = 10 #mm
+EPS = 150

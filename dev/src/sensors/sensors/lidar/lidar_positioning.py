@@ -36,6 +36,7 @@ class LidarPositioningNode(Node):
 
         self.robot_pos = Position()
         self.obstacle_msg = SensorObstacleList()
+        self.mark_msg = SensorObstacleList()
 
         self.mark_1 = Point(x=MARK_1_X, y=MARK_1_Y)
         self.mark_2 = Point(x=MARK_2_X, y=MARK_2_Y)
@@ -52,6 +53,7 @@ class LidarPositioningNode(Node):
         # initialisation des publishers
         self.pub_obstacles = self.create_publisher(SensorObstacleList, "/sensors/obstaclesLidar", default_profile)
         self.pub_position = self.create_publisher(Position, "/br/currentPosition", br_position_topic_profile)
+        self.pub_marks = self.create_publisher(SensorObstacleList, "/sensors/marksLidar", default_profile)
         
         # initialisation des suscribers
         self.sub_scan = self.create_subscription(LaserScan, "/scan", self.update_positions, default_profile)
@@ -76,18 +78,51 @@ class LidarPositioningNode(Node):
         marks = self._get_marks(clusters)
 
         #On déduit la position du robot de la position des repères
-        #On passe les coordonnées dans le repère absolu
-        #On filtre les points hors de la table
-        #On publie la position du robot, des repères et des obstacles
+        self.robot_pos = self.CALL_NIELS_FUNCTION_HERE(marks) 
+        #Input : une liste de longueur 3 de la position relative des marks détectées (que se passe-t-il si il n'y en a que 2 ?) 
+        #Output : la position absolue du robot (x, y theta)
 
-        self.obstacle_msg.obstacles.clear()
+        #On passe les coordonnées dans le repère absolu
+        clusters_abs = []
+        marks_abs = []
+
+        cos = math.cos(self.robot_pos.theta)
+        sin = math.sin(self.robot_pos.theta)
 
         for cluster in clusters:
-            if cluster.num_of_points >= DETECTION_THRESHOLD:
-                point = cluster.build()
-                self.obstacle_msg.obstacles.append(SensorObstacle(x=point.x, y=point.y))
+            x_abs, y_abs = make_absolute(self.robot_pos, cluster, cos=cos, sin=sin)
+            clusters_abs.append(Point(x_abs, y_abs))
+
+        for mark in marks:
+            x_abs, y_abs = make_absolute(self.robot_pos, mark, cos=cos, sin=sin)
+            marks_abs.append(Point(x_abs, y_abs))
+
+        #On filtre les points hors de la table
+        length = len(clusters_abs)
+        i = 0
+
+        while (i < length):
+            point = clusters_abs[i]
+            if not((0 < point.x < TABLE_W) and (0 < point.y < TABLE_H)):
+                clusters_abs[i], clusters_abs[length-1] = clusters_abs[length-1], clusters_abs[i]
+                clusters_abs.pop()
+                i -= 1
+                length -= 1
+            i += 1
+
+        #On publie la position du robot, des repères et des obstacles
+        self.obstacle_msg.obstacles.clear()
+        self.mark_msg.obtacles.clear()
+
+        for cluster in clusters_abs:
+            self.obstacle_msg.obstacles.append(SensorObstacle(cluster.x, cluster.y))
+
+        for mark in marks_abs:
+            self.mark_msg.obstacles.append(SensorObstacle(mark.x, mark.y))
 
         self.pub_obstacles.publish(self.obstacle_msg)
+        self.pub_marks.publish(self.mark_msg)
+        self.pub_position.publish(self.robot_pos)
 
     def _get_marks(self, clusters):
         """ 
@@ -129,7 +164,7 @@ class LidarPositioningNode(Node):
 
     def _get_dist_set_min(self, sets):
         i_min = 0
-        min_dist = 10000000
+        min_dist = sys.maxsize
 
         mark_1 = self.mark_1_pos_rel
         mark_2 = self.mark_2_pos_rel

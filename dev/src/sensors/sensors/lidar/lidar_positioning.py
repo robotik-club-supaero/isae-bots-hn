@@ -245,7 +245,7 @@ class LidarPositioningNode(Node):
         return clusters
     
 
-def _compute_robot_position_from_xbyb(b1_true_pos, b2_true_pos, b1_robot_pos, b2_robot_pos):
+def _compute_robot_position_from_xbyb(self, b1_true_pos, b2_true_pos, b1_robot_pos, b2_robot_pos):
     """
     Détermine la position et l'orientation du robot à partir des positions de deux balises
     dans le repère monde et dans le repère robot.

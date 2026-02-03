@@ -199,8 +199,8 @@ class LidarPositioningNode(Node):
             # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
             if range_min<dist_mm<range_max:
                 # Conversion de (d, theta) en (x_rel, y_rel)
-                x_rel = dist_mm*math.cos(theta) + LIDAR_OFFSET_X
-                y_rel = dist_mm*math.sin(theta) + LIDAR_OFFSET_Y
+                x_rel = dist_mm*math.cos(theta - LIDAR_ANGLE*math.pi/180) + LIDAR_OFFSET_X
+                y_rel = dist_mm*math.sin(theta - LIDAR_ANGLE*math.pi/180) + LIDAR_OFFSET_Y
                 obstacle = Point(x_rel, y_rel)
                 obstList.append(obstacle)
 

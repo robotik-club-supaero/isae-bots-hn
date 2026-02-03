@@ -37,11 +37,7 @@ class DispTestNode(Node):
         self.dispOrder._theta = THETA
         self.idle = Bool()
         self.idle.data = False
-
-        if (NB_TOURS > 1):
-            self.round = NB_TOURS
-        else:
-            self.round = 1
+        self.round = max(NB_TOURS, 1)
 
         # initialisation des publishers
         self.pub_dispOrd = self.create_publisher(DisplacementOrder, '/br/goTo', latch_profile)
@@ -50,24 +46,37 @@ class DispTestNode(Node):
         # initialisation des suscribers
         self.sub_callback = self.create_subscription(Int16, '/br/callbacks', self._launchNewRound, default_profile)
 
-        launch = Int16()
-        launch.data = 7
-        self._launchNewRound(launch)
+        self.launch = Int16()
+        self.launch.data = 7
         self.get_logger().info("Displacement Test Node initialized")
+        self._launchNewRound(self.launch)
 
     def _launchNewRound(self, msg):
         if not(self.idle.data):
-            self._setReady()
-        if ((msg.data == 7) & (self.round > 0)):
+            self._changeIdle(run=True)
+        elif ((msg.data == 7) and (self.round >= 1)):
             #msg.data == 7 => Déplacement fini
-            self.round = self.round - 1
+            self.round = self.round-1
             self.pub_dispOrd.publish(self.dispOrder)
-        elif (msg == 6):
+        elif (msg.data == 6):
+            #msg.data == 6 => okIdle, contrôleur passé en état Idle
             self.idle.data = False
+        elif (msg.data == 5):
+            #msg.data == 5 => okReady, contrôleur passé en état Ready
+            self._launchNewRound(self.launch)
+        elif (self.round == 0):
+            self.get_logger().warning("Node ended successfully !")
+            self._changeIdle(False)
+            self.destroy_node()
+            rclpy.try_shutdown()
 
-    def _setReady(self):
-        self.idle.data = True
+    def _changeIdle(self, run=True):
+        self.idle.data = run
         self.pub_idle.publish(self.idle)
+        if (run == True):
+            self.get_logger().warning("Entering running mode")
+        else:
+            self.get_logger().warning("Entering idle mode")
         time.sleep(2)
 
 #################################################################

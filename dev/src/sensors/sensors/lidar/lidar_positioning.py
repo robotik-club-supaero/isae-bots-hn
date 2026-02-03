@@ -243,6 +243,71 @@ class LidarPositioningNode(Node):
             clusters.append(current_cluster)
 
         return clusters
+    
+
+def _compute_robot_position_from_xbyb(b1_true_pos, b2_true_pos, b1_robot_pos, b2_robot_pos):
+    """
+    Détermine la position et l'orientation du robot à partir des positions de deux balises
+    dans le repère monde et dans le repère robot.
+
+    Args:
+        b1_true_pos (tuple): (x, y) de la balise 1 dans le repère monde.
+        b2_true_pos (tuple): (x, y) de la balise 2 dans le repère monde.
+        b1_robot_pos (tuple):  (x, y) de la balise 1 dans le repère robot.
+        b2_robot_pos (tuple): ((x, y) de la balise 2 dans le repère robot.
+
+    Returns:
+        tuple: (position_robot_x, position_robot_y, orientation_theta)
+    """
+
+    # Unpack
+    d1, a1 = b1_distanceangle
+    d2, a2 = b2_distanceangle
+    b1_local = np.array(list(b1_robot_pos))
+    b2_local = np.array(list(b2_robot_pos))
+
+    # Vecteur global balise 1 -> balise 2 dans le repère monde
+    b1b2_global = np.array(b2_true_pos) - np.array(b1_true_pos)
+    # Vecteur local balise 1 -> balise 2 dans le repère Robot
+    b1b2_local = b2_local - b1_local
+
+    # Système linéaire A * u = B pour trouver cos(theta) et sin(theta)
+    # On cherche u = [cos, sin].
+    x12r, y12r = b1b2_local 
+    M_theta = np.array([
+        [x12r, -y12r],
+        [y12r,  x12r]
+    ])
+    u = np.linalg.pinv(M_theta) @ b1b2_global
+    cos_theta_raw, sin_theta_raw = u
+
+    # Si les distances mesurées ne sont pas parfaites, cos^2 + sin^2 != 1.
+    norm = np.hypot(cos_theta_raw, sin_theta_raw)
+    #print(norm)
+    cos_theta = cos_theta_raw / norm
+    sin_theta = sin_theta_raw / norm
+
+    # Récupération de l'orientation du robot et l'expédie entre 0 et 2 pi
+    theta_final = np.arctan2(sin_theta, cos_theta)%(2*np.pi)
+
+    # Matrice de rotation reconstruite
+    R = np.array([
+        [cos_theta, -sin_theta],
+        [sin_theta,  cos_theta]
+    ])
+
+    pos_robot = np.array(b1_true_pos) - (R @ b1_local)
+
+    return pos_robot[0], pos_robot[1], theta_final
+
+
+
+
+
+
+
+
+
         
 class ClusterBuilder:
     def __init__(self, pt):

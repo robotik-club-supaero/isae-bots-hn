@@ -37,5 +37,5 @@ done
 
 
 # lancement du master_node dans le Docker
-cd /home/pi/isae-bots-hn-2024
+cd /home/pi/isae-bots-hn
 make main INTERACTIVE="" CMD="source install/setup.bash; ros2 launch scripts/master_node.launch 2>&1 > /tmp/master_node.log; $SHELL"

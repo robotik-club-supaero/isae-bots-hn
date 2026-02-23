@@ -24,6 +24,7 @@ INTERACTIVE = -it
 CORE_DOCKERFILE = ${CURDIR}/docker/dockerfile.core
 BASE_DOCKERFILE = ${CURDIR}/docker/dockerfile.base
 PI_DOCKERFILE = ${CURDIR}/docker/dockerfile.pi
+PI_NEW_DOCKERFILE = ${CURDIR}/docker/dockerfile.pi_new
 PI_PLATFORM = linux/arm64/v8
 
 # Setup Docker volumes and env variables
@@ -104,6 +105,10 @@ build-base: build-core
 .PHONY: build-image-pi
 build-image-pi:
 	@docker buildx build --platform=${PI_PLATFORM} -f ${PI_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
+
+.PHONY: build-image-pi-new
+build-image-pi-new:
+	@docker buildx build --platform=${PI_PLATFORM} -f ${PI_NEW_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
 
 
 .PHONY: create-container

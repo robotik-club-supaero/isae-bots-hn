@@ -55,8 +55,31 @@ RUN git clone --recursive https://github.com/Hokuyo-aut/urg_node2.git  /app/dev/
 COPY ./dev/lib/br /app/dev/lib/br
 
 # ---- HN ----
-# Yasmin (state machines)
-RUN apt-get install -y ros-jazzy-yasmin ros-jazzy-yasmin-viewer
+# Installer les paquets ROS officiels
+RUN apt-get update && \
+    apt-get install -y ros-jazzy-yasmin ros-jazzy-yasmin-viewer
+
+# Installer les dépendances nécessaires pour compiler Yasmin
+RUN apt-get update && \
+    apt-get install -y git python3-colcon-common-extensions python3-vcstool
+
+# Cloner Yasmin et basculer sur la version 3.5.1
+RUN mkdir -p /app/yasmin_ws/src
+WORKDIR /app/yasmin_ws/src
+RUN git clone https://github.com/uleroboticsgroup/yasmin.git
+WORKDIR /app/yasmin_ws/src/yasmin
+RUN git checkout 3.5.1
+
+# Compiler Yasmin avec colcon
+WORKDIR /app/yasmin_ws
+RUN . /opt/ros/jazzy/setup.sh && \
+    colcon build --symlink-install --packages-select yasmin
+
+# Sourcer l'espace de travail Yasmin
+RUN echo "source /app/yasmin_ws/install/setup.bash" >> ~/.bashrc
+
+# Retourner au répertoire de travail principal
+WORKDIR /app
 
 # ---- Pre-build (only third-party packages)
 WORKDIR '/app'

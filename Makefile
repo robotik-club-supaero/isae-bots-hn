@@ -102,8 +102,8 @@ build-base: build-core
 
 # Build the image for the raspberry pi (64 bits so architecture linux/arm64/v8)
 # To be able to do that, docker buildx needs to be installed (cf tuto installs on new pi)
-.PHONY: build-image-pi
-build-image-pi:
+.PHONY: build-image-pi-old
+build-image-pi-old:
 	@docker buildx build --platform=${PI_PLATFORM} -f ${PI_DOCKERFILE} -t ${IMAGE_NAME_PI} . --load
 
 .PHONY: build-image-pi-new

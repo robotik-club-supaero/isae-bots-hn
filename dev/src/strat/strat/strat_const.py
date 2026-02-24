@@ -12,7 +12,6 @@
 
 # pyright: reportMissingImports=false
 
-from math import pi
 from enum import IntEnum
 
 class ActionResult(IntEnum):
@@ -23,32 +22,35 @@ class ActionResult(IntEnum):
 
 class Action(IntEnum):
     INIT         = -3
-    PENDING = -2
+    PENDING      = -2
     NONE         = -1
-    PICKUP = 0
-    DEPOSIT = 1
-    CURSOR = 2
+    PICKUP       = 0
+    DEPOSIT      = 1
+    CURSOR       = 2
     PARK         = 3
     WAIT         = 4
     END          = 5
+    PARKSTANDBY  = 6
 
 
-ACTIONS_OUTCOMES = {
+ACTIONS_OUTCOMES = { # int -> str
     Action.PICKUP: 'pickup',
     Action.DEPOSIT: 'deposit',
     Action.CURSOR: 'cursor',
     Action.PARK: 'park',
     Action.END: 'end',
-    Action.WAIT: 'waiting',
+    Action.WAIT: 'wait',
+    Action.PARKSTANDBY: 'parkstandby',
 }
 
-ACTION_TRANSITIONS = {
+ACTION_TRANSITIONS = { # transi -> state
     'pickup': 'PICKUP',
     'deposit': 'DEPOSIT',
     'cursor': 'CURSOR',
     'park':'PARK',
     'end':'END',
-    'waiting':'WAITING',
+    'wait':'WAIT',
+    'parkstandby':'PARKSTANDBY',
 }
 
 class ActionScore(IntEnum): #TODO update

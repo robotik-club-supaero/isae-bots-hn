@@ -71,6 +71,9 @@ class Displacement(yasmin.State):
         self._logger = node.get_logger()
         
     def execute(self, userdata):
+        if self.is_canceled(): 
+            return 'preempted'
+        
         # Init the callback var of dsp result. CHECK an_const to see details on cb_depl
         userdata["cb_depl"] = DspCallback.PENDING
 
@@ -83,6 +86,7 @@ class Displacement(yasmin.State):
             time.sleep(0.01)
 
             if self.is_canceled():
+                self._node.disp_pub.publish(create_stop_BR_request())
                 return 'preempted'
 
             if userdata["cb_depl"] == DspCallback.ERROR_ASSERV:
@@ -168,12 +172,17 @@ class MoveStraight(Displacement):
         offset_x = self.distance * math.cos(theta)
         offset_y = self.distance * math.sin(theta)
 
-        if self.backward:
+        backward = False
+        reverse = True if userdata["color"] == 1 else False # If blue -> all backward
+        if reverse:
+            backward = not self.backward
+
+        if backward:
             offset_x = -offset_x
             offset_y = -offset_y
 
-        userdata["next_move"] = create_displacement_request(x + offset_x, y + offset_y, theta, self.backward, straight_only=True)
-
+        userdata["next_move"] = create_displacement_request(x + offset_x, y + offset_y, theta, backward, straight_only=True)
+        
         return super().execute(userdata)
 
 class MoveForwardStraight(MoveStraight):
@@ -192,8 +201,10 @@ class MoveWithSpeed(yasmin.State):
         self._linear = linear
         self._angular = angular
 
-    def execute(self, userdata):        
-        self._node.disp_pub.publish(create_speed_control_request(self._linear, self._angular))
+    def execute(self, userdata):
+        if self.is_canceled(): return 'preempted'
+        reverse = True if userdata["color"] == 1 else False # If blue -> all backward
+        self._node.disp_pub.publish(create_speed_control_request(self._linear, self._angular, reverse=reverse))
         return "success"
 
 class StopRobot(yasmin.State):
@@ -201,7 +212,8 @@ class StopRobot(yasmin.State):
         super().__init__(outcomes=['success', 'fail', 'preempted'])
         self._node = node
 
-    def execute(self, userdata):        
+    def execute(self, userdata):
+        if self.is_canceled(): return 'preempted'
         self._node.disp_pub.publish(create_stop_BR_request())
         return "success"
 
@@ -229,11 +241,11 @@ def create_orientation_request(theta):
     return msg
 
 
-def create_speed_control_request(linear, angular):
+def create_speed_control_request(linear, angular, reverse=False):
     msg = DisplacementRequest()
     msg.kind = DisplacementRequest.SPEED_CONTROL
-    msg.x = linear
-    msg.y = angular
+    msg.x = linear if not reverse else -1 * linear
+    msg.y = angular if not reverse else -1 * angular
 
     return msg
 

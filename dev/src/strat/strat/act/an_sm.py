@@ -32,7 +32,8 @@ from .an_sm_states.sm_park import Park
 from .an_sm_states.sm_cursor import CursorSequence
 from .an_sm_states.sm_deposit_box import DepositBoxesSequence
 from .an_sm_states.sm_pickup_boxes import PickupBoxesSequence
-from .an_sm_states.sm_waiting import waiting
+from .an_sm_states.sm_waiting import waiting, Waiting
+from .an_sm_states.sm_standby_park import StandbyParkSequence
 from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
 
 from message.msg import EndOfActionMsg
@@ -68,7 +69,7 @@ class Setup(yasmin.State):
         userdata["start"] = False
         userdata["end"] = False
         userdata["color"] = 0
-        userdata["park"] = 0
+        userdata["go_park"] = 0
         
         ## Callback of subscribers
         userdata["cb_depl"] = DspCallback.PENDING  # result of displacement action. CHECK an_const to see details on cb_depl
@@ -95,8 +96,7 @@ class Setup(yasmin.State):
         self._logger.info('Waiting for match to start ...')
 
         while not userdata["start"]:
-            if self.is_canceled():
-                return 'preempted'
+            if self.is_canceled(): return 'preempted'
             time.sleep(0.01)
         
         self._logger.info('Starting match !')
@@ -114,14 +114,17 @@ class Repartitor(yasmin.State): # TO UPDATE
     """
 
     def __init__(self, logger, repartitor_pub):
-        super().__init__(outcomes=list(ACTIONS_OUTCOMES.values())+ ["preempted"])
+        super().__init__(outcomes=list(ACTIONS_OUTCOMES.values()) + ["preempted"])
         self._logger = logger
         self._repartitor_pub = repartitor_pub
 
     def execute(self, userdata):
+        if self.is_canceled(): return "preempted"
+
         if userdata["end"]:
-            return "end"
-            
+            self._logger.info('[Repartitor] Ended.')
+            return 'end'
+        
         self._logger.info('[Repartitor] Requesting next action ...')
 
         self._repartitor_pub.publish(EndOfActionMsg(exit=userdata["action_result"])) # demande nextAction au DN
@@ -130,14 +133,10 @@ class Repartitor(yasmin.State): # TO UPDATE
         userdata["next_action"] = [Action.PENDING] # reset variable prochaine action
         
         while userdata["next_action"][0] == Action.PENDING: # en attente de reponse du DN
-            if self.is_canceled():
-                if userdata["next_action"][0] == Action.PENDING:
-                    return 'preempted'
-                break
-            time.sleep(0.5)
-            self._logger.info(f"DEBUG REPARTITOR : {userdata["next_action"]}")
+            time.sleep(0.1)
+            if self.is_canceled(): return "preempted"
 
-        self._logger.info(f'[Repartitor] Repartitor has received the next action : {userdata["next_action"]}')
+        self._logger.info(f'[Repartitor] Repartitor has received the next action : {userdata["next_action"]} -> {ACTIONS_OUTCOMES[userdata["next_action"][0]]}')
 
         return ACTIONS_OUTCOMES[userdata["next_action"][0]]   # lancement prochaine action
         
@@ -149,20 +148,18 @@ class Repartitor(yasmin.State): # TO UPDATE
 
 class End(yasmin.State):
     """
-    STATE MACHINE : Dispatch actions between sm substates.
+    STATE MACHINE : Last action to stop the robot
     """
 
     def __init__(self, logger, disp_pub, stop_teensy_pub):
-        super().__init__(outcomes=['end','preempted'])
+        super().__init__(outcomes=['end', 'preempted'])
         self._logger = logger
         self._disp_pub = disp_pub
         self._stop_teensy_pub = stop_teensy_pub
 
     def execute(self, userdata):
+        if self.is_canceled(): return "preempted"
         self._logger.info('[End] Killing state machine ...')
-
-        if self.is_canceled():
-            return 'preempted'
 
         ###########################
         ## STOP RUNNING PROGRAMS ##
@@ -177,20 +174,22 @@ class End(yasmin.State):
 #                                                               #
 #################################################################
 
-class ActionStateMachine(yasmin.StateMachine): # TODO
+class ActionStateMachine(yasmin.StateMachine):
     def __init__(self, node):
         super().__init__(outcomes=['exit all', 'exit preempted'])
         self._viewers = []
         self._node = node
+        self._force_transition_repartitor = False
         
         # Primary States
         self.add_state('SETUP', Setup(node), transitions={'preempted':'END','start':'REPARTITOR'})
         self.add_state('REPARTITOR', Repartitor(node.get_logger(), node.repartitor_pub),
                         transitions=dict(ACTION_TRANSITIONS, **{'preempted':'REPARTITOR'}))
+        
         self.add_state('END', End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
-                        transitions={'end':'exit all','preempted':'exit preempted'})
-        self.add_state('WAITING', waiting,
-                        transitions={'preempted':'REPARTITOR','success':'REPARTITOR'})
+                        transitions={'end':'exit all', 'preempted': 'END'})
+        self.add_state('WAIT', waiting,
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Specific Action States
         self.add_submachine('DEPOSIT', DepositBoxesSequence(node),
@@ -201,16 +200,34 @@ class ActionStateMachine(yasmin.StateMachine): # TODO
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Other States
+        self.add_submachine('PARKSTANDBY', StandbyParkSequence(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         self.add_submachine('PARK', Park(node),
-                        transitions={'preempted':'REPARTITOR','end':'REPARTITOR','fail':'REPARTITOR'})
-        
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+             
     
     def add_submachine(self, name, machine, transitions):
         self.add_state(name, machine, transitions)
         #self._viewers.append(YasminViewerPub(name, machine, node=self._node))
-
+    
     def cancel_state(self):
-        # Only cancels the current submachine (i.e. the current action)
-        # and keeps the global state machine active
+        # Only cancel the current child action, NOT the top-level SM itself.
+        # In YASMIN 3.5.1, status is tracked via StateStatus enum (not a _canceled bool),
+        # so the old "self._canceled = False" reset was a no-op — the SM stayed CANCELED,
+        # causing a RuntimeError when the execute loop tried to transition to REPARTITOR.
+        self._node.get_logger().info("Canceling state...")
+        # OLD (broken — self._canceled = False had no effect in YASMIN 3.5.1):
+        # super().cancel_state()
+        # self._canceled = False
+        if self.is_running():
+            current_state_name = self.get_current_state()
+            while not current_state_name:
+                time.sleep(0.001)
+                current_state_name = self.get_current_state()
+            if current_state_name and current_state_name in self.get_states():
+                self.get_states()[current_state_name]["state"].cancel_state()
+
+    def cancel_all(self):
+        """Full cancel for node shutdown — stops the SM thread completely."""
+        self._node.get_logger().info("Full shutdown cancel...")
         super().cancel_state()
-        self._canceled: bool = False

@@ -32,7 +32,6 @@ from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
 
 from .sm_displacement import MoveTo, MoveForwardStraight, Approach, approach, create_displacement_request
-from .sm_waiting import ObsWaitingOnce
 
 #################################################################
 #                                                               #
@@ -47,7 +46,10 @@ class CalcPositionBox(yasmin.State): # TODO
         self._node = node
         self._msg = String()
     
-    def execute(self, userdata):    
+    def execute(self, userdata):  
+        if self.is_canceled():
+            return 'preempted'
+          
         BOX_POS = StratConfig(userdata["color"]).pickup_boxes_pos
 
         box_pos_id = self._node.get_pickup_id("boxes", userdata) % len(BOX_POS)
@@ -56,8 +58,21 @@ class CalcPositionBox(yasmin.State): # TODO
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
         
         ((xp, yp, tp), box_id) = BOX_POS[box_pos_id]
+        reverse = True if userdata["color"] == 1 else False
 
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=False) #approach(userdata["robot_pos"], xp, yp, R_APPROACH, theta_final=tp)
+        # --- If need to go behind, go reverse as defined if angle final is close to initial
+        xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+        opposite = ((xp - xr) * math.cos(tr) + (yp -yr) * math.sin(tr)) < 0
+        delta_t = abs((tp % 3.142) - (tr % 3.142))
+        if opposite:
+            if not reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        else:
+            if reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        # ----
+
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=reverse) #approach(userdata["robot_pos"], xp, yp, R_APPROACH, theta_final=tp)
 
         return 'success'
  
@@ -67,6 +82,9 @@ class PickupBoxEnd(yasmin.State): # TODO
         super().__init__(outcomes=['fail','success','preempted'])
         
     def execute(self, userdata):
+        if self.is_canceled():
+            return 'preempted'
+        
         #TODO check that the action was actually successful
         userdata['action_result'] = ActionResult.SUCCESS
         return 'success'

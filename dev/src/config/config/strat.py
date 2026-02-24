@@ -36,7 +36,9 @@ class NaiveStratConfig(RobotConfig):
 
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
+
     MOVE_CURSOR = True
+    CURSOR_DISTANCE = 500 # TODO 100 = 10 cm for now TO BE DETERMINED
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -56,6 +58,9 @@ class NaiveStratConfig(RobotConfig):
     @property
     def cursor_pos(self):
         return StratConfig.CURSOR_POS
+    @property
+    def cursor_distance(self):
+        return self.CURSOR_DISTANCE
     
     @property
     def init_zone_count(self):
@@ -77,29 +82,29 @@ class StratConfig(NaiveStratConfig):
     # Sur le plan des règles (origine en bas à gauche) : (x, y, theta)
     # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
+    WAIT_PARK_ZONE = DynamicPos(2000 - 1300, 1000, -1.57)
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 0)
     PARK_ZONE_BLUE = DynamicPos(2000 - 1775, 375, 3.14)
-    CURSOR_POS = DynamicPos(2000 - 300, 350, 3.14) # To Set
+
+    CURSOR_POS = DynamicPos(2000 - 250, 250, 1.57) # To Set
     
     INIT_ZONES = [PARK_ZONE] # Il peut y avoir plusieurs zone de départ -> on peu choisir sur le master node au démarrage
 
     PICKUP_POS = [
-        # Protected pickup zone :
-        (DynamicPos(2000 - 1450, 825, 3.14), 0), 
-        # Side Pickup zones :
-        (StaticPos(2000 - 400, 350, -1.57), 1), (StaticPos(2000 - 1325, 400, -1.57), 2),
-        (StaticPos(2000 - 500, 2700, 1.57), 3), (StaticPos(2000 - 1325, 2600, 1.57), 4),
-        (StaticPos(2000 - 500, 775, 0), 5), (StaticPos(2000 - 500, 2225, 0), 6),
-        # Middle Pickup zones :
-        (StaticPos(2000 - 700, 1100, 3.14), 7), (StaticPos(2000 - 1200, 1100, 0), 7), 
-        (StaticPos(2000 - 700, 1900, 3.14), 8), (StaticPos(2000 - 1200, 1900, 0), 8) 
+        (DynamicPos(2000 - 1200, 400, 0), 0),
+        (DynamicPos(2000 - 400, 400, 0), 1),
+        (DynamicPos(2000 - 400, 1200, 1.57), 2),
+
+        (DynamicPos(2000 - 550, 1150, -1.57), 3),
+        (DynamicPos(2000 - 1000, 1150, -1.57), 3),
     ]
 
     DEPOSIT_POS = [
-        DynamicPos(2000 - 225, 775, 0), 
-        DynamicPos(2000 - 350, 1225, 0), 
-        DynamicPos(2000 - 225, 2775, 0), 
-        DynamicPos(2000 - 875, 2675, 1.57)
+        DynamicPos(2000 - 800, 350, 0), 
+        DynamicPos(2000 - 350, 700, 1.57), 
+        DynamicPos(2000 - 600, 900, -1.57), 
+        DynamicPos(2000 - 1000, 900, 1.57), 
+        DynamicPos(2000 - 1250, 1250, -1.57),
     ]
 
     def __init__(self, color):
@@ -128,6 +133,10 @@ class StratConfig(NaiveStratConfig):
     @property
     def park_pos(self):
         return self._resolve_pos(StratConfig.PARK_ZONE)
+
+    @property
+    def wait_park_pos(self):
+        return self._resolve_pos(StratConfig.WAIT_PARK_ZONE)
 
     def static_obstacles(self):
         """Dict of static obstacles for path finder"""

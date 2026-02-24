@@ -108,7 +108,8 @@ class ActionNode(Node):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.sm.cancel_state()
+        # OLD: self.sm.cancel_state()
+        self.sm.cancel_all()  # Full cancel to actually stop the SM thread on shutdown
         self._sm_thread.join()
         self.get_logger().info('Exiting state machine.')
 
@@ -173,7 +174,7 @@ class ActionNode(Node):
             return
         else: 
             self.smData["color"] = msg.data
-            self.get_logger().info("Received color : {}".format(COLOR[self.smData["color"]]))
+            self.get_logger().info(f"Received color : {COLOR[self.smData["color"]]}, ({self.smData["color"]})")
 
     def trigger_debug(self, msg):
         self.get_logger().info(f"DEBUG TRIGGERED")
@@ -196,12 +197,10 @@ class ActionNode(Node):
         self.smData["next_action"] = [Action(msg.data[0])] + list(msg.data[1:])
 
         if msg.data[0] == Action.PARK:
-            self.sm.cancel_state()
-            self.get_logger().info("Received stop signal (initiate parking)")
+            self.get_logger().info("Initiate Parking")
             return
         if msg.data[0] == Action.END:
-            self.sm.cancel_state()
-            self.get_logger().info("Received park signal (end of match)")
+            self.get_logger().info("Received end of match signal")
             return
         if Action(msg.data[0]) not in ACTIONS_OUTCOMES:
             self.get_logger().error(f"Wrong command from DN [/strat/repartitor] : {msg.data[0]}")
@@ -263,7 +262,7 @@ class ActionNode(Node):
         <copy> this template for your update / callback functions.
         """
         if self.setupComplete:
-            self.smData["park"] = msg.data
+            self.smData["go_park"] = msg.data
             if msg.data != 0:
                 self.sm.cancel_state()
 

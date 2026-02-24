@@ -30,11 +30,11 @@ from ..an_const import *
 #                                                               #
 #################################################################
 
-class ObsWaitingOnce(yasmin.State):
+class Waiting(yasmin.State):
     """
     SM WAITING : Observer state
     """
-    def __init__(self, wait_time=100, outcomes=['preempted','success']):
+    def __init__(self, wait_time=100, outcomes=['preempted', 'success', 'fail']):
         super().__init__(outcomes=outcomes)
         self._wait_time = wait_time
 
@@ -54,4 +54,4 @@ class ObsWaitingOnce(yasmin.State):
 #                                                               #
 #################################################################
 
-waiting = ObsWaitingOnce()
+waiting = Waiting()

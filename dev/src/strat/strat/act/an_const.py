@@ -107,6 +107,7 @@ USERDATA_VAR_LIST = [ #TODO update
     'cb_drawbridge',
     'cb_pumps',
     'cb_cursor_stick',
+    'bumper_state',
     'robot_pos',
     'robot_pos_realignment',
     'depositArea',

@@ -25,7 +25,7 @@ import yasmin
 import math
 
 from std_msgs.msg import Empty
-from config import StratConfig
+from config import StratConfig, NaiveStratConfig
 
 from ..an_const import *
 from ..an_utils import CursorStickDOWN, CursorStickUP, Sequence
@@ -48,10 +48,13 @@ class CalcPosition(yasmin.State):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
 
     def execute(self, userdata):
-
+        if self.is_canceled(): return 'preempted'
+        
         xp, yp, thetap = StratConfig(userdata["color"]).cursor_pos
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True)
+        reverse = True if userdata["color"] == 1 else False
+        if reverse: thetap = (thetap + 3.142) % 6.284
 
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True, backward=reverse)
         return 'success'
 
 class WaitForBumpers(yasmin.State):
@@ -61,12 +64,11 @@ class WaitForBumpers(yasmin.State):
         self._logger = logger
 
     def execute(self, userdata):
-        self._logger.info(f"Waiting for the robot to touch the wall before deploying the banner")
+        self._logger.info(f"Waiting for the robot to touch the wall")
 
         begin = time.perf_counter()
         while time.perf_counter() - begin < self._timeout:
-            if self.is_canceled():
-                return 'preempted'   
+            if self.is_canceled(): return 'preempted'   
             if userdata["bumper_state"] == BumperState.PRESSED:
                 return "success"
         
@@ -81,10 +83,7 @@ class CursorEnd(yasmin.State):
         super().__init__(outcomes=['preempted','success','fail'])
 
     def execute(self, userdata):
-        if self.is_canceled():
-            return 'preempted'
-        
-        #TODO actions before exiting the state machine
+        if self.is_canceled(): return 'preempted'
 
         #TODO check that the action was actually successful
         userdata['action_result'] = ActionResult.SUCCESS
@@ -92,7 +91,7 @@ class CursorEnd(yasmin.State):
 
 
 #################################################################
-#                                                               #
+#                                                                   #
 #                        SM STATE : BANDEROLLE                  #
 #                                                               #
 #################################################################
@@ -101,12 +100,12 @@ class CursorSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('CURSOR_DEPL_POSITIONING', MoveTo(node, CalcPosition(node))),
-            ('CURSOR_DEPL_MOVEBACK', MoveWithSpeed(node, -0.1, 0.)),
-            ('CURSOR_WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
-            ('CURSOR_STOP_ROBOT', StopRobot(node)),
-            ('CURSOR_REALIGN_ROBOT_POS', PosRealign(node)), # NOT TESTED !
+            #('CURSOR_DEPL_MOVEBACK', MoveWithSpeed(node, -0.1, 0.)),
+            #('CURSOR_WAIT_FOR_BUMPERS', WaitForBumpers(node.get_logger())),
+            #('CURSOR_STOP_ROBOT', StopRobot(node)),
+            #('CURSOR_REALIGN_ROBOT_POS', PosRealign(node)), # NOT TESTED !
             ('CURSOR_STICK_DOWN', CursorStickDOWN(node)),
-            ('CURSOR_DEPL_MOVEFORWARD', MoveForwardStraight(node, 500)), # TODO 500 = 50 cm for now TO BE DETERMINED
+            ('CURSOR_DEPL_MOVEFORWARD', MoveForwardStraight(node, NaiveStratConfig().cursor_distance)),
             ('CURSOR_STICK_UP', CursorStickUP(node)),
             ('CURSOR_END',  CursorEnd(node)),
         ])

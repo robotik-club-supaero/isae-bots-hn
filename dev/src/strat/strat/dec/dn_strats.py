@@ -81,8 +81,8 @@ def match_strat(node):
         -
         -
     """
-
-    action_order = [Action.PICKUP, Action.DEPOSIT, Action.CURSOR, Action.PARK]
+    
+    action_order = [Action.PICKUP, Action.DEPOSIT, Action.PICKUP, Action.CURSOR, Action.DEPOSIT, Action.PICKUP, Action.DEPOSIT, Action.PARKSTANDBY]
     
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 
@@ -162,6 +162,11 @@ def match_strat(node):
                 return True
             else:
                 node.get_logger().info("No more slot to deposit.")
+        
+        if next_action == Action.PARKSTANDBY:
+            node.curr_action = [Action.PARKSTANDBY]
+            node.get_logger().info(f"Next action order : Park Standby")        
+            return True
 
         return False
 
@@ -183,7 +188,7 @@ def match_strat(node):
         return
 
     # Retry
-    if not node.action_successful:
+    if not node.action_successful and not node.go_park:
         if node.retry_count < 2: # retry une fois
             node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")
             node.retry_count += 1 # reset in dec_node when action success

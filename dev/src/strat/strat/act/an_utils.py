@@ -51,8 +51,7 @@ class HardwareOrder(yasmin.State): # Should not be modified (unless you should)
         begin = time.perf_counter()
         while time.perf_counter() - begin < self._timeout:
             
-            if self.is_canceled():
-                return 'preempted'   
+            if self.is_canceled(): return 'preempted'  
 
             response = userdata[self._cb_key]
             if response == self._expected:
@@ -141,7 +140,7 @@ class Sequence(yasmin.StateMachine): # Should not be modified (unless you should
 
         for state in states:
             self.add_state(state[0], state[1], connector=state[2] if len(state) > 2 else "success")
-
+        
     def add_state(self, name, state, connector="success"):
         if self._last_state is not None:
             self.get_states()[self._last_state]["transitions"][self._connector] = name
@@ -149,18 +148,21 @@ class Sequence(yasmin.StateMachine): # Should not be modified (unless you should
         self._last_state = name
         self._connector = connector
 
-        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes() if outcome in state.get_outcomes()})
+        super().add_state(name, state, transitions={outcome: outcome for outcome in self.get_outcomes() if outcome in ( ["preempted", "success", "fail"] + list(state.get_outcomes()))})
+
+    def cancel_state(self):
+        super().cancel_state()
 
     def execute(self, blackboard):
         try:
             outcome = super().execute(blackboard)
+            if self.is_canceled(): return "preempted"
             if outcome == self._connector:
                 return self._success_outcome
             else:
                 return outcome
         except RuntimeError:
-            if self.is_canceled():
-                return "preempted"
+            if self.is_canceled(): return "preempted"
             else:
                 raise
 

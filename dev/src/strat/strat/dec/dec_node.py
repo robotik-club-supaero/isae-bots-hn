@@ -181,7 +181,7 @@ class DecisionsNode(Node):
         Feedback on strategy chosen /game/init_pos.*
         """
 
-        if msg.data not in [0,1,2]:
+        if msg.data not in [0]:
             self.get_logger().error(f"Wrong value of init pos given ({msg.data})...")
             return
         else:

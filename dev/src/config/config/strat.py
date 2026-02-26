@@ -33,12 +33,13 @@ class DynamicPos:
 class NaiveStratConfig(RobotConfig):
 
     STATIC_OBSTACLES = True # DOIT ETRE 1 EN MATCH REEL
+    SIM_MOVING_OBSTACLE = True # Pour simuler robot adverse relou
 
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
 
     MOVE_CURSOR = True
-    CURSOR_DISTANCE = 500 # TODO 100 = 10 cm for now TO BE DETERMINED
+    CURSOR_DISTANCE = 450 # TODO 100 = 10 cm for now TO BE DETERMINED
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -46,7 +47,11 @@ class NaiveStratConfig(RobotConfig):
     @property
     def enable_static_obstacles(self):
         return NaiveStratConfig.STATIC_OBSTACLES
-
+    
+    @property
+    def enable_obstacle_sim(self):
+        return NaiveStratConfig.STATIC_OBSTACLES
+    
     @property
     def strat_names(self):
         return NaiveStratConfig.STRAT_NAMES
@@ -91,20 +96,17 @@ class StratConfig(NaiveStratConfig):
     INIT_ZONES = [PARK_ZONE] # Il peut y avoir plusieurs zone de départ -> on peu choisir sur le master node au démarrage
 
     PICKUP_POS = [
-        (DynamicPos(2000 - 1200, 400, 0), 0),
-        (DynamicPos(2000 - 400, 400, 0), 1),
-        (DynamicPos(2000 - 400, 1200, 1.57), 2),
-
-        (DynamicPos(2000 - 550, 1150, -1.57), 3),
-        (DynamicPos(2000 - 1000, 1150, -1.57), 3),
+        (DynamicPos(2000 - 1200, 425, 0), 0),
+        (DynamicPos(2000 - 400, 425, 0), 1),
+        (DynamicPos(2000 - 425, 1100, 1.57), 2),
+        (DynamicPos(2000 - 600, 1150, -1.57), 3),
     ]
 
     DEPOSIT_POS = [
-        DynamicPos(2000 - 800, 350, 0), 
-        DynamicPos(2000 - 350, 700, 1.57), 
-        DynamicPos(2000 - 600, 900, -1.57), 
-        DynamicPos(2000 - 1000, 900, 1.57), 
-        DynamicPos(2000 - 1250, 1250, -1.57),
+        DynamicPos(2000 - 800, 375, 0), 
+        DynamicPos(2000 - 375, 700, 1.57), 
+        DynamicPos(2000 - 375, 700, 1.57), 
+        DynamicPos(2000 - 500, 800, -1.57), 
     ]
 
     def __init__(self, color):
@@ -146,8 +148,8 @@ class StratConfig(NaiveStratConfig):
         if not self.enable_static_obstacles:
             return obstacles
 
-        margin = self.robot_diagonal / 2
-
+        margin = self.robot_diagonal / 4
+        # ObstacleRect -> ObstacleRect(xMin, xMax, yMin, yMax)
         # Walls 
         obstacles["wallNorth"] = ObstacleRect(0, margin, 0, 3000)
         obstacles["wallSouth"] = ObstacleRect(2000-margin, 2000, 0, 3000)
@@ -159,7 +161,8 @@ class StratConfig(NaiveStratConfig):
 
         # elements
         elements_margin = margin / 2
-        obstacles["box_1"] = ObstacleRect(1000-elements_margin, 1100+elements_margin, 900-elements_margin, 1300+elements_margin)
+        obstacles["scene"] = ObstacleRect(600-elements_margin, 2400+elements_margin, 0-elements_margin, 400+elements_margin)
+        obstacles["middle_zone"] = ObstacleRect(700-elements_margin, 2300+elements_margin, 1100-elements_margin, 1300+elements_margin)
 
         return obstacles
 

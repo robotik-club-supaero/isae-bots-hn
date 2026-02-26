@@ -205,16 +205,17 @@ class DecisionsNode(Node):
 
         if msg.exit == ActionResult.SUCCESS:
             
-            self.get_logger().info(f"[ dec_node Callback ] Action {str(self.curr_action)} Success.")
+            self.get_logger().info(f"[ dec_node Callback ] Action {str(self.curr_action)} Succeeded.")
             self.action_successful = True
 
             self.retry_count = 0
             
             # Count points
             if self.curr_action[0] == Action.PICKUP:
-                pass
+                self.remaining_boxes_areas[self.curr_action[1]] = 0
             
             if self.curr_action[0] == Action.DEPOSIT:
+                self.remaining_deposits_slots[self.curr_action[1]] = 0
                 self.score += ActionScore.SCORE_DEPOSIT.value
                 self.publishScore()
             

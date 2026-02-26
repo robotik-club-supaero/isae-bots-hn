@@ -76,10 +76,8 @@ def match_strat(node):
     """
     DN Strat: match (used for reach matches)
     
-    Actions of this strategy :
-        - 
-        -
-        -
+    Modify : node.curr_action -> ex: [Action.PICKUP, 3] -> Pickup element at index n°3
+
     """
     
     action_order = [Action.PICKUP, Action.DEPOSIT, Action.PICKUP, Action.CURSOR, Action.DEPOSIT, Action.PICKUP, Action.DEPOSIT, Action.PARKSTANDBY]

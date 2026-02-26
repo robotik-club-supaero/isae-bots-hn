@@ -276,7 +276,7 @@ class ActionNode(Node):
 
     def get_pickup_id(self, what, userdata):
         try:
-            return userdata["next_action"][1] # userdata["next_action"] = [Enum Action, argument optionnelle] ici l'id du truc a prendre
+            return userdata["next_action"][1] # userdata["next_action"] = [Enum Action, argument optionnelle] ici l'index du truc a prendre
         except IndexError:
             self.get_logger().warning(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
             return 0

@@ -33,7 +33,7 @@ from message.msg import SensorObstacleList, SensorObstacle, CircleObstacle
 from message_utils.geometry import make_relative
 from br_messages.msg import Position, Point
 
-from config import RobotConfig
+from config import RobotConfig, NaiveStratConfig
 from config.qos import default_profile, br_position_topic_profile
 
 #################################################################
@@ -42,7 +42,7 @@ from config.qos import default_profile, br_position_topic_profile
 #                                                               #
 #################################################################
 
-OBSTACLE_MODE = False
+OBSTACLE_MODE = NaiveStratConfig().enable_obstacle_sim
 OBSTACLE_RADIUS = 150 # should match the plot radius defined in the interface for consistent display
 SPEED = 500 # mm/s | can be 0 for fixed obstacle
 INIT_POS = [500., 1300.]
@@ -58,7 +58,7 @@ class SIM_ObstaclesNode(Node):
     SIM OBS node: obstacles ros node for simulation.
     """
 
-    def __init__(self):
+    def __init__(self): 
         super().__init__("OBS")
         self.get_logger().info("Initializing OBS node ...")
 

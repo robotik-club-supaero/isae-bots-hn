@@ -59,6 +59,9 @@ class CalcPositionBox(yasmin.State): # TODO
         
         ((xp, yp, tp), box_id) = BOX_POS[box_pos_id]
         reverse = True if userdata["color"] == 1 else False
+        if reverse:
+            if abs(abs(tp % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
+                tp = (tp + 3.142) % 6.284
 
         # --- If need to go behind, go reverse as defined if angle final is close to initial
         xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta

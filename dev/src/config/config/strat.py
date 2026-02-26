@@ -99,12 +99,10 @@ class StratConfig(NaiveStratConfig):
         (DynamicPos(2000 - 1200, 425, 0), 0),
         (DynamicPos(2000 - 400, 425, 0), 1),
         (DynamicPos(2000 - 425, 1100, 1.57), 2),
-        (DynamicPos(2000 - 600, 1150, -1.57), 3),
     ]
 
     DEPOSIT_POS = [
         DynamicPos(2000 - 800, 375, 0), 
-        DynamicPos(2000 - 375, 700, 1.57), 
         DynamicPos(2000 - 375, 700, 1.57), 
         DynamicPos(2000 - 500, 800, -1.57), 
     ]
@@ -148,21 +146,21 @@ class StratConfig(NaiveStratConfig):
         if not self.enable_static_obstacles:
             return obstacles
 
-        margin = self.robot_diagonal / 4
+        wall_margin = self.robot_diagonal / 4
         # ObstacleRect -> ObstacleRect(xMin, xMax, yMin, yMax)
         # Walls 
-        obstacles["wallNorth"] = ObstacleRect(0, margin, 0, 3000)
-        obstacles["wallSouth"] = ObstacleRect(2000-margin, 2000, 0, 3000)
-        obstacles["wallEast"] = ObstacleRect(0, 2000, 0, margin)
-        obstacles["wallWest"] = ObstacleRect(0, 2000, 3000-margin, 3000)
+        obstacles["wallNorth"] = ObstacleRect(0, wall_margin, 0, 3000)
+        obstacles["wallSouth"] = ObstacleRect(2000-wall_margin, 2000, 0, 3000)
+        obstacles["wallEast"] = ObstacleRect(0, 2000, 0, wall_margin)
+        obstacles["wallWest"] = ObstacleRect(0, 2000, 3000-wall_margin, 3000)
 
         # Protected/reserved zones
         # None
 
         # elements
-        elements_margin = margin / 2
-        obstacles["scene"] = ObstacleRect(600-elements_margin, 2400+elements_margin, 0-elements_margin, 400+elements_margin)
-        #obstacles["middle_zone"] = ObstacleRect(700-elements_margin, 2300+elements_margin, 1100-elements_margin, 1300+elements_margin)
+        elements_margin = self.robot_diagonal / 4
+        obstacles["scene"] = ObstacleRect(0, 425+elements_margin, 600-elements_margin, 2400+elements_margin)
+        obstacles["middle_zone"] = ObstacleRect(1090, 1300, 675 - elements_margin, 2325 + elements_margin)
 
         return obstacles
 

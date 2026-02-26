@@ -44,6 +44,9 @@ class DisplacementNode(Node):
         self._last_update = 0
         self.manager = DisplacementManager(self, self.get_logger())
 
+        # Static Obstacle
+        self.pub_static_obstacles = self.create_publisher(Float32MultiArray, "/simu/static_obstacles", latch_profile)
+
         self._setup_config()
         if not self.config.enable_static_obstacles:
             self.get_logger().warn("Static obstacles disabled! -- Make sure to enable before a match!")
@@ -58,7 +61,7 @@ class DisplacementNode(Node):
         self.pub_teensy_reset = self.create_publisher(Position, '/br/resetPosition', latch_profile)
 
         self.msg_go_to = DisplacementOrder()
-        
+
         # General subscriptions
         self.color_sub = self.create_subscription(Int16, '/game/color', self.cb_color, default_profile)
         self.init_pos_sub = self.create_subscription(Int16, '/game/init_pos', self.cb_init_pos, default_profile)

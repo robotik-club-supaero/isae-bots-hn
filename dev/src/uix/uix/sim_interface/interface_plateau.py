@@ -37,7 +37,7 @@ from message_utils.geometry import make_absolute
 
 from br_trajectories import getTrajectoryCurves, Point2D, Position2D
 from br_messages.msg import Position, Point, DisplacementOrder
-from config import RobotConfig, NaiveStratConfig
+from config import RobotConfig, NaiveStratConfig, StratConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 from .interface_const import *
@@ -678,7 +678,24 @@ class Grid(Drawable):
         node = np.zeros(2)
         for i in range(len(self._grid) // 2):
             node[:] = self._grid[2*i:2*i+2]
-            canvas.draw_oval(node, 5, fill='grey', tag='grid_circle')
+            canvas.draw_oval(node, 15, fill='grey', tag='grid_circle')
+
+class StaticObstacleRects(Drawable):
+
+    def __init__(self, obstacles, color="grey", tag="static_obstacles"):
+        super().__init__()
+        self._obstacles = obstacles  # dict: name -> ObstacleRect
+        self._color = color
+        self._tag = tag
+
+    def _draw(self, canvas):
+        canvas.delete(self._tag)
+        for obs in self._obstacles.values():
+            center = np.array([obs.center.x, obs.center.y])
+            canvas.draw_rectangle(
+                center, obs.width, obs.height,
+                fill="", outline=self._color, width=2, tag=self._tag
+            )
 
 class ControlWindow(tk.Toplevel):
     def __init__(self, node):
@@ -764,6 +781,7 @@ class InterfaceNode(Node):
 
         self._path = Path()
         self._grid = Grid()
+        self._staticObstacleRects = StaticObstacleRects(StratConfig(color=0).static_obstacles())
 
         self._plants = []
         self._pots = []
@@ -803,6 +821,7 @@ class InterfaceNode(Node):
 
             force = force or self._force_redraw
 
+            self._staticObstacleRects.redraw(self._canvas, force=force)
             self._grid.redraw(self._canvas, force=force)
 
             self._path.redraw(self._canvas, force=force)

@@ -50,7 +50,7 @@ class NaiveStratConfig(RobotConfig):
     
     @property
     def enable_obstacle_sim(self):
-        return NaiveStratConfig.STATIC_OBSTACLES
+        return NaiveStratConfig.SIM_MOVING_OBSTACLE
     
     @property
     def strat_names(self):
@@ -161,8 +161,8 @@ class StratConfig(NaiveStratConfig):
 
         # elements
         elements_margin = margin / 2
-        obstacles["scene"] = ObstacleRect(600-elements_margin, 2400+elements_margin, 0-elements_margin, 400+elements_margin)
-        obstacles["middle_zone"] = ObstacleRect(700-elements_margin, 2300+elements_margin, 1100-elements_margin, 1300+elements_margin)
+        #obstacles["scene"] = ObstacleRect(600-elements_margin, 2400+elements_margin, 0-elements_margin, 400+elements_margin)
+        #obstacles["middle_zone"] = ObstacleRect(700-elements_margin, 2300+elements_margin, 1100-elements_margin, 1300+elements_margin)
 
         return obstacles
 

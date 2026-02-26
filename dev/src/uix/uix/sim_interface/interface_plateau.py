@@ -37,7 +37,7 @@ from message_utils.geometry import make_absolute
 
 from br_trajectories import getTrajectoryCurves, Point2D, Position2D
 from br_messages.msg import Position, Point, DisplacementOrder
-from config import RobotConfig, NaiveStratConfig, StratConfig
+from config import RobotConfig, NaiveStratConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 from .interface_const import *
@@ -682,18 +682,21 @@ class Grid(Drawable):
 
 class StaticObstacleRects(Drawable):
 
-    def __init__(self, obstacles, color="red", tag="static_obstacles"):
+    def __init__(self, color="red", tag="static_obstacles"):
         super().__init__()
-        self._obstacles = obstacles  # dict: name -> ObstacleRect
+        self._rects = []  # list of (center np.array, width, height)
         self._color = color
         self._tag = tag
 
+    def setRects(self, rects):
+        self._rects = rects
+        self.invalidate()
+
     def _draw(self, canvas):
         canvas.delete(self._tag)
-        for obs in self._obstacles.values():
-            center = np.array([obs.center.x, obs.center.y])
+        for center, width, height in self._rects:
             canvas.draw_rectangle(
-                center, obs.width, obs.height,
+                center, width, height,
                 fill="", outline=self._color, width=2, tag=self._tag
             )
 
@@ -781,7 +784,7 @@ class InterfaceNode(Node):
 
         self._path = Path()
         self._grid = Grid()
-        self._staticObstacleRects = StaticObstacleRects(StratConfig(color=0).static_obstacles())
+        self._staticObstacleRects = StaticObstacleRects()
 
         self._plants = []
         self._pots = []
@@ -802,6 +805,8 @@ class InterfaceNode(Node):
             SensorObstacleList, "/sensors/obstaclesSonar", self.updateObstaclesSonar, default_profile)
         self._subRobotObstacle = self.create_subscription(
             CircleObstacle, "/simu/robotObstacle", self.updateRobotObstacle, default_profile)
+        self._subStaticObstacles = self.create_subscription(
+            Float32MultiArray, "/simu/static_obstacles", self.updateStaticObstacles, latch_profile)
 
         self._subOrder = self.create_subscription(
             DisplacementOrder, "/br/goTo", self.updateOrder, default_profile)
@@ -968,7 +973,16 @@ class InterfaceNode(Node):
 
     def updateGrid(self, msg):
         with self.lock:
-            self._grid.setGrid(msg.data) 
+            self._grid.setGrid(msg.data)
+
+    def updateStaticObstacles(self, msg):
+        data = msg.data
+        rects = []
+        for i in range(len(data) // 4):
+            cx, cy, w, h = data[4*i:4*i+4]
+            rects.append((np.array([cx, cy]), w, h))
+        with self.lock:
+            self._staticObstacleRects.setRects(rects) 
 
     def _spin(self):
         try:

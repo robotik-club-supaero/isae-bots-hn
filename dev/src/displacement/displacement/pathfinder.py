@@ -1,4 +1,4 @@
-from pathfinder import Map, Point
+from pathfinder import Map, Point, ObstacleRect
 
 USE_REGULAR_GRID = False
 GRID_INTERVAL = 100 # mm
@@ -16,7 +16,8 @@ class PathFinder:
             # The default is a visibility graph
 
         self.dyn_obstacles = set()
-        
+        self._static_obstacles = dict(static_obstacles)
+
     def set_dynamic_obstacle(self, name, obstacle):
         if obstacle is not None:
             self.dyn_obstacles.add(name)
@@ -46,7 +47,11 @@ class PathFinder:
             self.remove_obstacle(name)
 
     def remove_obstacle(self, obstacle_name):
+        self._static_obstacles.pop(obstacle_name, None)
         self._set_obstacle(obstacle_name, None)
+
+    def get_rect_obstacles(self):
+        return {k: v for k, v in self._static_obstacles.items() if isinstance(v, ObstacleRect)}
 
     def get_obstacle(self, obstacle_name):
         return self.map.getObstacle(obstacle_name)

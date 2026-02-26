@@ -86,6 +86,7 @@ class DisplacementNode(Node):
         if SIMULATION:
             self.pub_grid = self.create_publisher(Float32MultiArray, "/simu/nodegrid", latch_profile)
             self.last_grid_update = 0
+            self.pub_static_obstacles = self.create_publisher(Float32MultiArray, "/simu/static_obstacles", latch_profile)
 
         self._setup_init_pos()
 
@@ -166,6 +167,18 @@ class DisplacementNode(Node):
     def _setup_config(self):
         self.config = StratConfig(self.color)
         self.manager.setStaticObstacles(self.config.static_obstacles())
+        self._publish_static_obstacles()
+
+    def _publish_static_obstacles(self):
+        if not SIMULATION:
+            return
+        rects = self.manager.getPathFinder().get_rect_obstacles()
+        data = []
+        for obs in rects.values():
+            data.extend([obs.center.x, obs.center.y, obs.width, obs.height])
+        msg = Float32MultiArray()
+        msg.data = data
+        self.pub_static_obstacles.publish(msg)
 
     def _setup_init_pos(self):
         """Update la position de départ du robot."""
@@ -185,6 +198,7 @@ class DisplacementNode(Node):
 
     def callback_delete_obs(self, msg):
         self.manager.getPathFinder().remove_obstacle(msg.data)
+        self._publish_static_obstacles()
 
     def callback_lidar(self, msg):
         """Traitement des msg reçus du lidar etc."""

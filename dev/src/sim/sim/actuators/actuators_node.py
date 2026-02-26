@@ -34,7 +34,7 @@ from enum import Enum
 
 from enum import IntEnum
 
-from strat.act.an_const import DspCallback, DrawbridgeOrder, DrawbridgeCallback, PumpsOrder, PumpsCallback, CursorOrder, CursorCallback, BumperState
+from strat.act.an_const import DspCallback, DrawbridgeOrder, DrawbridgeCallback, CursorOrder, CursorCallback, BumperState
 
 from config import COLOR, RobotConfig
 from config.qos import default_profile, latch_profile, br_position_topic_profile
@@ -46,8 +46,7 @@ from config.qos import default_profile, latch_profile, br_position_topic_profile
 #################################################################
 
 ## Constants Pour simuler le temps pris par certains actionneurs
-PUMP_TIME = 0.1
-DRAWBRIDGE_TIME = 3.
+DRAWBRIDGE_TIME = 5.
 CURSOR_TIME = 1.
 
 #############################
@@ -74,10 +73,7 @@ class ActuatorNode(Node):
         self.drawbridge_sub = self.create_subscription(Int16, '/act/order/drawbridge', self.drawbridge_response, default_profile)
         self.drawbridge_callback_pub = self.create_publisher(Int16, "/act/callback/drawbridge", latch_profile)  
 
-        # Simule la reponse du BN sur les pompes
-        self.pumps_sub = self.create_subscription(Int16, '/act/order/pumps', self.pumps_response, default_profile)
-        self.pumps_callback_pub = self.create_publisher(Int16, "/act/callback/pumps", latch_profile)
-
+        # Simule la réponse du BN sur le curseur
         self.cursor_sub = self.create_subscription(Int16, '/act/order/cursor_stick', self.cursor_response, default_profile)
         self.cursor_callback_pub = self.create_publisher(Int16, "/act/callback/cursor_stick", latch_profile)  
 
@@ -115,27 +111,20 @@ class ActuatorNode(Node):
         sleep(DRAWBRIDGE_TIME)
         rsp = Int16()
 
-        if msg.data == DrawbridgeOrder.UP:
-            rsp.data = DrawbridgeCallback.UP
-            self.log_info(f"Réponse simulée : Drawbridge HAUT")
+        if msg.data == DrawbridgeOrder.PICKUP:
+            rsp.data = DrawbridgeCallback.PICKUP
+            self.log_info(f"Réponse simulée : Drawbridge PICKUP")
+        elif msg.data == DrawbridgeOrder.DEPOSIT:
+            rsp.data = DrawbridgeCallback.DEPOSIT
+            self.log_info(f"Réponse simulée : Drawbridge DEPOSIT")
+        elif msg.data == DrawbridgeOrder.STORE:
+            rsp.data = DrawbridgeCallback.STORE
+            self.log_info(f"Réponse simulée : Drawbridge STORE")
         else:
-            rsp.data = DrawbridgeCallback.DOWN
-            self.log_info(f"Réponse simulée : Drawbridge BAS")
+            rsp.data = DrawbridgeCallback.UNKNOWN
+            self.log_info(f"Réponse simulée : Drawbridge UNKNOWN")
 
         self.drawbridge_callback_pub.publish(rsp)
-
-    def pumps_response(self, msg):
-        sleep(PUMP_TIME)
-        rsp = Int16()
-
-        if msg.data == PumpsOrder.ON:
-            rsp.data = PumpsCallback.ON
-            self.log_info(f"Réponse simulée : Pompes ON")
-        else:
-            rsp.data = PumpsCallback.OFF
-            self.log_info(f"Réponse simulée : Pompes OFF")
-
-        self.pumps_callback_pub.publish(rsp)
     
     def cursor_response(self, msg):
         sleep(CURSOR_TIME)

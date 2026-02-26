@@ -26,7 +26,7 @@ from std_msgs.msg import String
 
 from config import StratConfig
 
-from ..an_utils import Sequence, Concurrence, DrawbridgeUP, DrawbridgeDOWN, PumpsON
+from ..an_utils import Sequence, Concurrence, DrawbridgePickup, DrawbridgeStore
 
 from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
@@ -98,19 +98,11 @@ class PickupBoxEnd(yasmin.State): # TODO
 #                                                               #
 #################################################################
 
-class _DrawbridgeSequence(Sequence):
-    def __init__(self, node):
-        super().__init__(states=[
-        ('PICKUP_PUMPS_TURN_ON', PumpsON(node)),
-        ('PICKUP_DRAW_BRIDGE_DOWN', DrawbridgeDOWN(node)), # The BN manage the bumpers to stop the down / up
-        ('PICKUP_DRAW_BRIDGE_UP', DrawbridgeUP(node)),
-        ])
-
 class PickupBoxesSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('PICKUP_MOVE_TO_ZONE', MoveTo(node, CalcPositionBox(node))),
-            ('PICKUP_BOX_SEQ', _DrawbridgeSequence(node)),
+            ('PICKUP_BOX_SEQ', DrawbridgePickup(node)),
             ('PICKUP_BOX_END', PickupBoxEnd(node)),
             ])
     

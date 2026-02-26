@@ -35,7 +35,7 @@ from config import COLOR
 ########## CONSTANTES 2025 ##########
 MAX_X = 2000 # Arena
 MAX_Y = 3000 # Arena
-WAIT_TIME = 5 # Timeout for action
+WAIT_TIME = 10 # Timeout for action
 from config import RobotConfig
 
 
@@ -66,24 +66,16 @@ class DspCallback(Callback):
     SUCCESS = 0      # Le robot est arrivé au point demandé
 
 class DrawbridgeOrder(IntEnum):
-    UP = 0
-    DOWN = 1
+    STORE = 0
+    PICKUP = 1
+    DEPOSIT = 2
 
 class DrawbridgeCallback(Callback):
     UNKNOWN = -2
     PENDING = -1
-    UP = 0
-    DOWN = 1
-
-class PumpsOrder(IntEnum):
-    ON = 1
-    OFF = 0
-
-class PumpsCallback(IntEnum):
-    UNKNOWN = -2
-    PENDING = -1
-    ON = 1
-    OFF = 0
+    STORE = 0
+    PICKUP = 1
+    DEPOSIT = 2
 
 class CursorOrder(IntEnum):
     DOWN = 0
@@ -105,7 +97,6 @@ USERDATA_VAR_LIST = [ #TODO update
     'color',
     'cb_depl',
     'cb_drawbridge',
-    'cb_pumps',
     'cb_cursor_stick',
     'bumper_state',
     'robot_pos',

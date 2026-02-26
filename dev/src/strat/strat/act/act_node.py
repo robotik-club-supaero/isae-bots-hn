@@ -36,7 +36,7 @@ import time
 from std_msgs.msg import Int16, Int16MultiArray, Empty, String
 from br_messages.msg import Position
 
-from .an_const import DspCallback, DrawbridgeCallback, PumpsCallback, CursorCallback, BumperState, COLOR
+from .an_const import DspCallback, DrawbridgeCallback, CursorCallback, BumperState, COLOR
 from .an_sm import ActionStateMachine
 from .an_utils import color_dict, Color
 
@@ -65,7 +65,6 @@ class ActionNode(Node):
         
         # SPECIFIC TO CURRENT YEAR [2025]
         self.drawbridge_pub = self.create_publisher(Int16, '/act/order/drawbridge', latch_profile)
-        self.pumps_pub = self.create_publisher(Int16, '/act/order/pumps', latch_profile)
         self.cursor_stick_pub = self.create_publisher(Int16, '/act/order/cursor_stick', latch_profile)
         """
         Initialize all subscribers of AN
@@ -83,8 +82,7 @@ class ActionNode(Node):
         self.end_sub = self.create_subscription(Int16, '/game/end', self.cb_end_fct, default_profile)
 
         # SPECIFIC TO CURRENT YEAR [2025]
-        self.drawbridge_sub = self.create_subscription(Int16, '/act/callback/drawbridge', self.cb_drawbridge_fct, default_profile)
-        self.pumps_sub = self.create_subscription(Int16, '/act/callback/pumps', self.cb_pumps_fct, default_profile)
+        self.drawbridge_sub = self.create_subscription(Int16, '/act/callback/drawbridge', self.cb_drawbridge_fct, default_profile)        
         self.cursor_stick_sub = self.create_subscription(Int16, '/act/callback/cursor_stick', self.cb_cursor_stick_fct, default_profile)
         self.bumper_sub = self.create_subscription(Int16, '/act/bumpers', self.cb_bumper_fct, default_profile)
 
@@ -222,14 +220,6 @@ class ActionNode(Node):
             self.smData["robot_pos"].y = msg.y #- self.smData["robot_pos_realignement"].y
             self.smData["robot_pos"].theta = msg.theta
     
-    def cb_pumps_fct(self, msg):
-        """
-        Callback of the state of the pumps
-        """
-        self.get_logger().error(f"Pumps Callback received : {msg.data} -> {PumpsCallback(msg.data)}")
-        if self.setupComplete:
-            self.smData["cb_pumps"] = PumpsCallback(msg.data)
-
     def cb_drawbridge_fct(self, msg):
         """
         Callback of the state of the drawbridge

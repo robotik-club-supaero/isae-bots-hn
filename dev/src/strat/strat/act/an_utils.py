@@ -7,7 +7,7 @@ from threading import Thread, Lock
 
 from std_msgs.msg import Int16 # type: ignore
 
-from .an_const import DrawbridgeOrder, DrawbridgeCallback, CursorOrder, CursorCallback, PumpsOrder, PumpsCallback, WAIT_TIME
+from .an_const import DrawbridgeOrder, DrawbridgeCallback, CursorOrder, CursorCallback, WAIT_TIME
 
 #################################################################
 # Colors gestion												#
@@ -67,51 +67,40 @@ class HardwareOrder(yasmin.State): # Should not be modified (unless you should)
 
 # -------- Order to be sent to the Action BN specific of the year ---------- #
 
-class DrawbridgeUP(HardwareOrder):
+class DrawbridgePickup(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.UP, DrawbridgeCallback.PENDING, DrawbridgeCallback.UP)
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.PICKUP, DrawbridgeCallback.PENDING, DrawbridgeCallback.PICKUP)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
-        self._debug_print('c', f"Request to set DRAWBRIDGE in UP position..")
+        self._debug_print('c', f"Request to set DRAWBRIDGE to PICKUP..")
         return super().execute(userdata)
 
-class DrawbridgeDOWN(HardwareOrder):
+class DrawbridgeDeposit(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.DOWN, DrawbridgeCallback.PENDING, DrawbridgeCallback.DOWN)
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.DEPOSIT, DrawbridgeCallback.PENDING, DrawbridgeCallback.DEPOSIT)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
-        self._debug_print('c', f"Request to set DRAWBRIDGE in DOWN position..")
+        self._debug_print('c', f"Request to set DRAWBRIDGE in DEPOSIT..")
         return super().execute(userdata)
 
-class PumpsON(HardwareOrder):
+class DrawbridgeStore(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.pumps_pub, f"cb_pumps", PumpsOrder.ON, PumpsCallback.PENDING, PumpsCallback.ON)
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.STORE, DrawbridgeCallback.PENDING, DrawbridgeCallback.STORE)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
-        self._debug_print('c', f"Request to set PUMPS in ON position..")
+        self._debug_print('c', f"Request to set DRAWBRIDGE to go in STORE position..")
         return super().execute(userdata)
-
-class PumpsOFF(HardwareOrder):
-    
-    def __init__(self, node):
-        super().__init__(node.get_logger(), node.pumps_pub, f"cb_pumps", PumpsOrder.OFF, PumpsCallback.PENDING, PumpsCallback.OFF)
-        self._debug_print = node.debug_print
-        
-    def execute(self, userdata):        
-        self._debug_print('c', f"Request to set PUMPS in OFF position..")
-        return super().execute(userdata)
-
 
 class CursorStickDOWN(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.DOWN, PumpsCallback.PENDING, CursorCallback.DOWN)
+        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.DOWN, CursorCallback.PENDING, CursorCallback.DOWN)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        
@@ -121,7 +110,7 @@ class CursorStickDOWN(HardwareOrder):
 class CursorStickUP(HardwareOrder):
     
     def __init__(self, node):
-        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.UP, PumpsCallback.PENDING, CursorCallback.UP)
+        super().__init__(node.get_logger(), node.cursor_stick_pub, f"cb_cursor_stick", CursorOrder.UP, CursorCallback.PENDING, CursorCallback.UP)
         self._debug_print = node.debug_print
         
     def execute(self, userdata):        

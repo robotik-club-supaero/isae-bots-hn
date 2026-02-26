@@ -26,7 +26,7 @@ from std_msgs.msg import Empty
 from config import StratConfig
 
 from ..an_const import DspCallback
-from ..an_utils import Sequence, Concurrence, DrawbridgeUP, DrawbridgeDOWN, PumpsOFF
+from ..an_utils import Sequence, Concurrence, DrawbridgeDeposit, DrawbridgeStore
 
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
@@ -74,7 +74,6 @@ class CalcPositionDepositBox(yasmin.State):
         return 'success'
 
 class DepositBoxEnd(yasmin.State): # DEPRECATED TODO
-
     def __init__(self, node):
         super().__init__(outcomes=['fail', 'success', 'preempted'])
     def execute(self, userdata):
@@ -89,18 +88,10 @@ class DepositBoxEnd(yasmin.State): # DEPRECATED TODO
 #                                                               #
 #################################################################
 
-class _DrawbridgeSequence(Sequence):
-    def __init__(self, node):
-        super().__init__(states=[
-        ('DEPOSIT_DRAW_BRIDGE_DOWN', DrawbridgeDOWN(node)),
-        ('DEPOSIT_PUMPS_TURN_OFF', PumpsOFF(node)),
-        ('DEPOSIT_DRAW_BRIDGE_UP', DrawbridgeUP(node)),
-        ])
-
 class DepositBoxesSequence(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('DEPOSIT_MOVE_TO_ZONE', MoveTo(node, CalcPositionDepositBox(node))),
-            ('DEPOSIT_BOX_SEQUENCE', _DrawbridgeSequence(node)),
+            ('DEPOSIT_BOX_SEQUENCE', DrawbridgeDeposit(node)),
             ('DEPOSIT_BOX_END', DepositBoxEnd(node)),
             ])

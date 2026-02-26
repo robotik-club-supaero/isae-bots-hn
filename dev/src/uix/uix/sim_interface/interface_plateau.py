@@ -682,7 +682,7 @@ class Grid(Drawable):
 
 class StaticObstacleRects(Drawable):
 
-    def __init__(self, obstacles, color="grey", tag="static_obstacles"):
+    def __init__(self, obstacles, color="red", tag="static_obstacles"):
         super().__init__()
         self._obstacles = obstacles  # dict: name -> ObstacleRect
         self._color = color

@@ -1,4 +1,6 @@
-# ISAE-BOTS-HN 2023
+# ISAE-BOTS-HN
+
+# BRANCH OUTDATED -> Go Robot_202X
 
 ![logo isae-robotics-club](.media/isae_robotics_logo.png)
 

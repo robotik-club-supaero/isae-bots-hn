@@ -68,8 +68,10 @@ class DecisionsNode(Node):
         self.score_pub = self.create_publisher(Int16, '/game/score', latch_profile)
         self.end_pub = self.create_publisher(Int16, '/game/end', latch_profile)
         self.park_pub = self.create_publisher(Int16, '/park', latch_profile)
+        self.timer_pub = self.create_publisher(Int16, '/game/timer', default_profile)
 
         self.match_started = False
+        self._game_timer_task = None  # ROS timer publishing elapsed seconds — created at match start
         
         # Color
         self.config = None # Depend of the color
@@ -149,6 +151,9 @@ class DecisionsNode(Node):
             self.start_time = time.time()
             threading.Timer(self.match_time - self.delay_park, self.park_IT).start()
             threading.Timer(self.match_time, self.stop_IT).start()
+
+            # Start publishing elapsed time on /game/timer at 1 Hz (takes over from master_node)
+            self._game_timer_task = self.create_timer(1.0, self._publish_elapsed_time)
 
     def setup_color(self, msg):
         """
@@ -254,6 +259,12 @@ class DecisionsNode(Node):
     #                                                               #
     #################################################################
     
+    def _publish_elapsed_time(self):
+        elapsed = int(time.time() - self.start_time)
+        msg = Int16()
+        msg.data = min(elapsed, self.match_time)
+        self.timer_pub.publish(msg)
+
     def park_IT(self):
         """
         Interrupt : time to park
@@ -270,6 +281,10 @@ class DecisionsNode(Node):
         Interrupt : end of match => stop moving
         """
         self.get_logger().info('\033[1m\033[36m' + "#"*20 + " End of match " + "#"*19 + '\033[0m')
+
+        if self._game_timer_task is not None:
+            self._game_timer_task.cancel()
+            self._game_timer_task = None
 
         action_msg = Int16MultiArray()
         action_msg.data = [Action.END.value]

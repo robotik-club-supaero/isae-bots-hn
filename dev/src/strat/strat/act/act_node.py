@@ -65,7 +65,7 @@ class ActionNode(Node):
         
         # SPECIFIC TO CURRENT YEAR [2025]
         self.drawbridge_pub = self.create_publisher(Int16, '/act/order/drawbridge', latch_profile)
-        self.cursor_stick_pub = self.create_publisher(Int16, '/act/order/cursor_stick', latch_profile)
+        self.cursor_stick_pub = self.create_publisher(Int16, '/act/order/cursor', latch_profile)
         """
         Initialize all subscribers of AN
         """
@@ -83,7 +83,7 @@ class ActionNode(Node):
 
         # SPECIFIC TO CURRENT YEAR [2025]
         self.drawbridge_sub = self.create_subscription(Int16, '/act/callback/drawbridge', self.cb_drawbridge_fct, default_profile)        
-        self.cursor_stick_sub = self.create_subscription(Int16, '/act/callback/cursor_stick', self.cb_cursor_stick_fct, default_profile)
+        self.cursor_stick_sub = self.create_subscription(Int16, '/act/callback/cursor', self.cb_cursor_stick_fct, default_profile)
         self.bumper_sub = self.create_subscription(Int16, '/act/bumpers', self.cb_bumper_fct, default_profile)
 
         # DEBUG 

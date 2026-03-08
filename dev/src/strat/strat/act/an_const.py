@@ -79,13 +79,13 @@ class DrawbridgeCallback(Callback):
 
 class CursorOrder(IntEnum):
     DOWN = 0
-    UP = 2
+    UP = 1
 
 class CursorCallback(IntEnum):
     UNKNOWN = -2
     PENDING = -1
-    DOWN = 2
-    UP = 2
+    DOWN = 0
+    UP = 1
 
 class BumperState(IntEnum):
     RELEASED = 0

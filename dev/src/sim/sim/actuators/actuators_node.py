@@ -74,8 +74,8 @@ class ActuatorNode(Node):
         self.drawbridge_callback_pub = self.create_publisher(Int16, "/act/callback/drawbridge", latch_profile)  
 
         # Simule la réponse du BN sur le curseur
-        self.cursor_sub = self.create_subscription(Int16, '/act/order/cursor_stick', self.cursor_response, default_profile)
-        self.cursor_callback_pub = self.create_publisher(Int16, "/act/callback/cursor_stick", latch_profile)  
+        self.cursor_sub = self.create_subscription(Int16, '/act/order/cursor', self.cursor_response, default_profile)
+        self.cursor_callback_pub = self.create_publisher(Int16, "/act/callback/cursor", latch_profile)  
 
         self.bumpers_pub = self.create_publisher(Int16, "/act/bumpers", latch_profile)
       

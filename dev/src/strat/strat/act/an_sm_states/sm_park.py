@@ -29,7 +29,7 @@ from config import StratConfig
 from ..an_const import *
 from ..an_utils import Sequence
 
-from .sm_displacement import MoveTo, approach, Approach
+from .sm_displacement import MoveTo, approach, Approach, create_displacement_request
 from strat.strat_utils import create_end_of_action_msg
 
 from strat.strat_const import ActionResult
@@ -55,7 +55,21 @@ class CalcParkPos(yasmin.State):
         # Modif pour la strat du dernier match 
 
         reverse = True if userdata["color"] == 1 else False
-        userdata["next_move"] = approach(userdata["robot_pos"], x_dest, y_dest, 0, backward=reverse)
+        end_theta = 0 if userdata["color"] == 0 else 3.142
+
+        # --- If need to go behind, go reverse as defined if angle final is close to initial
+        xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+        opposite = ((x_dest - xr) * math.cos(theta) + (y_dest -yr) * math.sin(theta)) < 0
+        delta_t = abs((theta % 3.142) - (tr % 3.142))
+        if opposite:
+            if not reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        else:
+            if reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        # ----
+
+        userdata["next_move"] =   create_displacement_request(x_dest, y_dest, theta=end_theta, backward=reverse) #approach(userdata["robot_pos"], x_dest, y_dest, end_theta, backward=reverse)
         return 'success'
     
     

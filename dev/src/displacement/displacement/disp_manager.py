@@ -195,6 +195,8 @@ class DisplacementManager:
 
     def _stop(self):
         self.communicator.sendStopCommand()
+    def _shutdown(self):
+        self.communicator.sendShutdownCommand()
 
     def _stopAndWait(self):
         self._stop()

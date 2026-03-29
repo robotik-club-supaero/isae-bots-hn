@@ -20,7 +20,7 @@ from enum import IntEnum
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
-from std_msgs.msg import Int16, Float32MultiArray, String, Empty
+from std_msgs.msg import Int16, Float32MultiArray, String, Empty, Bool
 
 from br_messages.msg import Position, Point, DisplacementOrder, Command
 from message.msg import SensorObstacleList, DisplacementRequest
@@ -57,6 +57,7 @@ class DisplacementNode(Node):
         self.pub_teensy_go_to = self.create_publisher(DisplacementOrder, '/br/goTo', latch_profile)
         self.pub_teensy_cmd = self.create_publisher(Command, '/br/command', latch_profile)
         self.pub_teensy_stop = self.create_publisher(Empty, '/br/stop', latch_profile)
+        self.pub_teensy_idle = self.create_publisher(Bool, "/br/idle", latch_profile)
         self.pub_teensy_speed = self.create_publisher(Int16, "/br/setSpeed", latch_profile)
         self.pub_teensy_reset = self.create_publisher(Position, '/br/resetPosition', latch_profile)
 
@@ -119,6 +120,9 @@ class DisplacementNode(Node):
 
     def sendStopCommand(self):
         self.pub_teensy_stop.publish(Empty())
+
+    def sendShutdownCommand(self):
+        self.pub_teensy_idle.publish(Bool(data=False))
 
     def sendSpeedCommand(self, linear, angular):
         msg = Command()
@@ -198,6 +202,7 @@ class DisplacementNode(Node):
         if msg.data == 1:
             self.manager.cancelDisplacement()
             self.matchEnded = True
+            self.sendShutdownCommand()
 
     def callback_delete_obs(self, msg):
         self.manager.getPathFinder().remove_obstacle(msg.data)

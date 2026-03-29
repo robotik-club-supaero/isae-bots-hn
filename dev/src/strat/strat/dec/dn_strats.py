@@ -61,12 +61,23 @@ def homologation(node):
         -
     """
     last_action = node.curr_action[0]
-    outcome = node.action_successful
 
-    if last_action == Action.PICKUP and outcome == ActionResult.SUCCESS :
-        node.curr_action = [Action.PARK] # just go park 
+    if last_action == Action.INIT:
+        node.action_step_index = 0 # Initialise to first action
+
+    if node.action_step_index == 0 :
+        node.curr_action = [Action.PICKUP, 1]
+        node.action_step_index += 1
+    elif node.action_step_index == 1:
+        node.curr_action = [Action.DEPOSIT, 1] 
+        node.action_step_index += 1
+    elif node.action_step_index == 2: 
+        node.curr_action = [Action.PARK]
+        node.action_step_index += 1
     else:
-        node.curr_action = [Action.PICKUP, 1] # just go pickup box id n°1
+        node.get_logger().info("End of strategy : HOMOLOGATION")
+        node.curr_action = [Action.PARK]
+        node.stop_IT() # Stop robot
 
     node.publishAction()
     return

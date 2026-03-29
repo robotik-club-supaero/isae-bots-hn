@@ -51,8 +51,23 @@ class CalcPosition(yasmin.State):
         if self.is_canceled(): return 'preempted'
         
         xp, yp, thetap = StratConfig(userdata["color"]).cursor_pos
+        
         reverse = True if userdata["color"] == 1 else False
-        if reverse: thetap = (thetap + 3.142) % 6.284
+        if reverse:
+            if abs(abs(thetap % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
+                thetap = (thetap + 3.142) % 6.284   
+        
+        # --- If need to go behind, go reverse as defined if angle final is close to initial
+        xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+        opposite = ((xp - xr) * math.cos(tr) + (yp -yr) * math.sin(tr)) < 0
+        delta_t = abs((thetap % 3.142) - (tr % 3.142))
+        if opposite:
+            if not reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        else:
+            if reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        # ----
 
         userdata["next_move"] = create_displacement_request(xp, yp, theta=thetap, straight_only=True, backward=reverse)
         return 'success'

@@ -42,7 +42,7 @@ LED_PINS = [15,14,13,12,11,10,9,8,7,6]
 BUTTONS_PINS = [0,1,2,3,4]
 TRIGGER_PIN = 5
 
-TRIGGER_LED_ID = 0
+TRIGGER_LED_ID = 2
 BR_IDLE_LED_ID = 1
 STATUS_LED_ID = len(LED_PINS) - 1
 
@@ -136,6 +136,18 @@ class ISBNode(Node):
 
     def update(self):
         self.manager.do_blink()
+
+        # if self.match_started.data == 0 : # ! DEBUG
+        #     if self.manager.getButtonState(TRIGGER_PIN) == 0:
+        #         self.manager.setLedState(LED_PINS[TRIGGER_LED_ID], LedState.ON)
+        #     else:
+        #         self.manager.setLedBlinking(LED_PINS[TRIGGER_LED_ID], True)
+
+        if self.manager.getButtonState(TRIGGER_PIN) == 0:
+            self.manager.setLedBlinking(LED_PINS[TRIGGER_LED_ID], True)
+        else:
+            self.manager.setLedState(LED_PINS[TRIGGER_LED_ID], LedState.ON)
+
 
         if self.match_started.data == 0 and self.manager.getButtonState(TRIGGER_PIN) == 0:
             self.start_match()

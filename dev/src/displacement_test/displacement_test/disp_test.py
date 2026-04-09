@@ -58,6 +58,7 @@ class DispTestNode(Node):
             #msg.data == 7 => Déplacement fini
             self.round = self.round-1
             self.pub_dispOrd.publish(self.dispOrder)
+            self.get_logger().info("Displacement Test : Order sent.")
         elif (msg.data == 6):
             #msg.data == 6 => okIdle, contrôleur passé en état Idle
             self.idle.data = False

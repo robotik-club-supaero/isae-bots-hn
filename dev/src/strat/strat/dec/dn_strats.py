@@ -68,10 +68,7 @@ def homologation(node):
     if node.action_step_index == 0 :
         node.curr_action = [Action.PICKUP, 1]
         node.action_step_index += 1
-    elif node.action_step_index == 1:
-        node.curr_action = [Action.DEPOSIT, 1] 
-        node.action_step_index += 1
-    elif node.action_step_index == 2: 
+    elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]
         node.action_step_index += 1
     else:

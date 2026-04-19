@@ -28,7 +28,7 @@ class _ObstacleFilter(ABC):
         
         self.robot_length = config.robot_length / 2 # Size along X
         self.robot_width = config.robot_width / 2 # Size along Y
-        self.robot_half_diag = config.robot_half_diagonal / 2
+        self.robot_half_diag = config.robot_diagonal / 2
         self.logger = logger
 
     def _isRelevant(self, obs, backward, *, any_dir, check_sides=True, lateral_margin=0):

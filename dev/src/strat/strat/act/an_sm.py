@@ -30,11 +30,11 @@ from br_messages.msg import Position
 # import les states de la SM
 from .an_sm_states.sm_park import Park
 from .an_sm_states.sm_cursor import CursorSequence
-from .an_sm_states.sm_deposit_box import DepositBoxesSequence
-from .an_sm_states.sm_pickup_boxes import PickupBoxesSequence
+from .an_sm_states.sm_deposit_box import DepositBoxesSequence, DepositAllBoxesSequence
+from .an_sm_states.sm_pickup_boxes import PickupBoxesSequence, PickupAllBoxesSequence
 from .an_sm_states.sm_waiting import waiting, Waiting
 from .an_sm_states.sm_standby_park import StandbyParkSequence
-from .an_sm_states.sm_displacement import create_displacement_request, create_stop_BR_request
+from .an_sm_states.sm_displacement import GoTo, create_displacement_request, create_stop_BR_request
 
 from message.msg import EndOfActionMsg
 from std_msgs.msg import Int16MultiArray
@@ -189,12 +189,20 @@ class ActionStateMachine(yasmin.StateMachine):
                         transitions={'end':'exit all', 'preempted': 'END'})
         self.add_state('WAIT', waiting,
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        self.add_state('GOTO', GoTo(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         
         # Specific Action States
         self.add_submachine('DEPOSIT', DepositBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        self.add_submachine('DEPOSITALL', DepositAllBoxesSequence(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        
         self.add_submachine('PICKUP', PickupBoxesSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        self.add_submachine('PICKUPALL', PickupAllBoxesSequence(node),
+                        transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
+        
         self.add_submachine('CURSOR', CursorSequence(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         

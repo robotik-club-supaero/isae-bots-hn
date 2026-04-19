@@ -42,7 +42,7 @@ class NaiveStratConfig(RobotConfig):
     CURSOR_DISTANCE = 550 # TODO 100 = 10 cm for now TO BE DETERMINED
 
     MIN_DEPOSIT_DURATION = 15 # s
-    MIN_PICKUP_DEPOSIT_DURATION = 30 # s
+    MIN_PICKUP_DEPOSIT_DURATION = 90 # s
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0

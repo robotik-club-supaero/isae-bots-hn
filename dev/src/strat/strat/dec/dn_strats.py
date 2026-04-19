@@ -102,6 +102,13 @@ def match_strat(node):
                     (Action.PICKUP, 3), 
                     (Action.DEPOSIT, 2), 
                     Action.PARKSTANDBY]
+    
+    test = [(Action.WAIT, 15),
+            (Action.PICKUP, 0), 
+            (Action.DEPOSIT, 2), 
+            Action.PARKSTANDBY]
+    
+    strat_used = test
 
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 
@@ -179,7 +186,7 @@ def match_strat(node):
             return True
         
         if next_action == Action.WAIT:
-            node.curr_action = [Action.WAIT]
+            node.curr_action = [Action.WAIT, *parameter]
             node.get_logger().info(f"Next action order : Wait")        
             return True
         

@@ -34,14 +34,24 @@ class Waiting(yasmin.State):
     """
     SM WAITING : Observer state
     """
-    def __init__(self, wait_time=100, outcomes=['preempted', 'success', 'fail']):
+    def __init__(self, wait_time=None, outcomes=['preempted', 'success', 'fail']):
         super().__init__(outcomes=outcomes)
-        self._wait_time = wait_time
+        if wait_time is None:
+            self._wait_time = 100
+            self.predefined = False
+        else:
+            self._wait_time = wait_time
+            self.predefined = True
 
     def execute(self, userdata):
         begin_time = time.time()
 
-        while time.time() - begin_time < self._wait_time:
+        if not self.predefined:
+            duration = self._node.get_action_detail("wait_duration", userdata)
+        else:
+            duration = self._wait_time
+
+        while time.time() - begin_time < duration:
             time.sleep(0.01)
             if self.is_canceled():
                 return 'preempted'       

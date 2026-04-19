@@ -275,7 +275,7 @@ class ActionNode(Node):
                 else: 
                     return userdata["next_action"][1:3], None # [Action, x, y] -> x, y, None
             else:
-                return userdata["next_action"][1] # [Action, int]
+                return userdata["next_action"][1] # [Action, value]
         except IndexError:
             self.get_logger().warning(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
             return 0

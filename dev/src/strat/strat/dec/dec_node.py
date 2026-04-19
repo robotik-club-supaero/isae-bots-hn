@@ -89,8 +89,6 @@ class DecisionsNode(Node):
 
         # States
         self.action_step_index = 0 # counter for the strat to know at what action it is
-        self.pickup_index = 0 # counter for the strat to know at what zone to pickup
-        self.deposit_index = 0 # counter for the strat to know at what zone to deposit
         self.cursor_pushed = False
         self.go_park = False
         self.parked = False

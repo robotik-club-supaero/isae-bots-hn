@@ -90,7 +90,7 @@ class StratConfig(NaiveStratConfig):
     # ! Sur le plan des règles (origine en bas à gauche) : (x, y, theta)
     # ! Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
-    WAIT_PARK_ZONE = DynamicPos(2000 - 1300, 1000, -1.57)
+    WAIT_PARK_ZONE = DynamicPos(2000 - 1200, 850, -1.57)
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 0)
     PARK_ZONE_BLUE = DynamicPos(2000 - 1775, 375, 3.14)
 

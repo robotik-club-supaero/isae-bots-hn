@@ -90,29 +90,18 @@ def match_strat(node):
     """
     DN Strat: match (used for reach matches)
     
-    Modify : node.curr_action -> ex: [Action.PICKUP, 3] -> Pickup element at index n°3
+    Modify : node.curr_action -> ex: [Action.PICKUP, 3] -> Pickup element at zone n°3
 
     """
     
-    action_order = [Action.PICKUP, Action.DEPOSIT, Action.PICKUP, Action.CURSOR, Action.DEPOSIT, Action.PICKUP, Action.DEPOSIT, Action.PARKSTANDBY]
-    pickup_order = [0, 1, 3, 2]
-    deposit_order = [0, 1, 3, 2]
-
-    def get_next_pickup_zone():
-        global pickup_order
-        if len(pickup_order) < node.pickup_index:
-            return pickup_order[node.pickup_index]
-        else:
-            node.get_logger().info(f"DN STRAT Warning : index n°{node.pickup_index} our of pickup_order length.")
-            return pickup_order[0]
-    
-    def get_next_deposit_zone():
-        global deposit_order
-        if len(deposit_order) < node.deposit_index:
-            return deposit_order[node.deposit_index]
-        else:
-            node.get_logger().info(f"DN STRAT Warning : index n°{node.deposit_index} our of deposit_order length.")
-            return deposit_order[0]
+    action_order = [(Action.PICKUP, 0), 
+                    (Action.DEPOSIT, 0), 
+                    (Action.PICKUP, 1), 
+                    Action.CURSOR, 
+                    (Action.DEPOSIT, 1), 
+                    (Action.PICKUP, 3), 
+                    (Action.DEPOSIT, 2), 
+                    Action.PARKSTANDBY]
 
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 
@@ -159,29 +148,28 @@ def match_strat(node):
 
     def set_next_action():
         next_action = action_order[node.action_step_index]
+        if isinstance(next_action, list) or isinstance(next_action, tuple):
+            next_action, parameter = next_action[0], next_action[1:]
         
         if next_action == Action.DEPOSIT:
             if node.time_left > node.config.MIN_DEPOSIT_DURATION:
-                deposit_id = deposit_order[node.deposit_index]
-                node.curr_action = [Action.DEPOSIT, deposit_id]
-                node.get_logger().info(f"Next action order : Deposit -> Area n°{deposit_id}")
+                node.curr_action = [Action.DEPOSIT, parameter]
+                node.get_logger().info(f"Next action order : Deposit -> Area n°{parameter}")
                 return True
             else:
                 next_action = Action.PARK
         
         if next_action == Action.PICKUP:
             if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:
-                box_id = pickup_order[node.pickup_index]
-                node.curr_action = [Action.PICKUP, box_id]
-                node.get_logger().info(f"Next action order : Pick Up -> Box n°{box_id}")
+                node.curr_action = [Action.PICKUP, parameter]
+                node.get_logger().info(f"Next action order : Pick Up -> Box n°{parameter}")
                 return True
             else:
                 next_action = Action.PICKUPALL
 
         if next_action == Action.PICKUPALL:
-            box_id = pickup_order[node.pickup_index]
-            node.curr_action = [Action.PICKUPALL, box_id]
-            node.get_logger().info(f"Next action order : Pick Up All -> Box n°{box_id}")
+            node.curr_action = [Action.PICKUPALL, parameter]
+            node.get_logger().info(f"Next action order : Pick Up All -> Box n°{parameter}")
             return True
 
         if next_action == Action.CURSOR:
@@ -210,8 +198,6 @@ def match_strat(node):
     # Init
     if last_action == Action.INIT:
         node.action_step_index = 0 # Initialise to first action
-        node.pickup_index = 0
-        node.deposit_index = 0
         success = set_next_action()
         if success:
             node.get_logger().info(f"Next action order : Beginning of the startegy -> {node.curr_action}")
@@ -237,13 +223,6 @@ def match_strat(node):
                 return
             else:
                 node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
-
-    # Register empty zone
-    if last_action in (Action.PICKUP, Action.PICKUPALL):
-        node.pickup_index += 1
-    # Register empty zone
-    if last_action in (Action.DEPOSIT, Action.DEPOSITALL):
-        node.deposit_index += 1
     
     if not node.go_park:
 

@@ -236,6 +236,8 @@ class DisplacementNode(Node):
         
     def callback_strat(self, msg):
         """Traitement des commandes de la strat."""
+        if self.matchEnded:
+            return
         if msg.kind == 0:
             self.manager.cancelDisplacement()
 

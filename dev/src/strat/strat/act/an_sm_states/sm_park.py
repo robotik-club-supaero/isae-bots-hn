@@ -75,8 +75,8 @@ class CalcParkPos(yasmin.State):
                 if (delta_t < 1.6): reverse = not reverse 
         # ----
 
-        self._logger.info(f"[CalcParkPos] (x, y)=({xr}, {yr}) tr={tr:.3f}, (x_dest, y_dest)=({x_dest}, {y_dest}) theta={theta:.3f}, opposite={opposite}, delta_t={delta_t:.3f}, reverse={reverse}")
-        userdata["next_move"] =   create_displacement_request(x_dest, y_dest, theta=theta, backward=reverse) #approach(userdata["robot_pos"], x_dest, y_dest, end_theta, backward=reverse)
+        #self._logger.info(f"[CalcParkPos] (x, y)=({xr}, {yr}) tr={tr:.3f}, (x_dest, y_dest)=({x_dest}, {y_dest}) theta={theta:.3f}, opposite={opposite}, delta_t={delta_t:.3f}, reverse={reverse}")
+        userdata["next_move"] = create_displacement_request(x_dest, y_dest, theta=theta, backward=reverse) #approach(userdata["robot_pos"], x_dest, y_dest, end_theta, backward=reverse)
         return 'success'
     
     

@@ -201,7 +201,7 @@ class DisplacementNode(Node):
     def callback_end(self, msg):
         if msg.data == 1:
             self.manager.cancelDisplacement()
-            self.matchEnded = True
+            self.match_ended = True
             self.sendShutdownCommand()
 
     def callback_delete_obs(self, msg):
@@ -236,7 +236,7 @@ class DisplacementNode(Node):
         
     def callback_strat(self, msg):
         """Traitement des commandes de la strat."""
-        if self.matchEnded:
+        if self.match_ended:
             return
         if msg.kind == 0:
             self.manager.cancelDisplacement()

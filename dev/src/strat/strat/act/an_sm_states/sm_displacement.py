@@ -267,7 +267,7 @@ class CalcPositionGoTo(yasmin.State):
             # userdata['next_action'] = [Action.GOTO, (xp, yp, tp)]   |   tp = None -> No final orientation
             (xp, yp, tp) = self._node.get_action_detail("goto", userdata) 
         except:
-            self._node.get_logger.info("CalcPositionGoTo failed to extract coordinate.")
+            self._node.get_logger().info("CalcPositionGoTo failed to extract coordinate.")
             return 'fail'
 
         reverse = True if userdata["color"] == 1 else False

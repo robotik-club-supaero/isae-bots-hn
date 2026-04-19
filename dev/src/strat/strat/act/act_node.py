@@ -268,7 +268,7 @@ class ActionNode(Node):
         # userdata["next_action"] = [Enum Action, arguments optionnels]
         try:
             if (what == "goto"):
-                if len(userdata["next_action"][1:] == 3):
+                if len(userdata["next_action"][1:]) == 3:
                     return userdata["next_action"][1:4] # [Action, x, y, theta] -> x, y, theta
                 else: 
                     return userdata["next_action"][1:3], None # [Action, x, y] -> x, y, None

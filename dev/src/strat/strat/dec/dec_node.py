@@ -263,6 +263,7 @@ class DecisionsNode(Node):
         # ----- Appel la stratégie pour définir la prochaine action à faire ------ #
         self.get_logger().info(f"AN requested next action to DN (after '{str(self.curr_action[0])}' -> '{str(msg.exit)}')")
         self.strat_functions[self.strat](self)
+        self.publishAction()
         
 
     #################################################################

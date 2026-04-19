@@ -48,7 +48,6 @@ def test_strat(node):
         -
     """
     node.curr_action = [Action.PICKUP, 2]
-    node.publishAction()
     node.get_logger().info(f"Next action order : Pick Up -> Box n°{2}")
     return
 
@@ -82,7 +81,6 @@ def homologation(node):
         node.curr_action = [Action.PARK]
         node.stop_IT() # Stop robot
 
-    node.publishAction()
     return
 
 
@@ -111,7 +109,9 @@ def match_strat(node):
             (Action.DEPOSIT, 0),   
             Action.PARKSTANDBY]
     
-    action_order = test
+    action_order = match
+
+    # -------------------- Useful function ------------------------- #
 
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 
@@ -136,9 +136,6 @@ def match_strat(node):
                 return element_id
         
         return None
-    
-    last_action = node.curr_action[0]
-    time.sleep(0.01) # is it really necessary ?
 
     def deposit_closest():
         DEPOSIT_POS = node.config.deposit_zones_pos
@@ -222,13 +219,16 @@ def match_strat(node):
         node.get_logger().info("Next action order : ERROR")
         return False
 
+    # -------------------- Base Checks ------------------------- #
+    last_action = node.curr_action[0]
+    time.sleep(0.01) # is it really necessary ?
+
     # Init
     if last_action == Action.INIT:
         node.action_step_index = 0 # Initialise to first action
         success = set_next_action(last_action, node.action_successful)
         if success:
             node.get_logger().info(f"Next action order : Beginning of the startegy -> {node.curr_action}")
-            node.publishAction()
             return
         else:
             node.get_logger().info(f"Next Action : First Action not recognised. -> {action_order[node.action_step_index]}")
@@ -236,7 +236,6 @@ def match_strat(node):
     # Pending
     if last_action == Action.PENDING:
         node.get_logger().info(f"Action PENDING.. waiting for trigger.")
-        node.publishAction()
         return
 
     # Retry
@@ -247,11 +246,11 @@ def match_strat(node):
                 node.retry_count += 1 # reset in dec_node when action success
                 success = set_next_action(last_action, node.action_successful)
                 if success:
-                    node.publishAction()
                     return
                 else:
                     node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
-        
+
+    # -------------------- Going to next Action ------------------------- # 
     if not node.go_park:
 
         # If failed + retry failed too -> Debug Print
@@ -262,7 +261,6 @@ def match_strat(node):
 
         success = set_next_action(last_action, node.action_successful)
         if success:
-            node.publishAction()
             return
         else:
             node.get_logger().info(f"Next Action : Action not recognised. ({action_order[node.action_step_index]})")
@@ -270,7 +268,6 @@ def match_strat(node):
             can_pickup, pickup_id = pickup_closest()
             if can_pickup:
                 node.get_logger().info(f"Next action order : Picking Up -> Box n°{pickup_id}")
-                node.publishAction()
                 return
             else:
                 node.get_logger().info("No more box to pick up")
@@ -279,9 +276,9 @@ def match_strat(node):
         node.get_logger().info(f"Strategy could not find any solution after : action={str(node.curr_action)}, success={node.action_successful}")
         node.curr_action = [Action.PARK]
         node.get_logger().info("Next action order : Park")
-        node.publishAction()
         return
 
+    # -------------------- End ------------------------- #
     # End of Match
     if node.parked:
         node.get_logger().info("End of strategy : MATCH")
@@ -291,5 +288,4 @@ def match_strat(node):
     # Go to park
     node.curr_action = [Action.PARK]
     node.get_logger().info("Next action order : Park")
-    node.publishAction()
     return

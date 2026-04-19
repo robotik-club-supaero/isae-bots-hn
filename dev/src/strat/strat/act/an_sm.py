@@ -187,7 +187,7 @@ class ActionStateMachine(yasmin.StateMachine):
         
         self.add_state('END', End(node.get_logger(), node.disp_pub, node.stop_teensy_pub),
                         transitions={'end':'exit all', 'preempted': 'END'})
-        self.add_state('WAIT', waiting,
+        self.add_state('WAIT', Waiting(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})
         self.add_state('GOTO', GoTo(node),
                         transitions={'success':'REPARTITOR','fail':'REPARTITOR','preempted':'REPARTITOR'})

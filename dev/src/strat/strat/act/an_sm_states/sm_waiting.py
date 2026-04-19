@@ -34,8 +34,9 @@ class Waiting(yasmin.State):
     """
     SM WAITING : Observer state
     """
-    def __init__(self, wait_time=None, outcomes=['preempted', 'success', 'fail']):
+    def __init__(self, node, wait_time=None, outcomes=['preempted', 'success', 'fail']):
         super().__init__(outcomes=outcomes)
+        self._node = node
         if wait_time is None:
             self._wait_time = 100
             self.predefined = False
@@ -57,11 +58,3 @@ class Waiting(yasmin.State):
                 return 'preempted'       
 
         return 'success'
-
-#################################################################
-#                                                               #
-#                        SM STATE : WAITING                     #
-#                                                               #
-#################################################################
-
-waiting = Waiting()

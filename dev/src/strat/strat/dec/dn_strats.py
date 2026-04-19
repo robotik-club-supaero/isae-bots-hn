@@ -68,7 +68,8 @@ def homologation(node):
         node.action_step_index = 0 # Initialise to first action
 
     if node.action_step_index == 0 :
-        node.curr_action = [Action.GOTO, DynamicPos(2000 - 400, 425, 0).resolve(node.color)]
+        x, y, t = DynamicPos(2000 - 400, 425, None).resolve(node.color)
+        node.curr_action = [Action.GOTO, x, y, t]
         node.action_step_index += 1
     elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]

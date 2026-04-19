@@ -266,7 +266,11 @@ class ActionNode(Node):
 
     def get_action_detail(self, what, userdata):
         try:
-            return userdata["next_action"][1] # userdata["next_action"] = [Enum Action, argument optionnelle] ici l'index du truc a prendre
+            # userdata["next_action"] = [Enum Action, arguments optionnels] 
+            if (what == "goto"):
+                return userdata["next_action"][1:4] # [Action, x, y, theta]
+            else:
+                return userdata["next_action"][1] # [Action, int]
         except IndexError:
             self.get_logger().warning(f"No {what} id in userdata.next_action, defaulting to {what} id 0")
             return 0

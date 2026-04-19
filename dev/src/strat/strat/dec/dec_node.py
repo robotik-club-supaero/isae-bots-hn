@@ -89,6 +89,7 @@ class DecisionsNode(Node):
 
         # States
         self.action_step_index = 0 # counter for the strat to know at what action it is
+        self.loaded = False
         self.cursor_pushed = False
         self.go_park = False
         self.parked = False
@@ -213,6 +214,8 @@ class DecisionsNode(Node):
         Send back the next action when triggered by the repartitor.
         """
         self.action_successful = False # reset
+        
+        last_action = self.curr_action[0]
 
         if msg.exit == ActionResult.SUCCESS:
             
@@ -222,20 +225,22 @@ class DecisionsNode(Node):
             self.retry_count = 0
             
             # Count points
-            if self.curr_action[0] == Action.PICKUP:
+            if last_action in (Action.PICKUP, Action.PICKUPALL):
                 self.remaining_boxes_areas[self.curr_action[1]] = 0
+                self.loaded = True
             
-            if self.curr_action[0] == Action.DEPOSIT:
+            if last_action in (Action.DEPOSIT, Action.DEPOSITALL):
                 self.remaining_deposits_slots[self.curr_action[1]] = 0
                 self.score += ActionScore.SCORE_DEPOSIT.value
+                self.loaded = False
                 self.publishScore()
             
-            if self.curr_action[0] == Action.CURSOR:
+            if last_action == Action.CURSOR:
                 self.score += ActionScore.SCORE_CURSOR.value
                 self.publishScore()
                 self.cursor_pushed = True
             
-            if self.curr_action[0] == Action.PARK:
+            if last_action == Action.PARK:
                 self.score += ActionScore.SCORE_PARK.value
                 self.score += ActionScore.SCORE_PAMIS.value # Hope that all coccinelle have done correctly
                 self.publishScore()
@@ -243,8 +248,9 @@ class DecisionsNode(Node):
             
         elif msg.exit == ActionResult.NOTHING_TO_PICKUP:
             self.get_logger().warning(f"Last action aborted: there was nothing to pick up")
-            if self.curr_action[0] == Action.PICKUP:
+            if last_action == Action.PICKUP:
                 self.remaining_boxes_areas[self.curr_action[1]] = 0
+                self.loaded = False
             else:
                 self.get_logger().error(f"Invalid exit value NOTHING_TO_PICK_UP for action {self.curr_action[0]}")
         elif msg.exit == ActionResult.FAILURE:

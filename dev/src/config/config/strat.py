@@ -38,6 +38,8 @@ class NaiveStratConfig(RobotConfig):
     MATCH_TIME = 100 # s
     DELAY_PARK = 10 # s
 
+    TRY_RETRY = False
+    
     MOVE_CURSOR = True
     CURSOR_DISTANCE = 550 # TODO 100 = 10 cm for now TO BE DETERMINED
 

@@ -22,7 +22,7 @@ import time
 import numpy as np
 
 from ..strat_const import Action, ActionScore, ActionResult
-from config import DynamicPos
+from config import DynamicPos, TRY_RETRY
 
 #################################################################
 #                                                               #
@@ -153,27 +153,43 @@ def match_strat(node):
             return True, box_id
         return False, None
 
-    def set_next_action():
+    def increment_action_index():
+        node.action_step_index += 1 # Go to next action
+        if (node.action_step_index) >= len(action_order):
+            node.get_logger().info(f"End of Action Order defined by Strategy. -> STOP")   
+            node.get_logger().info("End of strategy : MATCH")
+            node.stop_IT() 
+            return
+
+    def set_next_action(last_action, succeeded):
         next_action = action_order[node.action_step_index]
         if isinstance(next_action, list) or isinstance(next_action, tuple):
             parameter = next_action[1:]
             next_action = next_action[0]
         
         if next_action == Action.DEPOSIT:
-            if node.time_left > node.config.MIN_DEPOSIT_DURATION:
-                node.curr_action = [Action.DEPOSIT, *parameter]
-                node.get_logger().info(f"Next action order : Deposit -> Area n°{parameter}")
-                return True
-            else:
-                next_action = Action.PARK
+            if node.loaded:
+                if node.time_left > node.config.MIN_DEPOSIT_DURATION:
+                    node.curr_action = [Action.DEPOSIT, *parameter]
+                    node.get_logger().info(f"Next action order : Deposit -> Area n°{parameter}")
+                    return True
+                else:
+                    next_action = Action.PARK
+            else: # Nothing to deposit
+                increment_action_index()
+                return set_next_action(Action.DEPOSIT, False)
         
         if next_action == Action.PICKUP:
-            if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:
-                node.curr_action = [Action.PICKUP, *parameter]
-                node.get_logger().info(f"Next action order : Pick Up -> Box n°{parameter}")
-                return True
-            else:
-                next_action = Action.PICKUPALL
+            if not node.loaded:
+                if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:
+                    node.curr_action = [Action.PICKUP, *parameter]
+                    node.get_logger().info(f"Next action order : Pick Up -> Box n°{parameter}")
+                    return True
+                else:
+                    next_action = Action.PICKUPALL
+            else: # Already Loaded
+                increment_action_index()
+                return set_next_action(Action.DEPOSIT, False)
 
         if next_action == Action.PICKUPALL:
             node.curr_action = [Action.PICKUPALL, *parameter]
@@ -206,7 +222,7 @@ def match_strat(node):
     # Init
     if last_action == Action.INIT:
         node.action_step_index = 0 # Initialise to first action
-        success = set_next_action()
+        success = set_next_action(last_action, node.action_successful)
         if success:
             node.get_logger().info(f"Next action order : Beginning of the startegy -> {node.curr_action}")
             node.publishAction()
@@ -221,31 +237,27 @@ def match_strat(node):
         return
 
     # Retry
-    if not node.action_successful and not node.go_park:
-        if node.retry_count < 2: # retry 1 time
-            node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")
-            node.retry_count += 1 # reset in dec_node when action success
-            success = set_next_action()
-            if success:
-                node.publishAction()
-                return
-            else:
-                node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
-    
+    if TRY_RETRY: # deactivating by default
+        if not node.action_successful and not node.go_park:
+            if node.retry_count < 2: # retry 1 time
+                node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")
+                node.retry_count += 1 # reset in dec_node when action success
+                success = set_next_action(last_action, node.action_successful)
+                if success:
+                    node.publishAction()
+                    return
+                else:
+                    node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
+        
     if not node.go_park:
 
         # If failed + retry failed too -> Debug Print
         if not node.action_successful:
             node.get_logger().info(f"ACTION '{last_action}' FAILED and RETRY FAILED. Skipping to next action.")
 
-        node.action_step_index += 1 # Go to next action
-        if (node.action_step_index) >= len(action_order):
-            node.get_logger().info(f"End of Action Order defined by Strategy. -> STOP")   
-            node.get_logger().info("End of strategy : MATCH")
-            node.stop_IT() 
-            return
+        increment_action_index()
 
-        success = set_next_action()
+        success = set_next_action(last_action, node.action_successful)
         if success:
             node.publishAction()
             return

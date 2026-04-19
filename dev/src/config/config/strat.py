@@ -103,13 +103,14 @@ class StratConfig(NaiveStratConfig):
         (DynamicPos(2000 - 1200, 425, 0), 0),
         (DynamicPos(2000 - 400, 425, 0), 1),
         (DynamicPos(2000 - 425, 1100, 1.57), 2),
-        (DynamicPos(2000 - 600, 1150, 1.57), 3),
+        (DynamicPos(2000 - 600, 1150, -1.57), 3),
     ]
 
     DEPOSIT_POS = [
         DynamicPos(2000 - 800, 375, 0), 
         DynamicPos(2000 - 375, 700, 1.57), 
-        DynamicPos(2000 - 500, 800, -1.57), 
+        DynamicPos(2000 - 800, 1250, 3.14), 
+        DynamicPos(2000 - 1000, 800, 1.57), 
     ]
 
     def __init__(self, color):

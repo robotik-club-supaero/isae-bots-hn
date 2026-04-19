@@ -32,7 +32,7 @@ from .an_sm_states.sm_park import Park
 from .an_sm_states.sm_cursor import CursorSequence
 from .an_sm_states.sm_deposit_box import DepositBoxesSequence, DepositAllBoxesSequence
 from .an_sm_states.sm_pickup_boxes import PickupBoxesSequence, PickupAllBoxesSequence
-from .an_sm_states.sm_waiting import waiting, Waiting
+from .an_sm_states.sm_waiting import Waiting
 from .an_sm_states.sm_standby_park import StandbyParkSequence
 from .an_sm_states.sm_displacement import GoTo, create_displacement_request, create_stop_BR_request
 

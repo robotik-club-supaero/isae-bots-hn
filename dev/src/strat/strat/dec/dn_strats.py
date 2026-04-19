@@ -149,11 +149,12 @@ def match_strat(node):
     def set_next_action():
         next_action = action_order[node.action_step_index]
         if isinstance(next_action, list) or isinstance(next_action, tuple):
-            next_action, parameter = next_action[0], next_action[1:]
+            next_action = next_action[0]
+            parameter = next_action[1:]
         
         if next_action == Action.DEPOSIT:
             if node.time_left > node.config.MIN_DEPOSIT_DURATION:
-                node.curr_action = [Action.DEPOSIT, parameter]
+                node.curr_action = [Action.DEPOSIT, *parameter]
                 node.get_logger().info(f"Next action order : Deposit -> Area n°{parameter}")
                 return True
             else:
@@ -161,14 +162,14 @@ def match_strat(node):
         
         if next_action == Action.PICKUP:
             if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:
-                node.curr_action = [Action.PICKUP, parameter]
+                node.curr_action = [Action.PICKUP, *parameter]
                 node.get_logger().info(f"Next action order : Pick Up -> Box n°{parameter}")
                 return True
             else:
                 next_action = Action.PICKUPALL
 
         if next_action == Action.PICKUPALL:
-            node.curr_action = [Action.PICKUPALL, parameter]
+            node.curr_action = [Action.PICKUPALL, *parameter]
             node.get_logger().info(f"Next action order : Pick Up All -> Box n°{parameter}")
             return True
 

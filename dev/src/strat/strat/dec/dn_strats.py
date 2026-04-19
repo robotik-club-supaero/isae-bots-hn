@@ -149,8 +149,8 @@ def match_strat(node):
     def set_next_action():
         next_action = action_order[node.action_step_index]
         if isinstance(next_action, list) or isinstance(next_action, tuple):
-            next_action = next_action[0]
             parameter = next_action[1:]
+            next_action = next_action[0]
         
         if next_action == Action.DEPOSIT:
             if node.time_left > node.config.MIN_DEPOSIT_DURATION:

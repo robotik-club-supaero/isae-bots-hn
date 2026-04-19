@@ -78,8 +78,8 @@ class DisplacementManager:
         self.communicator = communicator
 
         config = RobotConfig()
-        self.robot_diag = config.robot_diagonal / 2
-        self.obstacle_radius = self.robot_diag
+        self.robot_half_diag = config.robot_diagonal / 2
+        self.obstacle_radius = self.robot_half_diag
 
         self.obstacles_bypassable = ObstacleBypassable(logger, config)
         self.obstacles_non_bypassable = ObstacleNonBypassable(logger, config)
@@ -220,7 +220,7 @@ class DisplacementManager:
             self._clearObstacleToBypass()
         else:
             x_abs, y_abs = make_absolute(self._robot_pos, obs)
-            self.map.set_dynamic_obstacle(BYPASS_OBSTACLE_NAME, ObstacleCircle(Point_pf(x_abs, y_abs), self.robot_diag + self.obstacle_radius + STOP_RANGE))
+            self.map.set_dynamic_obstacle(BYPASS_OBSTACLE_NAME, ObstacleCircle(Point_pf(x_abs, y_abs), self.robot_half_diag + self.obstacle_radius + STOP_RANGE))
 
     def _startManoeuver(self):
         _, dist_forward = self._findNearestObstacle(backward=False, check_sides=False)
@@ -290,7 +290,7 @@ class DisplacementManager:
                 self._setSpeed(speed)
 
         elif self._status == DisplacementStatus.WAITING:
-            obs, dist = self._findNearestObstacle(self._backward)
+            _, dist = self._findNearestObstacle(self._backward)
 
             if dist < STOP_RANGE and time.time() - self._wait_start > STAND_BEFORE_BYPASS:
                 if self._manoeuverBlocked:
@@ -319,8 +319,8 @@ class DisplacementManager:
                 self.logger.info("Obstacle detected too close: aborting manoeuver")
                 self._stopAndWait()
             else:
-                obs, dist = self._findNearestObstacle(self._backward, lateral_margin=MANOEUVER_ESCAPE_THRESHOLD)
-                if dist > MANOEUVER_ESCAPE_THRESHOLD or obs.x < 0 == self._manoeuverBackward:
+                _, dist = self._findNearestObstacle(self._backward, lateral_margin=MANOEUVER_ESCAPE_THRESHOLD)
+                if dist > MANOEUVER_ESCAPE_THRESHOLD:
                     self._updateObstacleToBypass()
                     self.logger.info("Manoeuver complete: resuming displacement")
                     self._stopAndWait()

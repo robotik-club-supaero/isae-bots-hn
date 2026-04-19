@@ -28,15 +28,15 @@ class _ObstacleFilter(ABC):
         
         self.robot_length = config.robot_length / 2 # Size along X
         self.robot_width = config.robot_width / 2 # Size along Y
-        self.robot_diag = config.robot_diagonal / 2
+        self.robot_half_diag = config.robot_half_diagonal / 2
         self.logger = logger
 
     def _isRelevant(self, obs, backward, *, any_dir, check_sides=True, lateral_margin=0):
         x_r, y_r = obs.x, obs.y
 
         return any_dir or (not backward and x_r > self.robot_length) or (backward and x_r < -self.robot_length) or \
-                (check_sides and x_r*x_r+y_r*y_r < (self.robot_diag+lateral_margin)**2) or \
-                (check_sides and isinstance(self, ObstacleBypassable) and x_r*x_r+y_r*y_r < (2*self.robot_diag+lateral_margin)**2)
+                (check_sides and x_r*x_r+y_r*y_r < (self.robot_half_diag+lateral_margin)**2) or \
+                (check_sides and isinstance(self, ObstacleBypassable) and x_r*x_r+y_r*y_r < (2*self.robot_half_diag+lateral_margin)**2)
 
     @abstractmethod
     def _getObstacles(self):
@@ -47,7 +47,7 @@ class _ObstacleFilter(ABC):
             return obs.dist
         else:
             self.logger.error("Obstacle distance not specified by " + type(self).__name__)
-            return max(0, math.sqrt(obs.x*obs.x + obs.y*obs.y) - self.robot_diag)
+            return max(0, math.sqrt(obs.x*obs.x + obs.y*obs.y) - self.robot_half_diag)
 
     def findObstacles(self, backward, *, any_dir=False, check_sides=True, lateral_margin=0):
         for obs in self._getObstacles():
@@ -163,7 +163,7 @@ class ObstacleBypassable(_ObstacleFilter):
 
     def __init__(self, logger, config):
         super().__init__(logger, config)
-        self.obstacle_radius = self.robot_diag
+        self.obstacle_radius = self.robot_half_diag
 
         self.obstacles_lidar = []
         # TODO: obstacles camera
@@ -182,7 +182,7 @@ class ObstacleBypassable(_ObstacleFilter):
         obstacle_margin = self.obstacle_radius
 
         # Première estimation, souvent pessimiste (correspond au pire cas, atteint si les robots sont coin-à-coin)
-        estimation_1 = math.sqrt(x_r*x_r + y_r*y_r) - obstacle_margin - self.robot_diag
+        estimation_1 = math.sqrt(x_r*x_r + y_r*y_r) - obstacle_margin - self.robot_half_diag
 
         # On essaie d'avoir une meilleure estimation, en déterminant de quel côté est le robot adverse
         # Pour cela, on détermine le côté du robot qui intersecte la droite qui relie le centre des deux robots
@@ -224,7 +224,8 @@ class ObstacleBypassable(_ObstacleFilter):
         return obs
 
     def _getObstacles(self):
-        return (self._makeObstacle(obs) for obs in self.obstacles_lidar)
+        return (self._makeObstacle(obs) for obs in self.obstacles_lidar
+                if math.sqrt(obs.x*obs.x + obs.y*obs.y) >= self.robot_half_diag)
 
 def cross_product_sign(x1, y1, x2, y2):
     return x1*y2-y1*x2

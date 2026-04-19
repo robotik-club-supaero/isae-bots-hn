@@ -164,7 +164,7 @@ class StratConfig(NaiveStratConfig):
         # None
 
         # elements
-        elements_margin = self.robot_diagonal / 4
+        elements_margin = self.robot_diagonal / 3
         obstacles["scene"] = ObstacleRect(0, 425+elements_margin, 600-elements_margin, 2400+elements_margin)
         #obstacles["middle_zone"] = ObstacleRect(1090, 1300, 675 - elements_margin, 2325 + elements_margin)
 

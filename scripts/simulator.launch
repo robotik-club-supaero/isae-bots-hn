@@ -12,6 +12,6 @@ Strat + simulation nodes
 	<node name="BRN" pkg="br_simu" exec="simulation_br" output="both"/>
 
 	<!-- simulates a fake moving obstacle -->
-	<!-- node name="OBS" pkg="sim" exec="obstacle_node" output="both"/ -->
+	<node name="OBS" pkg="sim" exec="obstacle_node" output="both"/>
 	
 </launch>

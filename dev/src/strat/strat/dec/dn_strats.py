@@ -95,7 +95,25 @@ def match_strat(node):
     """
     
     action_order = [Action.PICKUP, Action.DEPOSIT, Action.PICKUP, Action.CURSOR, Action.DEPOSIT, Action.PICKUP, Action.DEPOSIT, Action.PARKSTANDBY]
+    pickup_order = [0, 1, 3, 2]
+    deposit_order = [0, 1, 3, 2]
+
+    def get_next_pickup_zone():
+        global pickup_order
+        if len(pickup_order) < node.pickup_index:
+            return pickup_order[node.pickup_index]
+        else:
+            node.get_logger().info(f"DN STRAT Warning : index n°{node.pickup_index} our of pickup_order length.")
+            return pickup_order[0]
     
+    def get_next_deposit_zone():
+        global deposit_order
+        if len(deposit_order) < node.deposit_index:
+            return deposit_order[node.deposit_index]
+        else:
+            node.get_logger().info(f"DN STRAT Warning : index n°{node.deposit_index} our of deposit_order length.")
+            return deposit_order[0]
+
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 
         if coeffs is None:
@@ -141,15 +159,29 @@ def match_strat(node):
 
     def set_next_action():
         next_action = action_order[node.action_step_index]
-
-        if next_action == Action.PARK:
-            node.curr_action = [Action.PARK]
-            node.get_logger().info("Next action order : Park")
-            return True
         
-        if next_action == Action.WAIT:
-            node.curr_action = [Action.WAIT]
-            node.get_logger().info(f"Next action order : Wait")        
+        if next_action == Action.DEPOSIT:
+            if node.time_left > node.config.MIN_DEPOSIT_DURATION:
+                deposit_id = deposit_order[node.deposit_index]
+                node.curr_action = [Action.DEPOSIT, deposit_id]
+                node.get_logger().info(f"Next action order : Deposit -> Area n°{deposit_id}")
+                return True
+            else:
+                next_action = Action.PARK
+        
+        if next_action == Action.PICKUP:
+            if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:
+                box_id = pickup_order[node.pickup_index]
+                node.curr_action = [Action.PICKUP, box_id]
+                node.get_logger().info(f"Next action order : Pick Up -> Box n°{box_id}")
+                return True
+            else:
+                next_action = Action.PICKUPALL
+
+        if next_action == Action.PICKUPALL:
+            box_id = pickup_order[node.pickup_index]
+            node.curr_action = [Action.PICKUPALL, box_id]
+            node.get_logger().info(f"Next action order : Pick Up All -> Box n°{box_id}")
             return True
 
         if next_action == Action.CURSOR:
@@ -157,34 +189,29 @@ def match_strat(node):
             node.get_logger().info(f"Next action order : Push Cursor")        
             return True
         
-        if next_action == Action.PICKUP:
-            can_pickup, box_id = pickup_closest()
-            if can_pickup:
-                node.curr_action = [Action.PICKUP, box_id]
-                node.get_logger().info(f"Next action order : Pick Up -> Box n°{box_id}")
-                return True
-            else:
-                node.get_logger().info("No more box to pick up")      
-        
-        if next_action == Action.DEPOSIT:
-            can_deposit, deposit_id = deposit_closest()
-            if can_deposit:
-                node.curr_action = [Action.DEPOSIT, deposit_id]
-                node.get_logger().info(f"Next action order : Deposit -> Area n°{deposit_id}")
-                return True
-            else:
-                node.get_logger().info("No more slot to deposit.")
+        if next_action == Action.WAIT:
+            node.curr_action = [Action.WAIT]
+            node.get_logger().info(f"Next action order : Wait")        
+            return True
         
         if next_action == Action.PARKSTANDBY:
             node.curr_action = [Action.PARKSTANDBY]
             node.get_logger().info(f"Next action order : Park Standby")        
             return True
+        
+        if next_action == Action.PARK:
+            node.curr_action = [Action.PARK]
+            node.get_logger().info("Next action order : Park")
+            return True
 
+        node.get_logger().info("Next action order : ERROR")
         return False
 
     # Init
     if last_action == Action.INIT:
         node.action_step_index = 0 # Initialise to first action
+        node.pickup_index = 0
+        node.deposit_index = 0
         success = set_next_action()
         if success:
             node.get_logger().info(f"Next action order : Beginning of the startegy -> {node.curr_action}")
@@ -201,7 +228,7 @@ def match_strat(node):
 
     # Retry
     if not node.action_successful and not node.go_park:
-        if node.retry_count < 2: # retry une fois
+        if node.retry_count < 2: # retry 1 time
             node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")
             node.retry_count += 1 # reset in dec_node when action success
             success = set_next_action()
@@ -211,6 +238,12 @@ def match_strat(node):
             else:
                 node.get_logger().info(f"Retry Failed : Action not recognised. ({action_order[node.action_step_index]})")
 
+    # Register empty zone
+    if last_action in (Action.PICKUP, Action.PICKUPALL):
+        node.pickup_index += 1
+    # Register empty zone
+    if last_action in (Action.DEPOSIT, Action.DEPOSITALL):
+        node.deposit_index += 1
     
     if not node.go_park:
 

@@ -66,7 +66,8 @@ class CalcPositionBox(yasmin.State): # TODO
         # --- If need to go behind, go reverse as defined if angle final is close to initial
         xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
         opposite = ((xp - xr) * math.cos(tr) + (yp -yr) * math.sin(tr)) < 0
-        delta_t = abs((tp % 3.142) - (tr % 3.142))
+        diff = (tp - tr) % math.pi
+        delta_t = min(diff, math.pi - diff)
         if opposite:
             if not reverse:
                 if (delta_t < 1.6): reverse = not reverse 

@@ -57,6 +57,7 @@ class DecisionsNode(Node):
         self.color_sub = self.create_subscription(Int16, "/game/color", self.setup_color, default_profile)
         self.strat_sub = self.create_subscription(Int16, "/game/strat", self.setup_strat, default_profile)
         self.strat_sub = self.create_subscription(Int16, "/game/init_pos", self.setup_init_pos, default_profile)
+        self.timer_sub = self.create_subscription(Int16, "/game/timer", self.timer_cb, default_profile)
         self.position_sub = self.create_subscription(Position, "/br/currentPosition", self.recv_position, br_position_topic_profile)
         
         self.next_action_pub = self.create_publisher(Int16MultiArray, "/strat/action/order", default_profile)
@@ -82,11 +83,14 @@ class DecisionsNode(Node):
 
         # Timings
         self.start_time = 0
+        self.time_left = self.config.match_time
         self.match_time = self.config.match_time
         self.delay_park = self.config.delay_park
 
         # States
         self.action_step_index = 0 # counter for the strat to know at what action it is
+        self.pickup_index = 0 # counter for the strat to know at what zone to pickup
+        self.deposit_index = 0 # counter for the strat to know at what zone to deposit
         self.cursor_pushed = False
         self.go_park = False
         self.parked = False
@@ -193,13 +197,17 @@ class DecisionsNode(Node):
             self.init_pos = msg.data
             self.get_logger().info(f"Received init pos: {self.init_pos}")
 
+    def timer_cb(self, msg):
+        """
+        Feedback on color side /game/timer.
+        """
+        self.time_left = max(0, min(self.match_time, self.match_time - msg.data))
 
 
     def recv_position(self, msg):
         """
         Feedback on /disp/current_position topic.
         """
-
         self.position = [msg.x, msg.y, msg.theta]
 
     def send_action_next(self, msg):

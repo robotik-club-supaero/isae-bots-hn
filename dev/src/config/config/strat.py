@@ -39,7 +39,10 @@ class NaiveStratConfig(RobotConfig):
     DELAY_PARK = 10 # s
 
     MOVE_CURSOR = True
-    CURSOR_DISTANCE = 450 # TODO 100 = 10 cm for now TO BE DETERMINED
+    CURSOR_DISTANCE = 470 # TODO 100 = 10 cm for now TO BE DETERMINED
+
+    MIN_DEPOSIT_DURATION = 15 # s
+    MIN_PICKUP_DEPOSIT_DURATION = 30 # s
 
     STRAT_NAMES = ['match_strat', 'homologation', 'test_strat']
     DEFAULT_STRAT_INDEX = 0
@@ -83,22 +86,24 @@ class StratConfig(NaiveStratConfig):
 
     DEFAULT_INIT_ZONE = 0
 
-    # Explication coord :
-    # Sur le plan des règles (origine en bas à gauche) : (x, y, theta)
-    # Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
+    # ! Explication coord :
+    # ! Sur le plan des règles (origine en bas à gauche) : (x, y, theta)
+    # ! Dans notre repère (origine en haut à gauche orienté vers le bas) : (x <= 2000 - y, x <= y, theta <= theta)
 
     WAIT_PARK_ZONE = DynamicPos(2000 - 1300, 1000, -1.57)
     PARK_ZONE = DynamicPos(2000 - 1775, 375, 0)
     PARK_ZONE_BLUE = DynamicPos(2000 - 1775, 375, 3.14)
 
-    CURSOR_POS = DynamicPos(2000 - 250, 250, 1.57) # To Set
+    CURSOR_POS = DynamicPos(2000 - 250, 250, -1.57) # To Set
     
     INIT_ZONES = [PARK_ZONE] # Il peut y avoir plusieurs zone de départ -> on peu choisir sur le master node au démarrage
 
+    # (DynamicPos(2000 - 1200, 425, 0), 0) -> (Position to access a zone, zone id) -> there may be different pos for 1 zone id
     PICKUP_POS = [
         (DynamicPos(2000 - 1200, 425, 0), 0),
         (DynamicPos(2000 - 400, 425, 0), 1),
         (DynamicPos(2000 - 425, 1100, 1.57), 2),
+        (DynamicPos(2000 - 600, 1150, 1.57), 3),
     ]
 
     DEPOSIT_POS = [

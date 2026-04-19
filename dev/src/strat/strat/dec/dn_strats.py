@@ -22,6 +22,7 @@ import time
 import numpy as np
 
 from ..strat_const import Action, ActionScore, ActionResult
+from config import DynamicPos
 
 #################################################################
 #                                                               #
@@ -67,7 +68,7 @@ def homologation(node):
         node.action_step_index = 0 # Initialise to first action
 
     if node.action_step_index == 0 :
-        node.curr_action = [Action.GOTO, (node.config.DynamicPos(2000 - 400, 425, 0).resolve(node.color))]
+        node.curr_action = [Action.GOTO, DynamicPos(2000 - 400, 425, 0).resolve(node.color)]
         node.action_step_index += 1
     elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]

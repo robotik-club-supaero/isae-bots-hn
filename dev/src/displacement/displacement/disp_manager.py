@@ -154,12 +154,14 @@ class DisplacementManager:
 
                 self._currentPath = path
 
-                force_reverse = self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
-                                    (self._robot_pos.x-self._destination_pos.x)**2 + (self._robot_pos.y-self._destination_pos.y)**2 < FORCE_REVERSE_THRESHOLD
+                # The robot will go backward -> reverse logic done by state machine on displacement request
+                #
+                #force_reverse = self._robot_pos.x*self._destination_pos.x + self._robot_pos.y*self._destination_pos.y < 0 and \
+                #                    (self._robot_pos.x-self._destination_pos.x)**2 + (self._robot_pos.y-self._destination_pos.y)**2 < FORCE_REVERSE_THRESHOLD
 
                 self._blocked = False
                 self._manoeuverBlocked = False
-                self.communicator.sendPathCommand(path, self._backward or force_reverse, self._destination_theta , allow_curve=not self._straight_only)
+                self.communicator.sendPathCommand(path, self._backward, self._destination_theta , allow_curve=not self._straight_only)
                 self._status = DisplacementStatus.MOVING
 
             except PathNotFoundError:

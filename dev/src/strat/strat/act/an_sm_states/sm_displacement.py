@@ -271,23 +271,29 @@ class CalcPositionGoTo(yasmin.State):
             return 'fail'
 
         reverse = True if userdata["color"] == 1 else False
-        if reverse:
-            if abs(abs(tp % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
-                tp = (tp + 3.142) % 6.284
-        
-        # --- If need to go behind, go reverse as defined if angle final is close to initial
-        xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
-        opposite = ((xp - xr) * math.cos(tr) + (yp - yr) * math.sin(tr)) < 0
-        delta_t = abs((tp % 3.142) - (tr % 3.142))
-        if opposite:
-            if not reverse:
-                if (delta_t < 1.6): reverse = not reverse 
-        else:
+
+        if tp is not None:
+            
             if reverse:
-                if (delta_t < 1.6): reverse = not reverse 
-        # ----
+                if abs(abs(tp % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
+                    tp = (tp + 3.142) % 6.284
+            
+            # --- If need to go behind, go reverse as defined if angle final is close to initial
+            xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+            opposite = ((xp - xr) * math.cos(tr) + (yp - yr) * math.sin(tr)) < 0
+            delta_t = abs((tp % 3.142) - (tr % 3.142))
+            if opposite:
+                if not reverse:
+                    if (delta_t < 1.6): reverse = not reverse 
+            else:
+                if reverse:
+                    if (delta_t < 1.6): reverse = not reverse 
+            # ----
+            userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=reverse)
         
-        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=reverse)
+        else: 
+            userdata["next_move"] = create_displacement_request(xp, yp, backward=reverse)
+
         return 'success'
 
 class GoTo(Sequence):

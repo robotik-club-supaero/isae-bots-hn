@@ -26,7 +26,7 @@ from std_msgs.msg import String
 
 from config import StratConfig
 
-from ..an_utils import Sequence, Concurrence, DrawbridgePickup, DrawbridgeStore
+from ..an_utils import Sequence, Concurrence, DrawbridgePickup, DrawbridgePickupAll, DrawbridgeStore
 
 from strat.strat_const import ActionResult
 from strat.strat_utils import create_end_of_action_msg
@@ -52,7 +52,7 @@ class CalcPositionBox(yasmin.State): # TODO
           
         BOX_POS = StratConfig(userdata["color"]).pickup_boxes_pos
 
-        box_pos_id = self._node.get_pickup_id("boxes", userdata) % len(BOX_POS)
+        box_pos_id = self._node.get_action_detail("boxes", userdata) % len(BOX_POS)
         
         self._msg.data = f"box_{box_pos_id}"
         self._node.remove_obs.publish(self._msg) # FIXME if action fails, obstacle is not restored
@@ -88,7 +88,7 @@ class PickupBoxEnd(yasmin.State): # TODO
         if self.is_canceled():
             return 'preempted'
         
-        #TODO check that the action was actually successful
+        #TODO ? check that the action was actually successful -> Already check by ACT
         userdata['action_result'] = ActionResult.SUCCESS
         return 'success'
     
@@ -105,4 +105,11 @@ class PickupBoxesSequence(Sequence):
             ('PICKUP_BOX_SEQ', DrawbridgePickup(node)),
             ('PICKUP_BOX_END', PickupBoxEnd(node)),
             ])
-    
+
+class PickupAllBoxesSequence(Sequence):
+    def __init__(self, node):
+        super().__init__(states=[
+            ('PICKUP_MOVE_TO_ZONE', MoveTo(node, CalcPositionBox(node))),
+            ('PICKUP_BOX_SEQ', DrawbridgePickupAll(node)),
+            ('PICKUP_BOX_END', PickupBoxEnd(node)),
+            ])

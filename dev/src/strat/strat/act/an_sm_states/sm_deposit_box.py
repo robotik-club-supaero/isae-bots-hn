@@ -26,7 +26,7 @@ from std_msgs.msg import Empty
 from config import StratConfig
 
 from ..an_const import DspCallback
-from ..an_utils import Sequence, Concurrence, DrawbridgeDeposit, DrawbridgeStore
+from ..an_utils import Sequence, Concurrence, DrawbridgeDeposit, DrawbridgeDepositAll, DrawbridgeStore
 
 from strat.strat_utils import create_end_of_action_msg
 from .sm_displacement import MoveTo, MoveBackwardsStraight, Approach, approach, create_displacement_request, DISP_TIMEOUT
@@ -49,7 +49,7 @@ class CalcPositionDepositBox(yasmin.State):
     def execute(self, userdata):
         if self.is_canceled(): return 'preempted'
 
-        zone_id = self._node.get_pickup_id("deposit_zones", userdata)
+        zone_id = self._node.get_action_detail("deposit_zones", userdata)
         
         xp, yp, tp = StratConfig(userdata["color"]).deposit_zones_pos[zone_id]
 
@@ -93,5 +93,13 @@ class DepositBoxesSequence(Sequence):
         super().__init__(states=[
             ('DEPOSIT_MOVE_TO_ZONE', MoveTo(node, CalcPositionDepositBox(node))),
             ('DEPOSIT_BOX_SEQUENCE', DrawbridgeDeposit(node)),
+            ('DEPOSIT_BOX_END', DepositBoxEnd(node)),
+            ])
+
+class DepositAllBoxesSequence(Sequence):
+    def __init__(self, node):
+        super().__init__(states=[
+            ('DEPOSIT_MOVE_TO_ZONE', MoveTo(node, CalcPositionDepositBox(node))),
+            ('DEPOSIT_BOX_SEQUENCE', DrawbridgeDepositAll(node)),
             ('DEPOSIT_BOX_END', DepositBoxEnd(node)),
             ])

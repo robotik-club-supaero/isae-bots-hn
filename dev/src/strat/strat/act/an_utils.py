@@ -77,6 +77,16 @@ class DrawbridgePickup(HardwareOrder):
         self._debug_print('c', f"Request to set DRAWBRIDGE to PICKUP..")
         return super().execute(userdata)
 
+class DrawbridgePickupAll(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.PICKUPALL, DrawbridgeCallback.PENDING, DrawbridgeCallback.PICKUP)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set DRAWBRIDGE to PICKUPALL..")
+        return super().execute(userdata)
+
 class DrawbridgeDeposit(HardwareOrder):
     
     def __init__(self, node):
@@ -85,6 +95,16 @@ class DrawbridgeDeposit(HardwareOrder):
         
     def execute(self, userdata):        
         self._debug_print('c', f"Request to set DRAWBRIDGE in DEPOSIT..")
+        return super().execute(userdata)
+
+class DrawbridgeDepositAll(HardwareOrder):
+    
+    def __init__(self, node):
+        super().__init__(node.get_logger(), node.drawbridge_pub, f"cb_drawbridge", DrawbridgeOrder.DEPOSITALL, DrawbridgeCallback.PENDING, DrawbridgeCallback.DEPOSIT)
+        self._debug_print = node.debug_print
+        
+    def execute(self, userdata):        
+        self._debug_print('c', f"Request to set DRAWBRIDGE in DEPOSITALL..")
         return super().execute(userdata)
 
 class DrawbridgeStore(HardwareOrder):

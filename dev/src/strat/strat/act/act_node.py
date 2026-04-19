@@ -264,7 +264,7 @@ class ActionNode(Node):
         self.smData["end"] = True
         self.sm.cancel_state()
 
-    def get_pickup_id(self, what, userdata):
+    def get_action_detail(self, what, userdata):
         try:
             return userdata["next_action"][1] # userdata["next_action"] = [Enum Action, argument optionnelle] ici l'index du truc a prendre
         except IndexError:

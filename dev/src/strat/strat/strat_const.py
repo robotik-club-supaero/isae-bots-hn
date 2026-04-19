@@ -31,9 +31,12 @@ class Action(IntEnum):
     WAIT         = 4
     END          = 5
     PARKSTANDBY  = 6
+    PICKUPALL    = 7
+    DEPOSITALL   = 8
+    GOTO         = 9
 
 
-ACTIONS_OUTCOMES = { # int -> str
+ACTIONS_OUTCOMES = { # int -> str (transi)
     Action.PICKUP: 'pickup',
     Action.DEPOSIT: 'deposit',
     Action.CURSOR: 'cursor',
@@ -41,6 +44,9 @@ ACTIONS_OUTCOMES = { # int -> str
     Action.END: 'end',
     Action.WAIT: 'wait',
     Action.PARKSTANDBY: 'parkstandby',
+    Action.PICKUPALL: 'pickupall',
+    Action.DEPOSITALL: 'depositall',
+    Action.GOTO: 'goto',
 }
 
 ACTION_TRANSITIONS = { # transi -> state
@@ -51,6 +57,9 @@ ACTION_TRANSITIONS = { # transi -> state
     'end':'END',
     'wait':'WAIT',
     'parkstandby':'PARKSTANDBY',
+    'pickupall': 'PICKUPALL',
+    'depositall': 'DEPOSITALL',
+    'goto': 'GOTO'
 }
 
 class ActionScore(IntEnum): #TODO update

@@ -111,10 +111,10 @@ class ActuatorNode(Node):
         sleep(DRAWBRIDGE_TIME)
         rsp = Int16()
 
-        if msg.data == DrawbridgeOrder.PICKUP:
+        if msg.data in (DrawbridgeOrder.PICKUP, DrawbridgeOrder.PICKUPALL):
             rsp.data = DrawbridgeCallback.PICKUP
             self.log_info(f"Réponse simulée : Drawbridge PICKUP")
-        elif msg.data == DrawbridgeOrder.DEPOSIT:
+        elif msg.data in (DrawbridgeOrder.DEPOSIT, DrawbridgeOrder.DEPOSITALL):
             rsp.data = DrawbridgeCallback.DEPOSIT
             self.log_info(f"Réponse simulée : Drawbridge DEPOSIT")
         elif msg.data == DrawbridgeOrder.STORE:

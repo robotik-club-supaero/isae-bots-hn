@@ -60,13 +60,14 @@ def homologation(node):
         -
         -
     """
-    last_action = node.curr_action[0]
+    last_action = node.curr_action[0] if len(node.curr_action) > 0 else Action.INIT
 
     if last_action == Action.INIT:
+        node.get_logger().info("Start of strategy : HOMOLOGATION")
         node.action_step_index = 0 # Initialise to first action
 
     if node.action_step_index == 0 :
-        node.curr_action = [Action.PICKUP, 1]
+        node.curr_action = [Action.GOTO, (node.config.DynamicPos(2000 - 400, 425, 0).resolve(node.color))]
         node.action_step_index += 1
     elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]

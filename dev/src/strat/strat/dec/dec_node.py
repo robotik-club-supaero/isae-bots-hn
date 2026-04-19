@@ -35,7 +35,7 @@ from message.msg import EndOfActionMsg
 from br_messages.msg import Position
 
 from ..strat_const import Action, ActionScore, ActionResult
-from config import StratConfig, COLOR
+from config import StratConfig, COLOR, DynamicPos
 from config.qos import default_profile, latch_profile, br_position_topic_profile
 
 #################################################################

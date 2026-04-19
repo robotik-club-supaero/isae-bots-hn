@@ -128,7 +128,6 @@ class MoveTo(Sequence):
         super().__init__(states=[('COMPUTE_DEST', destination), 
                                  ('DEPL', Displacement(node))])
 
-
 class PosRealign(Displacement): # Take the closest coordinate to the wall and set it to the minimal possible
     """ NOT TESTED !! """
     def __init__(self, node):
@@ -252,3 +251,47 @@ def create_speed_control_request(linear, angular, reverse=False):
 
 def create_stop_BR_request():
     return DisplacementRequest() # Empty msg = STOP
+
+
+
+class CalcPositionGoTo(yasmin.State):
+
+    def __init__(self, node):
+        super().__init__(outcomes=['fail', 'success', 'preempted'])
+        self._node = node
+
+    def execute(self, userdata):
+        if self.is_canceled(): return 'preempted'
+
+        try:
+            # userdata['next_action'] = [Action.GOTO, (xp, yp, tp)]   |   tp = None -> No final orientation
+            (xp, yp, tp) = self._node.get_action_detail("goto", userdata) 
+        except:
+            self._node.get_logger.info("CalcPositionGoTo failed to extract coordinate.")
+            return 'fail'
+
+        reverse = True if userdata["color"] == 1 else False
+        if reverse:
+            if abs(abs(tp % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
+                tp = (tp + 3.142) % 6.284
+        
+        # --- If need to go behind, go reverse as defined if angle final is close to initial
+        xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
+        opposite = ((xp - xr) * math.cos(tr) + (yp - yr) * math.sin(tr)) < 0
+        delta_t = abs((tp % 3.142) - (tr % 3.142))
+        if opposite:
+            if not reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        else:
+            if reverse:
+                if (delta_t < 1.6): reverse = not reverse 
+        # ----
+        
+        userdata["next_move"] = create_displacement_request(xp, yp, theta=tp, backward=reverse)
+        return 'success'
+
+class GoTo(Sequence):
+    def __init__(self, node):
+        super().__init__(states=[
+            ('MOVEMENT', MoveTo(node, CalcPositionGoTo(node))),
+            ])

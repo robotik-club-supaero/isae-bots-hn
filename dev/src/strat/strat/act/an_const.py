@@ -32,12 +32,13 @@ from config import COLOR
 
 
 
-########## CONSTANTES 2025 ##########
+########## CONSTANTES ##########
 MAX_X = 2000 # Arena
 MAX_Y = 3000 # Arena
 WAIT_TIME = 10 # Timeout for action
 from config import RobotConfig
 
+CURSOR_SERVO_ANGLE = 180
 
 #################################################################
 #                                                               #
@@ -76,6 +77,8 @@ class DrawbridgeCallback(Callback):
     STORE = 0
     PICKUP = 1
     DEPOSIT = 2
+    ALLPICKUP = 3
+    ALLDEPOSIT = 4
 
 class CursorOrder(IntEnum):
     DOWN = 0

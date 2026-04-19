@@ -39,7 +39,7 @@ class NaiveStratConfig(RobotConfig):
     DELAY_PARK = 10 # s
 
     TRY_RETRY = False
-    
+
     MOVE_CURSOR = True
     CURSOR_DISTANCE = 550 # TODO 100 = 10 cm for now TO BE DETERMINED
 
@@ -105,7 +105,7 @@ class StratConfig(NaiveStratConfig):
         (DynamicPos(2000 - 1200, 425, 0), 0),
         (DynamicPos(2000 - 400, 425, 0), 1),
         (DynamicPos(2000 - 425, 1100, 1.57), 2),
-        (DynamicPos(2000 - 600, 1150, -1.57), 3),
+        (DynamicPos(2000 - 625, 1150, -1.57), 3),
     ]
 
     DEPOSIT_POS = [

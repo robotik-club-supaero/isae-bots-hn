@@ -22,7 +22,7 @@ import time
 import numpy as np
 
 from ..strat_const import Action, ActionScore, ActionResult
-from config import DynamicPos, TRY_RETRY
+from config import DynamicPos, NaiveStratConfig
 
 #################################################################
 #                                                               #
@@ -237,7 +237,7 @@ def match_strat(node):
         return
 
     # Retry
-    if TRY_RETRY: # deactivating by default
+    if NaiveStratConfig.TRY_RETRY: # deactivating by default
         if not node.action_successful and not node.go_park:
             if node.retry_count < 2: # retry 1 time
                 node.get_logger().info(f"DN asked Strategy for next action while last action not succeed : {node.curr_action[0]} -> RETRY.")

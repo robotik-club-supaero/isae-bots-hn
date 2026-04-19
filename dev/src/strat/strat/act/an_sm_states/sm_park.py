@@ -44,8 +44,9 @@ class CalcParkPos(yasmin.State):
     """
     SM PARK : Observer state
     """
-    def __init__(self):
-        super().__init__(outcomes=['preempted','success','fail'])			                   
+    def __init__(self, logger):
+        super().__init__(outcomes=['preempted','success','fail'])
+        self._logger = logger			                   
 
     def execute(self, userdata):
         if self.is_canceled(): return 'preempted'
@@ -73,6 +74,7 @@ class CalcParkPos(yasmin.State):
                 if (delta_t < 1.6): reverse = not reverse 
         # ----
 
+        self._logger.info(f"[CalcParkPos] (x, y)=({xr}, {yr}) tr={tr:.3f}, (x_dest, y_dest)=({x_dest}, {y_dest}) theta={theta:.3f}, opposite={opposite}, delta_t={delta_t:.3f}, reverse={reverse}")
         userdata["next_move"] =   create_displacement_request(x_dest, y_dest, theta=theta, backward=reverse) #approach(userdata["robot_pos"], x_dest, y_dest, end_theta, backward=reverse)
         return 'success'
     
@@ -103,7 +105,7 @@ class Park(Sequence):
         super().__init__(
             outcomes=['preempted', 'success', 'fail'],
             states=[
-                ('CALC_PARK_POS', MoveTo(node, CalcParkPos())),
+                ('CALC_PARK_POS', MoveTo(node, CalcParkPos(node.get_logger()))),
                 ('PARK_END', ParkEnd(node))
             ]
         )

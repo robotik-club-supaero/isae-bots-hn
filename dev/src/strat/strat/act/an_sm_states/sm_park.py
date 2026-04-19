@@ -55,12 +55,17 @@ class CalcParkPos(yasmin.State):
         # Modif pour la strat du dernier match 
 
         reverse = True if userdata["color"] == 1 else False
+
+        if reverse:
+            if abs(abs(theta % 3.142) - 1.571) < 0.1:  # If reverse -> only horizontal angle reversed
+                theta = (theta + 3.142) % 6.284
+        
         end_theta = 0 if userdata["color"] == 0 else 3.142
 
         # --- If need to go behind, go reverse as defined if angle final is close to initial
         xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
-        opposite = ((x_dest - xr) * math.cos(theta) + (y_dest -yr) * math.sin(theta)) < 0
-        delta_t = abs((theta % 3.142) - (tr % 3.142))
+        opposite = ((x_dest - xr) * math.cos(end_theta) + (y_dest - yr) * math.sin(end_theta)) < 0
+        delta_t = abs((end_theta % 3.142) - (tr % 3.142))
         if opposite:
             if not reverse:
                 if (delta_t < 1.6): reverse = not reverse 

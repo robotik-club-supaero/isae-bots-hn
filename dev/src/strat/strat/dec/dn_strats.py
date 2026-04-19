@@ -94,7 +94,7 @@ def match_strat(node):
 
     """
     
-    action_order = [(Action.PICKUP, 0), 
+    match = [(Action.PICKUP, 0), 
                     (Action.DEPOSIT, 0), 
                     (Action.PICKUP, 1), 
                     Action.CURSOR, 
@@ -108,7 +108,7 @@ def match_strat(node):
             (Action.DEPOSIT, 2), 
             Action.PARKSTANDBY]
     
-    strat_used = test
+    action_order = test
 
     def find_closest(node, positions, remaining, cond=None, coeffs=None, pos_type='boxes'):
 

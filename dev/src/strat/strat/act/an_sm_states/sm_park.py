@@ -65,7 +65,8 @@ class CalcParkPos(yasmin.State):
         # --- If need to go behind, go reverse as defined if angle final is close to initial
         xr, yr, tr = userdata["robot_pos"].x, userdata["robot_pos"].y, userdata["robot_pos"].theta
         opposite = ((x_dest - xr) * math.cos(theta) + (y_dest - yr) * math.sin(theta)) < 0
-        delta_t = abs(((theta % 6.284) % 3.142) - ((tr % 6.284) % 3.142))
+        diff = (theta - tr) % math.pi
+        delta_t = min(diff, math.pi - diff)
         if opposite:
             if not reverse:
                 if (delta_t < 1.6): reverse = not reverse 

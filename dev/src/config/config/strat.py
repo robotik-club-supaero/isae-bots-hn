@@ -12,10 +12,7 @@ class StaticPos:
     theta: float | None = None
 
     def resolve(self, color=None):
-        if self.theta is None:
-            return self.x, self.y
-        else:
-            return self.x, self.y, self.theta
+        return self.x, self.y, self.theta
 
 @dataclass(frozen=True)
 class DynamicPos:

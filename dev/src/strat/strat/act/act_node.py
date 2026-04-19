@@ -24,6 +24,7 @@ DEBUG_PRINTS = True
 import os
 import sys
 import threading
+from numpy import deg2rad
 
 import rclpy
 from rclpy.node import Node
@@ -269,7 +270,8 @@ class ActionNode(Node):
         try:
             if (what == "goto"):
                 if len(userdata["next_action"][1:]) == 3:
-                    return userdata["next_action"][1:4] # [Action, x, y, theta] -> x, y, theta
+                    x, y, t = userdata["next_action"][1:4] # [Action, x, y, theta] -> x, y, theta
+                    return x, y, deg2rad(t)
                 else: 
                     return userdata["next_action"][1:3], None # [Action, x, y] -> x, y, None
             else:

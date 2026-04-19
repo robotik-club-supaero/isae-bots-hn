@@ -70,9 +70,9 @@ def homologation(node):
     if node.action_step_index == 0 :
         x, y, t = DynamicPos(2000 - 400, 400, 0).resolve(node.color)
         if t is None:
-            node.curr_action = [Action.GOTO, x, y]
+            node.curr_action = [Action.GOTO, int(x), int(y)]
         else:
-            node.curr_action = [Action.GOTO, x, y, t]
+            node.curr_action = [Action.GOTO, int(x), int(y), int(np.rad2deg(t))]
         node.action_step_index += 1
     elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]

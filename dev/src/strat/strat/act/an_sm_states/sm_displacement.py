@@ -171,10 +171,11 @@ class MoveStraight(Displacement):
         offset_x = self.distance * math.cos(theta)
         offset_y = self.distance * math.sin(theta)
 
-        backward = False
         reverse = True if userdata["color"] == 1 else False # If blue -> all backward
         if reverse:
             backward = not self.backward
+        else:
+            backward = self.backward
 
         if backward:
             offset_x = -offset_x

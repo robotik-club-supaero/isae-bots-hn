@@ -1,5 +1,5 @@
 from .robot import RobotConfig
-from .strat import StratConfig, NaiveStratConfig
+from .strat import StratConfig, NaiveStratConfig, DynamicPos
 
 COLOR = ["YELLOW", "BLUE"]
 

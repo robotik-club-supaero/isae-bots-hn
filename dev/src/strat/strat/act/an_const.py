@@ -70,6 +70,8 @@ class DrawbridgeOrder(IntEnum):
     STORE = 0
     PICKUP = 1
     DEPOSIT = 2
+    PICKUPALL = 3
+    DEPOSITALL = 4
 
 class DrawbridgeCallback(Callback):
     UNKNOWN = -2
@@ -77,8 +79,8 @@ class DrawbridgeCallback(Callback):
     STORE = 0
     PICKUP = 1
     DEPOSIT = 2
-    ALLPICKUP = 3
-    ALLDEPOSIT = 4
+    ALLPICKUP = 3  # Not used
+    ALLDEPOSIT = 4 # Not used
 
 class CursorOrder(IntEnum):
     DOWN = 0

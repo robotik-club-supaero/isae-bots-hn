@@ -99,7 +99,7 @@ class StandbyParkSequence(Sequence):
             outcomes=['preempted', 'success', 'fail'],
             states=[
                 ('CALC_STANDBY_PARK_POS', MoveTo(node, CalcTargetPos())),
-                ('STANDBY_PARK', Waiting(wait_time=100)),
+                ('STANDBY_PARK', Waiting(node, wait_time=100)),
                 ('STANDBY_PARK_END', StandbyParkEnd(node))
             ]
         )

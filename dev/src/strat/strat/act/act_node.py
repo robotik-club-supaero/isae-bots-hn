@@ -264,11 +264,14 @@ class ActionNode(Node):
         self.smData["end"] = True
         self.sm.cancel_state()
 
-    def get_action_detail(self, what, userdata):
+    def get_action_detail(self, what, userdata): # If an action needs parameters (id, coordinate...)
+        # userdata["next_action"] = [Enum Action, arguments optionnels]
         try:
-            # userdata["next_action"] = [Enum Action, arguments optionnels] 
             if (what == "goto"):
-                return userdata["next_action"][1:4] # [Action, x, y, theta]
+                if len(userdata["next_action"][1:] == 3):
+                    return userdata["next_action"][1:4] # [Action, x, y, theta] -> x, y, theta
+                else: 
+                    return userdata["next_action"][1:3], None # [Action, x, y] -> x, y, None
             else:
                 return userdata["next_action"][1] # [Action, int]
         except IndexError:

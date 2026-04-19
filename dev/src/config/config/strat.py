@@ -39,7 +39,7 @@ class NaiveStratConfig(RobotConfig):
     DELAY_PARK = 10 # s
 
     MOVE_CURSOR = True
-    CURSOR_DISTANCE = 470 # TODO 100 = 10 cm for now TO BE DETERMINED
+    CURSOR_DISTANCE = 550 # TODO 100 = 10 cm for now TO BE DETERMINED
 
     MIN_DEPOSIT_DURATION = 15 # s
     MIN_PICKUP_DEPOSIT_DURATION = 30 # s

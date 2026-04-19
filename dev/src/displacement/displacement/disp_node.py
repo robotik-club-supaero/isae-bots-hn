@@ -202,7 +202,11 @@ class DisplacementNode(Node):
         if msg.data == 1:
             self.manager.cancelDisplacement()
             self.match_ended = True
-            self.sendShutdownCommand()
+            self._shutdown_timer = self.create_timer(0.2, self._on_shutdown_timer)
+
+    def _on_shutdown_timer(self):
+        self._shutdown_timer.cancel()
+        self.sendShutdownCommand()
 
     def callback_delete_obs(self, msg):
         self.manager.getPathFinder().remove_obstacle(msg.data)

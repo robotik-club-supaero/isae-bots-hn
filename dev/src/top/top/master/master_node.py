@@ -116,6 +116,7 @@ class MasterNode(Node):
     # ------------------------------------------------------------------
 
     def _spawn_act_agent(self):
+        self.get_logger().info("ACT Agent Spawned.")
         return subprocess.Popen(
             ['ros2', 'run', 'micro_ros_agent', 'micro_ros_agent', 'serial', '--dev', ACT_DEVICE],
             stdout=subprocess.DEVNULL,
@@ -193,6 +194,7 @@ class MasterNode(Node):
     # ------------------------------------------------------------------
 
     def _spawn_br_agent(self):
+        self.get_logger().info("BR Agent Spawned.")
         return subprocess.Popen(
             ['ros2', 'run', 'micro_ros_agent', 'micro_ros_agent', 'serial', '--dev', BR_DEVICE],
             stdout=subprocess.DEVNULL,

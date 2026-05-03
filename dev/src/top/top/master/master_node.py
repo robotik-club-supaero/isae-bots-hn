@@ -11,6 +11,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Int16
+from br_messages.msg import Position
 
 from .button import ButtonState, GpioButton, DummyLed, LedState
 from .optional import Optional
@@ -23,6 +24,7 @@ from config.qos import default_profile, latch_profile
 BUTTON_PIN = 15
 
 ACT_DEVICE       = '/dev/ttyACT'
+BR_DEVICE        = '/dev/ttyBR'
 WATCHDOG_TIMEOUT = 5.0  # seconds without /act/callback_color before Teensy restart + micro_ros connection reset
 
 class Status(IntEnum):
@@ -92,6 +94,17 @@ class MasterNode(Node):
         self._watchdog_timer  = self.create_timer(WATCHDOG_TIMEOUT, self._on_watchdog_timeout)
         self._watchdog_timer.cancel() # Wait for first msg
 
+        # ---
+
+        # --- BR Teensy watchdog & connection management ---
+        self._br_agent = self._spawn_br_agent()
+
+        self._br_watchdog_armed = False
+        self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
+        self._br_watchdog_timer.cancel()
+
+        self._br_callback_sub = self.create_subscription(
+            Position, '/br/currentPosition', self._cb_br_current_position, default_profile)
         # ---
 
         self.update_timer = self.create_timer(0.01, self.update_state)
@@ -174,6 +187,57 @@ class MasterNode(Node):
         time.sleep(1.5)
         self._act_agent = self._spawn_act_agent()
         logger.info("ACT micro-ROS agent restarted")
+
+    # ------------------------------------------------------------------
+    # BR Teensy watchdog helpers
+    # ------------------------------------------------------------------
+
+    def _spawn_br_agent(self):
+        return subprocess.Popen(
+            ['ros2', 'run', 'micro_ros_agent', 'micro_ros_agent', 'serial', '--dev', BR_DEVICE],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def _cb_br_current_position(self, msg):
+        if not self._br_watchdog_armed:
+            self._br_watchdog_armed = True
+            self.destroy_timer(self._br_watchdog_timer)
+            self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
+        else:
+            self._br_watchdog_timer.reset()
+
+    def _on_br_watchdog_timeout(self):
+        self._br_watchdog_armed = False
+        self.destroy_timer(self._br_watchdog_timer)
+        self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
+        self._br_watchdog_timer.cancel()
+
+        self.get_logger().error("BR Teensy watchdog timeout (5 s) — resetting connection")
+        self._reset_br_connection()
+
+    def _reset_br_connection(self):
+        logger = self.get_logger()
+
+        if self._br_agent and self._br_agent.poll() is None:
+            self._br_agent.terminate()
+            try:
+                self._br_agent.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self._br_agent.kill()
+
+        try:
+            with serial.Serial(BR_DEVICE, baudrate=115200, timeout=1) as s:
+                s.dtr = False
+                time.sleep(0.2)
+                s.dtr = True
+            logger.info("BR Teensy reset done")
+        except Exception as e:
+            logger.error(f"BR Teensy reset failed: {e}")
+
+        time.sleep(1.5)
+        self._br_agent = self._spawn_br_agent()
+        logger.info("BR micro-ROS agent restarted")
 
     # ------------------------------------------------------------------
 
@@ -263,6 +327,8 @@ class MasterNode(Node):
         self.status = Status.STOPPING
         if self._act_agent and self._act_agent.poll() is None:
             self._act_agent.terminate()
+        if self._br_agent and self._br_agent.poll() is None:
+            self._br_agent.terminate()
         if self._launchMatch is not None:
             self._launchMatch.__exit__(exc_type, exc_value, traceback)
       

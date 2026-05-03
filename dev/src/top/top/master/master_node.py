@@ -205,6 +205,7 @@ class MasterNode(Node):
             self.destroy_timer(self._br_watchdog_timer)
             self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
         else:
+            self.get_logger().info(f"RECEIVED BR CALLBACK : {msg.data}")
             self._br_watchdog_timer.reset()
 
     def _on_br_watchdog_timeout(self):

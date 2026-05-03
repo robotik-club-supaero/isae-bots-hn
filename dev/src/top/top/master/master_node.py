@@ -26,6 +26,7 @@ BUTTON_PIN = 15
 ACT_DEVICE       = '/dev/ttyACT'
 BR_DEVICE        = '/dev/ttyBR'
 WATCHDOG_TIMEOUT = 5.0  # seconds without /act/callback_color before Teensy restart + micro_ros connection reset
+ENABLE_WATCHDOG = False
 
 class Status(IntEnum):
     INVALID = -1
@@ -68,44 +69,45 @@ class MasterNode(Node):
 
         ### Subscriptions ###
         self.start_sub = self.create_subscription(Int16, '/game/start', self.cb_start, default_profile)
-
-        # --- ACT Teensy watchdog & connection management ---
-        # Spawn the ACT micro-ROS agent as a managed subprocess (so we can restart it)
-        self._act_agent = self._spawn_act_agent()
-
-        # Track the expected color (set by whoever publishes /game/color)
-        self._expected_color = 0  # 0=yellow (default)
-
-        # /game/color: subscribe to know expected color; re-publish if Teensy has the wrong one
-        self._color_sub = self.create_subscription(Int16, '/game/color', self._cb_game_color, latch_profile)
-        self._color_pub = self.create_publisher(Int16, '/game/color', latch_profile)
-
+        
         # /game/timer: publish 0 at 1 Hz before match; dec_node takes over during match
         self._game_timer_pub  = self.create_publisher(Int16, '/game/timer', default_profile)
         self._game_timer_tick = self.create_timer(1.0, self._publish_game_timer)
+        
+        if ENABLE_WATCHDOG:
+            # --- ACT Teensy watchdog & connection management ---
+            # Spawn the ACT micro-ROS agent as a managed subprocess (so we can restart it)
+            self._act_agent = self._spawn_act_agent()
 
-        # /act/callback_color: ping-back from ACT Teensy — echoes its stored color
-        self._callback_color_sub = self.create_subscription(
-            Int16, '/act/callback_color', self._cb_callback_color, default_profile)
+            # Track the expected color (set by whoever publishes /game/color)
+            self._expected_color = 0  # 0=yellow (default)
 
-        # Watchdog: 5 s without a callback_color → reset the Teensy.
-        # Starts cancelled; activated on first successful callback.
-        self._watchdog_armed  = False
-        self._watchdog_timer  = self.create_timer(WATCHDOG_TIMEOUT, self._on_watchdog_timeout)
-        self._watchdog_timer.cancel() # Wait for first msg
+            # /game/color: subscribe to know expected color; re-publish if Teensy has the wrong one
+            self._color_sub = self.create_subscription(Int16, '/game/color', self._cb_game_color, latch_profile)
+            self._color_pub = self.create_publisher(Int16, '/game/color', latch_profile)
 
-        # ---
+            # /act/callback_color: ping-back from ACT Teensy — echoes its stored color
+            self._callback_color_sub = self.create_subscription(
+                Int16, '/act/callback_color', self._cb_callback_color, default_profile)
 
-        # --- BR Teensy watchdog & connection management ---
-        self._br_agent = self._spawn_br_agent()
+            # Watchdog: 5 s without a callback_color → reset the Teensy.
+            # Starts cancelled; activated on first successful callback.
+            self._watchdog_armed  = False
+            self._watchdog_timer  = self.create_timer(WATCHDOG_TIMEOUT, self._on_watchdog_timeout)
+            self._watchdog_timer.cancel() # Wait for first msg
 
-        self._br_watchdog_armed = False
-        self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
-        self._br_watchdog_timer.cancel()
+            # ---
 
-        self._br_callback_sub = self.create_subscription(
-            Position, '/br/currentPosition', self._cb_br_current_position, default_profile)
-        # ---
+            # --- BR Teensy watchdog & connection management ---
+            self._br_agent = self._spawn_br_agent()
+
+            self._br_watchdog_armed = False
+            self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
+            self._br_watchdog_timer.cancel()
+
+            self._br_callback_sub = self.create_subscription(
+                Position, '/br/currentPosition', self._cb_br_current_position, default_profile)
+            # ---
 
         self.update_timer = self.create_timer(0.01, self.update_state)
 
@@ -207,7 +209,6 @@ class MasterNode(Node):
             self.destroy_timer(self._br_watchdog_timer)
             self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
         else:
-            self.get_logger().info(f"RECEIVED BR CALLBACK : {msg.data}")
             self._br_watchdog_timer.reset()
 
     def _on_br_watchdog_timeout(self):

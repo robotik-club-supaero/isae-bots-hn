@@ -7,6 +7,8 @@
 
 	<!-- true to simulate the actuators -->
 	<arg name="NO_ACT" default="false" />
+	<!-- true to simulate the br -->
+	<arg name="NO_BR" default="false" />
 	<!-- true to disable the lidar -->
 	<arg name="NO_LIDAR" default="false" />
 	<!-- true to disable human-machine interface nodes -->
@@ -14,6 +16,8 @@
 
 	<!-- FIXME: micro_ros nodes moved to master_node.launch because they can't be launched from Python (why?)
 			and this script is launched by the master_node -->
+	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var BR)" output="both" unless="$(var NO_BR)"/>
+	<node name="SerialNodeBR" pkg="micro_ros_agent" exec="micro_ros_agent" args="serial --dev $(var ACT)" output="both" unless="$(var NO_ACT)"/>
 
 	<!-- Simulate the actuators if not present -->
 	<node name="ACN" pkg="sim" exec="actuator_node" output="both" if="$(var NO_ACT)"/>

@@ -236,5 +236,5 @@ class ActionStateMachine(yasmin.StateMachine):
 
     def cancel_all(self):
         """Full cancel for node shutdown — stops the SM thread completely."""
-        self._node.get_logger().info("Full shutdown cancel...")
+        self._node.get_logger().info("Full shutdown : cancel...")
         super().cancel_state()

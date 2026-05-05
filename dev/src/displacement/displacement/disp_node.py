@@ -119,7 +119,10 @@ class DisplacementNode(Node):
         self.pub_teensy_go_to.publish(self.msg_go_to)
 
     def sendStopCommand(self):
-        self.pub_teensy_stop.publish(Empty())
+        try:
+            self.pub_teensy_stop.publish(Empty())
+        except:
+            self.get_logger().warn("Teensy stop command : publish issue.")
 
     def sendShutdownCommand(self):
         self.pub_teensy_idle.publish(Bool(data=False))

@@ -101,15 +101,12 @@ def match_strat(node):
                     (Action.DEPOSIT, 2), 
                     Action.PARKSTANDBY]
     
-    test = [(Action.PICKUP, 0),
-            (Action.PICKUP, 1),
-            (Action.DEPOSIT, 2),
-            (Action.DEPOSIT, 1),
+    basic = [(Action.PICKUP, 0),
+            (Action.DEPOSIT, 0),
             Action.CURSOR,
-            (Action.DEPOSIT, 0),   
             Action.PARKSTANDBY]
     
-    action_order = match
+    action_order = basic
 
     # -------------------- Useful function ------------------------- #
 

@@ -74,17 +74,17 @@ class MasterNode(Node):
         self._game_timer_pub  = self.create_publisher(Int16, '/game/timer', default_profile)
         self._game_timer_tick = self.create_timer(1.0, self._publish_game_timer)
         
+        # Track the expected color (set by whoever publishes /game/color)
+        self._expected_color = 0  # 0=yellow (default)
+
+        # /game/color: subscribe to know expected color; re-publish if Teensy has the wrong one
+        self._color_sub = self.create_subscription(Int16, '/game/color', self._cb_game_color, latch_profile)
+        #self._color_pub = self.create_publisher(Int16, '/act/color', latch_profile)
+    
         if ENABLE_WATCHDOG:
             # --- ACT Teensy watchdog & connection management ---
             # Spawn the ACT micro-ROS agent as a managed subprocess (so we can restart it)
             self._act_agent = self._spawn_act_agent()
-
-            # Track the expected color (set by whoever publishes /game/color)
-            self._expected_color = 0  # 0=yellow (default)
-
-            # /game/color: subscribe to know expected color; re-publish if Teensy has the wrong one
-            self._color_sub = self.create_subscription(Int16, '/game/color', self._cb_game_color, latch_profile)
-            self._color_pub = self.create_publisher(Int16, '/game/color', latch_profile)
 
             # /act/callback_color: ping-back from ACT Teensy — echoes its stored color
             self._callback_color_sub = self.create_subscription(
@@ -130,13 +130,14 @@ class MasterNode(Node):
 
     def _cb_callback_color(self, msg):
         """Ping-back from ACT Teensy. Resets watchdog and verifies color."""
-        if not self._watchdog_armed:
-            # First callback after startup or after a reset: activate the watchdog
-            self._watchdog_armed = True
-            self.destroy_timer(self._watchdog_timer)
-            self._watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_watchdog_timeout)
-        else:
-            self._watchdog_timer.reset()
+        if ENABLE_WATCHDOG:
+            if not self._watchdog_armed:
+                # First callback after startup or after a reset: activate the watchdog
+                self._watchdog_armed = True
+                self.destroy_timer(self._watchdog_timer)
+                self._watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_watchdog_timeout)
+            else:
+                self._watchdog_timer.reset()
 
         if msg.data != self._expected_color:
             self.get_logger().warning(

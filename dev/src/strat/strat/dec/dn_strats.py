@@ -66,12 +66,14 @@ def homologation(node):
         node.get_logger().info("Start of strategy : HOMOLOGATION")
         node.action_step_index = 0 # Initialise to first action
     elif node.action_successful:
+        node.get_logger().info("ACTION SUCCESSFUL -> INCREMENT")
+        node.action_step_index += 1
         if last_action == Action.PARK: 
             node.get_logger().info("End of strategy : HOMOLOGATION")
             node.stop_IT() # Stop robot
             return
-        else:
-            node.action_step_index += 1
+    
+    print(f"HOMOLOGATION STEP {node.action_step_index}")
         
     if node.time_left < 15:
         node.curr_action = [Action.PARK]

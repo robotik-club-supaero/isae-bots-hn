@@ -65,17 +65,24 @@ def homologation(node):
     if last_action == Action.INIT:
         node.get_logger().info("Start of strategy : HOMOLOGATION")
         node.action_step_index = 0 # Initialise to first action
-
-    if node.action_step_index == 0 :
+    elif node.action_successful:
+        if last_action == Action.PARK: 
+            node.get_logger().info("End of strategy : HOMOLOGATION")
+            node.stop_IT() # Stop robot
+            return
+        else:
+            node.action_step_index += 1
+        
+    if node.time_left < 15:
+        node.curr_action = [Action.PARK]
+    elif node.action_step_index == 0 :
         x, y, t = DynamicPos(2000 - 400, 400, 0).resolve(node.color)
         if t is None:
             node.curr_action = [Action.GOTO, int(x), int(y)]
         else:
             node.curr_action = [Action.GOTO, int(x), int(y), int(np.rad2deg(t))]
-        node.action_step_index += 1
     elif node.action_step_index == 1: 
         node.curr_action = [Action.PARK]
-        node.action_step_index += 1
     else:
         node.get_logger().info("End of strategy : HOMOLOGATION")
         node.curr_action = [Action.PARK]

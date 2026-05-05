@@ -82,7 +82,7 @@ class LidarNode(Node):
             dist_mm = dist * 1000
 
             # On applique un masque pour supprimer les points qui ne sont pas dans les bornes indiquées (bornes de détection du LiDAR).
-            if range_min<dist_mm<range_max:
+            if range_min < dist_mm < range_max:
                 # Conversion de (d, theta) en (x_rel, y_rel)
                 x_rel = dist_mm * math.cos(theta - LIDAR_ANGLE*math.pi/180)  + LIDAR_OFFSET_X
                 y_rel = dist_mm * math.sin(theta - LIDAR_ANGLE*math.pi/180) + LIDAR_OFFSET_Y

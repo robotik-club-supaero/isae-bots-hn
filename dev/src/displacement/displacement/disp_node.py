@@ -73,7 +73,7 @@ class DisplacementNode(Node):
    
         # Comm Lidar/Sonar
         self.sub_lidar = self.create_subscription(SensorObstacleList, "/sensors/obstaclesLidar", self.callback_lidar, default_profile)
-        self.sub_lidar = self.create_subscription(SensorObstacleList, "/sensors/obstaclesSonar", self.callback_sonar, default_profile)
+        #self.sub_lidar = self.create_subscription(SensorObstacleList, "/sensors/obstaclesSonar", self.callback_sonar, default_profile)
    
         # Comm Strat
         self.pub_strat = self.create_publisher(Int16, "/dsp/callback/next_move", latch_profile)

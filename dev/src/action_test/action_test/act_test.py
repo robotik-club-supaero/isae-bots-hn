@@ -113,9 +113,10 @@ class ActionTestNode(Node):
     def _on_timeout(self):
         self.timeout_timer.cancel()
         actuator, order, expected_cb = self.current_action
-        self.get_logger().error(f"Timeout (10 s) waiting for {actuator} callback (expected {expected_cb}) — aborting.")
-        self.destroy_node()
-        rclpy.try_shutdown()
+        self.get_logger().error(f"Timeout (10 s) waiting for {actuator} callback (expected {expected_cb}) — trying next action.")
+        self.timeout_timer.cancel()
+        self.waiting = False
+        self._send_next_action()
 
 
 #################################################################

@@ -79,16 +79,16 @@ class MasterNode(Node):
 
         # /game/color: subscribe to know expected color; re-publish if Teensy has the wrong one
         self._color_sub = self.create_subscription(Int16, '/game/color', self._cb_game_color, latch_profile)
-        #self._color_pub = self.create_publisher(Int16, '/act/color', latch_profile)
+        self._color_pub = self.create_publisher(Int16, '/game/color', latch_profile)
+
+        # /act/callback_color: ping-back from ACT Teensy — echoes its stored color
+        self._callback_color_sub = self.create_subscription(Int16, '/act/callback_color', self._cb_callback_color, default_profile)
+
     
         if ENABLE_WATCHDOG:
             # --- ACT Teensy watchdog & connection management ---
             # Spawn the ACT micro-ROS agent as a managed subprocess (so we can restart it)
             self._act_agent = self._spawn_act_agent()
-
-            # /act/callback_color: ping-back from ACT Teensy — echoes its stored color
-            self._callback_color_sub = self.create_subscription(
-                Int16, '/act/callback_color', self._cb_callback_color, default_profile)
 
             # Watchdog: 5 s without a callback_color → reset the Teensy.
             # Starts cancelled; activated on first successful callback.
@@ -140,9 +140,7 @@ class MasterNode(Node):
                 self._watchdog_timer.reset()
 
         if msg.data != self._expected_color:
-            self.get_logger().warning(
-                f"ACT Teensy color mismatch: got {msg.data}, expected {self._expected_color} — resending /game/color"
-            )
+            self.get_logger().warning(f"ACT Teensy color mismatch: got {msg.data}, expected {self._expected_color} — resending /game/color")
             resend = Int16()
             resend.data = self._expected_color
             self._color_pub.publish(resend)
@@ -205,12 +203,13 @@ class MasterNode(Node):
         )
 
     def _cb_br_current_position(self, msg):
-        if not self._br_watchdog_armed:
-            self._br_watchdog_armed = True
-            self.destroy_timer(self._br_watchdog_timer)
-            self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
-        else:
-            self._br_watchdog_timer.reset()
+        if ENABLE_WATCHDOG:
+            if not self._br_watchdog_armed:
+                self._br_watchdog_armed = True
+                self.destroy_timer(self._br_watchdog_timer)
+                self._br_watchdog_timer = self.create_timer(WATCHDOG_TIMEOUT, self._on_br_watchdog_timeout)
+            else:
+                self._br_watchdog_timer.reset()
 
     def _on_br_watchdog_timeout(self):
         self._br_watchdog_armed = False

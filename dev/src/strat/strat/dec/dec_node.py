@@ -213,7 +213,7 @@ class DecisionsNode(Node):
         """
         Send back the next action when triggered by the repartitor.
         """
-        self.get_logger().info(f"[ dec_node Callback ] Action callback : {str(msg)}, {msg.exit}, {msg.data}")
+        self.get_logger().info(f"[ dec_node Callback ] Action callback : {str(msg)}, {msg.exit}")
 
         self.action_successful = False # reset
         

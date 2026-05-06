@@ -30,6 +30,7 @@ from message.msg import DisplacementRequest
 
 from ..an_const import DspCallback, MAX_X, MAX_Y, RobotConfig
 from ..an_utils import Sequence
+from strat.strat_const import ActionResult
 
 #################################################################
 #                                                               #
@@ -116,12 +117,24 @@ class Displacement(yasmin.State):
                         userdata["cb_depl"] = DspCallback.PENDING
                         self._node.disp_pub.publish(dest)
                         continue
-
                 self._logger.info('Displacement result: success displacement')
                 return 'success'
 
         self._logger.error('Timeout reached - [displacement]')
         return 'fail'
+
+class EndOfDisplacement(yasmin.State):
+    """
+    SM MOVE : end of move
+    """
+    def __init__(self, node):
+        super().__init__(outcomes=['preempted','success','fail'])
+
+    def execute(self, userdata):
+        if self.is_canceled(): return 'preempted'
+        
+        userdata["action_result"] = ActionResult.SUCCESS
+        return 'success'
 
 class MoveTo(Sequence):
     def __init__(self, node, destination):
@@ -301,4 +314,5 @@ class GoTo(Sequence):
     def __init__(self, node):
         super().__init__(states=[
             ('MOVEMENT', MoveTo(node, CalcPositionGoTo(node))),
+            ('GOTO_END', EndOfDisplacement(node))
             ])

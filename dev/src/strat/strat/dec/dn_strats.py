@@ -108,12 +108,14 @@ def match_strat(node):
                     (Action.DEPOSIT, 1), 
                     (Action.PICKUP, 3), 
                     (Action.DEPOSIT, 2), 
-                    Action.PARKSTANDBY]
+                    Action.PARKSTANDBY,
+                    Action.PARK]
     
-    basic = [(Action.PICKUP, 0),
-            (Action.DEPOSIT, 0),
+    basic = [(Action.PICKUPALL, 0),
+            (Action.DEPOSITALL, 0),
             Action.CURSOR,
-            Action.PARKSTANDBY]
+            Action.PARKSTANDBY,
+            Action.PARK]
     
     action_order = basic
 
@@ -162,10 +164,13 @@ def match_strat(node):
     def increment_action_index():
         node.action_step_index += 1 # Go to next action
         if (node.action_step_index) >= len(action_order):
-            node.get_logger().info(f"End of Action Order defined by Strategy. -> STOP")   
-            node.get_logger().info("End of strategy : MATCH")
-            node.stop_IT() 
-            return
+            if not node.parked:
+                node.action_step_index = len(action_order) - 1
+            else:
+                node.get_logger().info(f"End of Action Order defined by Strategy. -> STOP")   
+                node.get_logger().info("End of strategy : MATCH")
+                node.stop_IT() 
+                return
 
     def set_next_action(last_action, succeeded):
         next_action = action_order[node.action_step_index]

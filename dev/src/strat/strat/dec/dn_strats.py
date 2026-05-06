@@ -190,6 +190,11 @@ def match_strat(node):
                 increment_action_index()
                 return set_next_action(Action.DEPOSIT, False)
         
+        if next_action == Action.DEPOSITALL:
+            node.curr_action = [Action.DEPOSITALL, *parameter]
+            node.get_logger().info(f"Next action order : Deposit All -> Area n°{parameter}")
+            return True
+        
         if next_action == Action.PICKUP:
             if not node.loaded:
                 if node.time_left > node.config.MIN_PICKUP_DEPOSIT_DURATION:

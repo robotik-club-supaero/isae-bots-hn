@@ -73,7 +73,7 @@ def homologation(node):
             node.stop_IT() # Stop robot
             return
     
-    print(f"HOMOLOGATION STEP {node.action_step_index}")
+    node.get_logger().info(f"HOMOLOGATION STEP {node.action_step_index}")
         
     if node.time_left < 15:
         node.curr_action = [Action.PARK]
